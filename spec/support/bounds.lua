@@ -132,7 +132,7 @@ function bounds.overflows(root, slack)
 			if left then
 				bounds.measured = bounds.measured + 1
 				local _, inked = textWidth(region)
-				local justify = region.justifyH or "LEFT"
+				local justify = region:GetJustifyH()
 				local start = justify == "RIGHT" and frameWidth - inked
 					or justify == "CENTER" and (frameWidth - inked) / 2
 					or 0

@@ -40,8 +40,9 @@ local HOUR_Y, TICK_Y, MINOR_Y, RULE_Y, REALM_Y, NEXT_Y = 53, 69, 74, 82.5, 65, 4
 -- least gap between two hour labels: a label that would come closer to the one before it is left out.
 local COLUMN_ROOM, HOUR_GAP = 178 - 24, 4
 local LIST_Y, LIST_HEIGHT, LEGEND_Y = 84, 368, 498
--- The now line runs up through the ruler from here.
-local NOW_Y = 44
+-- The now line runs up through the ruler from here, on a frame this many levels over the list's rows' (the content
+-- frame's, one over its scroll frame's), so over the rows; the groups' headings one over that.
+local NOW_Y, NOW_LIFT = 44, 4
 -- Each row's columns: the medallion, the name, the track (190 units for the ruler's 24 hours), and the margin label
 -- right-aligned at the list's edge.
 local NAME_X, NAME_WIDTH, TRACK_X, TRACK_WIDTH, MARGIN_INSET = 31, 140, 178, 190, 3
@@ -238,13 +239,13 @@ end
 -- A group's heading: its dot, its name in small caps, its note in italic, and its row count in the margin. It is set
 -- over the frame the now line is drawn on, so the line passes under its words: a language's longer note ("öffnet
 -- danach oder braucht mehr Fertigkeit", and English's "Later" note too) reaches across the line, which ran through
--- it. The rows stay under the line, their bars crossing it as the kit drew them.
+-- it. The rows stay under the line, their bars crossing it as the kit drew them. Its level is set at each draw
+-- (drawList), from the list's as it is then.
 ---@param view TimelinePageView
 ---@return TimelineHeadingView
 local function newHeading(view)
 	local fonts = ns.BoardFonts()
 	local heading = CreateFrame("Frame", nil, view.content) --[[@as TimelineHeadingView]]
-	heading:SetFrameLevel(view.nowLine:GetParent():GetFrameLevel() + 1)
 	heading:SetSize(view.width, HEADING_GAP + HEADING_HEIGHT)
 	heading.dot = ns.NewBoardDot(heading, 9)
 	heading.dot:SetPoint("TOPLEFT", 0, -(HEADING_GAP + 6))
@@ -351,10 +352,11 @@ local function build(page)
 	thumb:ClearAllPoints()
 	thumb:SetWidth(RAIL_WIDTH)
 
-	-- The now line runs up through the ruler, over the list: on its own frame above the scroll.
+	-- The now line runs up through the ruler, over the list: on its own frame above the list's rows, NOW_LIFT over the
+	-- frame they are on, set again at each draw (drawList).
 	local over = CreateFrame("Frame", nil, page)
 	over:SetAllPoints()
-	over:SetFrameLevel(scroll:GetFrameLevel() + 5)
+	over:SetFrameLevel(content:GetFrameLevel() + NOW_LIFT)
 	local nowLine = ns.BoardSolid(over, LOOK.nowLine, "OVERLAY")
 	nowLine:ClearAllPoints()
 	nowLine:SetSize(2, LIST_Y + LIST_HEIGHT - NOW_Y)
@@ -602,11 +604,16 @@ local function drawList(view, timeline)
 	local live = view.serial == serial - 1 and view.showing == showing
 	view.serial, view.showing = serial, showing
 	local slide = live and ns.MotionOn()
+	-- the now line's frame over the rows, and each heading over it, from the rows' frame's level as it is now: set once,
+	-- they kept the levels of the draw that made them, under the rows of a list stacked higher since
+	local lineLevel = view.content:GetFrameLevel() + NOW_LIFT
+	view.nowLine:GetParent():SetFrameLevel(lineLevel)
 	local y = 0
 	local groupOf, headingsUsed, opened = {}, {}, false
 	for _, group in ipairs(timeline.groups) do
 		local heading = view.headings[group.group] or newHeading(view)
 		view.headings[group.group] = heading
+		heading:SetFrameLevel(lineLevel + 1)
 		headingsUsed[group.group] = true
 		moveTo(heading, y, slide)
 		heading.dot:SetGroup(group.group, true)

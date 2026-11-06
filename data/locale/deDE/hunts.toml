@@ -40,7 +40,7 @@ en.wagerCentury = "{earnedRuns:0} Wager runs completed"
 en.wagerRuns = "{earnedRuns:0} Wager runs completed"
 
 [WINDOW_MOMENTS_SETTING]
-value = "Melden, wenn sich das Fenster einer angehefteten Jagd öffnet"
+value = "Offene Jagdfenster melden"
 en = "Tell me when a pinned Hunt's window opens"
 
 [WINDOW_MOMENTS_TOOLTIP]

@@ -86,7 +86,7 @@ value = "Gegenstand {item}"
 en = "Item {item}"
 
 [SETTINGS_CLAMS]
-value = "Muscheln zwischen Würfen öffnen"
+value = "Muscheln beim Angeln öffnen"
 en = "Open clams between Casts"
 
 [SETTINGS_CLAMS_TOOLTIP]
@@ -218,7 +218,7 @@ value = "Die Angeltaste legt es an, wenn du keine Angelrute in der Hand hast. Do
 en = "The Fishing key puts it on when no pole is in hand. Double-click skips this."
 
 [SETTINGS_FISHING_SET_NONE]
-value = "Keins (Ausrüstung bleibt, wie sie ist)"
+value = "Keins (Ausrüstung bleibt)"
 en = "None (gear stays as it is)"
 
 [SETTINGS_SAVE_FISHING_SET]

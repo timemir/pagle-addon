@@ -380,7 +380,7 @@ local ROW_GAP, ROW_GAP_MIN, RULE_SHARE = 16.03, 8, 8.05 / 16.03
 --- item, ticked once done.
 ---@class PagleGuideEveningView: Frame
 ---@field count FontString
----@field rows { id: string, done: boolean, box: PagleSprite, tick: PagleSprite, words: FontString, strike: Texture }[]
+---@field rows { id: string, done: boolean, box: PagleSprite, tick: PagleSprite, words: FontString, strikes: Texture[] }[]
 
 --- What Core's pages drew, for their onShow to redraw: made at each step's first showing, one guide a session.
 ---@class PagleGuidePages
@@ -622,19 +622,22 @@ local function newEvening(right, y)
 	y = LIST_TOP
 	for _, item in ipairs(ns.GuideEveningPreview(ns.Modules:Modules())) do
 		local words = text(list, "print", 13.5, "body", item.text, ITEM_X, y + 2, 17.6, { wrap = true })
-		words:SetWidth(0)
-		-- struck through its first line: as wide as its words, or the paper's room when they wrap
-		local inked = math.min(LIST_WIDTH - ITEM_X - ITEM_END, math.ceil(words:GetStringWidth()))
 		local more = onPaper(words, 13.5, 17.6)
-		local strike = rule(list, ITEM_X, y + 11, math.max(1, inked), "strike", 0.6)
-		strike:SetDrawLayer("OVERLAY")
+		-- struck through every line it wraps to, each as wide as its words
+		local strikes = {}
+		local lines = math.floor(more / 17.6 + 0.5) + 1
+		for k, inked in ipairs(ns.GuideLineWidths(words, LIST_WIDTH - ITEM_X - ITEM_END, lines)) do
+			local strike = rule(list, ITEM_X, y + 11 + (k - 1) * 17.6, math.max(1, inked), "strike", 0.6)
+			strike:SetDrawLayer("OVERLAY")
+			strikes[k] = strike
+		end
 		list.rows[#list.rows + 1] = {
 			id = item.id,
 			done = false,
 			box = part(list, "li-box", 24, y + 4),
 			tick = part(list, "li-done", 24, y + 4),
 			words = words,
-			strike = strike,
+			strikes = strikes,
 		}
 		if item.hint then
 			local hint = text(list, "italic", 12.5, "small", item.hint, ITEM_X, y + more + 19.6, 16.3, { wrap = true })
@@ -658,7 +661,9 @@ local function tickEvening(list)
 		done = done + (row.done and 1 or 0)
 		row.box:SetShown(not row.done)
 		row.tick:SetShown(row.done)
-		row.strike:SetShown(row.done)
+		for _, strike in ipairs(row.strikes) do
+			strike:SetShown(row.done)
+		end
 		hue(row.words, row.done and "itemDone" or "item")
 	end
 	list.count:SetText(ns.RenderText(L.GUIDE_EVENING_COUNT, { done = done, rows = #list.rows }))

@@ -612,9 +612,12 @@ end
 
 -- Lays the posts' titles under them (HNT-R162): each centred under its post, the last ending at the page's right, as
 -- wide as its words up to POST_TITLE_W, and narrower where it would run into the next (a longer language's titles,
--- CORE-R8): each pair shares the room between their posts by ns.ShareRoom, a narrowed title is set a size down at a
--- time to POST_TITLE_FLOOR, and the client cuts it short past that, never to under POST_TITLE_MIN, so two posts closer
--- than POST_TITLE_GAP still show the start of each title.
+-- CORE-R8): each pair shares the room between their posts, less POST_TITLE_GAP, by ns.ShareRoom; a narrowed title is
+-- set a size down at a time to POST_TITLE_FLOOR, and the client cuts it short past that, never to under
+-- POST_TITLE_MIN (or its whole words, if shorter), taking what it keeps from its neighbour's share. Two posts so close
+-- that the room can't hold both of those (none do while the posts stand a third of the rail apart): the earlier
+-- post's title is left out, its post and number still showing, so no two titles ever overprint. The pairs go from the
+-- right, each title beside the nearest one shown after it, so the last post's title, at the page's right, always shows.
 ---@param ladder WagersLadderView
 ---@param marks { at: number, title: string }[]
 local function layPostTitles(ladder, marks)
@@ -633,18 +636,33 @@ local function layPostTitles(ladder, marks)
 	local function rightShare(i)
 		return i == n and 0 or 0.5
 	end
-	for i = 1, n - 1 do
-		local j = i + 1
-		local right, left =
-			ns.ShareRoom(at[j] - at[i] - POST_TITLE_GAP, widths[i] * rightShare(i), widths[j] * leftShare(j))
-		widths[i] = math.min(widths[i], math.max(POST_TITLE_MIN, right / rightShare(i)))
-		widths[j] = math.min(widths[j], math.max(POST_TITLE_MIN, left / leftShare(j)))
+	local shown, after = { [n] = true }, n
+	for i = n - 1, 1, -1 do
+		local j = after
+		local room = at[j] - at[i] - POST_TITLE_GAP
+		local a, b = widths[i] * rightShare(i), widths[j] * leftShare(j)
+		local leastA = math.min(a, POST_TITLE_MIN * rightShare(i))
+		local leastB = math.min(b, POST_TITLE_MIN * leftShare(j))
+		if leastA + leastB <= room then
+			local right, left = ns.ShareRoom(room, a, b)
+			if right < leastA then
+				right, left = leastA, math.min(b, room - leastA)
+			elseif left < leastB then
+				right, left = math.min(a, room - leastB), leastB
+			end
+			widths[i], widths[j] = right / rightShare(i), left / leftShare(j)
+			shown[i], after = true, i
+		end
 	end
 	for i, mark in ipairs(marks) do
 		local title = ladder.titles[i]
-		-- narrowed, a size down at a time before the client cuts it ("Ruhestand der Buch…")
-		ns.ShrinkWagerText(title, mark.title, widths[i], POST_TITLE_FLOOR)
-		if i == n then
+		if shown[i] then
+			-- narrowed, a size down at a time before the client cuts it ("Ruhestand der Buch…")
+			ns.ShrinkWagerText(title, mark.title, widths[i], POST_TITLE_FLOOR)
+		end
+		if not shown[i] then
+			title:Hide()
+		elseif i == n then
 			ns.PlaceWagerText(title, ladder, 0, POST_TITLE_Y, true)
 		else
 			title:SetJustifyH("CENTER")

@@ -65,7 +65,9 @@ local RING_CLEAR = 14
 
 -- What an arrow aims at for `target`, in `frame`'s units (ns.NoteArrowPath's target): its rectangle, or for a font
 -- string its words' inked span as its justification lays them across it, widened by RING_CLEAR on every side, so the
--- ring lands beside the words from whichever side the note is. Nil while it isn't laid out.
+-- ring lands beside the words from whichever side the note is. Up and down it widens only within the font string's
+-- row, the frame it is on (a Settings row, a ribbon's tab), never past the text's own height: on rows stacked tight
+-- the ring stays on its word's row instead of landing on the next row's words. Nil while it isn't laid out.
 ---@param target Region
 ---@param frame Frame
 ---@return PagleRect?
@@ -84,12 +86,14 @@ local function aimAt(target, frame)
 			or rect.left
 		rect.left, rect.right = left, left + inked
 	end
-	return {
-		left = rect.left - RING_CLEAR,
-		right = rect.right + RING_CLEAR,
-		bottom = rect.bottom - RING_CLEAR,
-		top = rect.top + RING_CLEAR,
-	}
+	local bottom, top = rect.bottom - RING_CLEAR, rect.top + RING_CLEAR
+	local parent = words:GetParent()
+	local row = parent and rectIn(parent, frame)
+	if row then
+		bottom = math.min(rect.bottom, math.max(bottom, row.bottom))
+		top = math.max(rect.top, math.min(top, row.top))
+	end
+	return { left = rect.left - RING_CLEAR, right = rect.right + RING_CLEAR, bottom = bottom, top = top }
 end
 
 -- Shows as much of the arrow as `reveal` says, segment by segment, the head once the curve is whole, and the ring at

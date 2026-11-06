@@ -136,6 +136,51 @@ describe("The First evening list on the client", function()
 		assert.are.same({}, bounds.overflows(frame.body))
 	end)
 
+	-- A done line was struck through its first line only: a longer language's wrapped one kept its second unstruck.
+	it("onb_r62 strikes a done line through every line it wraps to, each as wide as its words", function()
+		local long = "Wirf einen Blick in den Kuriositätenladen"
+		local loaded = withList()
+		loaded.ns.L.EVENING_SHOP = long
+		local GuideText = loaded.ns.GuideText
+		loaded.ns.GuideText = function(...)
+			local fontString = GuideText(...)
+			fontString.GetStringHeight = function(self)
+				return (self.wordWrap and self.text == long) and 13.5 * 2 + 4.1 or 14
+			end
+			return fontString
+		end
+		offToTheWater(loaded)
+
+		pagle(loaded, "shop")
+		catchAndFlush(loaded)
+
+		local shop, catch
+		for _, row in ipairs(loaded.ns.eveningFrame.rows) do
+			shop = row.text.text == long and row or shop
+			catch = row.text.text == "Land a Catch" and row or catch
+		end
+		assert(shop and catch, "no shop or catch line")
+		-- at 6 a byte the room, 217, holds "Wirf einen Blick in den" and not the next word, which takes the second line
+		assert.is_true(#"Wirf einen Blick in den Kuriositätenladen" * 6 > 217)
+		local struck = {}
+		for _, strike in ipairs(shop.strikes) do
+			if strike.shown then
+				struck[#struck + 1] = { strike.width, strike.height, strike.points[1][4], -strike.points[1][5] }
+			end
+		end
+		local y = struck[1] and struck[1][4]
+		assert.are.same({
+			{ #"Wirf einen Blick in den" * 6, 1, 43, y },
+			{ #"Kuriositätenladen" * 6, 1, 43, y + 17.6 },
+		}, struck)
+		-- a done line on one line keeps one strike
+		local shown = 0
+		for _, strike in ipairs(catch.strikes) do
+			shown = shown + (strike.shown and 1 or 0)
+		end
+		assert.are.same({ 1, #"Land a Catch" * 6 }, { shown, catch.strikes[1].width })
+	end)
+
 	it("ticks a real Cast and Catch, a Session ending without a card and the shop opening (ONB-R61)", function()
 		local loaded = withList()
 		offToTheWater(loaded)

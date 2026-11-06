@@ -4,11 +4,10 @@ import shutil
 import tomllib
 from pathlib import Path
 
-import pytest
-
 from pagle_data.text_convert import convert
 from pagle_data.text_convert_es import EsEntry, _same, convert_es, evaluate_es, parse_es_lua
 from test_text_convert import apply, build
+from tools_fixture import tool
 
 STATS = (
     'HI = "Hi %s"\n'
@@ -41,18 +40,15 @@ SPANISH = (
 LORE = '[statsgood."stats.trackerframe.none"]\nname = "Sin marco"\n# EN: No Frame\n'
 
 
-LUA_BIN = Path(__file__).resolve().parents[2] / ".tools" / "bin" / "lua"
-needs_lua = pytest.mark.skipif(not LUA_BIN.exists(), reason="no .tools/bin/lua")
 
 
-@needs_lua
 def test_a_spanish_file_is_read_with_its_english_comments() -> None:
     source = (
         'L.A = "uno " .. "dos"\n-- EN: one two\n'
         'L.T = {\n\tx = { one = "a\\nb", other = "c" },\n\t"list",\n}\n-- EN: { x = { one = "a", other = "c" } }\n'
     )
 
-    entries = parse_es_lua(source, evaluate_es(LUA_BIN, 'local ns = select(2, ...)\nlocal L = ns.L\n' + source))
+    entries = parse_es_lua(source, evaluate_es(tool("bin/lua"), 'local ns = select(2, ...)\nlocal L = ns.L\n' + source))
 
     assert entries == [
         EsEntry("A", "uno dos", "one two"),
@@ -60,7 +56,6 @@ def test_a_spanish_file_is_read_with_its_english_comments() -> None:
     ]
 
 
-@needs_lua
 def test_the_spanish_strings_become_fields_counted_strings_and_snapshots(tmp_path: Path) -> None:
     root = tmp_path / "now"
     build(root, {"Pagle_Stats": STATS}, {"addons/Pagle_Stats/logic/Say.lua": LUA})
@@ -72,7 +67,7 @@ def test_the_spanish_strings_become_fields_counted_strings_and_snapshots(tmp_pat
         "data/lore/es/stats.toml": LORE,
     }
 
-    report = convert_es(root, before, files.get, list(files), LUA_BIN)
+    report = convert_es(root, before, files.get, list(files), tool("bin/lua"))
 
     parsed = tomllib.loads(report.files["data/locale/esES/stats.toml"])
     assert parsed["HI"] == {"value": "Hola {name}", "en": "Hi {name}"}
@@ -109,7 +104,6 @@ def test_a_comment_written_with_the_lua_escapes_is_the_english_it_quotes() -> No
     assert not _same(None, "x")
 
 
-@needs_lua
 def test_a_translation_with_an_escaped_comment_is_refreshed_not_kept_stale(tmp_path: Path) -> None:
     root = tmp_path / "now"
     build(
@@ -123,7 +117,7 @@ def test_a_translation_with_an_escaped_comment_is_refreshed_not_kept_stale(tmp_p
     spanish = 'local ns = select(2, ...)\nlocal L = ns.L\nL.ICON = "Tiene %s \\\\Media\\\\a.blp"\n-- EN: Got %s \\\\Media\\\\a.blp\n'
     files = {"addons/Pagle_Stats/locale/esES.lua": spanish}
 
-    report = convert_es(root, before, files.get, list(files), LUA_BIN)
+    report = convert_es(root, before, files.get, list(files), tool("bin/lua"))
 
     parsed = tomllib.loads(report.files["data/locale/esES/stats.toml"])
     assert parsed["ICON"] == {"value": "Tiene {icon} \\Media\\a.blp", "en": "Got {icon} \\Media\\a.blp"}

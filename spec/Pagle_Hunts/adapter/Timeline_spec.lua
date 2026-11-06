@@ -835,6 +835,29 @@ describe("a set's page, drawn (HNT-R66)", function()
 		assert(crossing >= 1, "no note reaches the now line, so this checks nothing")
 	end)
 
+	-- A heading's frame level was set once, when it was made, from the now line's frame's level then: a list whose
+	-- frames were later stacked higher (the board raised over another window) kept it where it was, under its own rows.
+	it("hnt_r62 keeps the now line over the rows and each heading over it, set again at each draw", function()
+		local run = start()
+		run.ns.board:Open({ mode = "board" })
+		local view = assert(run.ns.TimelinePageView(run.ns.board:Page(place(run), "left")))
+		local over = view.nowLine:GetParent()
+
+		view.scroll:SetFrameLevel(view.scroll:GetFrameLevel() + 20)
+		run.ns.board:Draw()
+
+		local content = view.content:GetFrameLevel()
+		assert(over:GetFrameLevel() > content, "the now line is under the list's rows")
+		local shown = 0
+		for group, heading in pairs(view.headings) do
+			if heading:IsShown() then
+				shown = shown + 1
+				assert.are.equal(over:GetFrameLevel() + 1, heading:GetFrameLevel(), group)
+			end
+		end
+		assert(shown > 0, "no heading shows, so this checks nothing")
+	end)
+
 	it(
 		"sets a long heading a size down at a time, to 16, before the client cuts it short (HNT-R66, CORE-R8)",
 		function()

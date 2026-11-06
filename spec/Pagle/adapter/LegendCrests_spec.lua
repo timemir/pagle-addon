@@ -180,8 +180,32 @@ describe("a Legend crest on the client (LED-R153)", function()
 			assert(german.label:GetStringWidth() <= FLAT, "to fit the flat run")
 			assert.are.equal(FLAT, german.label:GetWidth(), "and held within it")
 			assert.are.equal(kit, english.label.fontObject.font[2])
+			-- on one line: the client never breaks the word onto a second, whatever it measures
+			assert.is_false(german.label:CanWordWrap())
+			assert.is_false(english.label:CanWordWrap())
 		end
 	)
+
+	-- German "UNGESCHRIEBEN" on the 150 crest measures about 119 of its 120 (1.1.1): a rounding difference in the client
+	-- could still cut it. As the other fits, a word within a unit of the run is set smaller too.
+	it("led_r153 sets a word within a unit of the flat run smaller, never to the run's edge", function()
+		local loaded = loadCore()
+		local FLAT = 120
+		local english = newCrest(loaded, 150)
+		english:SetLegend(QUEENFISH, false)
+		local kit = english.label.fontObject.font[2]
+
+		local crest = newCrest(loaded, 150)
+		-- the word measures half a unit short of the run at the kit's size, proportionally less smaller
+		function crest.label.GetStringWidth(label)
+			return (FLAT - 0.5) * label.fontObject.font[2] / kit
+		end
+		crest:SetLegend(QUEENFISH, false)
+
+		assert(crest.label.fontObject.font[2] < kit, "a word within a unit of the run is set smaller")
+		assert(crest.label:GetStringWidth() + 1 <= FLAT, "to a unit inside the run")
+		assert.is_false(crest.label:CanWordWrap())
+	end)
 end)
 
 describe("a Legend crest's motion on the client (LED-R153)", function()

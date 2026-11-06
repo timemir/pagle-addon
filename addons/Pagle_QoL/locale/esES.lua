@@ -104,7 +104,7 @@ ns.Locale("esES", function(L)
 	L.SETTINGS_FISHING_KEY = "Tecla de pesca"
 	L.SETTINGS_FISHING_KEY_TOOLTIP = "Cada pulsación hace lo siguiente que toca: lanzar, recoger, o un señuelo, equipo o almeja cuando haga falta."
 	L.SETTINGS_FISHING_SET = "Conjunto de pesca"
-	L.SETTINGS_FISHING_SET_NONE = "Ninguno (el equipo se queda como está)"
+	L.SETTINGS_FISHING_SET_NONE = "Ninguno (equipo intacto)"
 	L.SETTINGS_FISHING_SET_TOOLTIP = "La Tecla de pesca te lo pone si no llevas caña en la mano. El doble clic se lo salta."
 	L.SETTINGS_GEAR = "Equipo"
 	L.SETTINGS_LURE = "Señuelo"
