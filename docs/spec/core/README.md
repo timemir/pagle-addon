@@ -144,7 +144,7 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
 
 ### Compartment menu
 
-- **CORE-R50** Core registers one Addon Compartment entry, "Pagle". Clicking it opens a menu, in this order:
+- **CORE-R50** Core registers one Addon Compartment entry, "Pagle", with Pagle's icon: the minimap icon's favicon (CORE-R53, `media/minimap/Pagle.blp`), which the compartment draws unmasked at 16 px beside the label; from 1.1.2. Clicking it opens a menu, in this order:
   1. for each registered Module by `def.order`: its views, then its extra `menu` entries
   2. "Curio Shop" with the balance (in the Language's separators, CORE-R8, then a coin icon), from M2; it shows 0 while held. Until the shop exists (M4) the entry is shown disabled, with the balance.
   3. "Copy for the website", which opens the export window as `/pagle export` does (PST-R50); from 1.1 (#549), so the two copy-out entries sit together
