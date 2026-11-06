@@ -409,6 +409,7 @@ end
 ---@field list PagleQoLSetList the field's list, open under it after a click
 ---@field field Frame the Swap gear binding field (nav.BindingField)
 ---@field nudge Frame the swap-back Nudge's sample strip
+---@field nudgeMore Frame its second strip, when its line is drawn on two
 ---@field nudgeY number where the strip's top sits on `lower`
 
 local clothes ---@type PagleQoLClothesPages?
@@ -492,6 +493,88 @@ local function choiceLabel()
 	return ns.L.SETTINGS_FISHING_SET_NONE
 end
 
+-- The least scale the swap-back sample is drawn at on one strip, and the room between its two strips when it takes two
+-- (ONB-R33); a strip is 26 tall.
+local SAMPLE_FLOOR, SAMPLE_GAP, STRIP_HEIGHT = 0.5, 4, 26
+
+-- `parts` split at the `n`th place a line can break: between two pieces, or at a space inside a piece of words. Nil
+-- past the last such place.
+---@param parts PagleQoLNudgePart[]
+---@param n integer
+---@return PagleQoLNudgePart[]? first
+---@return PagleQoLNudgePart[]? second
+local function splitAt(parts, n)
+	local seen = 0
+	for i, part in ipairs(parts) do
+		if i > 1 then
+			seen = seen + 1
+			if seen == n then
+				return { unpack(parts, 1, i - 1) }, { unpack(parts, i) }
+			end
+		end
+		if type(part) == "string" then
+			for space in part:gmatch("() ") do
+				seen = seen + 1
+				if seen == n then
+					local first, second = { unpack(parts, 1, i - 1) }, { part:sub(space + 1):match("^%s*(.-)$") }
+					first[#first + 1] = part:sub(1, space - 1):match("^(.-)%s*$")
+					for j = i + 1, #parts do
+						second[#second + 1] = parts[j]
+					end
+					return first, second
+				end
+			end
+		end
+	end
+	return nil
+end
+
+-- Draws the swap-back Nudge as a sample (ONB-R33, QOL-R77) on its strip, drawn smaller, as the whole strip, when its
+-- line is too long for the column. Smaller than SAMPLE_FLOOR, it is drawn on two strips instead, one under the other,
+-- split where the longer of the two is shortest (between pieces or at a space), both at the one scale that fits it.
+---@param pages PagleQoLClothesPages
+local function drawSample(pages)
+	local key = GetBindingKey("PAGLE_SWAP_GEAR")
+	local parts = ns.SwapBackNudge(key and ns.ShortKeyText(key))
+	local nudge, more = pages.nudge, pages.nudgeMore
+	nudge:SetScale(1)
+	more:SetScale(1)
+	more:Hide()
+	ns.DrawNudge(nudge, parts)
+	local scale = ns.FitScale(nudge:GetWidth(), COLUMN)
+	if scale < SAMPLE_FLOOR then
+		local best, widest
+		local n = 1
+		local first, second = splitAt(parts, n)
+		while first and second do
+			if #first > 0 and #second > 0 and first[#first] ~= "" and second[1] ~= "" then
+				ns.DrawNudge(nudge, first)
+				ns.DrawNudge(more, second)
+				local width = math.max(nudge:GetWidth(), more:GetWidth())
+				if not widest or width < widest then
+					best, widest = n, width
+				end
+			end
+			n = n + 1
+			first, second = splitAt(parts, n)
+		end
+		if best then
+			first, second = splitAt(parts, best)
+			ns.DrawNudge(nudge, first --[[@as PagleQoLNudgePart[] ]])
+			ns.DrawNudge(more, second --[[@as PagleQoLNudgePart[] ]])
+			scale = ns.FitScale(widest, COLUMN)
+			more:SetScale(scale)
+			local y = pages.nudgeY + (STRIP_HEIGHT + SAMPLE_GAP) * scale
+			at(more, more:GetParent() --[[@as Region]], COLUMN_X / scale, y / scale)
+			more:Show()
+		else
+			ns.DrawNudge(nudge, parts)
+		end
+	end
+	nudge:SetScale(scale)
+	at(nudge, nudge:GetParent() --[[@as Region]], COLUMN_X / scale, pages.nudgeY / scale)
+end
+
 -- Draws the Fishing clothes step as things are now: the two sets, Save and the field live unless restricted
 -- (QOL-R41, ONB-R25), the chosen set, Save's message, and the sample Nudge with Swap gear's first key on its cap, or
 -- its unbound line (QOL-R77).
@@ -521,14 +604,7 @@ local function refreshClothes()
 		0,
 		pages.lowerY + (saveMessage and math.ceil(pages.message:GetStringHeight()) or 0)
 	)
-	local key = GetBindingKey("PAGLE_SWAP_GEAR")
-	local nudge = pages.nudge
-	nudge:SetScale(1)
-	ns.DrawNudge(nudge, ns.SwapBackNudge(key and ns.ShortKeyText(key)))
-	-- A line too long for the column is drawn smaller, as the whole strip.
-	local scale = ns.FitScale(nudge:GetWidth(), COLUMN)
-	nudge:SetScale(scale)
-	at(nudge, nudge:GetParent() --[[@as Region]], COLUMN_X / scale, pages.nudgeY / scale)
+	drawSample(pages)
 end
 
 --- The Fishing set field's list: the field's paper, opened under it, a row per choice. It is the page's own, drawn as
@@ -816,6 +892,9 @@ local function buildClothes(left, right, nav)
 	fit(write(lower, "sc", 14, "kicker", L.GUIDE_NUDGE_KICKER, COLUMN_X, kickerY, 14), "sc", 14, "kicker", COLUMN)
 	local nudge = CreateFrame("Frame", nil, lower)
 	nudge:SetFrameLevel(lower:GetFrameLevel() + 1)
+	local nudgeMore = CreateFrame("Frame", nil, lower)
+	nudgeMore:SetFrameLevel(lower:GetFrameLevel() + 1)
+	nudgeMore:Hide()
 	clothes = {
 		previous = previous,
 		fishing = fishing,
@@ -828,6 +907,7 @@ local function buildClothes(left, right, nav)
 		list = list,
 		field = field,
 		nudge = nudge,
+		nudgeMore = nudgeMore,
 		nudgeY = kickerY + 20.8,
 	}
 	refreshClothes()

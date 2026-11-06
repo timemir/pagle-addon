@@ -1003,6 +1003,50 @@ describe("The Fishing clothes step (ONB-R33)", function()
 			assert.are.same({ "PagleQoLNudgeEm", 19 }, { name.fontObject.name, name.fontObject.font[2] })
 		end
 	)
+
+	it(
+		"draws a sample too long to read on one strip on two, split at a space, each as large (ONB-R33, QOL-R77)",
+		function()
+			local LONG = "Du hältst noch deine Angelrute und den ganzen Kasten. Belege {binding}, um mit einem einzigen"
+				.. " Druck wieder zurückzuwechseln."
+			local fake, client, loaded = start(function(_, client, loaded)
+				client.boundKeys.PAGLE_SWAP_GEAR = nil
+				loaded.ns.L.NUDGE_SWAP_BACK_UNBOUND = LONG
+			end)
+			local _, right = open(fake, "clothes")
+
+			local strips = all(right, function(region)
+				return region.pools ~= nil and region.middle.texture == FIELD
+			end)
+			assert.are.equal(2, #strips)
+			local first, second = strips[1], strips[2]
+			-- On one strip it would be drawn at less than half its size.
+			local whole = 30
+				+ #"Du hältst noch deine Angelrute und den ganzen Kasten. Belege" * 6
+				+ 8
+				+ #"Pagle: Swap gear" * 6
+				+ 8
+				+ #"um mit einem einzigen Druck wieder zurückzuwechseln." * 6
+				+ 30
+			assert.is_true(382 / whole < 0.5)
+			-- Every word, in order, across the two strips, and each strip within the column at one scale, over 0.5.
+			local said = table.concat(lineOf(first), " ") .. " " .. table.concat(lineOf(second), " ")
+			assert.are.equal(loaded.ns.NudgeText(loaded.ns.SwapBackNudge(nil)), said)
+			assert.are.equal(first.scale, second.scale)
+			assert.is_true(first.scale >= 0.5)
+			for _, strip in ipairs(strips) do
+				assert.is_true(strip.width * strip.scale <= 382 + 1e-9)
+				assert.is_true(strip.shown)
+			end
+			-- the second under the first
+			assert.is_true(placeOf(second)[2] * second.scale >= placeOf(first)[2] * first.scale + 26 * first.scale)
+
+			client.boundKeys.PAGLE_SWAP_GEAR = { "G" }
+			fake.fireGameEvent("UPDATE_BINDINGS")
+			assert.are.same({ "Still holding your pole. Press", "G", "to swap back." }, lineOf(first))
+			assert.is_false(second.shown)
+		end
+	)
 end)
 
 describe("The qol.lure Margin note (ONB-R52)", function()
