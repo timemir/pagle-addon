@@ -223,7 +223,11 @@ describe("a toast in a composed toast style", function()
 		local rung = artOf(loaded, STORM, "toast")
 		local amountLeft = rung.amt.x + rung.amt.w - toast.coins.label:GetStringWidth()
 		assert(amountLeft < rung.amt.x, "the amount fits its box: the spec needs a wider one")
-		assert(rung.text.x + toast.text:GetWidth() < amountLeft, "the name runs under the amount")
+		-- A name too long for its room scrolls in its clip (ANN-R101), so what shows of it ends where the clip does,
+		-- once the name is written out: 4 past its room, which ends 4 before the amount.
+		loaded.client.update(7.1)
+		local shownRight = rung.text.x - 4 + toast.nameClip:GetWidth()
+		assert(shownRight <= amountLeft + 1e-6, "the name runs under the amount")
 	end)
 
 	it(
@@ -1242,5 +1246,31 @@ describe("the epic five on the client (ANN-R85)", function()
 				assert(slot.layer.sprite:find("^nod%-"), slot.layer.sprite)
 			end
 		end)
+	end)
+end)
+
+describe("a composed style's long name line on the client (ANN-R101)", function()
+	it("scrolls in its clip as the Torn Page's does, its room the line's before the Coins (ANN-R101)", function()
+		local loaded, M = composedCore({})
+		equip(loaded, STORM)
+		local cast = ("%s-%d-0"):format(PLAYER_GUID, SERVER_TIME)
+		local text = ("x"):rep(80)
+
+		M:RaiseMoment({ rung = "toast", kind = "spec", title = "New Species", text = text, cast = cast })
+		M:RaiseMoment({ rung = "nod", kind = "spec", title = "Rank up", cast = cast, coins = 5 })
+		loaded.client.advance(0)
+		local toast = loaded.ns.announcementFrames.toast
+
+		-- The fake measures 6 a byte: 80 bytes are 480, wider than any rung's text box.
+		assert(toast.composed, "drawn composed")
+		assert.are.same({ text, 80 * 6 }, { toast.text:GetText(), toast.text:GetWidth() })
+		local written, hold = 0.26 * 7, loaded.ns.MARQUEE_HOLD
+		loaded.client.update(written + hold + 1)
+		local room = toast.nameClip:GetWidth() - 4
+		local _, _, _, x = toast.text:GetPoint(1)
+		-- A second into its glide, the line is a second's speed along, and the clip's left edge hasn't moved.
+		assert.are.equal(80 * 6, room + toast.nameScroll)
+		assert(math.abs(x + loaded.ns.MARQUEE_SPEED) < 1e-6, "the line is at " .. x)
+		assert(math.abs(x + toast.nameClip.points[1][4] + 4) < 1e-6, "the clip moved")
 	end)
 end)

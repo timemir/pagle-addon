@@ -453,6 +453,8 @@ describe("the announcements art", function()
 			.. " size",
 		function()
 			local loaded, M = loadCore()
+			-- Animations off, so a line still too wide at 70% ends in "..." rather than scrolling (ANN-R101).
+			loaded.ns.db.profile.announcements.motion = false
 			local hand = "Interface\\AddOns\\Pagle\\media\\fonts\\Caveat-SemiBold.ttf"
 
 			-- The fake measures 6 pixels a character: 49 characters are 294, over the toast's 292 for words.
@@ -1965,9 +1967,11 @@ describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, AN
 
 	it(
 		"keeps the fish's name whole at the smallest font and cuts the variety's name first when the line still"
-			.. " doesn't fit (#467, VAR-R28)",
+			.. " doesn't fit, with Animations off (#467, VAR-R28, ANN-R101)",
 		function()
 			local loaded = loadCore()
+			-- With Animations on, the line scrolls instead (ANN-R101).
+			loaded.ns.db.profile.announcements.motion = false
 
 			local toast = drawCatch(loaded, ("F"):rep(19), ("V"):rep(20))
 
@@ -1982,9 +1986,11 @@ describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, AN
 
 	it(
 		"cuts the fish's name only as a last resort: when the variety's name is down to its floor and the line still"
-			.. " doesn't fit (#467, VAR-R28)",
+			.. " doesn't fit, with Animations off (#467, VAR-R28, ANN-R101)",
 		function()
 			local loaded = loadCore()
+			-- With Animations on, the line scrolls instead (ANN-R101).
+			loaded.ns.db.profile.announcements.motion = false
 
 			local toast = drawCatch(loaded, ("F"):rep(30), ("V"):rep(14))
 
@@ -2006,9 +2012,11 @@ describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, AN
 
 	it(
 		"keeps a ruled toast's name line clear of the ruler's numbers, cutting the fish's name when the variety's short"
-			.. " name has no room to give (#424, #467)",
+			.. " name has no room to give, with Animations off (#424, #467, ANN-R101)",
 		function()
 			local loaded, M = loadCore()
+			-- With Animations on, the line scrolls instead (ANN-R101).
+			loaded.ns.db.profile.announcements.motion = false
 			local record, variety = recordAndVariety("rare")
 			record.text = "Raw Bristle Whisker Catfish of the Deep Reaches"
 
@@ -2025,6 +2033,24 @@ describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, AN
 			assert.is_true(right <= page.tx + toast.ruler.trackWidth / 1.1)
 		end
 	)
+
+	it("scrolls a ruled toast's long name line inside its room, clear of the ruler's numbers (ANN-R101)", function()
+		local loaded, M = loadCore()
+		local record, variety = recordAndVariety("rare")
+		record.text = "Raw Bristle Whisker Catfish of the Deep Reaches"
+
+		raise(loaded, M, record, variety)
+		local toast = frameOf(loaded, "toast") --[[@as table]]
+		loaded.client.update(7.1)
+
+		local page = loaded.ns.ToastPage(toast.display.announcement)
+		-- Written whole, it is far wider than its room, which the clip shows, ending before the landed number.
+		assert.are.equal(#toast.text:GetText() * 6, toast.text:GetWidth())
+		assert(toast.nameScroll and toast.nameScroll > 0, "it scrolls")
+		local room = toast.nameClip:GetWidth() - 4
+		assert.are.equal(toast.text:GetWidth() + 6 + toast.gem.width + 3 + #"Coral" * 6, room + toast.nameScroll)
+		assert.is_true(page.tx + room <= page.tx + toast.ruler.trackWidth / 1.1)
+	end)
 
 	-- Measures the stamps' words and the kicker as the client does: a letter is 0.62 of the font's size wide, so a
 	-- larger font is wider and a smaller one narrower. Returns the toast, drawn again.
@@ -2385,6 +2411,261 @@ describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, AN
 			end
 		end
 	)
+end)
+
+describe("a long name line scrolling on the client (ANN-R101)", function()
+	local ITEM = 6291
+	-- The name line's room on the toast page: its 464, less the words' left (138) and a margin of 34.
+	local ROOM = 292
+	-- When the name is written out: 0.26 of the toast's 7 s timeline (announcements.md › Motion).
+	local WRITTEN = 0.26 * 7
+
+	-- Raises a catch toast naming `variety` after `fish`, drawn once, and returns its frame.
+	local function catchToast(loaded, fish, variety)
+		loaded.ns.moments:RaiseCatchToast({
+			rung = "toast.low",
+			kind = "catch",
+			title = "Decent · 34.2 cm",
+			text = fish,
+			nodLine = fish .. " · " .. variety,
+			icon = ITEM,
+			cast = CAST,
+			variety = { name = variety, rarity = "uncommon", before = fish .. " ·", after = "· Decent · 34.2 cm" },
+		})
+		loaded.client.advance(0)
+		return frameOf(loaded, "toast") --[[@as table]]
+	end
+
+	-- The line's whole width as drawn: the fish's name, the gem and its gaps, the variety's name.
+	local function lineOf(toast)
+		return toast.text:GetWidth() + 6 + toast.gem.width + 3 + toast.variety:GetWidth()
+	end
+
+	-- How far left the line sits from where it is written, and where the clip's left edge stands from the line's
+	-- written place: the clip hangs from the line, so its own offset makes up for the line's.
+	local function scrolled(toast)
+		local _, _, _, x = toast.text:GetPoint(1)
+		local clip = toast.nameClip.points[1]
+		return -x, x + clip[4]
+	end
+
+	-- Whether any frame has an OnUpdate set: the motion driver ticks only while something moves.
+	local function ticking(loaded)
+		for _, frame in ipairs(loaded.client.frames) do
+			if frame.scripts.OnUpdate then
+				return true
+			end
+		end
+		return false
+	end
+
+	local function near(expected, actual)
+		assert(math.abs(expected - actual) < 1e-6, ("expected %s, got %s"):format(expected, actual))
+	end
+
+	it("never moves a name line that fits, and ticks nothing once the toast has settled (ANN-R101)", function()
+		local loaded = loadCore()
+
+		local toast = catchToast(loaded, "Coral Snapper", "Fin")
+
+		assert(lineOf(toast) <= ROOM, "the line fits: " .. lineOf(toast))
+		-- The toast's own motion runs its 7 s timeline, then nothing ticks while it holds.
+		loaded.client.update(7.1)
+		assert.are.equal(lineOf(toast) + 8, toast.nameClip:GetWidth())
+		assert.are.same({ 0, -4 }, { scrolled(toast) })
+		assert.is_false(ticking(loaded))
+		assert.is_true(showing(loaded, "toast"))
+	end)
+
+	it(
+		"writes a line too long for its room whole and scrolls it: holds at the start, glides to its end, holds, glides"
+			.. " back, and again (ANN-R101)",
+		function()
+			local loaded = loadCore()
+			local fish, variety = ("F"):rep(30), ("V"):rep(20)
+
+			local toast = catchToast(loaded, fish, variety)
+
+			-- The fake measures 6 a byte: "FFF…F ·" is 33 bytes and the variety's name 20, with the gem and its gaps
+			-- far over the room, even at the font's floor.
+			local whole = 33 * 6 + 6 + toast.gem.width + 3 + 20 * 6
+			assert(whole > ROOM, "the line overflows: " .. whole)
+			-- Written whole, its bytes as they were.
+			assert.are.same({ fish .. " ·", variety }, { toast.text:GetText(), toast.variety:GetText() })
+			assert.are.same({ 33 * 6, 20 * 6 }, { toast.text:GetWidth(), toast.variety:GetWidth() })
+			assert.are.same({ 0, -4 }, { scrolled(toast) })
+
+			local over = whole - ROOM
+			local hold, glide = loaded.ns.MARQUEE_HOLD, over / loaded.ns.MARQUEE_SPEED
+			local seen = {}
+			local function after(seconds)
+				loaded.client.update(seconds)
+				local offset, clipLeft = scrolled(toast)
+				seen[#seen + 1] = offset
+				-- The clip never moves with the line: its left edge stays 4 before where the line is written.
+				near(-4, clipLeft)
+			end
+			after(WRITTEN + hold - 0.01) -- written out, then the start held
+			after(0.01 + glide / 2) -- halfway along
+			after(glide / 2 + hold / 2) -- its end held
+			after(hold / 2 + glide / 2) -- halfway back
+			after(glide / 2 + hold / 2) -- the start held again
+			after(hold / 2 + glide / 2) -- and along again
+
+			near(0, seen[1])
+			-- Written out, the clip shows the room and no more: from 4 before the line to where its room ends.
+			assert.are.equal(4 + ROOM, toast.nameClip:GetWidth())
+			assert.is_true(toast.nameClip:GetClipsChildren())
+			near(over / 2, seen[2])
+			near(over, seen[3])
+			near(over / 2, seen[4])
+			near(0, seen[5])
+			near(over / 2, seen[6])
+			-- A steady pace to read at, and a second's hold at each end.
+			assert(loaded.ns.MARQUEE_SPEED >= 30 and loaded.ns.MARQUEE_SPEED <= 40, "speed")
+			assert.are.equal(1, hold)
+		end
+	)
+
+	it("stops scrolling as the toast goes, back at its start, and ticks no more (ANN-R101)", function()
+		local loaded = loadCore()
+		local toast = catchToast(loaded, ("F"):rep(30), ("V"):rep(20))
+		assert(lineOf(toast) > ROOM, "the line overflows: " .. lineOf(toast))
+
+		-- Mid-glide when its time is up.
+		loaded.client.update(WRITTEN + loaded.ns.MARQUEE_HOLD + 0.5)
+		assert.is_true(scrolled(toast) > 0)
+		assert.is_true(ticking(loaded))
+		loaded.client.advance(TOAST + LEAVE_TOAST + 1)
+		loaded.client.update(0.1)
+
+		assert.is_false(toast:IsShown())
+		assert.is_false(ticking(loaded))
+		assert.are.same({ 0, -4 }, { scrolled(toast) })
+		assert.is_nil(toast.nameScroll)
+	end)
+
+	it(
+		"holds the line where it is through the toast's fade, then puts it back at its start once gone (ANN-R101)",
+		function()
+			local loaded = loadCore()
+			local toast = catchToast(loaded, ("F"):rep(30), ("V"):rep(20))
+			assert(lineOf(toast) > ROOM, "the line overflows: " .. lineOf(toast))
+			loaded.client.update(WRITTEN + loaded.ns.MARQUEE_HOLD + 0.5)
+			local mid = scrolled(toast)
+			assert(mid > 0, "mid-glide")
+
+			-- Its time is up: it starts to leave, still on screen, fading.
+			loaded.client.advance(TOAST)
+			assert.is_false(showing(loaded, "toast"))
+			assert.is_true(toast:IsShown())
+			local fading = {}
+			for _ = 1, 3 do
+				loaded.client.update(0.1)
+				fading[#fading + 1] = scrolled(toast)
+			end
+			assert.is_true(toast.alpha < 1)
+			assert.are.same({ mid, mid, mid }, fading)
+
+			loaded.client.advance(LEAVE_TOAST + 0.1)
+			loaded.client.update(0.1)
+			assert.is_false(toast:IsShown())
+			assert.are.same({ 0, -4 }, { scrolled(toast) })
+		end
+	)
+
+	it(
+		"starts the next toast on the same pooled frame at its line's start, with no offset or scroll of the last"
+			.. " (ANN-R101)",
+		function()
+			local loaded = loadCore()
+			local first = catchToast(loaded, ("F"):rep(30), ("V"):rep(20))
+			local firstOver = lineOf(first) - ROOM
+			assert(firstOver > 0, "the first line overflows: " .. lineOf(first))
+			loaded.client.update(WRITTEN + loaded.ns.MARQUEE_HOLD + 0.5)
+			assert.is_true(scrolled(first) > 0)
+			loaded.client.advance(TOAST + LEAVE_TOAST + 1)
+			loaded.client.update(0.1)
+
+			-- A short line next, on the frame the pool gives back: it starts in place and never moves.
+			local short = catchToast(loaded, "Coral Snapper", "Fin")
+			assert.are.equal(first, short)
+			assert.are.same({ 0, -4 }, { scrolled(short) })
+			assert.is_nil(short.nameScroll)
+			loaded.client.update(7.1)
+			assert.are.same({ 0, -4 }, { scrolled(short) })
+			assert.is_false(ticking(loaded))
+			loaded.client.advance(TOAST + LEAVE_TOAST + 1)
+			loaded.client.update(0.1)
+
+			-- A long one after it scrolls its own distance from its own start, after its own hold.
+			local long = catchToast(loaded, ("G"):rep(40), ("W"):rep(20))
+			assert.are.equal(first, long)
+			local over = lineOf(long) - ROOM
+			assert(over > firstOver, "a longer line than the first: " .. over)
+			loaded.client.update(WRITTEN + loaded.ns.MARQUEE_HOLD - 0.01)
+			near(0, (scrolled(long)))
+			loaded.client.update(0.01 + over / loaded.ns.MARQUEE_SPEED + 0.5)
+			near(over, (scrolled(long)))
+		end
+	)
+
+	it("cuts the line short as before, and moves nothing, with Animations off (ANN-R101, SET-R30)", function()
+		local loaded = loadCore()
+		loaded.ns.db.profile.announcements.motion = false
+
+		local toast = catchToast(loaded, ("F"):rep(30), ("V"):rep(20))
+
+		assert(lineOf(toast) <= ROOM + 0.01, "the line is cut to its room: " .. lineOf(toast))
+		assert.is_true(toast.variety:GetWidth() < 20 * 6)
+		assert.is_false(ticking(loaded))
+	end)
+
+	it(
+		"ends the clip it scrolls in 4 before the Coins as they draw, as a long name ends there (ANN-R101, ANN-R80)",
+		function()
+			local loaded, M = loadCore()
+			local text = "Öliges Schwarzmaul aus den tiefen Gewässern der Nordsee"
+
+			raise(
+				loaded,
+				M,
+				moment("toast", "Neue Art", { text = text, cast = CAST }),
+				moment("nod", "Rang", { cast = CAST, coins = 12 })
+			)
+			local toast = frameOf(loaded, "toast") --[[@as table]]
+			local coinsLeft = bounds.across(toast.coins, toast)
+			local textLeft = bounds.across(toast.text, toast)
+
+			assert.are.equal("+12", toast.coins.label:GetText())
+			assert(#text * 6 > coinsLeft - 4 - textLeft, "the name overflows its room before the Coins")
+			-- At rest, then a second into its glide: the clip stays put while the line moves under it.
+			for _, seconds in ipairs({ WRITTEN + loaded.ns.MARQUEE_HOLD, 1 }) do
+				loaded.client.update(seconds)
+				local clipLeft, clipWidth = bounds.across(toast.nameClip, toast)
+				near(coinsLeft - 4, clipLeft + clipWidth)
+				near(textLeft - 4, clipLeft)
+			end
+			near(loaded.ns.MARQUEE_SPEED, (scrolled(toast)))
+		end
+	)
+
+	it("scrolls any toast's long name line, a text with no variety too (ANN-R101)", function()
+		local loaded, M = loadCore()
+		local text = ("x"):rep(60)
+
+		raise(loaded, M, moment("toast", "New Species", { text = text }))
+		local toast = frameOf(loaded, "toast") --[[@as table]]
+
+		assert(#text * 6 > ROOM, "the text overflows")
+		loaded.client.update(WRITTEN + loaded.ns.MARQUEE_HOLD + 0.5)
+		assert.are.same({ text, #text * 6, 4 + ROOM }, {
+			toast.text:GetText(),
+			toast.text:GetWidth(),
+			toast.nameClip:GetWidth(),
+		})
+		near(0.5 * loaded.ns.MARQUEE_SPEED, (scrolled(toast)))
+	end)
 end)
 
 describe("a new variety's own toast on the client (#422, VAR-R25, VAR-R28, ANN-R11)", function()

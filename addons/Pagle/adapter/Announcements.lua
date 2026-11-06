@@ -110,6 +110,7 @@ local TICKS = 20
 ---@field ribbon number? how far a toast.high's bookmark hangs below its page
 ---@field body Frame? a toast's page and words, which slide in under the frame the lanes anchor
 ---@field nameClip Frame? the clip a toast's name is written out in
+---@field nameScroll number? how far a toast's name line too long for its room scrolls (ANN-R101), nil for none
 ---@field pivots Frame[]? the points a toast's stamps grow about
 ---@field recordPivot Frame? the point the ruler's New record stamp grows about
 ---@field rays PagleSprite? a banner's or the splash's
@@ -825,6 +826,69 @@ local function writeToastVariety(frame, look, font, ink, width)
 	return text:GetWidth() + lead + GEM_BOX * k + GEM_NAME_GAP + name:GetWidth()
 end
 
+-- The clip a toast's name is written out in reaches 4 units past the line each side, for the hand's flourishes.
+local NAME_CLIP_MARGIN = 4
+
+-- A toast's name line, written (writeHeadline, writeToastVariety; `line` the latter's width), that is still wider than
+-- `room` at its smallest font scrolls instead of being cut short with "..." (ANN-R101), on a toast of the lanes with
+-- Animations on: its fish's and variety's names go back to their whole widths, measured unbounded first, their text
+-- untouched, and `frame.nameScroll` is how far the toast's motion scrolls it. Returns the width of the clip it shows
+-- in: round the line as written (cut short on a still sample or with Animations off), or for one that scrolls, from
+-- the margin before it to the room's end, so nothing of it shows past where the line may end.
+---@param frame PagleAnnouncementFrame
+---@param line number?
+---@param room number
+---@return number
+local function nameClipWidth(frame, line, room)
+	frame.nameScroll = nil
+	local text, variety = frame.text, frame.variety --[[@as FontString]]
+	local shown = (line or text:GetWidth()) + 2 * NAME_CLIP_MARGIN
+	if not (frame.lanes and ns.MotionOn() and text:IsShown()) then
+		return shown
+	end
+	local between = line and line - text:GetWidth() - variety:GetWidth()
+	text:SetWidth(0)
+	local fish = text:GetStringWidth()
+	local whole, rest = fish, 0
+	if between then
+		variety:SetWidth(0)
+		rest = variety:GetStringWidth()
+		whole = fish + between + rest
+	end
+	text:SetWidth(fish)
+	if between then
+		variety:SetWidth(rest)
+	end
+	-- A line that fits was never cut: it is back as it was written.
+	if whole <= room then
+		return shown
+	end
+	frame.nameScroll = whole - room
+	return NAME_CLIP_MARGIN + room
+end
+
+-- Places a toast's name line `offset` units left of where it is written (ANN-R101), the gem and variety's name with
+-- it, and its clip, which hangs from the line, as far right, so the clip stays put and its edges cut the line.
+---@param frame PagleAnnouncementFrame
+---@param offset number
+local function scrollNameTo(frame, offset)
+	local text = frame.text
+	local point, relativeTo, relativePoint, _, y = text:GetPoint(1)
+	text:SetPoint(point, relativeTo, relativePoint, -offset, y)
+	local clip = frame.nameClip --[[@as Frame]]
+	clip:SetPoint("TOPLEFT", text, "TOPLEFT", offset - NAME_CLIP_MARGIN, 8)
+end
+
+-- A toast going away leaves its name line at its start, scrolling no more (ANN-R101): the frame comes back from the
+-- pool for the next toast with no offset of this one's.
+---@param frame PagleAnnouncementFrame
+local function restName(frame)
+	if frame.nameScroll then
+		frame.nameScroll = nil
+		scrollNameTo(frame, 0)
+	end
+end
+
 -- The gap between a toast's kicker and its name line.
 local TOAST_LINE_GAP = 5
 -- The scales a toast's stamp row is squeezed through, largest first, to fit right of its kicker.
@@ -1096,7 +1160,7 @@ local function drawComposedToast(frame, display, style)
 	local clip = frame.nameClip --[[@as Frame]]
 	clip:ClearAllPoints()
 	clip:SetPoint("TOPLEFT", frame.text, "TOPLEFT", -4, 8)
-	clip:SetSize((line or frame.text:GetWidth()) + 8, fontSize(fonts.name) + 22)
+	clip:SetSize(nameClipWidth(frame, line, lineWidth), fontSize(fonts.name) + 22)
 	clip:SetShown(frame.text:IsShown())
 
 	local ruler = frame.ruler --[[@as PagleRulerView]]
@@ -1255,7 +1319,7 @@ local function drawToast(frame, display, style)
 	local clip = frame.nameClip --[[@as Frame]]
 	clip:ClearAllPoints()
 	clip:SetPoint("TOPLEFT", frame.text, "TOPLEFT", -4, 8)
-	clip:SetSize((line or frame.text:GetWidth()) + 8, ns.ArtFontSize(fonts.name) + 22)
+	clip:SetSize(nameClipWidth(frame, line, lineWidth), ns.ArtFontSize(fonts.name) + 22)
 	clip:SetShown(frame.text:IsShown())
 
 	local ruler = frame.ruler --[[@as PagleRulerView]]
@@ -1856,6 +1920,13 @@ local MOTION = {
 					clip:SetWidth(math.max(0.01, width * v[1]))
 				end,
 			}
+			-- A name line too long for its room scrolls once it is written out, for as long as the toast shows
+			-- (ANN-R101). Drawn again in a style with less to scroll (or none), it goes no further than that.
+			if frame.nameScroll then
+				animations[#animations + 1] = ns.MarqueeAnimation(frame.nameScroll, function(offset)
+					scrollNameTo(frame, math.min(offset, frame.nameScroll or 0))
+				end, 0.26 * TIMELINE)
+			end
 		end
 		for _, stamp in ipairs(frame.stamps) do
 			if stamp:IsShown() then
@@ -2422,6 +2493,7 @@ local function hide(display, atOnce)
 	end
 	local seconds, leaving = ns.LEAVE_SECONDS[display.form], LEAVING[display.form]
 	if atOnce or not (seconds and leaving and ns.MotionOn() and frame:IsVisible()) then
+		restName(frame)
 		frame:Hide()
 		frame.inUse = false
 		return
@@ -2431,6 +2503,7 @@ local function hide(display, atOnce)
 	C_Timer.After(seconds, function()
 		if not frame.display then
 			ns.StopMotion(frame)
+			restName(frame)
 			frame:Hide()
 			frame.inUse = false
 		end

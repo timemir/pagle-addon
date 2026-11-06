@@ -71,6 +71,34 @@ function ns.WheelScroll(scroll, delta, options)
 	player:Wheel(scroll, delta, options)
 end
 
+-- A text too long for its room scrolls to and fro inside a clip (ANN-R101): it glides at MARQUEE_SPEED units a
+-- second, steady enough to read, and holds MARQUEE_HOLD seconds at each end.
+ns.MARQUEE_SPEED, ns.MARQUEE_HOLD = 40, 1
+
+--- The animation that scrolls a text `distance` units longer than its clip shows (ANN-R101): after `delay` it holds at
+--- its start, glides along until its end shows, holds there, glides back, and again, for as long as its owner plays it.
+--- `apply(offset)` places the text `offset` units along. Played with ns.Animate, it stops with its owner (ns.StopMotion,
+--- or hidden), and with Animations off rests at its start.
+---@param distance number
+---@param apply fun(offset: number)
+---@param delay number?
+---@return PagleAnimation
+function ns.MarqueeAnimation(distance, apply, delay)
+	local glide = distance / ns.MARQUEE_SPEED
+	local period = 2 * (ns.MARQUEE_HOLD + glide)
+	local hold = ns.MARQUEE_HOLD / period
+	return {
+		dur = period,
+		delay = delay,
+		iter = "infinite",
+		ease = ns.EASE.linear,
+		keys = { { 0, { 0 } }, { hold, { 0 } }, { 0.5, { distance } }, { 0.5 + hold, { distance } }, { 1, { 0 } } },
+		apply = function(v)
+			apply(v[1])
+		end,
+	}
+end
+
 -- What a Module moves its own frames with (announcements.md › Contracts).
 
 --- The Animations setting: true unless the player turned it off.
