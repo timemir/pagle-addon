@@ -1,5 +1,17 @@
 # Pagle
 
+## 1.2.2 (2026-11-06)
+
+Every variety stamp is readable.
+
+### Fixed
+
+- The "New variety", "Rare variety" and "Epic variety" stamps are readable in every toast style. In styles whose stamp is a solid block of ink, such as Ink and Koi, the word was printed in the same colour as the block and disappeared, leaving a plain green, blue or purple patch. The block keeps its rarity colour and the word is now light. On the dark Moonlit Vellum and Oxblood Vellum pages the word is light too. (#586)
+
+### TRANSLATORS
+
+- Español: fmartingr
+
 ## 1.2.1 (2026-11-06)
 
 Move the Session summary, and read every stamp.
