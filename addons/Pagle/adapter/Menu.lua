@@ -31,7 +31,8 @@ local function generate(_, root)
 end
 
 --- Opens Pagle's menu now, at the cursor (CORE-R50, CORE-R54). `owner` is the region it belongs to, which closes it
---- by hiding: the minimap icon's button (adapter/MinimapIcon.lua), or nil for the compartment's.
+--- by hiding: the minimap icon's button while Minimap is its parent (adapter/MinimapIcon.lua), or nil for the
+--- compartment's and for the icon once another addon has moved it off the minimap.
 ---@param owner table?
 function ns.OpenMenu(owner)
 	MenuUtil.CreateContextMenu(owner, generate)

@@ -254,6 +254,37 @@ describe("A click on the minimap icon", function()
 		assert.are.same({ curioShop(0), PASTE, "Help chart the waters", "Settings" }, menu.texts())
 	end)
 
+	it("opens it with no owner once another addon moved the icon off the minimap (CORE-R54)", function()
+		local loaded, button = loggedIn()
+		-- EllesmereUI's minimap-button flyout: its own panel on UIParent, which hides at a press outside it, a press on
+		-- the menu's entries included, and the icon with it.
+		local flyout = loaded.env.CreateFrame("Frame", nil, loaded.env.UIParent)
+		button:SetParent(flyout)
+
+		button:Click("LeftButton")
+
+		assert.are.equal(1, #loaded.client.menus)
+		local menu = loaded.client.menus[1]
+		assert(menu.owner == nil, "the menu belongs to nothing, so hiding the flyout leaves it open")
+		assert.are.same({ curioShop(0), PASTE, "Help chart the waters", "Settings" }, menu.texts())
+		flyout:Hide()
+		menu.click("Settings")
+		assert.are.same({ "Pagle" }, openedNames(loaded))
+	end)
+
+	it("reads where the icon is at each click, owned again once it is back on the minimap (CORE-R54)", function()
+		local loaded, button = loggedIn()
+
+		button:SetParent(loaded.env.UIParent)
+		button:Click("LeftButton")
+		button:SetParent(loaded.env.Minimap)
+		button:Click("LeftButton")
+
+		local menus = loaded.client.menus
+		assert.are.same({ 2, button }, { #menus, menus[2].owner })
+		assert(menus[1].owner == nil, "the icon moved off the minimap after login")
+	end)
+
 	it("lists each Module's entries as the compartment does, read as it opens (CORE-R54, CORE-R52)", function()
 		local loaded = loadCore()
 		local reads = 0
