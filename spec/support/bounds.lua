@@ -146,4 +146,13 @@ function bounds.overflows(root, slack)
 	return out
 end
 
+--- `region`'s left edge from `root`'s left and its width, as the client lays it out; nil off the root.
+---@param region table
+---@param root table
+---@return number?
+---@return number?
+function bounds.across(region, root)
+	return across(region, root)
+end
+
 return bounds
