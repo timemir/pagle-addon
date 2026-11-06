@@ -133,6 +133,8 @@ local RAIL_X, RAIL_Y, RAIL_W, POST_CY, POST, POST_TITLE_Y, POST_TITLE_W, TOKEN_C
 -- "2d 20h" are wider in some fonts than the kit's); the least gap between two posts' titles, and the least width a
 -- title is cut to, its first letters and the ellipsis.
 local POST_INNER, DIAL_INNER, RING_FLOOR, POST_TITLE_GAP, POST_TITLE_MIN = 15, 28, 7, 8, 24
+-- The least size a narrowed title is set at before the client cuts it (the kit's is 11.5).
+local POST_TITLE_FLOOR = 10
 -- Motion (HNT-R162's motion, data/art/wagers/art.json › motion): the stamp pressed from 1.6 times its size, in 0.22 s,
 -- then the ticket nudged a unit down and back in 0.12 s; the token sliding to its new share in 0.45 s.
 local THUMP_FROM, THUMP_DUR, NUDGE, NUDGE_DUR, SLIDE_DUR = 1.6, 0.22, 1, 0.12, 0.45
@@ -610,8 +612,9 @@ end
 
 -- Lays the posts' titles under them (HNT-R162): each centred under its post, the last ending at the page's right, as
 -- wide as its words up to POST_TITLE_W, and narrower where it would run into the next (a longer language's titles,
--- CORE-R8): each pair shares the room between their posts by ns.ShareRoom, and the client cuts a narrowed title short,
--- never to under POST_TITLE_MIN, so two posts closer than POST_TITLE_GAP still show the start of each title.
+-- CORE-R8): each pair shares the room between their posts by ns.ShareRoom, a narrowed title is set a size down at a
+-- time to POST_TITLE_FLOOR, and the client cuts it short past that, never to under POST_TITLE_MIN, so two posts closer
+-- than POST_TITLE_GAP still show the start of each title.
 ---@param ladder WagersLadderView
 ---@param marks { at: number, title: string }[]
 local function layPostTitles(ladder, marks)
@@ -638,7 +641,8 @@ local function layPostTitles(ladder, marks)
 	end
 	for i, mark in ipairs(marks) do
 		local title = ladder.titles[i]
-		ns.FitWagerText(title, mark.title, widths[i])
+		-- narrowed, a size down at a time before the client cuts it ("Ruhestand der Buch…")
+		ns.ShrinkWagerText(title, mark.title, widths[i], POST_TITLE_FLOOR)
 		if i == n then
 			ns.PlaceWagerText(title, ladder, 0, POST_TITLE_Y, true)
 		else
