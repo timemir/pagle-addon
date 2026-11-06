@@ -253,6 +253,13 @@ function widgets.newWidget(kind, parent)
 	function widget:SetJustifyH(justify)
 		self.justifyH = justify
 	end
+	function widget:GetJustifyH()
+		return self.justifyH or "LEFT"
+	end
+	-- What kind of widget it is, as CreateFrame or Create<Region> made it: "Frame", "Button", "FontString", ….
+	function widget:GetObjectType()
+		return self.kind
+	end
 	function widget:SetTextColor(r, g, b, a)
 		self.textColor = { r, g, b, a }
 	end

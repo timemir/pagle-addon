@@ -386,12 +386,13 @@ describe("a Module's First look (ONB-R56, ONB-R58, ONB-R90)", function()
 
 	it("stacks a note under the one above it when their words would overlap, never over it (ONB-R58)", function()
 		-- each note is 35 tall at the fake's one line: the second, 10 under the first's top, starts 8 under its foot
+		-- with its badge, which reaches 12 above its paper
 		local loaded, window = lookAt(600, { { -190, 100 }, { -190, 110 }, { -190, 300 } })
 
 		window:Show()
 
 		assert.are.same({ "TOPLEFT", window, "TOPLEFT", -190, -100 }, noteFrame(loaded, 1).points[1])
-		assert.are.same({ "TOPLEFT", window, "TOPLEFT", -190, -143 }, noteFrame(loaded, 2).points[1])
+		assert.are.same({ "TOPLEFT", window, "TOPLEFT", -190, -155 }, noteFrame(loaded, 2).points[1])
 		assert.are.same({ "TOPLEFT", window, "TOPLEFT", -190, -300 }, noteFrame(loaded, 3).points[1])
 	end)
 
@@ -404,8 +405,76 @@ describe("a Module's First look (ONB-R56, ONB-R58, ONB-R90)", function()
 
 		window:Show()
 
-		-- under the "?", the lower of the two, 8 clear of its foot at 880
-		assert.are.same({ "TOPLEFT", window, "TOPRIGHT", -64, -28 }, noteFrame(loaded, 1).points[1])
+		-- under the "?", the lower of the two, 8 clear of its foot at 880 with its badge, 12 above its paper
+		assert.are.same({ "TOPLEFT", window, "TOPRIGHT", -64, -40 }, noteFrame(loaded, 1).points[1])
+	end)
+
+	it(
+		"slides a note whose badge would sit on the window's close off it, once the close is laid out (ONB-R58)",
+		function()
+			-- 420 free on the right: the note sits 16 past the edge, its paper clear of the close (centred 3 in from the
+			-- window's corner at 1500, 900, as the shell's wax close), its badge reaching 12 left of and above the paper
+			local close
+			local loaded, window = lookAt(600, { { 916, 0 } }, function(loaded, window)
+				close = loaded.env.CreateFrame("Button", nil, window)
+				close.screenLeft = nil -- not laid out yet as the set first shows
+			end)
+
+			window:Show()
+			assert.are.same({ "TOPLEFT", window, "TOPRIGHT", 16, 0 }, noteFrame(loaded, 1).points[1])
+			window.close = layOut(close, 1481, 881, 32, 32)
+			-- where the note is, its badge (1504 to 1530 across, 874 to 900 up) is on the close
+			assert.is_true(1516 - 12 < 1513 and 900 + 12 > 881)
+
+			loaded.client.update(0)
+
+			-- under the close, 8 clear of its foot at 881 with its badge: its paper's top 12 lower
+			assert.are.same(
+				{ "TOPLEFT", window, "TOPRIGHT", 16, -(900 - (881 - 8 - 12)) },
+				noteFrame(loaded, 1).points[1]
+			)
+		end
+	)
+
+	it("rings a word it points at beside the word, not on its letters (ONB-R56)", function()
+		local label
+		local loaded = core(function(Pagle, loaded)
+			local M = Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+			local window = layOut(loaded.env.CreateFrame("Frame", nil, loaded.env.UIParent), 600, 200, 900, 700)
+			window:Hide()
+			label = window:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+			label:SetText("PAGLE-MÜNZEN")
+			layOut(label, 1500, 500, #"PAGLE-MÜNZEN" * 6, 14)
+			M:RegisterFirstLook({
+				id = "ledger.journal",
+				window = window,
+				title = "the Fish Journal",
+				notes = {
+					{
+						text = "Coins.",
+						target = function()
+							return label
+						end,
+						x = -190,
+						y = 100,
+						w = 176,
+					},
+				},
+			})
+			window:SetScript("OnShow", function()
+				M:ShowFirstLook("ledger.journal")
+			end)
+			return window
+		end)
+		loaded.ns.firstLooks:Window("ledger.journal"):Show()
+		loaded.client.update(0)
+
+		local arrow = noteFrame(loaded, 1).arrow
+		local finish = arrow.lines[14].endPoint
+		-- the note is left of the word: its arrow ends left of the word's first letter, the 12-unit ring 2 clear of it
+		assert.is_true(finish[3] + 6 <= 1500 - 2)
+		assert.is_true(finish[4] >= 500 - 8 and finish[4] <= 514 + 8)
+		assert.are.same({ "CENTER", loaded.env.UIParent, "BOTTOMLEFT", finish[3], finish[4] }, arrow.ring.points[1])
 	end)
 
 	it("slides a note held over the window's edge off what another note points at (ONB-R56, ONB-R58)", function()
