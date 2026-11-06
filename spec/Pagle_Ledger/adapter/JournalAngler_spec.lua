@@ -730,40 +730,46 @@ describe("the Angler page's Where your XP came from", function()
 		end
 	end
 
-	it("led_r150 wraps column heads too wide for their column onto two lines, both alike, the kit's as the kit", function()
-		local _, loaded = anglerPage()
-		local head = loaded.ns.journal.shown.right.drawn.xpSource[1]
-		measuredHeads(head)
-		loaded.ns.journal:Draw()
-		assert.are.same({ 12.5, false, false }, { head.climb.fontObject.font[2], head.climb.wordWrap, head.total.wordWrap })
-		-- how far under the head the first line starts
-		local function below()
-			local drawn = loaded.ns.journal.shown.right.drawn.xpSource
-			local top = function(region)
-				return -region.points[1][#region.points[1]]
+	it(
+		"led_r150 wraps column heads too wide for their column onto two lines, both alike, the kit's as the kit",
+		function()
+			local _, loaded = anglerPage()
+			local head = loaded.ns.journal.shown.right.drawn.xpSource[1]
+			measuredHeads(head)
+			loaded.ns.journal:Draw()
+			assert.are.same(
+				{ 12.5, false, false },
+				{ head.climb.fontObject.font[2], head.climb.wordWrap, head.total.wordWrap }
+			)
+			-- how far under the head the first line starts
+			local function below()
+				local drawn = loaded.ns.journal.shown.right.drawn.xpSource
+				local top = function(region)
+					return -region.points[1][#region.points[1]]
+				end
+				return top(drawn[2]) - top(drawn[1])
 			end
-			return top(drawn[2]) - top(drawn[1])
+			local english = below()
+
+			loaded.ns.L.ANGLER_XP_CLIMB = "Dieser Aufstieg"
+			loaded.ns.L.ANGLER_XP_ALL = "Insgesamt"
+			loaded.ns.journal:Draw()
+
+			head = loaded.ns.journal.shown.right.drawn.xpSource[1]
+			local room = 84 - 6
+			assert(15 * 0.5 * 12.5 > room, "the German head is wider than its column")
+			assert.are.same({ 12.5, true, 2, room }, {
+				head.climb.fontObject.font[2],
+				head.climb.wordWrap,
+				head.climb.maxLines,
+				head.climb:GetWidth(),
+			})
+			assert.are.same({ 12.5, true }, { head.total.fontObject.font[2], head.total.wordWrap })
+			assert.are.equal("Dieser Aufstieg", head.climb:GetText())
+			-- the next line starts under the head's two lines
+			assert.are.equal(english + 14, below())
 		end
-		local english = below()
-
-		loaded.ns.L.ANGLER_XP_CLIMB = "Dieser Aufstieg"
-		loaded.ns.L.ANGLER_XP_ALL = "Insgesamt"
-		loaded.ns.journal:Draw()
-
-		head = loaded.ns.journal.shown.right.drawn.xpSource[1]
-		local room = 84 - 6
-		assert(15 * 0.5 * 12.5 > room, "the German head is wider than its column")
-		assert.are.same({ 12.5, true, 2, room }, {
-			head.climb.fontObject.font[2],
-			head.climb.wordWrap,
-			head.climb.maxLines,
-			head.climb:GetWidth(),
-		})
-		assert.are.same({ 12.5, true }, { head.total.fontObject.font[2], head.total.wordWrap })
-		assert.are.equal("Dieser Aufstieg", head.climb:GetText())
-		-- the next line starts under the head's two lines
-		assert.are.equal(english + 14, below())
-	end)
+	)
 
 	it("led_r150 sets a word wider than its column smaller, both heads alike", function()
 		local _, loaded = anglerPage()
