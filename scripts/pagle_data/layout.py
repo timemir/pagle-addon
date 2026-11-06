@@ -39,11 +39,18 @@ CYRILLIC_LOOKALIKES = dict(zip(
 ))
 
 
+def _face(path: Path, size: int) -> ImageFont.FreeTypeFont:
+    """A face at `size`, laid out by FreeType alone, as the client lays out a font string: no HarfBuzz shaping (Raqm),
+    which Pillow uses where it has it (its Linux wheels do, its macOS wheels don't) and which measures some
+    precomposed letters, such as À, as their parts. The same advances on every platform, so the gate's check holds."""
+    return ImageFont.truetype(str(path), size, layout_engine=ImageFont.Layout.BASIC)
+
+
 def face_advances(path: Path) -> tuple[dict[int, int], set[int], float]:
     """One face's advance per codepoint at 1000 units an em, the codepoints estimated, and its line height in ems."""
-    font = ImageFont.truetype(str(path), 1000)
+    font = _face(path, 1000)
     # Whether the face has a glyph: unlike the notdef glyph, in advance or ink box (at a small size, which is quick).
-    probe = ImageFont.truetype(str(path), 48)
+    probe = _face(path, 48)
     notdef = (probe.getlength("\uffff"), probe.getbbox("\uffff"))
 
     def has(char: str) -> bool:
@@ -221,7 +228,7 @@ class _Faces:
                 file = CYRILLIC_FACE
         key = (file, size)
         if key not in self.cache:
-            self.cache[key] = ImageFont.truetype(str(self.fonts / file), max(1, round(size * SCALE)))
+            self.cache[key] = _face(self.fonts / file, max(1, round(size * SCALE)))
         return self.cache[key]
 
 
