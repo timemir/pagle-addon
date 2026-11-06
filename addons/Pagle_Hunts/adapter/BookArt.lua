@@ -177,6 +177,7 @@ end
 ---@field left Texture
 ---@field middle Texture
 ---@field right Texture
+---@field tall Texture[]?   -- ns.SetTallThreeSlice's nine pieces, made at its first use
 
 --- Draws sprite `name` three-sliced on `frame`, `width` wide and its drawn element's height high: `cap` UI units of the
 --- element are kept at each end, with the sprite's margin outside them. Makes the slices the first time.
@@ -211,6 +212,12 @@ function ns.SetThreeSliceAt(frame, atlasName, name, width, height, capLeft, capR
 		slice.middle = crisp(frame:CreateTexture(nil, layer or "BACKGROUND", nil, sublevel or 0))
 		slice.right = crisp(frame:CreateTexture(nil, layer or "BACKGROUND", nil, sublevel or 0))
 	end
+	for _, piece in ipairs(slice.tall or {}) do
+		piece:Hide()
+	end
+	slice.left:Show()
+	slice.middle:Show()
+	slice.right:Show()
 	local atlas, sprite = spriteOf(atlasName, name)
 	local scale, box = atlas.scale, sprite.box
 	local k = height / box[4]
@@ -234,6 +241,67 @@ function ns.SetThreeSliceAt(frame, atlasName, name, width, height, capLeft, capR
 	slice.middle:ClearAllPoints()
 	slice.middle:SetPoint("TOPLEFT", slice.left, "TOPRIGHT")
 	slice.middle:SetPoint("BOTTOMRIGHT", slice.right, "BOTTOMLEFT")
+end
+
+--- Draws sprite `name` three-sliced on `frame` as ns.SetThreeSlice does, at its own scale, `extra` units taller: its
+--- top half and its foot half as drawn, and the texel row between them stretched over the extra, so a pill keeps its
+--- round ends' curves and grows straight sides between them (a chip whose words wrap to a second line). Makes its nine
+--- pieces (`tall`) the first time, and hides ns.SetThreeSlice's three.
+---@param frame Frame
+---@param atlasName string
+---@param name string
+---@param width number
+---@param cap number
+---@param extra number
+---@param layer DrawLayer?
+---@param sublevel integer?
+function ns.SetTallThreeSlice(frame, atlasName, name, width, cap, extra, layer, sublevel)
+	local slice = frame --[[@as HuntsThreeSlice]]
+	if not slice.tall then
+		slice.tall = {}
+		for i = 1, 9 do
+			slice.tall[i] = crisp(frame:CreateTexture(nil, layer or "BACKGROUND", nil, sublevel or 0))
+		end
+	end
+	for _, piece in ipairs({ slice.left, slice.middle, slice.right }) do
+		piece:Hide()
+	end
+	local atlas, sprite = spriteOf(atlasName, name)
+	local scale, box = atlas.scale, sprite.box
+	local spriteWidth, spriteHeight = sprite.w / scale, sprite.h / scale
+	local marginLeft, marginRight = box[1], spriteWidth - box[1] - box[3]
+	local leftWidth, rightWidth = marginLeft + cap, cap + marginRight
+	local half = box[2] + box[4] / 2
+	-- each row: from where down the sprite, how much of it, how tall drawn; each column likewise across
+	local rows = { { 0, half, half }, { half, 1 / scale, extra }, { half, spriteHeight - half, spriteHeight - half } }
+	local middleWidth = width + marginLeft + marginRight - leftWidth - rightWidth
+	local columns = {
+		{ 0, leftWidth, leftWidth },
+		{ leftWidth, spriteWidth - leftWidth - rightWidth, middleWidth },
+		{ spriteWidth - rightWidth, rightWidth, rightWidth },
+	}
+	frame:SetSize(width, box[4] + extra)
+	local y = box[2]
+	for r, row in ipairs(rows) do
+		local x = -marginLeft
+		for c, column in ipairs(columns) do
+			local piece = slice.tall[(r - 1) * 3 + c]
+			cut(
+				piece,
+				atlas,
+				sprite.x + column[1] * scale,
+				sprite.y + row[1] * scale,
+				column[2] * scale,
+				row[2] * scale
+			)
+			piece:SetSize(column[3], row[3])
+			piece:ClearAllPoints()
+			piece:SetPoint("TOPLEFT", frame, "TOPLEFT", x, y)
+			piece:SetShown(row[3] > 0)
+			x = x + column[3]
+		end
+		y = y - row[3]
+	end
 end
 
 --- Shows in `texture` the first `width` UI units of sprite `name`'s drawn element, unstretched: a bar or an ink fill is

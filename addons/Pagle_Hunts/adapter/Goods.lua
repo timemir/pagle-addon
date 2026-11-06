@@ -140,6 +140,10 @@ local LOOKS = ns.TRACKER_LOOKS
 -- spyglass's orb (50) and the wager ribbon's coin (54). The first lines start under it (`clear`, its foot less the 3
 -- units a line's words sit below its top), so it is never drawn over a time, and the lines take the frame's width to
 -- the 16-unit inset, where before the spyglass and the ribbon kept 46 clear all the way down for it.
+-- The frame's top is kept as drawn and its middle stretched to the block (ns.SetVSlice), so each top slice reaches
+-- past its ornament's foot (58.5, 50.5 and 52 in the art): with less, the ornament's foot was stretched down with the
+-- middle, the further the taller the block, and with the Pagle Wagers block above the Hunts the compass sat on the
+-- first run's time. The bounty poster's header sits 4 units under the rule below WANTED (34 to 35.5), not right on it.
 ---@type { key: string, insets: number[], slice: number[], inks: string[], paper: boolean, clear: number? }[]
 local KIT_FRAMES = {
 	{
@@ -152,14 +156,14 @@ local KIT_FRAMES = {
 	{
 		key = "mapscrap",
 		insets = { 16, 16, 14, 14 },
-		slice = { 50, 24 },
+		slice = { 59, 24 },
 		inks = { "5a1a0a", "2a1a0a", "6a5030", "9a2a1a" },
 		paper = true,
 		clear = 55,
 	},
 	{
 		key = "bounty",
-		insets = { 18, 18, 36, 14 },
+		insets = { 18, 18, 40, 14 },
 		slice = { 42, 20 },
 		inks = { "5a1a0a", "2a1406", "6a4a24", "9a2a1a" },
 		paper = true,
@@ -167,7 +171,7 @@ local KIT_FRAMES = {
 	{
 		key = "spyglass",
 		insets = { 16, 16, 18, 18 },
-		slice = { 48, 14 },
+		slice = { 51, 14 },
 		inks = { "f0cd6a", "e8eef8", "a8b4c8", "f0cd6a" },
 		paper = false,
 		clear = 47,
@@ -175,7 +179,7 @@ local KIT_FRAMES = {
 	{
 		key = "wagerribbon",
 		insets = { 16, 16, 14, 22 },
-		slice = { 48, 26 },
+		slice = { 52, 26 },
 		inks = { "f0cd6a", "f4e8ff", "c0a8d8", "f0cd6a" },
 		paper = false,
 		clear = 51,
@@ -568,19 +572,35 @@ end
 -- with no count, TRACKER_HERE; a run's closest Hunt, "<Hunt>: 2 / 4"), and `line.second` keeps its whole text but
 -- only the room before it, so the client cuts it short with an ellipsis just where that part starts. Only widths
 -- change: what it reads is the line's text. The two share the room as a line's name and label do (labelShare).
+--
+-- With `wrap` (a run's line, whose last part is a Hunt's name, "Raw Mithril Head Trout: 0 / 4", too long to keep whole
+-- beside a cut start), a line still too long at its smaller size wraps to two lines instead, whole, and this returns
+-- true: the line is a line taller.
 ---@param line HuntsTrackerLineButton
 ---@param text string
 ---@param sub HuntsTrackerFont
 ---@param room number
-local function fitSecond(line, text, sub, room)
+---@param wrap boolean?
+---@return boolean wrapped
+local function fitSecond(line, text, sub, room, wrap)
+	line.second:SetWordWrap(false)
+	line.second:SetMaxLines(0)
 	local size = ns.FitText(line.second, sub[1], sub[2], room, sub[2] - 2, sub[4], sub[3])
 	line.second:SetWidth(0) -- measured unbounded
 	local whole = line.second:GetStringWidth()
+	if wrap and whole > room then
+		setFont(line.second, sub) -- at the look's own size, now it has two lines
+		line.count:Hide()
+		line.second:SetWordWrap(true)
+		line.second:SetMaxLines(2)
+		line.second:SetWidth(room)
+		return true
+	end
 	local at = whole > room and lastJoin(text, ns.L.TRACKER_JOIN)
 	line.count:SetShown(at and at > 1 or false)
 	if not at or at <= 1 then
 		line.second:SetWidth(room)
-		return
+		return false
 	end
 	local count = line.count
 	count:SetFontObject(ns.ArtFont(sub[1], size, sub[4]))
@@ -591,6 +611,7 @@ local function fitSecond(line, text, sub, room)
 	local countWidth = labelShare(room, whole - countWhole + 2, countWhole)
 	count:SetWidth(math.max(1, countWidth))
 	line.second:SetWidth(math.max(1, room - countWidth))
+	return false
 end
 -- Draws each of `entries` (a Hunt's or a run's two lines) on `lines` from `y` down, after a run's time dial or a dot
 -- of its group (`entry.dot`, else `dot`), its label red when `entry.urgent`; hides the lines past them; returns the y
@@ -638,6 +659,11 @@ local function drawLines(lines, entries, look, y, dot)
 			line.label:SetWidth(math.max(1, labelWidth))
 			line.first:ClearAllPoints()
 			line.first:SetPoint("TOPLEFT", x + 14, -3)
+			if nameWidth > room - labelWidth then
+				-- a name longer than its share likewise takes a point or two smaller before it is cut
+				local font = look.name
+				ns.FitText(line.first, font[1], font[2], room - labelWidth - 1, font[2] - 2, font[4], font[3])
+			end
 			line.first:SetWidth(math.max(1, math.min(nameWidth, room - labelWidth)))
 			setFont(line.second, look.sub)
 			line.second:SetText(entry.second or "")
@@ -646,9 +672,12 @@ local function drawLines(lines, entries, look, y, dot)
 			line.second:SetPoint("TOPLEFT", x + 14, -look.second)
 			line.count:ClearAllPoints()
 			line.count:SetPoint("TOPRIGHT", line, "TOPLEFT", right, -look.second)
-			-- a long target line shrinks a little, then is cut short before its count, within the block
-			fitSecond(line, entry.second or "", look.sub, right - x - 14)
-			y = y + look.step
+			-- a long target line shrinks a little, then is cut short before its count, within the block; a run's
+			-- wraps to a second line instead, the line growing by it
+			local wrapped = fitSecond(line, entry.second or "", look.sub, right - x - 14, entry.dial ~= nil)
+			local height = look.step + (wrapped and look.sub[2] + 3 or 0)
+			line:SetSize(look.width, height)
+			y = y + height
 		end
 	end
 	return y

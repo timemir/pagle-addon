@@ -120,6 +120,94 @@ describe("a Hunt's entry on the board", function()
 			end
 		)
 
+		it(
+			"tightens the entry a step at a time until its set line ends on the page, the conditions cut last (HNT-R64)",
+			function()
+				local run = start()
+				run.state.hunts.fixture_snapper = progress(1, 96, 11, 1)
+				local page, view = open(run, { mode = "board", hunt = "fixture_snapper" })
+				local fonts = run.ns.BoardFonts()
+				-- as the kit lays it: the window line in the large hand, every line of the conditions
+				assert.are.same({ fonts.handLarge, 0 }, { view.window.fontObject, view.conditions:GetMaxLines() })
+
+				-- eleven zones in a longer language: twenty lines of conditions, 17.5 a line, or the most it is kept to
+				local rows = 20
+				view.conditions.GetStringHeight = function(self)
+					local most = self:GetMaxLines()
+					return (most > 0 and math.min(most, rows) or rows) * 17.5
+				end
+				run.ns.board:Draw()
+
+				-- the foot compact, the body tight (the window line a size down), and the conditions kept to the lines
+				-- that leave the set line's words on the page, which cut them before
+				local most = view.conditions:GetMaxLines()
+				assert(most >= 1 and most < 20, "kept to " .. most)
+				assert.are.same({ fonts.note, false, fonts.hand }, {
+					view.effort.fontObject,
+					view.odds:IsShown(),
+					view.window.fontObject,
+				})
+				local setLine = view.setLine
+				assert.is_true(setLine:IsShown())
+				local foot = -setLine.points[1][3] + setLine:GetStringHeight()
+				assert(foot <= page:GetHeight(), "the set line ends at " .. foot .. ", past the page")
+
+				-- a short entry again is laid as the kit lays it, every line of its conditions shown
+				rows = 1
+				run.ns.board:Draw()
+				assert.are.same(
+					{ fonts.handLarge, 0, true },
+					{ view.window.fontObject, view.conditions:GetMaxLines(), view.odds:IsShown() }
+				)
+			end
+		)
+
+		it("keeps a longer language's kicker whole beside the round seal, then sets it smaller (HNT-R64)", function()
+			local run = start()
+			-- the kit left the kicker the heading's room, 96 short of the page's right for the seal's whole width; at the
+			-- kicker's line the wax reaches in only 67 of it
+			run.ns.L["set.fixture_dusk.name"] = "Heimische Gewässer am Ufer"
+			local page, view = open(run, { mode = "entry", set = "fixture_dusk", hunt = "fixture_snapper" })
+			local fonts = run.ns.BoardFonts()
+			local kicker = view.kicker:GetText()
+			assert.are.equal("HEIMISCHE GEWÄSSER AM UFER · NATURAL", kicker) -- never rewritten
+			assert(#kicker * 6 > page:GetWidth() - 96, "the kicker fits the kit's room in the fake")
+			assert.are.same({ fonts.kicker, true }, { view.kicker.fontObject, view.kicker.width >= #kicker * 6 })
+			assert(view.kicker.width <= page:GetWidth() - 71, "the kicker runs into the seal")
+
+			-- longer still: a size down at a time, then the client cuts it
+			run.ns.L["set.fixture_dusk.name"] = "Heimische Gewässer am stillen Ufer"
+			run.ns.board:Draw()
+			assert.are_not.equal(fonts.kicker, view.kicker.fontObject)
+			assert.are.equal(page:GetWidth() - 71, view.kicker.width)
+		end)
+
+		it("wraps a note too long for one line even set small to two lines in a taller chip (HNT-R65)", function()
+			local run = start()
+			-- deDE's: at the chips' least size, 11, it still ran past the page and was cut ("…eine Laterne und ei…")
+			local long = "Von der Abendglocke bis tief in die Nacht: eine Laterne und ein stilles Ufer."
+			run.ns.L["hunt.fixture_snapper.note"] = long
+			local page, view = open(run, { mode = "board", hunt = "fixture_snapper" })
+
+			local chip = chipOf(view, long) -- its words whole, never rewritten
+			assert(#long * 6 > page:GetWidth(), "the note fits on a line in the fake, so this checks nothing")
+			assert.are.same({ true, 2, run.ns.BoardFonts().small }, {
+				chip.label:CanWordWrap(),
+				chip.label:GetMaxLines(),
+				chip.label.fontObject,
+			})
+			assert.are.equal(page:GetWidth(), chip.width)
+			assert(chip.height > 22, "the chip keeps one line's height")
+			assert.is_true(chip.face.tall[1]:IsShown())
+			-- the set's note, the next chip, starts under it
+			local after = chipOf(view, "After the lamps are lit.")
+			assert.are.equal(-chip.points[1][3] + chip.height + 5, -after.points[1][3])
+
+			-- a short note is the kit's one-line chip
+			assert.are.same({ false, 22 }, { after.label:CanWordWrap(), after.height })
+			assert.is_false(after.face.tall ~= nil and after.face.tall[1]:IsShown())
+		end)
+
 		it("draws an undone Hunt's dashed 'not yet' and only its effort Casts (HNT-R26)", function()
 			local run = start()
 			run.state.hunts.fixture_snapper = progress(0, 12, 12, 0)

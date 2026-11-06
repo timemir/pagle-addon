@@ -569,6 +569,28 @@ describe("opening the board (HNT-R67)", function()
 		assert.is_true(has(texts, "opens after that, or needs more skill"))
 	end)
 
+	it("sets a row's long name a size down at a time before the client cuts it in its column (HNT-R63)", function()
+		local run = start()
+		wait(run, untilRealm(14))
+		run.ns.L["hunt.fixture_snapper.name"] = "Forelle im Morgengrauen" -- 23 bytes: 138 in the fake, under 140
+		run.ns.L["hunt.fixture_oddity.name"] = "Seltsames in der Dämmerung" -- 27 bytes: 162, over it
+		run.ns.ToggleBoard()
+
+		local names = {}
+		for _, row in ipairs(drawnRows(run)) do
+			names[row.huntID] = row.name
+		end
+		local fonts = run.ns.BoardFonts()
+		-- a name that fits keeps the kit's size, in the kit's column
+		assert.are.same({ fonts.text, 140 }, { names.fixture_snapper.fontObject, names.fixture_snapper.width })
+		-- a longer one keeps its words, set smaller, in the column (the fake's widths don't shrink with it, so it is
+		-- set at the floor, and the client cuts it there)
+		local oddity = names.fixture_oddity
+		assert.are.equal("Seltsames in der Dämmerung", oddity.text)
+		assert.are.equal(run.ns.ArtFont("print", 11.5), oddity.fontObject)
+		assert.are.equal(140, oddity.width)
+	end)
+
 	it("reads HNT-R67's line on the right page when every Hunt is hidden, and selects none", function()
 		local run = start({ list = extraList({ ALWAYS }) })
 		useState(run, { extra_1 = reached(1) })
@@ -785,6 +807,32 @@ describe("a set's page, drawn (HNT-R66)", function()
 		walk(run.ns.board:Page(run.ns.board.router:Place(), "left"))
 
 		assert.are.same({ mode = "entry", set = "fixture_dusk", hunt = "fixture_snapper" }, place(run))
+	end)
+
+	it("sets each group's heading over the now line, so the line never strikes through its note (HNT-R62)", function()
+		local run = start()
+		-- deDE's notes: in the client the now line, 2 hours along the ruler, ran through "Stunden" and "braucht"
+		run.ns.L.GROUP_NOTES.soon = "öffnet innerhalb von 3 Stunden"
+		run.ns.L.GROUP_NOTES.later = "öffnet danach oder braucht mehr Fertigkeit"
+		run.ns.board:Open({ mode = "board" })
+
+		local view = assert(run.ns.TimelinePageView(run.ns.board:Page(place(run), "left")))
+		local line = view.nowLine.points[1][4] -- across the page, as the ruler places it
+		local crossing = 0
+		for group, heading in pairs(view.headings) do
+			if heading:IsShown() then
+				-- each heading's frame is over the frame the now line is drawn on, and its words on its top layer
+				local over = view.nowLine:GetParent()
+				assert(heading:GetFrameLevel() > over:GetFrameLevel(), group .. "'s heading is under the now line")
+				assert.are.equal("OVERLAY", heading.note.layer)
+				-- the note's words reach across the line in the fake (17 + the name + 8 on, 6 px a byte)
+				local from = 17 + heading.label:GetStringWidth() + 8
+				if from < line and from + heading.note:GetStringWidth() > line then
+					crossing = crossing + 1
+				end
+			end
+		end
+		assert(crossing >= 1, "no note reaches the now line, so this checks nothing")
 	end)
 
 	it(

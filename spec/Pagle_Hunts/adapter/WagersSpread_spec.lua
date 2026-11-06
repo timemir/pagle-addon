@@ -878,6 +878,34 @@ describe("the spread in a longer language (CORE-R8)", function()
 			end
 		end
 	)
+
+	it("sets a post's title narrowed by its neighbour a size down before the client cuts it (HNT-R162)", function()
+		local r = oneOn({ language = "ruRU" })
+		r.ns.OpenWagers()
+		local ladder = r.ns.board:Page(place(r), "left").spread.ladder
+		local full = r.ns.ArtFont("italic", r.ns.WAGER_INKS.postTitle.size)
+
+		local narrowed = 0
+		for i, title in ipairs(ladder.titles) do
+			if #title.text * 6 + 1 > title.width then
+				narrowed = narrowed + 1
+				assert.are_not.equal(full, title.fontObject, "title " .. i .. " is cut at the kit's size")
+			else
+				assert.are.equal(full, title.fontObject, "title " .. i .. " fits, but is set smaller")
+			end
+		end
+		assert(narrowed > 0, "no title is narrowed in the fake, so this checks nothing")
+
+		-- drawn again, each title is measured at the kit's size again: the same sizes and widths
+		local before = {}
+		for i, title in ipairs(ladder.titles) do
+			before[i] = { title.fontObject, title.width }
+		end
+		r.ns.board:Draw()
+		for i, title in ipairs(ladder.titles) do
+			assert.are.same(before[i], { title.fontObject, title.width }, "title " .. i)
+		end
+	end)
 end)
 
 describe("the spread's motion (HNT-R162)", function()

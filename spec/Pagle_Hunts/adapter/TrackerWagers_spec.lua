@@ -440,3 +440,46 @@ describe("the tracker's Pagle Wagers block", function()
 		end)
 	end)
 end)
+
+describe("the tracker's Pagle Wagers lines in a longer language (HNT-R175, CORE-R8)", function()
+	it("sets a long run name a size down beside its time, and wraps a long second line to two lines", function()
+		local r = start(twoOn())
+		local L = r.ns.L
+		-- deDE's: in every frame the run's name and its second line were cut ("0 von 4 ersten Kerb…")
+		L["event.fixture_shore.name"] = "Forelle im Morgengrauen am See"
+		L["hunt.fixture_shore_snapper.name"] = "Raw Mithril Head Trout"
+		L.TRACKER_FIRST_MARKS = "{done:0} von {total:0} ersten Kerben"
+		local look = r.ns.TrackerLook(nil)
+		r.ns.Redraw("tour")
+
+		local line = r.ns.tracker.wagers.lines[1]
+		local second = line.second:GetText()
+		assert.are.equal("1 von 3 ersten Kerben · Raw Mithril Head Trout: 0 / 1", second) -- never rewritten
+		local room = look.right - look.x - 14
+		assert(#second * 6 > room, "the second line fits in the fake, so this checks nothing")
+		-- whole, over two lines at the look's own size, the line a line taller; no count split off it
+		assert.are.same({ true, 2, room, false, r.ns.ArtFont(look.sub[1], look.sub[2], look.sub[4]) }, {
+			line.second:CanWordWrap(),
+			line.second:GetMaxLines(),
+			line.second.width,
+			line.count:IsShown(),
+			line.second.fontObject,
+		})
+		assert(line.height > look.step, "the line keeps its one-line height")
+		local next = r.ns.tracker.wagers.lines[2]
+		assert.are.equal(topOf(line) + line.height, topOf(next))
+
+		-- the name and the time share the first line: the name a size down before it is cut
+		local name = line.first
+		assert.are.equal("Forelle im Morgengrauen am See", name:GetText())
+		assert(#name:GetText() * 6 + 1 > name.width, "the name fits in the fake, so this checks nothing")
+		assert.are_not.equal(r.ns.ArtFont(look.name[1], look.name[2], look.name[4]), name.fontObject)
+
+		-- a Hunt's long second line keeps its count whole at the right, on one line, as before
+		for _, hunt in ipairs(r.ns.tracker.lines) do
+			if hunt:IsShown() then
+				assert.are.same({ false, look.step }, { hunt.second:CanWordWrap(), hunt.height })
+			end
+		end
+	end)
+end)

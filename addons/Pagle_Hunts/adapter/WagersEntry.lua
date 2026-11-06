@@ -25,6 +25,10 @@ local L = ns.L
 -- the page: the seal keeps the kit's height and its place at the mark's lower right (8 units right of the mark's left,
 -- where the kit's was 14), so the mark moved 14 units in and the name's width came in with it.
 local SRC_MARK, SRC_GAP, NAME_Y, NAME_W, NAME_LINES = 13, 5, 17, 237, 3
+-- The least sizes the kicker, a Hunt's name and its line are set at before the client cuts them (CORE-R8: a longer
+-- language's "AUS DER ROTATION · NIEDRIGE GEWÄSSER", "Zeitgebunden · Raw Mithril Head Trout, 17:00–21:00"); the kit's
+-- are 12.5, 14.5 and 11.5.
+local KICKER_FLOOR, NAME_FLOOR, LINE_FLOOR = 11, 12.5, 10
 local MARK_SIZE, MARK_R, MARK_Y = 66, 10, -2
 local SEAL_R, SEAL_Y, SEAL_SIZE, SEAL_TILT, SEAL_WORD_Y, SEAL_DATE_Y = 2, 30.1, 66, -12, -8, 4
 -- The heading's least height, and the gap under it (tighter with five Hunts); the time block's height, its dial's size
@@ -402,7 +406,7 @@ local function layRow(view, i, data, y, entry, dropWindows)
 		row.count:Hide()
 		row.rest:Hide()
 	end
-	ns.FitWagerText(row.name, data.name, width - WORDS_X - (right > 0 and right + 6 or 0))
+	ns.ShrinkWagerText(row.name, data.name, width - WORDS_X - (right > 0 and right + 6 or 0), NAME_FLOOR)
 	ns.PlaceWagerText(row.name, root, WORDS_X, ry)
 	-- the diamonds at the right of the line, each in its trim once reached
 	local tiers = data.tiers or {}
@@ -417,7 +421,7 @@ local function layRow(view, i, data, y, entry, dropWindows)
 	end
 	ns.BoardHideFrom(row.diamonds, #tiers)
 	local diamonds = #tiers > 0 and #tiers * (DIAMOND + DIAMOND_GAP) - DIAMOND_GAP + 6 or 0
-	ns.FitWagerText(row.line, data.line, width - WORDS_X - diamonds)
+	ns.ShrinkWagerText(row.line, data.line, width - WORDS_X - diamonds, LINE_FLOOR)
 	ns.PlaceWagerText(row.line, root, WORDS_X, ry + LINE_Y)
 	for _, text in ipairs({ row.name, row.count, row.rest, row.line }) do
 		text:SetAlpha(alpha)
@@ -509,7 +513,7 @@ local function lay(view, entry, drop)
 		ns.PlaceSprite(view.srcSeal, root, 0, 0)
 		view.srcSeal:Show()
 	end
-	ns.FitWagerText(view.kicker, entry.kicker, NAME_W - SRC_MARK - SRC_GAP)
+	ns.ShrinkWagerText(view.kicker, entry.kicker, NAME_W - SRC_MARK - SRC_GAP, KICKER_FLOOR)
 	ns.PlaceWagerText(view.kicker, root, SRC_MARK + SRC_GAP, 0)
 	local nameHeight = layWrapped(view.name, entry.name, 0, NAME_Y, root)
 	view.mark:ClearAllPoints()

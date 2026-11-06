@@ -14,8 +14,12 @@ local ns = select(2, ...)
 
 local LOOK = ns.BOARD_LOOK
 
--- The seal's size and where its centre sits from the page's top right, and the room the heading leaves it.
-local SEAL_SIZE, SEAL_RIGHT, SEAL_DOWN, HEADING_ROOM = 88, 38.5, 39.5, 96
+-- The seal's size and where its centre sits from the page's top right, and the room the heading leaves it. The kicker,
+-- on the first line, leaves it less: the wax is round, and at the kicker's foot (18 units down) it reaches 66.7 units
+-- in from the page's right (the seal sprite's opaque edge), so the kicker keeps to 71 from it, 4 clear of the wax; a
+-- language's longer kicker ("HEIMISCHE GEWÄSSER · AUFERLEGT") then reads whole where the full 96 cut it short. Past
+-- that it is set a size down at a time, to KICKER_FLOOR, and only then cut.
+local SEAL_SIZE, SEAL_RIGHT, SEAL_DOWN, HEADING_ROOM, KICKER_ROOM, KICKER_FLOOR = 88, 38.5, 39.5, 96, 71, 10
 -- The pin pill's height, its pin's place and its words' place.
 local PILL_HEIGHT, PILL_CAP, PIN_X, PIN_Y, PIN_WORDS_X = 30, 15, 6, 7, 28
 -- The heading's measures down the page: the kicker, the name, the gap before the pill, and the least room the heading
@@ -23,6 +27,12 @@ local PILL_HEIGHT, PILL_CAP, PIN_X, PIN_Y, PIN_WORDS_X = 30, 15, 6, 7, 28
 local KICKER_Y, NAME_Y, PILL_GAP, HEAD_ROOM = 3, 19, 6, 120
 -- Gaps between blocks; a chip's height, its words' padding, the gap across and the step down.
 local GAP, CHIP_HEIGHT, CHIP_PAD, CHIP_GAP, CHIP_STEP = 8, 22, 8, 5, 27
+-- A tight entry's (draw's third step, a language's longer lines running it past the page's foot): the gaps between
+-- its blocks, the room under the chips (14 as the kit lays it), and the least size its name is set at to keep to one
+-- line.
+local GAP_TIGHT, CHIPS_FOOT, CHIPS_FOOT_TIGHT, NAME_FLOOR = 4, 14, 8, 22
+-- A conditions line's step down (its 13.5 and its 4 of spacing), to count its lines.
+local CONDITIONS_LINE = 17.5
 -- A ladder step's height, its mark's size and place, its threshold's and its date's places, and the ink bar's width.
 local STEP_HEIGHT, MARK_SIZE, MARK_X, THRESHOLD_X, WHEN_X, BAR_WIDTH = 23, 12, 2.5, 24, 60, 261
 -- The set line's rule from the page's foot at the least, and its words under the rule.
@@ -77,16 +87,19 @@ local function newChip(parent)
 	return chip
 end
 
--- The smallest a chip's words shrink to before they are cut short.
-local CHIP_FLOOR = 11
+-- The smallest a chip's words shrink to before they are cut short; a note too long for one line even then wraps to
+-- two at the chips' own size instead, its chip this much taller (a line of the small face).
+local CHIP_FLOOR, CHIP_LINE = 11, 15
 
 -- Dresses `chip` as `data` says, and sizes it to its words, no wider than `room` (the page's width): longer words
 -- shrink, then are cut short with an ellipsis, with the full words in its tooltip. Returns its width.
 ---@param chip EntryChipView
 ---@param data HuntEntryChip
 ---@param room number
+---@param oneLine boolean? an entry still too long once tight (draw): a long note is cut on one line, as other chips
+--- are, not wrapped
 ---@return number
-local function setChip(chip, data, room)
+local function setChip(chip, data, room, oneLine)
 	local unconfirmed = data.kind == "unconfirmed"
 	local ink = data.short and LOOK.red or unconfirmed and LOOK.unconfirmed or LOOK.chipText
 	chip.label:SetFontObject(unconfirmed and ns.BoardFonts().note or ns.BoardFonts().small)
@@ -96,7 +109,21 @@ local function setChip(chip, data, room)
 	chip.badge:SetShown(data.badge ~= nil)
 	local badge = data.badge and math.ceil(chip.badge:GetStringWidth()) + 6 or 0
 	local words = room - 2 * CHIP_PAD - badge
+	chip.label:SetWordWrap(false)
+	chip.label:SetMaxLines(0)
+	chip.label:SetWidth(0)
 	local fitted = math.ceil(chip.label:GetStringWidth()) > words
+	local wraps = data.kind == "note" and not oneLine
+	if fitted and wraps and math.ceil(chip.label:GetStringWidth()) * CHIP_FLOOR / 13.5 > words then
+		-- a note (a language's longer ones): whole over two lines, in a chip a line taller
+		chip.label:SetWordWrap(true)
+		chip.label:SetMaxLines(2)
+		chip.label:SetWidth(words)
+		chip.tooltip = data.tooltip
+		ns.SetTallThreeSlice(chip.face, "Parts", "chip", room, 11, CHIP_LINE, "BACKGROUND")
+		chip:SetSize(room, CHIP_HEIGHT + CHIP_LINE)
+		return room
+	end
 	if fitted then
 		ns.FitText(
 			chip.label,
@@ -114,7 +141,7 @@ local function setChip(chip, data, room)
 	local width = math.min(math.ceil(chip.label:GetStringWidth()), words) + 2 * CHIP_PAD + badge
 	local face = data.badge and "chip-here" or data.short and "chip-red" or unconfirmed and "chip-unc" or "chip"
 	ns.SetThreeSlice(chip.face, "Parts", face, width, 11, "BACKGROUND")
-	chip:SetWidth(width)
+	chip:SetSize(width, CHIP_HEIGHT)
 	return width
 end
 
@@ -299,30 +326,33 @@ local function line(text, words, y, after)
 	return y + text:GetStringHeight() + (after or 2)
 end
 
--- Lays out the chips in rows across `width`, from `y` down; returns the y below them.
+-- Lays out the chips in rows across `width`, from `y` down, a row as tall as its tallest chip (a note wrapped to two
+-- lines, unless `oneLine`); returns the y below them.
 ---@param view EntryView
 ---@param chips HuntEntryChip[]
 ---@param y number
 ---@param width number
+---@param oneLine boolean?
 ---@return number
-local function layChips(view, chips, y, width)
+local function layChips(view, chips, y, width, oneLine)
 	if #chips == 0 then
 		return y
 	end
-	local x = 0
+	local x, rowHeight = 0, CHIP_HEIGHT
 	for i, data in ipairs(chips) do
 		local chip = ns.BoardPooled(view.chips, i, function()
 			return newChip(view.page)
 		end)
-		local chipWidth = setChip(chip, data, width)
+		local chipWidth = setChip(chip, data, width, oneLine)
 		if x > 0 and x + chipWidth > width then
-			x, y = 0, y + CHIP_STEP
+			x, y, rowHeight = 0, y + rowHeight + CHIP_STEP - CHIP_HEIGHT, CHIP_HEIGHT
 		end
+		rowHeight = math.max(rowHeight, chip:GetHeight())
 		chip:ClearAllPoints()
 		chip:SetPoint("TOPLEFT", x, -y)
 		x = x + chipWidth + CHIP_GAP
 	end
-	return y + CHIP_HEIGHT
+	return y + rowHeight
 end
 
 -- Lays out the tier ladder from `y` down (HNT-R64, HNT-R18): each tier's mark in its trim's ink, filled once
@@ -332,8 +362,9 @@ end
 ---@param ladder HuntEntryLadder
 ---@param y number
 ---@param same boolean the same Hunt's bar as at the view's last draw: a count that grew runs its ink on
+---@param again boolean? laid again in this draw, tighter (draw): the bar keeps what the first lay set it running
 ---@return number
-local function layLadder(view, ladder, y, same)
+local function layLadder(view, ladder, y, same, again)
 	if ladder.updating then
 		return line(view.ladderUpdating, ladder.updating, y)
 	end
@@ -367,8 +398,10 @@ local function layLadder(view, ladder, y, same)
 	end
 	local bar = ladder.bar
 	if bar then
-		local grew = same and bar.fill > view.bar.value
-		view.bar:SetBar(bar.fill, bar.label, grew)
+		local grew = not again and same and bar.fill > view.bar.value
+		if not again then
+			view.bar:SetBar(bar.fill, bar.label, grew)
+		end
 		if grew and view.bar:IsVisible() and ns.MotionOn() then
 			-- a catch is written in: its Casts line fades up with the count (MOTION.md › Counts and readings)
 			ns.BoardSound("write")
@@ -417,22 +450,24 @@ local function layFoot(view, entry, y, compact)
 		view.rule:ClearAllPoints()
 		view.rule:SetPoint("TOPLEFT", 0, -ruleY)
 		view.rule:Show()
-		y = line(view.setLine, entry.setLine, ruleY + SET_WORDS_GAP)
+		y = line(view.setLine, entry.setLine, ruleY + SET_WORDS_GAP, 0) -- its words' foot, on the page's at the most
 	end
 	return y
 end
 
--- Draws `entry` (logic/Entry.lua's HuntEntry) of Hunt `huntID` on its page, top to bottom; its foot compact when it
--- would end past the page's (layFoot).
+-- Lays out `entry` (logic/Entry.lua's HuntEntry) of Hunt `huntID` on its page from the top to the ladder; `tight`
+-- keeps a long name to one line a size down, sets the window line a size down, cuts a long note on one line rather
+-- than wrap it, and sets the gaps between blocks closer.
+-- Returns the y under the ladder.
 ---@param view EntryView
 ---@param entry HuntEntry
 ---@param huntID string
-local function draw(view, entry, huntID)
-	-- the same Hunt's ink bar, drawn last time too with the board open since, may run on; a Catch made while the board
-	-- was closed draws settled
-	local showing = ns.board:Showing()
-	local same = view.shown == huntID and view.showing == showing and view.bar:IsShown()
-	view.shown, view.showing = huntID, showing
+---@param same boolean
+---@param again boolean laid again in this draw (layLadder)
+---@param tight boolean
+---@param oneLine boolean a long note cut on one line, not wrapped (setChip)
+---@return number
+local function layBody(view, entry, huntID, same, again, tight, oneLine)
 	hideAll(view)
 	local width = view.page:GetWidth()
 	local top = 0
@@ -448,7 +483,20 @@ local function draw(view, entry, huntID)
 	view.seal:ClearAllPoints()
 	view.seal:SetPoint("CENTER", view.page, "TOPLEFT", width - SEAL_RIGHT, -(top + SEAL_DOWN))
 	view.seal:Show()
-	local y = line(view.kicker, entry.kicker and ns.BoardSmallCaps(entry.kicker), top + KICKER_Y, 0)
+	local kicker = entry.kicker and ns.BoardSmallCaps(entry.kicker)
+	if kicker then
+		view.kicker:SetText(kicker)
+		ns.FitText(view.kicker, "print", 12, width - KICKER_ROOM, KICKER_FLOOR, nil, LOOK.kicker)
+	end
+	local y = line(view.kicker, kicker, top + KICKER_Y, 0)
+	-- tight, a name that would wrap is set a size down at a time to keep to one line, to NAME_FLOOR
+	view.name:SetFontObject(ns.BoardFonts().title)
+	inkText(view.name, LOOK.title)
+	view.name:SetWidth(width - HEADING_ROOM)
+	if tight and entry.name then
+		view.name:SetText(entry.name)
+		ns.FitText(view.name, "print", 29, width - HEADING_ROOM, NAME_FLOOR, nil, LOOK.title)
+	end
 	y = line(view.name, entry.name, math.max(y, top + NAME_Y), 0)
 	y = line(view.target, entry.target, y + 2)
 	y = line(view.retired, entry.retiredLine, y)
@@ -460,13 +508,56 @@ local function draw(view, entry, huntID)
 		view.pin:Show()
 		y = y + PILL_GAP + PILL_HEIGHT
 	end
-	y = math.max(y + GAP, top + HEAD_ROOM)
+	local gap = tight and GAP_TIGHT or GAP
+	y = math.max(y + gap, top + HEAD_ROOM)
+	view.window:SetFontObject(tight and ns.BoardFonts().hand or ns.BoardFonts().handLarge)
+	inkText(view.window, LOOK.hand)
 	y = line(view.window, entry.window, y, 4)
 	y = line(view.conditions, entry.conditions, y)
-	y = layChips(view, entry.chips, y + GAP, width) + 14
-	y = layLadder(view, entry.ladder, y, same) + GAP
-	if layFoot(view, entry, y, false) > view.page:GetHeight() then
-		layFoot(view, entry, y, true)
+	y = layChips(view, entry.chips, y + gap, width, oneLine) + (tight and CHIPS_FOOT_TIGHT or CHIPS_FOOT)
+	return layLadder(view, entry.ladder, y, same, again) + gap
+end
+
+-- The entry's steps, each tighter than the one before (draw): as the kit lays it; the foot compact; the body tight; a
+-- long note cut on one line.
+local TIGHTER = {
+	{},
+	{ compact = true },
+	{ compact = true, tight = true },
+	{ compact = true, tight = true, oneLine = true },
+}
+
+-- Draws `entry` of Hunt `huntID` on its page, top to bottom, as the kit lays it; where a language's longer lines run
+-- it past the page's foot (the page's frame cuts what passes it, the set line first), a step tighter at a time until
+-- it ends on the page: its foot compact (layFoot), then its body tight (layBody), then a long note cut on one line
+-- rather than wrapped, then the conditions line kept to
+-- fewer lines, the client ending it with an ellipsis (its zones are the chips' too, the rest in "+N more"'s tooltip).
+---@param view EntryView
+---@param entry HuntEntry
+---@param huntID string
+local function draw(view, entry, huntID)
+	-- the same Hunt's ink bar, drawn last time too with the board open since, may run on; a Catch made while the board
+	-- was closed draws settled
+	local showing = ns.board:Showing()
+	local same = view.shown == huntID and view.showing == showing and view.bar:IsShown()
+	view.shown, view.showing = huntID, showing
+	local height = view.page:GetHeight()
+	view.conditions:SetMaxLines(0)
+	for step, tighter in ipairs(TIGHTER) do
+		local y = layBody(view, entry, huntID, same, step > 1, tighter.tight, tighter.oneLine)
+		if layFoot(view, entry, y, tighter.compact) <= height then
+			return
+		end
+	end
+	if not entry.conditions then
+		return
+	end
+	local lines = math.floor(view.conditions:GetStringHeight() / CONDITIONS_LINE + 0.5)
+	for most = lines - 1, 1, -1 do
+		view.conditions:SetMaxLines(most)
+		if layFoot(view, entry, layBody(view, entry, huntID, same, true, true, true), true) <= height then
+			return
+		end
 	end
 end
 

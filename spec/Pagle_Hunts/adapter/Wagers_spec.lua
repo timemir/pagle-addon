@@ -724,6 +724,32 @@ describe("a run's entry (HNT-R163)", function()
 	)
 end)
 
+describe("a run's entry in a longer language (HNT-R163, CORE-R8)", function()
+	it("sets its kicker, a Hunt's name and its line a size down at a time before the client cuts them", function()
+		local r = oneOn({
+			prepare = function(loaded)
+				local L = loaded.ns.L
+				-- each past its room in the fake, 6 px a byte: the kicker's 219, a name's and a line's the row's
+				L.RUN_KICKER_ROTATION = "Aus der laufenden Rotation · {bands} Gewässer"
+				L["hunt.fixture_shore_snapper.name"] = "Rohe Nachtflossenschnapper am stillen Ufer bei Nacht"
+			end,
+		})
+		r.ns.OpenBoard({ run = SHORE })
+		local page = r.ns.board:Page(place(r), "right")
+
+		for text, ink in pairs({
+			["AUS DER LAUFENDEN ROTATION · LOW GEWÄSSER"] = "src",
+			["Rohe Nachtflossenschnapper am stillen Ufer bei Nacht"] = "huntName",
+			["Timed · Deviate Fish or Whimsyfin, 18:00–21:00"] = "huntLine",
+		}) do
+			local shown = assert(textOf(page, text), "no " .. text) -- its words whole, never rewritten
+			assert(#text * 6 > shown.width, text .. " fits in the fake, so this checks nothing")
+			local full = r.ns.WAGER_INKS[ink]
+			assert.are_not.equal(r.ns.ArtFont(full.face, full.caps and full.size * 0.84 or full.size), shown.fontObject)
+		end
+	end)
+end)
+
 describe("the nameplate (HNT-R165)", function()
 	it("counts ladder titles with the set titles", function()
 		local r = oneOn()
