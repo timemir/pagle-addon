@@ -48,6 +48,10 @@ local DAY_X, DAY_Y, DAY_STEP, DAY_SIZE = 84, 138, 42, 38
 -- The drawer's compartments: 6 across its 700 units, 74 high, 78 apart.
 local CELL_COLUMNS, CELL_X, CELL_Y, CELL_HEIGHT, CELL_ROW = 6, 24, 44, 74, 78
 local CELL_WIDTH = (728 - 8 - 20) / CELL_COLUMNS
+-- The shop card's words: 112 wide, centred, from 9 down, in lines 14 high and 2 apart; and its pointing hand, 22 by 12,
+-- where the kit draws it (77, 27: 1 after "Shop", the end of English's second line) while the words leave it room.
+local SHOP_WIDTH, SHOP_TOP, SHOP_LINE, SHOP_CARD = 112, 9, 16, { 128, 66 }
+local HAND_X, HAND_Y, HAND_W, HAND_H, HAND_GAP = 77, 27, 22, 12, 1
 -- The Refresh ticket's icon beside the count of Refreshes held: its height in UI units, its width following (#466).
 local REFRESH_ICON = 16
 -- The Refresh count's room, centred under the shop card (its centre 900 across the ledge): to the frame's leather at
@@ -125,6 +129,8 @@ local DAY_ICONS = { lit = "d-flame", burned = "d-burn", out = "d-out", unlit = "
 ---@field card TackleSprite
 ---@field label FontString
 ---@field pointer TackleSprite
+---@field handX number     -- where the pointing hand sits on the card, after the words (shopHand)
+---@field handY number
 
 ---@class TackleRefreshCount: Frame
 ---@field label FontString   -- "3 Refreshes held"
@@ -894,19 +900,58 @@ local function buildPlate(ledge)
 	ledge.plate = plate
 end
 
+-- Where the shop card's pointing hand goes (tackle-board.md › UI: the card reads "Coins go to the Curio Shop" with a
+-- pointing hand): the kit's place while the words' last line ends before it; else right after that line, if it fits on
+-- the card; else under the words, centred. The lines are the client's: words laid greedily within SHOP_WIDTH, each
+-- line measured on a hidden font string, so the label's own words are never changed. "Kuriositätenladen", a German
+-- second line nearly the card's width, covered the hand where the kit drew it.
+---@param shop TackleShopLink
+---@return number x
+---@return number y
+local function shopHand(shop)
+	local measure = shop:CreateFontString(nil, "OVERLAY")
+	ns.SetArtFont(measure, "Shop")
+	measure:SetWordWrap(false)
+	measure:Hide()
+	local function width(text)
+		measure:SetText(text)
+		return measure:GetStringWidth()
+	end
+	local lines, line = 0, nil
+	for word in (shop.label:GetText() or ""):gmatch("%S+") do
+		local longer = line and line .. " " .. word or word
+		if line and width(longer) > SHOP_WIDTH then
+			lines, line = lines + 1, word
+		else
+			line = longer
+		end
+	end
+	lines = lines + 1
+	local last = math.min(width(line or ""), SHOP_WIDTH)
+	local after = SHOP_CARD[1] / 2 + last / 2 + HAND_GAP
+	local lastTop = SHOP_TOP + (lines - 1) * SHOP_LINE
+	if after <= HAND_X and lastTop <= HAND_Y + HAND_H then
+		return HAND_X, HAND_Y
+	elseif after + HAND_W <= SHOP_CARD[1] - 4 then
+		return after, lastTop + 1
+	end
+	return (SHOP_CARD[1] - HAND_W) / 2, math.min(lastTop + SHOP_LINE + 1, SHOP_CARD[2] - HAND_H - 2)
+end
+
 -- The shop card: a card pinned to the ledge with its words and a pointing hand; a click calls Pagle.OpenShop(), which
 -- prints Core's line instead while restricted (SHOP-R41, TKB-R193).
 ---@param ledge TackleLedgeFrame
 local function buildShop(ledge)
 	local shop = CreateFrame("Button", nil, ledge) --[[@as TackleShopLink]]
-	shop:SetSize(128, 66)
+	shop:SetSize(SHOP_CARD[1], SHOP_CARD[2])
 	shop:SetPoint("TOPLEFT", 836, -48)
 	shop.card = ns.ArtSprite(shop, "Board", "shopcard", "ARTWORK")
-	shop.label = ns.ArtWrap(shop, "Shop", 112, 2)
+	shop.label = ns.ArtWrap(shop, "Shop", SHOP_WIDTH, SHOP_LINE - 14)
 	shop.label:SetJustifyH("CENTER")
-	shop.label:SetPoint("TOP", 0, -9)
+	shop.label:SetPoint("TOP", 0, -SHOP_TOP)
 	shop.label:SetText(ns.L.SHOP_LINK)
 	shop.pointer = ns.ArtSprite(shop, "Board", "hand", "ARTWORK", 2)
+	shop.handX, shop.handY = shopHand(shop)
 	ns.PlaceSprite(ns.NewBoardTack(shop), shop, 58, -6)
 	shop:SetScript("OnClick", function()
 		Pagle.OpenShop()
@@ -967,7 +1012,7 @@ local function drawLedge(ledge, draw)
 	plate.latest:SetText(tally.latest or ns.L.TALLY_NO_TITLE)
 	ns.FitArtText(plate.latest, tally.latest and "TallyTitle" or "TallyNone", plate.room)
 	ns.LeanSprite(ledge.shop.card, ledge.shop, 0, 0, 2.5)
-	ns.LeanSprite(ledge.shop.pointer, ledge.shop, 77, 27, 2.5)
+	ns.LeanSprite(ledge.shop.pointer, ledge.shop, ledge.shop.handX, ledge.shop.handY, 2.5)
 	ledge.refresh.label:SetText(
 		ns.TicketMarkup(REFRESH_ICON) .. " " .. ns.Text(ns.L.REFRESHES_HELD, { count = ns.RefreshesHeld() })
 	)
