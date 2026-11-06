@@ -29,7 +29,7 @@ __pycache__/
 # The pinned tools (scripts/setup.sh) and the cached packager (scripts/package.sh)
 .tools/
 # The web art export's default output (scripts/export-web-art.py), never committed: pagle-backend runs the export at
-# a pinned commit and copies what it writes
+# a pinned commit and copies what it writes; and the layout harness's findings and PNGs (scripts/measure-layout.sh)
 /build/
 
 # WoW SavedVariables / logs accidentally copied in

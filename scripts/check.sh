@@ -6,6 +6,7 @@
 #   scripts/check.sh lint api     # only these stages, in gate order; setup and libs always run
 #   GATE_JOBS=8 scripts/check.sh    # busted shards at a time without coverage (default 4)
 #   GATE_SHARD=2/3 scripts/check.sh tests    # only every 3rd busted shard from the 2nd (the Check workflow's runners)
+#   GATE_LAYOUT=1 scripts/check.sh    # adds the optional layout stage, last (or name it: scripts/check.sh layout)
 #
 # A busted shard peaks near its largest spec file, under 1.5 GB, since spec/support/addon.lua lets each file's blocks
 # go once it ends; before that, one shard kept every file it ran and spec/Pagle_Ledger's reached 12 GB, which shut down
@@ -23,18 +24,21 @@
 set -euo pipefail
 
 stages=(format lint api types tests generator)
+# The layout stage (scripts/measure-layout.sh) is optional: it runs only with GATE_LAYOUT=1 or when named. CI doesn't
+# run it yet.
+[[ ${GATE_LAYOUT:-0} != 1 ]] || stages+=(layout)
 if (($#)); then
 	for name in "$@"; do
 		case $name in
-		format | lint | api | types | tests | generator) ;;
+		format | lint | api | types | tests | generator | layout) ;;
 		*)
-			echo "check: unknown stage '$name'; choose from ${stages[*]}" >&2
+			echo "check: unknown stage '$name'; choose from format lint api types tests generator layout" >&2
 			exit 2
 			;;
 		esac
 	done
 	selected=()
-	for name in "${stages[@]}"; do
+	for name in format lint api types tests generator layout; do
 		for requested in "$@"; do
 			if [[ $name == "$requested" ]]; then
 				selected+=("$name")
@@ -360,6 +364,14 @@ stage_generator() {
 	"$bin/python" scripts/generate-data.py --check || return 1
 	"$bin/pytest" --quiet scripts/tests || return 1
 	"$bin/mypy" --config-file scripts/pyproject.toml || return 1
+}
+
+# --- 7. layout, optional (GATE_LAYOUT=1, or named): scripts/measure-layout.sh runs `/pagle dev tour` in enUS, deDE,
+# esES and ruRU with every font string measured in its real face, and fails on a cut, off-page or overlapping text
+# that scripts/measure-layout/allowlist.toml doesn't accept (docs/agents/layout-harness.md). Its PNGs go in
+# build/measure-layout/.
+stage_layout() {
+	PAGLE_TOOLS=$tools bash scripts/measure-layout.sh all || return 1
 }
 
 # run_stage <name>: stage_<name> into its log; then its exit status and wall time, in that order, into its result.

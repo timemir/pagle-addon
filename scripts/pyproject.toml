@@ -30,6 +30,7 @@ files = [
     "scripts/crate-art.py",
     "scripts/render-crate-sounds.py",
     "scripts/launch.py",
+    "scripts/measure-layout.py",
 ]
 python_version = "3.12"
 strict = true

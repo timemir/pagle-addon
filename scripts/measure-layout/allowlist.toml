@@ -1,0 +1,48 @@
+# The layout harness's accepted findings (scripts/measure-layout.sh, docs/agents/layout-harness.md): each one a cut,
+# off-page or overlapping text that's known and accepted, and why. A finding none of these match is new, and fails
+# the run.
+#
+# Each [[allow]] needs `kind` ("cut", "out" or "overlap"), `text` and `reason`; `other` (the text or "(rule)" an
+# overlap meets), `stop` (the tour stop's name, as `/pagle dev tour list` names it), `detail` (the report's detail
+# line) and `languages` (["deDE"]; every language if left out) narrow it. `text`, `other`, `stop` and `detail` are
+# globs: `*` any run of characters, `?` one, `[[]` a literal `[`. Keep each entry as narrow as the case it accepts.
+
+[[allow]]
+kind = "cut"
+text = "Gepanzert nach Einbruch der Nacht"
+stop = "hunts.b*" # the Board's stops, and its bindings' (hunts.binding.*)
+languages = ["deDE"]
+reason = """The Board's left list cuts this Hunt's German name with the client's "…" at its row's width, in every \
+binding; the full name is on its page. Accepted for 1.1.1."""
+
+[[allow]]
+kind = "cut"
+text = "Forelle im Morgengrauen"
+stop = "hunts.trackerframe.*"
+languages = ["deDE"]
+reason = """At the tracker frames' floor sizes the German name is cut with the client's "…"; a wider tracker shows \
+it whole. Accepted for 1.1.1."""
+
+[[allow]]
+kind = "cut"
+text = "* (* /pagle dev*)"
+stop = "core.announce.*"
+reason = """A designed truncation: a toast's name that doesn't fit its clip scrolls so the whole name is read (#573); \
+the harness sees one still frame. The sample is /pagle dev preview's long one."""
+
+[[allow]]
+kind = "overlap"
+text = "*"
+other = "(rule)"
+stop = "core.onboarding.evening"
+reason = "First evening strikes through the steps already done: the rule over the words is the design."
+
+[[allow]]
+kind = "overlap"
+text = "*"
+other = "(rule)"
+stop = "hunts.*"
+detail = "crosses a 2x[0-9][0-9][0-9] rule *"
+reason = """The Hunts timeline's now line (2 units wide, the list's height) passes under its group headings' notes by \
+design: each heading is set over the line's frame so its words stay legible (Pagle_Hunts/adapter/Timeline.lua, \
+newHeading)."""
