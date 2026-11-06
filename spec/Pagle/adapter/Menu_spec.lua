@@ -31,6 +31,23 @@ describe("The compartment entry", function()
 		end
 	end)
 
+	it("shows Pagle's icon, the minimap icon's favicon (CORE-R50, CORE-R53)", function()
+		local loaded = loadCore()
+		loaded.client.fire("PLAYER_LOGIN")
+
+		local icon = loaded.client.compartment[1].icon
+		assert.are.equal("Interface\\AddOns\\Pagle\\media\\minimap\\Pagle", icon)
+		assert.are.equal(loaded.ns.PAGLE_ICON, icon)
+		-- The texture the minimap icon draws through its round mask: the favicon.
+		local masked = {}
+		for _, child in ipairs(loaded.env.PagleMinimapButton.children) do
+			if child.kind == "Texture" and child.masks then
+				masked[#masked + 1] = child.texture
+			end
+		end
+		assert.are.same({ icon }, masked)
+	end)
+
 	it("opens its menu on the next frame, once the compartment's own menu has closed (CORE-R50)", function()
 		local loaded = loadCore()
 		loaded.client.fire("PLAYER_LOGIN")
