@@ -61,6 +61,9 @@ local TURN_LIFT, TURN_LAND = 0.22, 0.28
 -- the name's room across and its most lines (BOOK-R17).
 local RIBBON_LABEL_Y, RIBBON_LABEL_OVER_Y, RIBBON_COUNT_Y = 31, 38, 17
 local RIBBON_LABEL_WIDTH, RIBBON_LABEL_LINES = 82, 2
+-- The name's size, the room a word keeps inside the gold stitches (at about 7 and 89 across, 82 apart), and the least
+-- size a word too wide for it is set at (BOOK-R17).
+local RIBBON_LABEL_SIZE, RIBBON_WORD_ROOM, RIBBON_LABEL_FLOOR = 12, 74, 9
 
 -- The ids books have taken (BOOK-R1).
 local taken = {}
@@ -338,6 +341,28 @@ end
 ---@field id string?
 ---@field count FontString
 ---@field tooltip string[]?
+---@field labelY number where its name's foot sits above its swallowtail end (BOOK-R17, BOOK-R19)
+
+-- Sets a ribbon's name (BOOK-R17): at 12, wrapping at a space; a word wider than the room inside the stitches, which
+-- has no space to wrap at, sets the whole name smaller, down to RIBBON_LABEL_FLOOR, so it keeps off them. Each word is
+-- measured unbounded; the name keeps all its words.
+---@param label FontString
+---@param words string
+local function setRibbonName(label, words)
+	label:SetFontObject(ns.ArtFaceFont("gilt", RIBBON_LABEL_SIZE, true))
+	label:SetWidth(0)
+	local widest = 0
+	for word in words:gmatch("%S+") do
+		label:SetText(word)
+		widest = math.max(widest, label:GetStringWidth())
+	end
+	label:SetText(words)
+	if widest > RIBBON_WORD_ROOM then
+		local size = math.floor(RIBBON_LABEL_SIZE * RIBBON_WORD_ROOM / widest * 2) / 2
+		label:SetFontObject(ns.ArtFaceFont("gilt", math.max(RIBBON_LABEL_FLOOR, size), true))
+	end
+	label:SetWidth(RIBBON_LABEL_WIDTH)
+end
 
 -- Shows the bottom `length` units of BookParts sprite `name` in `texture`, the ribbon's width across.
 local function hang(texture, ribbon, name, length)
@@ -376,7 +401,7 @@ local function newRibbon(parent)
 	local ribbon = CreateFrame("Button", nil, parent) --[[@as PagleBookRibbonView]]
 	ribbon.body = ns.ArtCrisp(ribbon:CreateTexture(nil, "ARTWORK", nil, 0))
 	ribbon.stitch = ns.ArtCrisp(ribbon:CreateTexture(nil, "ARTWORK", nil, 1))
-	ribbon.label = text(ribbon, "gilt", 12, INKS.ribbon, true)
+	ribbon.label = text(ribbon, "gilt", RIBBON_LABEL_SIZE, INKS.ribbon, true)
 	ribbon.label:SetJustifyH("CENTER")
 	-- up to two lines inside the ribbon, growing upward from its foot
 	ribbon.label:SetWordWrap(true)
@@ -411,11 +436,12 @@ end
 local function setRibbon(ribbon, data, chosen, animate)
 	ribbon.id = data.id
 	ribbon.tooltip = data.tooltip
-	ribbon.label:SetText(data.text)
+	setRibbonName(ribbon.label, data.text)
 	ribbon.count:SetText(data.count or "")
 	ribbon.count:SetShown(data.count ~= nil)
+	ribbon.labelY = data.count and RIBBON_LABEL_OVER_Y or RIBBON_LABEL_Y
 	ribbon.label:ClearAllPoints()
-	ribbon.label:SetPoint("BOTTOM", ribbon, "BOTTOM", 0, data.count and RIBBON_LABEL_OVER_Y or RIBBON_LABEL_Y)
+	ribbon.label:SetPoint("BOTTOM", ribbon, "BOTTOM", 0, ribbon.labelY)
 	ribbon.color, ribbon.chosen = data.color, chosen
 	paintRibbon(ribbon)
 	local to = chosen and RIBBON.lengthChosen or RIBBON.length

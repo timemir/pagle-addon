@@ -426,6 +426,34 @@ describe("moving through the Field guide (ONB-R22–R24, ONB-R26)", function()
 		end
 	)
 
+	it("ticks a seen step's ribbon above its name, however many lines the name takes (ONB-R24)", function()
+		local loaded = withGuide()
+		stillness(loaded)
+		pagle(loaded, "guide")
+		loaded.ns.guide:Next()
+		local ribbon = bookOf(loaded).ribbons[1]
+		local tick = loaded.ns.guideBook.book.ticks[ribbon]
+		-- How far below the ribbon's top the tick's top sits, and the tick's height (GuideParts' tick-red).
+		local function drop()
+			return -tick.points[1][5]
+		end
+		local TICK_HEIGHT = 11.5
+		assert.are.equal("Welcome done 75", ribbons(loaded)[1])
+
+		-- One line (the fake's 14): the tick keeps its place under the book's edge, clear of the name.
+		assert.are.equal(11, drop())
+		assert.is_true(75 - drop() - TICK_HEIGHT >= ribbon.labelY + 14)
+
+		-- Two lines: at its place the tick would sit on the name's second line, so it rises above it.
+		ribbon.label.GetStringHeight = function()
+			return 28
+		end
+		assert.is_true(75 - 11 - TICK_HEIGHT < ribbon.labelY + 28)
+		loaded.ns.guide:Next()
+		assert.is_true(75 - drop() - TICK_HEIGHT >= ribbon.labelY + 28)
+		assert.is_true(drop() >= 2) -- below the 2 units tucked under the band
+	end)
+
 	it(
 		"opens at a step with /pagle dev onboarding step <id>, and lists the steps for an unknown one (ONB-R83)",
 		function()

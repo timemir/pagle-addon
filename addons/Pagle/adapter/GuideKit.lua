@@ -305,7 +305,8 @@ end
 
 --- A choice card (the kit's g-opt, Contracts' nav.ChoiceCard): its paper at rest, under the mouse and chosen, a radio,
 --- its title, an italic line and an optional pencilled tag. Its parent sizes and places it (SetSize, SetPoint); the
---- paper follows. Clicking it plays `check`; a step adds what it does with HookScript("OnClick", …) and shows the
+--- paper follows. A line that wraps longer than the parent's height holds grows the card to it, its last line box
+--- CARD_FOOT over the card's foot as the art's one line is, so a parent stacking cards reads each one's GetHeight. Clicking it plays `check`; a step adds what it does with HookScript("OnClick", …) and shows the
 --- choice with SetChosen.
 ---@class PagleGuideChoiceCard: Button
 ---@field rest PagleNineSlice
@@ -319,6 +320,7 @@ end
 ---@field chosen boolean
 ---@field over boolean    -- under the mouse
 ---@field SetChosen fun(self: PagleGuideChoiceCard, chosen: boolean)
+---@field Fit fun(self: PagleGuideChoiceCard): number fits its line to its width now, growing to it; returns its height
 
 -- Shows a card's paper for its state: chosen, under the mouse, or at rest.
 ---@param card PagleGuideChoiceCard
@@ -329,6 +331,10 @@ local function paintCard(card)
 	card.hover:SetShown(over)
 	card.rest:SetShown(not card.chosen and not over)
 end
+
+-- A card's italic line: where its first line box starts, its size and line box, and the room under its last line box
+-- (the art's 61.8-unit card holds one line).
+local CARD_LINE_Y, CARD_LINE_SIZE, CARD_LINE_LH, CARD_FOOT = 32.5, 13.5, 18.2, 11.1
 
 ---@param parent Frame
 ---@param title string
@@ -348,8 +354,15 @@ function ns.NewGuideChoiceCard(parent, title, line, tag)
 	card.title = ns.GuideText(card, "print", 17, "title", title)
 	ns.GuideAt(card.title, card, 37, 11 + 1.275)
 	if line then
-		card.line = ns.GuideText(card, "italic", 13.5, "line", line, { wrap = true, spacing = 4.7 })
-		ns.GuideAt(card.line, card, 37, 32.5 + 2.35)
+		card.line = ns.GuideText(
+			card,
+			"italic",
+			CARD_LINE_SIZE,
+			"line",
+			line,
+			{ wrap = true, spacing = CARD_LINE_LH - CARD_LINE_SIZE }
+		)
+		ns.GuideAt(card.line, card, 37, CARD_LINE_Y + (CARD_LINE_LH - CARD_LINE_SIZE) / 2)
 	end
 	if tag then
 		card.tag = ns.GuideText(card, "hand", 16, "green", tag, { justify = "RIGHT" })
@@ -359,6 +372,14 @@ function ns.NewGuideChoiceCard(parent, title, line, tag)
 	local function fit(self, width)
 		if self.line then
 			self.line:SetWidth(math.max(1, width - 49 - (self.tag and 40 or 0)))
+			-- its lines as the client wraps them, counted from its height, so a line measured a little taller than its
+			-- size still counts one
+			local spacing = CARD_LINE_LH - CARD_LINE_SIZE
+			local lines = math.max(1, math.floor((self.line:GetStringHeight() + spacing) / CARD_LINE_LH + 0.5))
+			local need = CARD_LINE_Y + lines * CARD_LINE_LH + CARD_FOOT
+			if self:GetHeight() < need - 1e-6 then
+				self:SetHeight(need)
+			end
 		end
 		if self.tag then
 			self.tag:ClearAllPoints()
@@ -367,6 +388,11 @@ function ns.NewGuideChoiceCard(parent, title, line, tag)
 	end
 	card:SetScript("OnSizeChanged", fit)
 	fit(card, card:GetWidth())
+	-- the client may run OnSizeChanged only once the card is laid out: a parent stacking cards fits each at once
+	function card.Fit(self)
+		fit(self, self:GetWidth())
+		return self:GetHeight()
+	end
 	card.chosen, card.over = false, false
 	function card.SetChosen(self, chosen)
 		self.chosen = chosen

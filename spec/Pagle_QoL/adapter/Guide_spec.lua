@@ -1068,4 +1068,48 @@ describe("QoL's steps on Core's own book", function()
 		assertSays(clothes.right.content, "Swap gear")
 		assertSays(clothes.right.content, "I don’t keep fishing clothes")
 	end)
+
+	it("grows an Input card to its line wrapped longer, and moves what is under it down (ONB-R32)", function()
+		local loaded = enterWorld(loadAddon("Pagle_QoL", FOREVER_GLOBALS), 3)
+		local core = loaded.namespaces.Pagle
+		core.db.profile.announcements.motion = false
+		local L = loaded.namespaces.Pagle_QoL.L
+		-- The client wraps the Fishing key's and the double right-click's lines to two (18.2 a line at 13.5): the fake
+		-- measures one line, so their heights are the client's.
+		local wrapped = { [L.GUIDE_CARD_KEY_LINE] = 2, [L.GUIDE_CARD_CLICK_LINE] = 2 }
+		local GuideText = core.GuideText
+		core.GuideText = function(parent, face, size, ink, words, options)
+			local fontString = GuideText(parent, face, size, ink, words, options)
+			local lines = wrapped[words]
+			if lines then
+				fontString.GetStringHeight = function()
+					return lines * size + (lines - 1) * 4.7
+				end
+			end
+			return fontString
+		end
+
+		core.guide:Open("casting")
+
+		local right = core.guideBook.sides.casting.right.content
+		local cards = cardsOn(right)
+		assert.are.equal(3, #cards)
+		local tops, bottoms = {}, {}
+		for i, made in ipairs(cards) do
+			tops[i], bottoms[i] = placeOf(made)[2], placeOf(made)[2] + made:GetHeight()
+			-- the line's last line box ends 11.1 over the card's foot, as one line's does on the art's 61.8
+			local lines = wrapped[made.line.text] or 1
+			assert.is.near(32.5 + lines * 18.2 + 11.1, made:GetHeight(), 1e-9)
+		end
+		-- At the art's 61.8, a second line would end past the card's foot.
+		assert.is_true(32.5 + 2 * 18.2 > 61.8)
+		assert.is.near(81.3, tops[1], 1e-9)
+		for i = 2, 3 do
+			assert.is_true(tops[i] >= bottoms[i - 1] + 7.9 - 1e-9)
+		end
+		local grown = bottoms[3] - (220.8 + 61.8)
+		assert.is.near(2 * 18.2, grown, 1e-9)
+		assert.is.near(298.5 + grown, placeOf(field(right, "PAGLE_FISHING_KEY"))[2], 1e-9)
+		assert.are.same({}, loaded.client.errors)
+	end)
 end)

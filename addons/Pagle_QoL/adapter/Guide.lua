@@ -297,11 +297,12 @@ end
 -- click changes the setting, which re-evaluates and so shows or hides the button at once (QOL-R25).
 ---@param parent Frame
 ---@param nav PagleGuideNav
+---@param y number its top on `parent`, under the binding field
 ---@return { on: Texture, off: Texture }
-local function buttonCheck(parent, nav)
+local function buttonCheck(parent, nav, y)
 	local row = CreateFrame("Button", nil, parent)
 	row:SetSize(COLUMN, 36)
-	at(row, parent, COLUMN_X, 374.5)
+	at(row, parent, COLUMN_X, y)
 	local check = { on = nav.Part(row, "check"), off = nav.Part(row, "check-off") }
 	place(check.on, row, 0, 2)
 	place(check.off, row, 0, 2)
@@ -354,11 +355,17 @@ local function buildCasting(left, right, nav)
 	body:SetSize(right:GetWidth(), right:GetHeight())
 	at(body, right, 0, 0)
 	local cards = {}
-	local tops = { 81.3, 151, 220.8 }
+	-- the art's tops for cards 61.8 tall; a card grown to a line that wraps longer moves the rest down, the binding
+	-- field and the checkbox with them
+	local tops, grown = { 81.3, 151, 220.8 }, 0
 	for i, choice in ipairs(ns.InputCards()) do
 		local card = nav.ChoiceCard(body, choice.title, choice.line, choice.tag)
 		card:SetSize(COLUMN, 61.8)
-		at(card, body, COLUMN_X, tops[i])
+		at(card, body, COLUMN_X, tops[i] + grown)
+		-- Core's card fits its line at once (nav.ChoiceCard's Fit); an older Core's card keeps the art's height
+		local fits = card --[[@as { Fit: (fun(self: Button): number)? }]]
+		local height = fits.Fit and fits.Fit(card) or card:GetHeight()
+		grown = grown + math.max(0, height - 61.8)
 		card:HookScript("OnClick", function()
 			ns.SetInput(choice.input)
 			refreshCasting()
@@ -366,12 +373,12 @@ local function buildCasting(left, right, nav)
 		cards[i] = { card = card, input = choice.input }
 	end
 	local field = nav.BindingField(body, "PAGLE_FISHING_KEY", L.SETTINGS_FISHING_KEY)
-	at(field, body, COLUMN_X, 298.5)
+	at(field, body, COLUMN_X, 298.5 + grown)
 	casting = {
 		faces = faces,
 		cards = cards,
 		field = field,
-		check = buttonCheck(body, nav),
+		check = buttonCheck(body, nav, 374.5 + grown),
 		resting = resting,
 		body = body,
 	}
