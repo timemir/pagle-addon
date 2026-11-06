@@ -701,9 +701,9 @@ describe("a toast announcing a variety in a composed toast style (#424, VAR-R26,
 		return slots
 	end
 
-	-- A size record and a first catch of a Rare variety on one Cast, as the Ledger raises them (LED-R97), and the
-	-- toast Core shows for them.
-	local function raiseRecord(loaded, M)
+	-- A size record and a first catch of a variety of `rarity` (Rare if none) on one Cast, as the Ledger raises them
+	-- (LED-R97), and the toast Core shows for them.
+	local function raiseRecord(loaded, M, rarity)
 		M:RaiseMoment({
 			rung = "toast.low",
 			kind = "sizeRecord",
@@ -725,7 +725,7 @@ describe("a toast announcing a variety in a composed toast style (#424, VAR-R26,
 			icon = 6291,
 			cast = CAST,
 			art = ART,
-			variety = { name = "Coral", rarity = "rare" },
+			variety = { name = "Coral", rarity = rarity or "rare" },
 		})
 		loaded.client.advance(0)
 		return loaded.ns.announcementFrames.toast
@@ -733,7 +733,7 @@ describe("a toast announcing a variety in a composed toast style (#424, VAR-R26,
 
 	it(
 		"shows the art in the medallion, tints its front and back in the rarity's colour, writes the gem and name and"
-			.. " inks the stamp's plate and word, the band beside the ruler (VAR-R26, ANN-R22)",
+			.. " inks the stamp's plate, its word cream on it (#582), the band beside the ruler (VAR-R26, ANN-R22)",
 		function()
 			local loaded, M = composedCore()
 			equip(loaded, DEEP)
@@ -760,7 +760,10 @@ describe("a toast announcing a variety in a composed toast style (#424, VAR-R26,
 				{ rgb(toast.variety.textColor), rgb(toast.gem.fill.color) }
 			)
 			local stamp = toast.stamps[1]
-			assert.are.same({ "NEW VARIETY", rgb(rare.ink) }, { stamp.label:GetText(), rgb(stamp.label.textColor) })
+			assert.are.same(
+				{ "NEW VARIETY", rgb(loaded.ns.ANNOUNCE_COLORS.cream) },
+				{ stamp.label:GetText(), rgb(stamp.label.textColor) }
+			)
 			for _, slice in ipairs(stamp.plate) do
 				assert.are.same({ true, rgb(rare.ink) }, { slice.desaturated == true, rgb(slice.vertexColor) })
 			end
@@ -771,6 +774,88 @@ describe("a toast announcing a variety in a composed toast style (#424, VAR-R26,
 				{ true, toast.bezel.Icon.width, toast.bezel.Icon.height, rgb(loaded.ns.ArtBacking(rare.color)) },
 				{ back.shown, back.width, back.height, rgb(back.color) }
 			)
+		end
+	)
+
+	-- Rec. 709 luminance over an ink's values, and WCAG's contrast ratio of two inks, each { r, g, b } from 0 to 1.
+	local function luminance(color)
+		return 0.2126 * color[1] + 0.7152 * color[2] + 0.0722 * color[3]
+	end
+	local function contrast(a, b)
+		local function relative(color)
+			local linear = {}
+			for i = 1, 3 do
+				local c = color[i]
+				linear[i] = c <= 0.03928 and c / 12.92 or ((c + 0.055) / 1.055) ^ 2.4
+			end
+			return luminance(linear)
+		end
+		local la, lb = relative(a), relative(b)
+		return (math.max(la, lb) + 0.05) / (math.min(la, lb) + 0.05)
+	end
+
+	it(
+		"keeps the New variety stamp's word readable on its tinted plate, in every style and every rarity: light on a"
+			.. " composed plate tinted dark, and on a round one style's outlined border as the style writes on its page"
+			.. " (#582, VAR-R28)",
+		function()
+			local loaded, M = composedCore({ motion = false })
+			local ids = {}
+			for id in pairs(loaded.ns.TOAST_STYLES) do
+				ids[#ids + 1] = id
+			end
+			table.sort(ids)
+			for _, rarity in ipairs(loaded.ns.VARIETY_RARITIES) do
+				local toast = raiseRecord(loaded, M, rarity.key)
+				local announcement = toast.display.announcement
+				for _, id in ipairs(ids) do
+					announcement.style = id
+					loaded.ns.DrawAnnouncement(toast, toast.display)
+					local style = loaded.ns.ToastStyleOf(id)
+					local label = ("%s, %s"):format(id, rarity.key)
+					local stamp
+					for _, shown in ipairs(toast.stamps) do
+						if shown.shown and shown.label:GetText():upper() == "NEW VARIETY" then
+							stamp = shown
+						end
+					end
+					assert(stamp, label .. ": no New variety stamp")
+					local word = rgb(stamp.label.textColor)
+					if style.layered then
+						-- The plate is the sprite greyed, then tinted in the ink: never lighter than the ink itself.
+						for _, slice in ipairs(stamp.plate) do
+							assert.are.same(
+								{ true, rgb(rarity.ink) },
+								{ slice.desaturated == true, rgb(slice.vertexColor) },
+								label
+							)
+						end
+						assert(
+							contrast(word, rarity.ink) >= 4.5,
+							("%s: the word contrasts %.2f with its plate"):format(label, contrast(word, rarity.ink))
+						)
+					else
+						-- The round one stamp is an outlined border: the word stands on the page, so it is as light or
+						-- as dark as the style's own words there, and in the rarity's ink where the page is light.
+						local border = stamp.border.left
+						assert.are.same(
+							{ true, rgb(rarity.ink) },
+							{ border.desaturated == true, rgb(border.vertexColor) },
+							label
+						)
+						local name = loaded.ns.ANNOUNCE_COLORS[style.name]
+						if luminance(name) <= 0.45 then
+							assert.are.same(rgb(rarity.ink), word, label)
+						else
+							assert(
+								contrast(word, rarity.ink) >= 4.5 and contrast(word, name) < 2,
+								label .. ": the word is not light on a dark page"
+							)
+						end
+					end
+				end
+				loaded.client.advance(10)
+			end
 		end
 	)
 
@@ -828,7 +913,7 @@ describe("a new variety's own toast in a composed toast style (#422, VAR-R28, AN
 
 	it(
 		"is drawn on the style's toast rung: the size as the kicker, the fish then the gem and the variety, its stamp's"
-			.. " plate and word in the rarity's ink, within the page",
+			.. " plate in the rarity's ink and its word cream on it (#582), within the page",
 		function()
 			local loaded, M = composedCore()
 			equip(loaded, DEEP)
@@ -847,7 +932,7 @@ describe("a new variety's own toast in a composed toast style (#422, VAR-R28, AN
 				})
 				local stamp = toast.stamps[1]
 				assert.are.same(
-					{ key == "rare" and "RARE VARIETY" or "NEW VARIETY", rgb(rarity.ink), false },
+					{ key == "rare" and "RARE VARIETY" or "NEW VARIETY", rgb(loaded.ns.ANNOUNCE_COLORS.cream), false },
 					{ stamp.label:GetText(), rgb(stamp.label.textColor), toast.stamps[2].shown == true }
 				)
 				for _, slice in ipairs(stamp.plate) do
@@ -1158,7 +1243,7 @@ describe("the epic five on the client (ANN-R85)", function()
 		)
 
 		it(
-			"gives that Epic toast an EPIC VARIETY stamp, first in the row and in the epic ink, as a Rare variety's toast has RARE VARIETY, with the kicker clear of it (ANN-R85, VAR-R28)",
+			"gives that Epic toast an EPIC VARIETY stamp, first in the row, its plate in the epic ink and its word cream on it (#582), as a Rare variety's toast has RARE VARIETY, with the kicker clear of it (ANN-R85, VAR-R28)",
 			function()
 				local loaded, M = epicCore()
 				equip(loaded, GALA)
@@ -1182,9 +1267,11 @@ describe("the epic five on the client (ANN-R85)", function()
 				end
 				assert.are.same({ "EPIC VARIETY", "NEW!" }, { stamps[1][1], stamps[2][1] })
 				local epicInk = loaded.ns.VARIETY_RARITIES[4].ink
+				local cream = loaded.ns.ANNOUNCE_COLORS.cream
+				local epicStamp = toast.stamps[stamps[1][2]]
 				assert.are.same(
-					{ epicInk[1], epicInk[2], epicInk[3] },
-					{ unpack(toast.stamps[stamps[1][2]].label.textColor, 1, 3) }
+					{ { epicInk[1], epicInk[2], epicInk[3] }, { cream[1], cream[2], cream[3] } },
+					{ { unpack(epicStamp.plate[2].vertexColor, 1, 3) }, { unpack(epicStamp.label.textColor, 1, 3) } }
 				)
 				-- The kicker, "Epic variety", ends before the leftmost stamp starts.
 				local left = math.huge
