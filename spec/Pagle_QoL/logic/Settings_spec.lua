@@ -48,7 +48,7 @@ describe("QoL's Fishing page with FakePagle", function()
 			{ "QoL", "checkboxSlider", "Ambience", true },
 			{ "QoL", "checkboxSlider", "Dialog", true },
 			{ "QoL", "dropdown", "Output device", true },
-			{ "QoL", "checkbox", "Keep sound when the game is in the background", true },
+			{ "QoL", "checkbox", "Keep sound in the background", true },
 			{ "QoL", "checkbox", "Auto-loot while fishing", false },
 			{ "QoL", "checkbox", "Show the next-action button", false },
 			{ "QoL", "checkbox", "Hide until a fishing pole is in hand", true },
@@ -313,15 +313,18 @@ describe("QoL's Fishing page with FakePagle", function()
 		fake.login()
 
 		local audio = rowOf(fake, "Fishing audio mix")
-		local background = rowOf(fake, "Keep sound when the game is in the background")
+		local background = rowOf(fake, "Keep sound in the background")
 		local autoLoot = rowOf(fake, "Auto-loot while fishing")
 
-		-- qol.md › Settings › Tooltips, word for word; it gives the background option none.
+		-- qol.md › Settings › Tooltips, word for word.
 		assert.are.equal(
 			"While you fish: each channel and the output device as set below. Put back afterwards.",
 			audio.tooltip
 		)
-		assert.is_nil(background.tooltip)
+		assert.are.equal(
+			"While you fish, the sound keeps playing when the game is in the background.",
+			background.tooltip
+		)
 		assert.are.equal("Only while you fish. Skipped if you already have auto-loot on.", autoLoot.tooltip)
 		assert.is_true(audio.default)
 		assert.is_false(background.default)
@@ -338,14 +341,14 @@ describe("QoL's Fishing page with FakePagle", function()
 		fake.login()
 
 		rowOf(fake, "Fishing audio mix").set(false)
-		rowOf(fake, "Keep sound when the game is in the background").set(true)
+		rowOf(fake, "Keep sound in the background").set(true)
 		rowOf(fake, "Auto-loot while fishing").set(false)
 
 		local profile = loaded.env.PagleQoLDB.profiles.Default
 		assert.are.same({ false, true }, { profile.audio.on, profile.audio.background })
 		assert.is_false(profile.autoLoot)
 		assert.is_false(rowOf(fake, "Fishing audio mix").get())
-		assert.is_true(rowOf(fake, "Keep sound when the game is in the background").get())
+		assert.is_true(rowOf(fake, "Keep sound in the background").get())
 		assert.is_false(rowOf(fake, "Auto-loot while fishing").get())
 	end)
 
@@ -391,7 +394,7 @@ describe("QoL's Fishing page with FakePagle", function()
 		fake.load("Pagle_QoL")
 		fake.login()
 		local audio = rowOf(fake, "Fishing audio mix")
-		local background = rowOf(fake, "Keep sound when the game is in the background")
+		local background = rowOf(fake, "Keep sound in the background")
 		background.set(true)
 
 		assert.is_true(background.isEnabled())
@@ -714,7 +717,7 @@ describe("QoL's Fishing page with Core", function()
 
 		local header = initializerOf(fishing, "While you fish")
 		local audio = initializerOf(fishing, "Fishing audio mix")
-		local background = initializerOf(fishing, "Keep sound when the game is in the background")
+		local background = initializerOf(fishing, "Keep sound in the background")
 		local autoLoot = initializerOf(fishing, "Auto-loot while fishing")
 		assert.are.equal("SettingsListSectionHeaderTemplate", header.template)
 		for _, row in ipairs({ audio, background, autoLoot }) do
@@ -731,7 +734,7 @@ describe("QoL's Fishing page with Core", function()
 	it("restores the three checkboxes with Defaults and leaves the binding alone (SET-R21, SET-R60)", function()
 		local loaded, fishing = fishingPage()
 		local audio = initializerOf(fishing, "Fishing audio mix"):GetSetting()
-		local background = initializerOf(fishing, "Keep sound when the game is in the background"):GetSetting()
+		local background = initializerOf(fishing, "Keep sound in the background"):GetSetting()
 		local autoLoot = initializerOf(fishing, "Auto-loot while fishing"):GetSetting()
 		audio:SetValue(false)
 		background:SetValue(true)
@@ -984,13 +987,13 @@ describe("ns.AddSettings with a fake store", function()
 		local rows, profile, calls = addRows()
 
 		rows["Fishing audio mix"].set(false)
-		rows["Keep sound when the game is in the background"].set(true)
+		rows["Keep sound in the background"].set(true)
 		rows["Auto-loot while fishing"].set(false)
 
 		assert.are.same({ false, true }, { profile.audio.on, profile.audio.background })
 		assert.is_false(profile.autoLoot)
 		assert.are.same({ { "changeLease" }, { "changeLease" }, { "changeLease" } }, calls)
-		assert.is_false(rows["Keep sound when the game is in the background"].isEnabled())
+		assert.is_false(rows["Keep sound in the background"].isEnabled())
 	end)
 
 	it("gives each channel a 0% to 100% slider in steps of 5, master's from 10%, 0% reading Off (QOL-R62)", function()

@@ -159,7 +159,11 @@ en = "{device} (not found)"
 
 [SETTINGS_BACKGROUND_SOUND]
 value = "Звук в фоновом режиме"
-en = "Keep sound when the game is in the background"
+en = "Keep sound in the background"
+
+[SETTINGS_BACKGROUND_SOUND_TOOLTIP]
+value = "Во время рыбалки звук не выключается, когда игра в фоновом режиме."
+en = "While you fish, the sound keeps playing when the game is in the background."
 
 [SETTINGS_AUTO_LOOT]
 value = "Автосбор добычи на рыбалке"

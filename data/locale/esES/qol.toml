@@ -142,8 +142,12 @@ value = "{device} (no encontrado)"
 en = "{device} (not found)"
 
 [SETTINGS_BACKGROUND_SOUND]
-value = "Mantener el sonido con el juego en segundo plano"
-en = "Keep sound when the game is in the background"
+value = "Sonido en segundo plano"
+en = "Keep sound in the background"
+
+[SETTINGS_BACKGROUND_SOUND_TOOLTIP]
+value = "Mientras pescas, el sonido sigue cuando el juego está en segundo plano."
+en = "While you fish, the sound keeps playing when the game is in the background."
 
 [SETTINGS_AUTO_LOOT]
 value = "Despojo automático al pescar"

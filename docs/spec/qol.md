@@ -178,7 +178,7 @@ Terms are used as `CONTEXT.md` defines them. A **game action** is the character 
   |---|---|---|
   | Soft-interact (for the reel; can't be turned off) | `SoftTargetInteract` = 3; `SoftTargetInteractRange` = 15, only if the player's value is below 15; `SoftTargetInteractRangeIsHard` = 0 | always |
   | Fishing audio mix | each channel by its setting, below, then the output device (QOL-R68); `Sound_EnableAllSound` untouched. Under the defaults (master unticked; effects ticked at 100%; music, ambience and dialog ticked at 0%, Off; device Don't change) that is `Sound_EnableSFX` = 1, `Sound_SFXVolume` = 1.0, `Sound_EnableMusic` = 0, `Sound_EnableAmbience` = 0, `Sound_EnableDialog` = 0, in that order, with master untouched: 1.1's mix | on |
-  | ↳ Keep sound when the game is in the background (only while the audio mix is on) | `Sound_EnableSoundWhenGameIsInBG` = 1 | off |
+  | ↳ Keep sound in the background (only while the audio mix is on) | `Sound_EnableSoundWhenGameIsInBG` = 1 | off |
   | Auto-loot while fishing | `autoLootDefault` = 1 | on |
 
   A CVar that already holds the leased value (compared as numbers) isn't leased, so auto-loot is skipped if the player already has it on.
@@ -328,7 +328,7 @@ All on the **Fishing** page (`M:AddSetting("fishing", …)`), in this order. Eac
 | | ↳ Ambience | as Effects | ticked, 0% (Off) |
 | | ↳ Dialog | as Effects | ticked, 0% (Off) |
 | | ↳ Output device | Don't change / each device the client lists when the menu opens, a chosen one that isn't there listed as "{device} (not found)" (QOL-R68); greyed out while the audio mix is off | Don't change |
-| | ↳ Keep sound when the game is in the background | on/off; greyed out while the audio mix is off | off |
+| | ↳ Keep sound in the background | on/off; greyed out while the audio mix is off | off |
 | | Auto-loot while fishing | on/off | on |
 | | Show the next-action button | on/off | on |
 | | ↳ Hide until a fishing pole is in hand | on/off; greyed out while Show the next-action button is off | off |
@@ -345,6 +345,7 @@ Tooltips:
 - **Master volume:** "Ticked, sets the master volume while you fish. It has no Off and goes no lower than 10%, so you still hear the splash."
 - **Effects, Music, Ambience, Dialog:** "Ticked, sets this channel while you fish: at 0% it's off. Unticked, leaves it as it is."
 - **Output device:** "Plays the game's sound here while you fish. The sound drops out for a moment as it switches, at the start and at the end."
+- **Keep sound in the background:** "While you fish, the sound keeps playing when the game is in the background." (from 1.2.0; the label was "Keep sound when the game is in the background" in 1.1, too wide for its row)
 - **Auto-loot while fishing:** "Only while you fish. Skipped if you already have auto-loot on."
 - **Show the next-action button:** "Shows what your next press will do. Shift-drag to move."
 - **Hide until a fishing pole is in hand:** "Keeps the button hidden while you're out of your fishing gear. It shows once a pole is in hand or you're fishing."

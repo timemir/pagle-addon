@@ -292,11 +292,12 @@ function ns.AddSettings(M, store)
 		end,
 		isEnabled = audioOn,
 	})
-	-- qol.md gives this row no tooltip.
+	-- A short label on the native row, the whole sentence in its tooltip.
 	M:AddSetting("fishing", {
 		kind = "checkbox",
 		parent = "audio",
 		label = L.SETTINGS_BACKGROUND_SOUND,
+		tooltip = L.SETTINGS_BACKGROUND_SOUND_TOOLTIP,
 		default = defaults.audio.background,
 		get = function()
 			return store.profile().audio.background

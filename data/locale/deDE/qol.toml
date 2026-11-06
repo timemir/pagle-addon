@@ -158,8 +158,12 @@ value = "{device} (nicht gefunden)"
 en = "{device} (not found)"
 
 [SETTINGS_BACKGROUND_SOUND]
-value = "Ton behalten, wenn das Spiel im Hintergrund ist"
-en = "Keep sound when the game is in the background"
+value = "Ton im Hintergrund behalten"
+en = "Keep sound in the background"
+
+[SETTINGS_BACKGROUND_SOUND_TOOLTIP]
+value = "Während du angelst, läuft der Ton weiter, wenn das Spiel im Hintergrund ist."
+en = "While you fish, the sound keeps playing when the game is in the background."
 
 [SETTINGS_AUTO_LOOT]
 value = "Beim Angeln automatisch plündern"

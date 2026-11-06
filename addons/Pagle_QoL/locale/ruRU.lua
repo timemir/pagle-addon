@@ -103,6 +103,7 @@ ns.Locale("ruRU", function(L)
 	L.SETTINGS_AUTO_LOOT = "Автосбор добычи на рыбалке"
 	L.SETTINGS_AUTO_LOOT_TOOLTIP = "Только во время рыбалки. Не действует, если автоматический сбор добычи уже включён."
 	L.SETTINGS_BACKGROUND_SOUND = "Звук в фоновом режиме"
+	L.SETTINGS_BACKGROUND_SOUND_TOOLTIP = "Во время рыбалки звук не выключается, когда игра в фоновом режиме."
 	L.SETTINGS_BUTTON_POSITION = "Положение кнопки"
 	L.SETTINGS_BUTTON_RESET = "Сбросить"
 	L.SETTINGS_CASTING = "Заброс"
