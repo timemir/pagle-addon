@@ -43,7 +43,7 @@ ns.GUIDE_SOUNDS.listDone = { id = 878, motion = false } -- IG_QUEST_LIST_COMPLET
 ---@field box PagleSprite
 ---@field tick PagleSprite
 ---@field text FontString
----@field strike Texture
+---@field strikes Texture[] a done line's strike-through, one for each line it wraps to
 ---@field hint FontString
 
 --- The tracker: the frame the dock places, and the body inside it that the fold fades and lifts.
@@ -114,9 +114,6 @@ local function rowAt(i)
 		local wash = body:CreateTexture(nil, "BACKGROUND", nil, 2)
 		wash:SetColorTexture(1, 1, 1, 1)
 		wash:SetGradient("HORIZONTAL", CreateColor(0.24, 0.63, 0.24, 0.28), CreateColor(0.24, 0.63, 0.24, 0))
-		local strike = body:CreateTexture(nil, "OVERLAY")
-		local green = ns.GUIDE_INKS.green
-		strike:SetColorTexture(green[1], green[2], green[3], 0.6)
 		row = {
 			wash = wash,
 			box = ns.ArtSprite(body, "GuideParts", "li-box", "ARTWORK", 1),
@@ -126,7 +123,7 @@ local function rowAt(i)
 				width = WIDTH - TEXT_X - TEXT_END,
 				spacing = TEXT_LH - TEXT_SIZE,
 			}),
-			strike = strike,
+			strikes = {},
 			hint = ns.GuideText(body, "italic", HINT_SIZE, "small", "", {
 				wrap = true,
 				width = WIDTH - TEXT_X - TEXT_END,
@@ -138,6 +135,21 @@ local function rowAt(i)
 	return row
 end
 
+-- Line `row`'s `k`th strike-through, made the first time.
+---@param row PagleEveningRow
+---@param k integer
+---@return Texture
+local function strikeAt(row, k)
+	local strike = row.strikes[k]
+	if not strike then
+		strike = body:CreateTexture(nil, "OVERLAY")
+		local green = ns.GUIDE_INKS.green
+		strike:SetColorTexture(green[1], green[2], green[3], 0.6)
+		row.strikes[k] = strike
+	end
+	return strike
+end
+
 -- Hides line `row`'s regions.
 ---@param row PagleEveningRow
 local function hideRow(row)
@@ -145,7 +157,9 @@ local function hideRow(row)
 	row.box:Hide()
 	row.tick:Hide()
 	row.text:Hide()
-	row.strike:Hide()
+	for _, strike in ipairs(row.strikes) do
+		strike:Hide()
+	end
 	row.hint:Hide()
 end
 
@@ -220,13 +234,15 @@ local function draw(list, ticked)
 		ns.GuideAt(row.text, body, TEXT_X, y + 2 + (TEXT_LH - TEXT_SIZE) / 2)
 		row.text:Show()
 		if line.done then
-			-- through its first line: as wide as its words, or the room when they wrap
-			local room = WIDTH - TEXT_X - TEXT_END
-			row.text:SetWidth(0)
-			row.strike:SetSize(math.min(room, math.ceil(row.text:GetStringWidth())), 1)
-			row.text:SetWidth(room)
-			ns.GuideAt(row.strike, body, TEXT_X, y + 11)
-			row.strike:Show()
+			-- through every line it wraps to, each as wide as its words
+			local lines = math.floor(more / TEXT_LH + 0.5) + 1
+			local widths = ns.LineWidths(row.text, WIDTH - TEXT_X - TEXT_END, lines)
+			for k, inked in ipairs(widths) do
+				local strike = strikeAt(row, k)
+				strike:SetSize(math.max(1, inked), 1)
+				ns.GuideAt(strike, body, TEXT_X, y + 11 + (k - 1) * TEXT_LH)
+				strike:Show()
+			end
 			if line.id == ticked then
 				popTick(row.tick)
 			end

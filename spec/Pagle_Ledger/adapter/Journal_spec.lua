@@ -537,6 +537,41 @@ describe("the Fish Journal's widgets (ledger.md › UI)", function()
 		assert.are.equal(#"Legends" * 7.1 + 1, legends.label:GetWidth())
 	end)
 
+	-- No contents line needs three lines today, but one that did took its leader's start from its third line's words,
+	-- which the client never draws: SetMaxLines(2) cuts the second with its ellipsis at the room, so that is the last
+	-- line shown, and it is full.
+	it("led_r132 starts a contents line's leader after the last line shown, the second, cut at the room", function()
+		local long = "Kuriositäten: Plunder, Schätze, Unverzeichnetes, Verlorenes, Wiedergefundenes und Fortgespültes "
+			.. "aus allen Gewässern"
+		local loaded = drawn({
+			{ kind = "leader", numeral = "II.", text = long, value = "5 / 31", place = { id = "home" } },
+		})
+		local curios = loaded.ns.journal.shown.left.drawn.leader[1]
+		function curios.label.GetStringWidth(label)
+			return #label.text * 7.1
+		end
+		function curios.label.GetStringHeight(label)
+			local wrapped = label.wordWrap and (label.width or 0) > 0 and #label.text * 7.1 > label.width
+			return wrapped and 38 or 19
+		end
+		local width = loaded.ns.journal.shown.left.width
+		local room = width - 28 - curios.value:GetWidth() - 12
+		assert(#long * 7.1 > 2 * room, "the words need more than two lines, so this checks nothing")
+
+		loaded.ns.journal:Draw()
+
+		curios = loaded.ns.journal.shown.left.drawn.leader[1]
+		assert.are.same({ long, true, 2, room }, {
+			curios.label:GetText(),
+			curios.label.wordWrap,
+			curios.label.maxLines,
+			curios.label:GetWidth(),
+		})
+		-- the value on the second line; the second line runs to the room, so no leader fits before the value
+		assert.are.equal(-3 - 19, curios.value.points[1][#curios.value.points[1]])
+		assert.is_false(curios.dots:IsShown())
+	end)
+
 	it("draws each kind of block with its words (ledger.md › UI)", function()
 		local loaded, texts = drawn({
 			{ kind = "kicker", text = "The Waters" },

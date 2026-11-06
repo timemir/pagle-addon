@@ -353,6 +353,14 @@ en = "Show the next-action button"
 value = "Показывает, что сделает следующее нажатие. Перетащите с Shift, чтобы сдвинуть."
 en = "Shows what your next press will do. Shift-drag to move."
 
+[SETTINGS_HIDE_UNTIL_POLE]
+value = "Скрывать, пока в руках нет удочки"
+en = "Hide until a fishing pole is in hand"
+
+[SETTINGS_HIDE_UNTIL_POLE_TOOLTIP]
+value = "Кнопка скрыта, пока вы не в рыбацкой одежде. Она появляется, когда удочка в руках или вы рыбачите."
+en = "Keeps the button hidden while you're out of your fishing gear. It shows once a pole is in hand or you're fishing."
+
 [SETTINGS_BUTTON_POSITION]
 value = "Положение кнопки"
 en = "Button position"

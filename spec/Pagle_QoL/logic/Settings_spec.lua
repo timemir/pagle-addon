@@ -51,6 +51,7 @@ describe("QoL's Fishing page with FakePagle", function()
 			{ "QoL", "checkbox", "Keep sound when the game is in the background", true },
 			{ "QoL", "checkbox", "Auto-loot while fishing", false },
 			{ "QoL", "checkbox", "Show the next-action button", false },
+			{ "QoL", "checkbox", "Hide until a fishing pole is in hand", true },
 			{ "QoL", "button", "Button position", true },
 		}, rows)
 	end)
@@ -72,6 +73,37 @@ describe("QoL's Fishing page with FakePagle", function()
 		assert.is_false(show.get())
 		assert.is_nil(show.isEnabled)
 	end)
+
+	it(
+		"makes Hide until a fishing pole is in hand a checkbox under it, off by default, greyed while the button is off (SET-R20, SET-R31, QOL-R72)",
+		function()
+			local fake = newFakePagle()
+			local loaded = fake.load("Pagle_QoL")
+			fake.login()
+			local show = rowOf(fake, "Show the next-action button")
+			local hide = rowOf(fake, "Hide until a fishing pole is in hand")
+
+			-- qol.md › Settings › Tooltips, word for word.
+			assert.are.equal(
+				"Keeps the button hidden while you're out of your fishing gear. It shows once a pole is in hand or you're fishing.",
+				hide.tooltip
+			)
+			assert.are.equal("indicator", hide.parent)
+			assert.is_false(hide.default)
+			assert.is_false(hide.get())
+			hide.set(true)
+			assert.is_true(loaded.env.PagleQoLDB.profiles.Default.indicator.untilPole)
+			assert.is_true(hide.get())
+
+			-- Greyed out while the button is off, keeping its value (SET-R31).
+			assert.is_true(hide.isEnabled())
+			show.set(false)
+			assert.is_false(hide.isEnabled())
+			assert.is_true(hide.get())
+			show.set(true)
+			assert.is_true(hide.isEnabled())
+		end
+	)
 
 	it("makes Button position a Reset button under it, greyed while the button is off (SET-R20, SET-R2)", function()
 		local fake = newFakePagle()
@@ -724,22 +756,30 @@ describe("QoL's Fishing page with Core", function()
 			local loaded, fishing = fishingPage()
 
 			local show = initializerOf(fishing, "Show the next-action button")
+			local hide = initializerOf(fishing, "Hide until a fishing pole is in hand")
 			local position = initializerOf(fishing, "Button position")
 			assert.are.equal("SettingsCheckboxControlTemplate", show.template)
 			assert.are.equal("Shows what your next press will do. Shift-drag to move.", show:GetTooltip())
 			assert.is_nil(show:GetParentInitializer())
 			assert.are.equal("SettingButtonControlTemplate", position.template)
 			assert.are.equal(show, position:GetParentInitializer())
+			assert.are.equal("SettingsCheckboxControlTemplate", hide.template)
+			assert.are.equal(show, hide:GetParentInitializer())
 			-- As the panel draws it: the label on the left, the caption on the button.
 			local frame = loaded.client.settings.show(fishing)[#fishing.layout.initializers].frame
 			assert.are.same({ "Button position", "Reset" }, loaded.client.settings.textsOf(frame))
-			-- The last two rows of the page, after Auto-loot while fishing.
+			-- The last three rows of the page, after Auto-loot while fishing.
 			local initializers = fishing.layout.initializers
-			assert.are.same({ show, position }, { initializers[#initializers - 1], initializers[#initializers] })
+			assert.are.same(
+				{ show, hide, position },
+				{ initializers[#initializers - 2], initializers[#initializers - 1], initializers[#initializers] }
+			)
 
-			-- Greyed out while the button is off.
+			-- Both greyed out while the button is off (SET-R31, QOL-R72).
+			assert.is_true(hide:EvaluateModifyPredicates())
 			assert.is_true(position:EvaluateModifyPredicates())
 			show:GetSetting():SetValue(false)
+			assert.is_false(hide:EvaluateModifyPredicates())
 			assert.is_false(position:EvaluateModifyPredicates())
 		end
 	)
@@ -747,15 +787,19 @@ describe("QoL's Fishing page with Core", function()
 	it("restores Show the next-action button with Defaults and leaves the button's place alone (SET-R21)", function()
 		local loaded, fishing = fishingPage()
 		local show = initializerOf(fishing, "Show the next-action button"):GetSetting()
+		local hide = initializerOf(fishing, "Hide until a fishing pole is in hand"):GetSetting()
 		local indicator = loaded.env.PagleQoLDB.profiles.Default.indicator
 		local moved = { point = "CENTER", relativeTo = "UIParent", relativePoint = "CENTER", x = 10, y = 20 }
 		indicator.point = moved
 		show:SetValue(false)
+		hide:SetValue(true)
 
 		pressDefaults(loaded, fishing)
 
 		assert.is_true(show:GetValue())
 		assert.is_true(indicator.shown)
+		assert.is_false(hide:GetValue())
+		assert.is_false(indicator.untilPole)
 		assert.are.equal(moved, indicator.point)
 	end)
 
@@ -798,7 +842,7 @@ describe("ns.AddSettings with a fake store", function()
 				device = "",
 			},
 			autoLoot = true,
-			indicator = { shown = true },
+			indicator = { shown = true, untilPole = false },
 		}
 		local choice, canEdit = ns.NO_FISHING_SET, true
 		-- A store call that only records its name.
@@ -908,18 +952,22 @@ describe("ns.AddSettings with a fake store", function()
 		rows["Lure"].set(6532)
 		rows["Open clams between Casts"].set(false)
 		rows["Show the next-action button"].set(false)
+		rows["Hide until a fishing pole is in hand"].set(true)
 
 		assert.are.same({ mode = "one", item = 6532 }, profile.lures)
 		assert.is_false(profile.clams)
 		assert.is_false(profile.indicator.shown)
-		assert.are.same({ { "evaluate" }, { "evaluate" }, { "evaluate" }, { "evaluate" } }, calls)
-		assert.are.same({ "one", 6532, false, false }, {
+		assert.is_true(profile.indicator.untilPole)
+		assert.are.same({ { "evaluate" }, { "evaluate" }, { "evaluate" }, { "evaluate" }, { "evaluate" } }, calls)
+		assert.are.same({ "one", 6532, false, false, true }, {
 			rows["Lures"].get(),
 			rows["Lure"].get(),
 			rows["Open clams between Casts"].get(),
 			rows["Show the next-action button"].get(),
+			rows["Hide until a fishing pole is in hand"].get(),
 		})
 		assert.is_true(rows["Lure"].isEnabled())
+		assert.is_false(rows["Hide until a fishing pole is in hand"].isEnabled())
 		assert.is_false(rows["Button position"].isEnabled())
 	end)
 

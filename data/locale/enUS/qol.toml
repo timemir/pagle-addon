@@ -113,6 +113,8 @@ BUTTON_TOOLTIP_CLAM = "Open {name}"
 BUTTON_TOOLTIP_NOTHING = "Nothing to do"
 SETTINGS_SHOW_BUTTON = "Show the next-action button"
 SETTINGS_SHOW_BUTTON_TOOLTIP = "Shows what your next press will do. Shift-drag to move."
+SETTINGS_HIDE_UNTIL_POLE = "Hide until a fishing pole is in hand"
+SETTINGS_HIDE_UNTIL_POLE_TOOLTIP = "Keeps the button hidden while you're out of your fishing gear. It shows once a pole is in hand or you're fishing."
 SETTINGS_BUTTON_POSITION = "Button position"
 SETTINGS_BUTTON_RESET = "Reset"
 # QoL's line on the Field guide's What's in the box step (ONB-R91).

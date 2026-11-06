@@ -249,12 +249,13 @@ function widgets.newWidget(kind, parent)
 	function widget:GetAlpha()
 		return self.alpha or 1
 	end
-	-- A font string's justification across its width (`justifyH`, "LEFT" until set, as the client's).
+	-- A font string's justification across its width (`justifyH`, "CENTER" until set, as the client's FontString,
+	-- whose font objects set none).
 	function widget:SetJustifyH(justify)
 		self.justifyH = justify
 	end
 	function widget:GetJustifyH()
-		return self.justifyH or "LEFT"
+		return self.justifyH or "CENTER"
 	end
 	-- What kind of widget it is, as CreateFrame or Create<Region> made it: "Frame", "Button", "FontString", ….
 	function widget:GetObjectType()

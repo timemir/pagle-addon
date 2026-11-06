@@ -351,6 +351,31 @@ describe("Pagle.NewBook (core/book.md)", function()
 		assert.are.same({ "Home", 12 }, { long:GetText(), giltSize(long) })
 	end)
 
+	-- Hunts' esES set "Las veinticuatro horas" wrapped to three lines on its ribbon, which shows two, so "horas" was cut
+	-- (1.1.2's real-font measure). A name that takes more than two lines is set a size down at a time until it takes two.
+	it("book_r17 sets a ribbon's name that wraps past two lines smaller until it takes two, its words kept", function()
+		local name = "Las veinticuatro horas"
+		local book = newBook()
+		book:Open()
+		local label = book.frame.ribbons[1].label
+		-- the gilt face near half its size a letter, so a smaller size narrows it (the fake measures 6 a byte at any)
+		function label.GetStringWidth(text)
+			return #text.text * 0.5 * giltSize(text)
+		end
+		-- at 12 "Las veinticuatro" and "veinticuatro horas" are each wider than the ribbon's 82: three lines
+		assert(#"Las veinticuatro" * 6 > 82 and #"veinticuatro horas" * 6 > 82, "it takes two lines at 12")
+
+		book:SetRibbons({ { id = "home", text = name, color = { 0.2, 0.4, 0.2 }, target = { page = "home" } } })
+
+		assert.are.same({ name, 82, 2 }, { label:GetText(), label.width, label:GetMaxLines() })
+		local size = giltSize(label)
+		assert(size < 12 and size >= 9, "set smaller, to no less than 9: " .. size)
+		assert(
+			#"Las veinticuatro" * 0.5 * size <= 82,
+			"so its first two words take the first line, and horas the second"
+		)
+	end)
+
 	it("reads as closed while it fades out after a close (BOOK-R23)", function()
 		local book = newBook()
 		book:Open()

@@ -240,6 +240,62 @@ describe("The next-action button", function()
 			assert.are.equal("Lure", assert(shown(loaded)).label)
 		end)
 
+		it(
+			"shows for the gear step alone with Hide until a fishing pole is in hand off, the default (QOL-R72)",
+			function()
+				local _, _, loaded = start(withGearStep)
+
+				assert.is_false(loaded.ns.db.profile.indicator.untilPole)
+				assert.are.equal("Gear", assert(shown(loaded)).label)
+			end
+		)
+
+		it("waits for a pole in hand with Hide until a fishing pole is in hand on (QOL-R72, QOL-R43)", function()
+			local fake, client, loaded = start(function(fake, client, loaded)
+				withGearStep(fake, client, loaded)
+				loaded.ns.db.profile.indicator.untilPole = true
+			end)
+			assert.is_nil(shown(loaded))
+
+			client.mainHand = FISHING_POLE
+			fake.fireGameEvent("PLAYER_EQUIPMENT_CHANGED", 16, true)
+			assert.are.equal("Lure", assert(shown(loaded)).label)
+
+			client.mainHand = SWORD
+			fake.fireGameEvent("PLAYER_EQUIPMENT_CHANGED", 16, true)
+			assert.is_nil(shown(loaded))
+		end)
+
+		it(
+			"shows while a Fishing stretch runs with Hide until a fishing pole is in hand on (QOL-R72, QOL-R61)",
+			function()
+				local fake, _, loaded = start(function(fake, client, loaded)
+					withGearStep(fake, client, loaded)
+					client.mainHand = nil
+					loaded.ns.db.profile.indicator.untilPole = true
+				end)
+				assert.is_nil(shown(loaded))
+
+				fake.fire("CastStarted")
+				assert.are.equal("Reel", assert(shown(loaded)).label)
+			end
+		)
+
+		it("shows or hides at once as Hide until a fishing pole is in hand changes (QOL-R72, QOL-R25)", function()
+			local fake, _, loaded = start(withGearStep)
+			local hide
+			for _, row in ipairs(assert(fake.settingsPage("fishing"))) do
+				hide = row.label == "Hide until a fishing pole is in hand" and row.setting or hide
+			end
+			assert.are.equal("Gear", assert(shown(loaded)).label)
+
+			hide.set(true)
+			assert.is_nil(shown(loaded))
+
+			hide.set(false)
+			assert.are.equal("Gear", assert(shown(loaded)).label)
+		end)
+
 		it("is never made while QoL stands down (QOL-R72, QOL-R82)", function()
 			local _, _, loaded = start(function(_, client)
 				client.addons.Angleur = { metadata = { Title = "Angleur" } }

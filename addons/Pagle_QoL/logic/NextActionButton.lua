@@ -32,17 +32,21 @@ end
 --- What decides whether the button shows (QOL-R72).
 ---@class PagleQoLButtonShownInput
 ---@field setting boolean Show the next-action button is on (`profile.indicator.shown`)
+---@field untilPole boolean Hide until a fishing pole is in hand is on (`profile.indicator.untilPole`)
 ---@field standingDown boolean QoL stands down (QOL-R82)
 ---@field stretch boolean a Fishing stretch is running (QOL-R61)
 ---@field poleInHand boolean a fishing pole is in hand (QOL-R21)
 ---@field gearReady boolean the gear step is ready (QOL-R43)
 
 --- Whether the button shows (QOL-R72): the setting is on, QoL isn't standing down, and a Fishing stretch is running,
---- a pole is in hand or the gear step is ready. In combat it still shows, as *nothing* (ns.ButtonLook).
+--- a pole is in hand or the gear step is ready, the last only while Hide until a fishing pole is in hand is off. In
+--- combat it still shows, as *nothing* (ns.ButtonLook).
 ---@param input PagleQoLButtonShownInput
 ---@return boolean
 function ns.ButtonShown(input)
-	return input.setting and not input.standingDown and (input.stretch or input.poleInHand or input.gearReady)
+	return input.setting
+		and not input.standingDown
+		and (input.stretch or input.poleInHand or (input.gearReady and not input.untilPole))
 end
 
 --- The icons the button can show, as the game reads them now (QOL-R71). The set's and the item's are read only for

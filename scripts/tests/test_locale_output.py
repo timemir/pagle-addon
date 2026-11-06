@@ -21,10 +21,8 @@ from pagle_data.locale import LocaleLayer, english_lua, locale_outputs, locales_
 from pagle_data.plural import RULES, plural_lua
 from test_item_records import write_tree as write_items
 from test_lore import FAMILIES, ITEMS, OFF
+from tools_fixture import REPO, tool
 
-REPO = Path(__file__).resolve().parents[2]
-LUA = REPO / ".tools" / "bin" / "lua"
-LUAC = REPO / ".tools" / "lua" / "bin" / "luac"
 
 GUARD = (
     "if not Pagle then -- luacheck: read globals Pagle (CORE-R11: the one read of Core outside adapter/)\n"
@@ -141,10 +139,8 @@ VECTORS = {
 
 
 def evaluate(name: str, counts: list[float]) -> list[str]:
-    if not LUA.exists():
-        pytest.skip("no .tools/bin/lua")
     script = f"local rule = {plural_lua(name, 0)}\nfor _, n in ipairs({{{','.join(repr(c) for c in counts)}}}) do print(rule(n)) end\n"
-    done = subprocess.run([str(LUA), "-"], input=script, capture_output=True, text=True, check=True)
+    done = subprocess.run([str(tool("bin/lua")), "-"], input=script, capture_output=True, text=True, check=True)
     return done.stdout.split()
 
 
@@ -165,21 +161,18 @@ def test_a_rule_answers_only_categories_it_declares(name: str) -> None:
 
 
 def test_every_generated_file_compiles_under_lua_5_1(tmp_path: Path) -> None:
-    if not LUAC.exists():
-        pytest.skip("no .tools/lua/bin/luac")
+    luac = tool("lua/bin/luac")
     trees = {"enUS": english(), "esES": spanish(), "ruRU": {"locale.toml": RUSSIAN_HEADER, "core.toml": RUSSIAN_CORE}}
     for path, text in outputs(tmp_path, trees).items():
         if path.endswith(".lua"):
             target = tmp_path / path.replace("/", "_")
             target.write_text(text, encoding="utf-8")
-            subprocess.run([str(LUAC), "-p", str(target)], check=True)
+            subprocess.run([str(luac), "-p", str(target)], check=True)
 
 
 def test_a_generated_locale_registers_and_applies_through_the_registry(tmp_path: Path) -> None:
     """The whole path in Lua: Registry.lua, the generated esES.lua, then ApplyLocale writes the strings into ns.L and
     answers the record whose plural function the helper calls."""
-    if not LUA.exists():
-        pytest.skip("no .tools/bin/lua")
     files = outputs(tmp_path, {"enUS": english(), "esES": spanish()})
     (tmp_path / "enUS.lua").write_text(files["addons/Pagle/locale/enUS.lua"], encoding="utf-8")
     (tmp_path / "esES.lua").write_text(files["addons/Pagle/locale/esES.lua"], encoding="utf-8")
@@ -194,7 +187,7 @@ local record, errors = ns.ApplyLocale("esES")
 assert(#errors == 0, errors[1])
 print(ns.L.BANDS[1], ns.L.FISH_COUNT.many, record.decimal, record.thousands, record.plural(1000000), ns.LocaleInfo("esES").name)
 """
-    done = subprocess.run([str(LUA), "-"], input=script, capture_output=True, text=True, check=True)
+    done = subprocess.run([str(tool("bin/lua")), "-"], input=script, capture_output=True, text=True, check=True)
     assert done.stdout.strip() == "Pequeño\t{count} de peces\t,\t.\tmany\tEspañol"
 
 

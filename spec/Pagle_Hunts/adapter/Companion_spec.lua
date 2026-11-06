@@ -216,7 +216,7 @@ describe("with the hint switch turned off (HNT-R172)", function()
 
 				assert.is_nil(announcementRow(r, SETTING))
 				local labels = announcementLabels(r)
-				assert.are.equal("Tell me when a pinned Hunt's window opens", labels[#labels])
+				assert.are.equal("Announce open Hunt windows", labels[#labels])
 			end)
 		end)
 	end
@@ -569,7 +569,7 @@ describe('the Settings row "Remind me about the Pagle companion" (SET-R32, SET-R
 		local rows = r.fake.settingsPage("announcements")
 		local labels = announcementLabels(r)
 		assert.are.same(
-			{ "Hunts", "Tell me when a pinned Hunt's window opens", SETTING },
+			{ "Hunts", "Announce open Hunt windows", SETTING },
 			{ labels[#labels - 2], labels[#labels - 1], labels[#labels] }
 		)
 		assert.are.equal("header", rows[#rows - 2].kind)

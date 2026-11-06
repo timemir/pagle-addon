@@ -36,10 +36,10 @@ ns.DB_DEFAULTS = {
 			device = "",
 		},
 		autoLoot = true,
-		-- The next-action button: Show the next-action button, and its place once Shift-drag moved it, as
-		-- { point, relativeTo = "UIParent", relativePoint, x, y } by name; nil (no default) is the default place
-		-- (QOL-R72, QOL-R73).
-		indicator = { shown = true },
+		-- The next-action button: Show the next-action button, Hide until a fishing pole is in hand, and its place once
+		-- Shift-drag moved it, as { point, relativeTo = "UIParent", relativePoint, x, y } by name; nil (no default) is
+		-- the default place (QOL-R72, QOL-R73).
+		indicator = { shown = true, untilPole = false },
 	},
 }
 

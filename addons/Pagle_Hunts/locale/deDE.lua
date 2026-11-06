@@ -268,7 +268,7 @@ ns.Locale("deDE", function(L)
 	L.WEEKDAYS_SHORT = { "So", "Mo", "Di", "Mi", "Do", "Fr", "Sa" }
 	L.WEEKDAY_CLOCK = "{weekday} {time}"
 	L.WEEKDAY_DATE = "{weekday}, {shortDate}"
-	L.WINDOW_MOMENTS_SETTING = "Melden, wenn sich das Fenster einer angehefteten Jagd öffnet"
+	L.WINDOW_MOMENTS_SETTING = "Offene Jagdfenster melden"
 	L.WINDOW_MOMENTS_TOOLTIP = "Ein stiller Wink, wenn sich das Fenster einer angehefteten Jagd öffnet. Er verblasst, wenn es sich schließt."
 	L.WINDOW_OPEN = "{name} ist offen"
 	L.WINDOW_OPENED = "{name}: Fenster offen seit {from}"

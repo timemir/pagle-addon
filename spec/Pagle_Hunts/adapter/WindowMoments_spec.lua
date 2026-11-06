@@ -239,7 +239,7 @@ describe("The setting (SET-R32, CORE-R42)", function()
 		assert.are.same({ "header", "checkbox" }, { rows[1].kind, rows[2].kind })
 		assert.are.equal("Hunts", rows[1].label)
 		local setting = rows[2].setting
-		assert.are.equal("Tell me when a pinned Hunt's window opens", setting.label)
+		assert.are.equal("Announce open Hunt windows", setting.label)
 		assert.are.equal(
 			"A quiet Nod when a pinned Hunt's window opens. It fades when the window closes.",
 			setting.tooltip

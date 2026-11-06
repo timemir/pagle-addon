@@ -906,6 +906,70 @@ describe("the spread in a longer language (CORE-R8)", function()
 			assert.are.same(before[i], { title.fontObject, title.width }, "title " .. i)
 		end
 	end)
+
+	-- The posts stand a third of the rail apart, so their titles never crowd today; with posts closer (a ladder of more
+	-- steps), two titles each kept at least POST_TITLE_MIN (24) overprinted each other where the room between their posts
+	-- held less than both (#568's review). Posts are moved here by the ladder's marks.
+	---@param ats number[] each post's share of the rail
+	local function crowdedLadder(language, ats)
+		local r = oneOn({ language = language })
+		local build = r.ns.BuildWagersLadder
+		r.ns.BuildWagersLadder = function(...)
+			local ladder = build(...)
+			for i, mark in ipairs(ladder.marks) do
+				mark.at = ats[i]
+			end
+			return ladder
+		end
+		r.ns.OpenWagers()
+		return r, r.ns.board:Page(place(r), "left").spread.ladder
+	end
+
+	-- The shown titles' spans, left to right, each the titles' least gap (POST_TITLE_GAP, 8) from the next.
+	local function apart(r, ladder, why)
+		local spans = {}
+		for i, title in ipairs(ladder.titles) do
+			if title.shown then
+				spans[#spans + 1] = { span = inked(r, title, ladder), i = i }
+			end
+		end
+		for k = 2, #spans do
+			assert(
+				spans[k - 1].span.right + 8 <= spans[k].span.left + 1e-9,
+				("%s: the titles of posts %d and %d run together"):format(why, spans[k - 1].i, spans[k].i)
+			)
+		end
+		return spans
+	end
+
+	it("hnt_r162 never overprints two crowded posts' titles, keeping each at least its first letters", function()
+		-- the second post 44 before the page's right, where the last title ends: room for its stub's right half and the
+		-- last's stub (8 + 12 + 24), not for their words; shared by their widths, the second's half came to 10
+		for _, language in ipairs({ "enUS", "ruRU" }) do
+			local r, ladder = crowdedLadder(language, { 0.6, (465.18 - 44 - 6) / 445, 1 })
+			assert.are.equal(465.18, math.floor(ladder.width * 100) / 100, "the page's width moved: move the post")
+			apart(r, ladder, language)
+			for i, title in ipairs(ladder.titles) do
+				assert(title.shown, language .. ": title " .. i .. " is hidden, though its stub has room")
+				assert(title.width >= math.min(24, #title.text * 6), language .. ": title " .. i .. " under 24")
+			end
+		end
+	end)
+
+	it("hnt_r162 hides the earlier of two posts' titles that can't both keep their first letters", function()
+		-- the first two posts 18 apart: under their 8-unit gap and two 12-unit halves of a stub
+		for _, language in ipairs({ "enUS", "ruRU" }) do
+			local r, ladder = crowdedLadder(language, { 0.6, 0.64, 1 })
+			apart(r, ladder, language)
+			assert.are.same({ false, true, true }, {
+				ladder.titles[1].shown,
+				ladder.titles[2].shown,
+				ladder.titles[3].shown,
+			}, language)
+			-- the post and its number still show
+			assert.is_true(ladder.posts[1].shown and ladder.numbers[1].shown)
+		end
+	end)
 end)
 
 describe("the spread's motion (HNT-R162)", function()

@@ -119,6 +119,8 @@ ns.Locale("ruRU", function(L)
 	L.SETTINGS_FISHING_SET_NONE = "Нет (экипировка не меняется)"
 	L.SETTINGS_FISHING_SET_TOOLTIP = "Клавиша рыбалки надевает его, если в руках нет удочки. Двойной щелчок этого не делает."
 	L.SETTINGS_GEAR = "Экипировка"
+	L.SETTINGS_HIDE_UNTIL_POLE = "Скрывать, пока в руках нет удочки"
+	L.SETTINGS_HIDE_UNTIL_POLE_TOOLTIP = "Кнопка скрыта, пока вы не в рыбацкой одежде. Она появляется, когда удочка в руках или вы рыбачите."
 	L.SETTINGS_LURE = "Приманка"
 	L.SETTINGS_LURES = "Приманки"
 	L.SETTINGS_LURES_AND_CLAMS = "Приманки и моллюски"

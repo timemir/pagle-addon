@@ -36,11 +36,12 @@ Fishing                                                    (QoL only)
   [Gear]                    Fishing set  ↳ Save what I'm wearing as my fishing set  ↳ Swap gear
   [Lures and clams]         Lures  ↳ Lure;  Open clams between Casts
   [While you fish]          Fishing audio mix  ↳ Master volume  ↳ Effects  ↳ Music  ↳ Ambience  ↳ Dialog
-                            ↳ Output device  ↳ Keep sound when the game is in the background;      (all but Keep sound from 1.2.0)
-                            Auto-loot while fishing;  Show the next-action button  ↳ Button position
+                            ↳ Output device  ↳ Keep sound in the background;      (all but Keep sound from 1.2.0)
+                            Auto-loot while fishing;  Show the next-action button  ↳ Hide until a fishing pole is in hand
+                            ↳ Button position
 Announcements
                             Cozy mode;  Interruption budget  ↳ Interruptions  ↳ Per;  Show every catch;  Animations;  Toast style;  Sound set
-  [Hunts]                   Tell me when a pinned Hunt's window opens;  Remind me about the Pagle companion
+  [Hunts]                   Announce open Hunt windows;  Remind me about the Pagle companion
                             (while Hunts' companion hint switch is on, as at 1.0: HNT-R172)
 Trackers
                             Tracker position  [Reset]
@@ -143,9 +144,10 @@ The rules below are authoritative; this sketch only summarises them.
   | | ↳ Ambience | checkboxSlider | hidden while the audio mix is off (SET-R31) | 1.2.0 |
   | | ↳ Dialog | checkboxSlider | hidden while the audio mix is off (SET-R31) | 1.2.0 |
   | | ↳ Output device | dropdown | the audio mix is off | 1.2.0 |
-  | | ↳ Keep sound when the game is in the background | checkbox | the audio mix is off | Track Q step 4 |
+  | | ↳ Keep sound in the background | checkbox | the audio mix is off | Track Q step 4 |
   | | Auto-loot while fishing | checkbox | | Track Q step 4 |
   | | Show the next-action button | checkbox | | Track Q step 5 |
+  | | ↳ Hide until a fishing pole is in hand | checkbox (QOL-R72) | the next-action button is off | 1.2.0 |
   | | ↳ Button position | button, caption "Reset" (QOL-R73) | the next-action button is off | Track Q step 5 |
 
   Track Q runs in parallel with M2 onward ([roadmap.md](roadmap.md#track-q-qol-v1)); a header arrives with its section's first row. Until Cast with exists, the Fishing key row has no parent and is never greyed. In M1 the page has no value row, so its Defaults button changes nothing.
@@ -178,7 +180,7 @@ The rules below are authoritative; this sketch only summarises them.
 
   | Header | Row | Kind | Values · default | Tooltip |
   |---|---|---|---|---|
-  | Hunts | Tell me when a pinned Hunt's window opens | checkbox | off (HNT-R88, `PagleHuntsDB.profile.windowMoments`) | "A quiet Nod when a pinned Hunt's window opens. It fades when the window closes." |
+  | Hunts | Announce open Hunt windows | checkbox | off (HNT-R88, `PagleHuntsDB.profile.windowMoments`) | "A quiet Nod when a pinned Hunt's window opens. It fades when the window closes." |
   | | Remind me about the Pagle companion | checkbox | on (HNT-R170, HNT-R171, `PagleHuntsDB.profile.companionHint`) | "A line on the Hunts board, and a Nod once a week, while the Pagle companion isn't bringing you new wagers." |
 
   Neither is greyed out in Cozy mode: the Nod then goes to the Session summary (ANN-R40), as moments do. The second row is registered only while Hunts' companion hint switch is on (HNT-R172), which it is at 1.0, so 1.0's section has both rows. *Default chosen while building (#305): hunts.md › Settings put it on a "Hunts" page, which Settings doesn't have (SET-R1); it governs a reminder and its Nod, so it sits here after the window row. Dismissing the hint on the board turns it off; turning it on brings the hint and the Nod back.* No other Module adds rows to Announcements: the Ledger has no rows, Stats raises no moments (STA-R2), and the Tackle Board's and QoL's sections are on other pages.
@@ -291,7 +293,7 @@ It raises no events and exposes nothing.
 
 ## UI
 
-Native Settings panels throughout (CORE-R40). Look reference: `prototypes/settings-tree/` (variant B, the topic tree). Where the prototype differs, this file wins: Hunts' rows use hunts.md's labels ("Show the Hunts tracker", "Tell me when a pinned Hunt's window opens") and its root button reads "Open Hunts"; Hunts' Announcements row sits under a "Hunts" header (CORE-R42), not "From Modules"; tracker frame dropdowns aren't indented (SET-R44); the Tackle Board's section before Start is its greyed checkbox, not a note (SET-R43); and the root has a Units section (SET-R10).
+Native Settings panels throughout (CORE-R40). Look reference: `prototypes/settings-tree/` (variant B, the topic tree). Where the prototype differs, this file wins: Hunts' rows use hunts.md's labels ("Show the Hunts tracker", "Announce open Hunt windows") and its root button reads "Open Hunts"; Hunts' Announcements row sits under a "Hunts" header (CORE-R42), not "From Modules"; tracker frame dropdowns aren't indented (SET-R44); the Tackle Board's section before Start is its greyed checkbox, not a note (SET-R43); and the root has a Units section (SET-R10).
 
 ## Settings
 

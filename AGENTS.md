@@ -23,3 +23,7 @@ One command from a committed fix to its tagged release and pagle-backend's pin-b
 ### Launch runbook
 
 The plan for the 1.0.0 tag on 4 Nov 2026, before Forever's live release, and 1.0.1, the live-data update after it: who does what when, what blocks the tag, how each failure gets applied, and the kit in `scripts/launch.py`. See `docs/agents/launch-runbook.md`.
+
+### Layout harness
+
+`scripts/measure-layout.sh <enUS|deDE|esES|ruRU|all> [module]` runs `/pagle dev tour` with every font string measured in its real bundled face, and reports text that's cut, off its page or overlapping beyond `scripts/measure-layout/allowlist.toml`, with PNGs in `build/measure-layout/`. It's a dev tool: the tour isn't in CI, but its advance table's freshness check is (`scripts/tests/test_layout.py`), and `GATE_LAYOUT=1 scripts/check.sh` adds the tour to the gate. See `docs/agents/layout-harness.md`.

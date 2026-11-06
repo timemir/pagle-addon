@@ -53,11 +53,14 @@ local TIPS = {
 	audio = "While you fish: each channel and the output device as set below. Put back afterwards.",
 	master = "Ticked, sets the master volume while you fish. It has no Off and goes no lower than 10%, so you still hear "
 		.. "the splash.",
+	background = "While you fish, the sound keeps playing when the game is in the background.",
 	channel = "Ticked, sets this channel while you fish: at 0% it's off. Unticked, leaves it as it is.",
 	device = "Plays the game's sound here while you fish. The sound drops out for a moment as it switches, at the start "
 		.. "and at the end.",
 	autoLoot = "Only while you fish. Skipped if you already have auto-loot on.",
 	button = "Shows what your next press will do. Shift-drag to move.",
+	untilPole = "Keeps the button hidden while you're out of your fishing gear. It shows once a pole is in hand or "
+		.. "you're fishing.",
 	cozy = "Nothing pops up or plays. Every moment waits in the Session summary. A Legend's splash still shows, "
 		.. "silently.",
 	budget = "When toasts come close together, the smaller ones step down to a quiet Nod. Records always keep their "
@@ -156,9 +159,10 @@ local EXPECTED = {
 			{ "checkboxSlider", "Ambience", under = true, tip = TIPS.channel, range = { 0, 100, 5 }, of = "QoL" },
 			{ "checkboxSlider", "Dialog", under = true, tip = TIPS.channel, range = { 0, 100, 5 }, of = "QoL" },
 			{ "dropdown", "Output device", under = true, tip = TIPS.device, of = "QoL" },
-			{ "checkbox", "Keep sound when the game is in the background", under = true, of = "QoL" },
+			{ "checkbox", "Keep sound in the background", under = true, tip = TIPS.background, of = "QoL" },
 			{ "checkbox", "Auto-loot while fishing", tip = TIPS.autoLoot, of = "QoL" },
 			{ "checkbox", "Show the next-action button", tip = TIPS.button, of = "QoL" },
+			{ "checkbox", "Hide until a fishing pole is in hand", under = true, tip = TIPS.untilPole, of = "QoL" },
 			{ "button", "Button position", under = true, caption = "Reset", of = "QoL" },
 		},
 	},
@@ -175,7 +179,7 @@ local EXPECTED = {
 			{ "slot", "Sound set" },
 			{ "button", "Toast position", caption = "Reset", tip = TIPS.toastPosition },
 			{ "header", "Hunts", of = "Hunts" },
-			{ "checkbox", "Tell me when a pinned Hunt's window opens", tip = TIPS.windowMoments, of = "Hunts" },
+			{ "checkbox", "Announce open Hunt windows", tip = TIPS.windowMoments, of = "Hunts" },
 			{ "checkbox", "Remind me about the Pagle companion", tip = TIPS.companionHint, of = "Hunts" },
 		},
 	},
@@ -473,10 +477,7 @@ describe("The Settings tree, every Module loaded", function()
 			assert.is_true(loaded.namespaces.Pagle_Hunts.COMPANION_HINT_ON)
 			assert.are.same(expectedTree(), drawnTree(loaded))
 			local rows = pageAsWritten(loaded, loaded.client.settings.page("Announcements"))
-			assert.are.same(
-				{ "checkbox", "Tell me when a pinned Hunt's window opens" },
-				{ rows[#rows - 1][1], rows[#rows - 1][2] }
-			)
+			assert.are.same({ "checkbox", "Announce open Hunt windows" }, { rows[#rows - 1][1], rows[#rows - 1][2] })
 			assert.are.same({ "checkbox", "Remind me about the Pagle companion" }, { rows[#rows][1], rows[#rows][2] })
 		end
 	)
@@ -654,7 +655,7 @@ describe("Greying in the Settings tree", function()
 
 		setRow(loaded, "Fishing", "Fishing audio mix", false)
 		assert.are.same(
-			{ "Swap gear", "Lure", "Output device", "Keep sound when the game is in the background" },
+			{ "Swap gear", "Lure", "Output device", "Keep sound in the background" },
 			greyedOn(loaded, "Fishing")
 		)
 		for _, label in ipairs(CHANNELS) do
@@ -690,15 +691,21 @@ describe("Greying in the Settings tree", function()
 		})
 	end)
 
-	it("greys Button position while the next-action button is off (SET-R20)", function()
-		local loaded = ready()
+	it(
+		"greys Hide until a fishing pole is in hand and Button position while the button is off (SET-R20, SET-R31)",
+		function()
+			local loaded = ready()
 
-		setRow(loaded, "Fishing", "Show the next-action button", false)
-		assert.are.same({ "Swap gear", "Lure", "Button position" }, greyedOn(loaded, "Fishing"))
+			setRow(loaded, "Fishing", "Show the next-action button", false)
+			assert.are.same(
+				{ "Swap gear", "Lure", "Hide until a fishing pole is in hand", "Button position" },
+				greyedOn(loaded, "Fishing")
+			)
 
-		setRow(loaded, "Fishing", "Show the next-action button", true)
-		assert.are.same({ "Swap gear", "Lure" }, greyedOn(loaded, "Fishing"))
-	end)
+			setRow(loaded, "Fishing", "Show the next-action button", true)
+			assert.are.same({ "Swap gear", "Lure" }, greyedOn(loaded, "Fishing"))
+		end
+	)
 
 	it("greys the budget, its sliders and Show every catch in Cozy mode, and nothing else (SET-R30–R32)", function()
 		local loaded = ready()
@@ -861,7 +868,8 @@ describe("Each page's Defaults button", function()
 				"Effects",
 				"Effects",
 				"Fishing audio mix",
-				"Keep sound when the game is in the background",
+				"Hide until a fishing pole is in hand",
+				"Keep sound in the background",
 				"Lure",
 				"Lures",
 				"Master volume",
@@ -874,6 +882,7 @@ describe("Each page's Defaults button", function()
 			}, restoredOn(loaded, "Fishing"))
 			assert.are.same({
 				"Animations",
+				"Announce open Hunt windows",
 				"Cozy mode",
 				"Interruption budget",
 				"Interruptions",
@@ -881,7 +890,6 @@ describe("Each page's Defaults button", function()
 				"Remind me about the Pagle companion",
 				"Show every catch",
 				"Sound set",
-				"Tell me when a pinned Hunt's window opens",
 				"Toast style",
 			}, restoredOn(loaded, "Announcements"))
 			assert.are.same({
@@ -955,9 +963,10 @@ describe("Each page's Defaults button", function()
 				["Ambience"] = { false, 55 },
 				["Dialog"] = { true, 100 },
 				["Output device"] = "System Default",
-				["Keep sound when the game is in the background"] = true,
+				["Keep sound in the background"] = true,
 				["Auto-loot while fishing"] = false,
 				["Show the next-action button"] = false,
+				["Hide until a fishing pole is in hand"] = true,
 			}) do
 				setRow(loaded, "Fishing", label, value)
 			end
@@ -967,7 +976,7 @@ describe("Each page's Defaults button", function()
 			loaded.client.settings.defaults(loaded.client.settings.page("Fishing"))
 
 			-- qol.md › Settings' defaults: Both, Best I have, the Shiny Bauble, on, on, master unticked at 100%, effects
-			-- ticked at 100%, music, ambience and dialog ticked at 0% (Off), Don't change, off, on, on.
+			-- ticked at 100%, music, ambience and dialog ticked at 0% (Off), Don't change, off, on, on, off.
 			assert.are.same({
 				["Cast with"] = "both",
 				["Fishing set"] = 3,
@@ -981,9 +990,10 @@ describe("Each page's Defaults button", function()
 				["Ambience"] = { true, 0 },
 				["Dialog"] = { true, 0 },
 				["Output device"] = "",
-				["Keep sound when the game is in the background"] = false,
+				["Keep sound in the background"] = false,
 				["Auto-loot while fishing"] = true,
 				["Show the next-action button"] = true,
+				["Hide until a fishing pole is in hand"] = false,
 			}, valuesOn(loaded, "Fishing"))
 			assert.are.same({ "F" }, loaded.client.boundKeys.PAGLE_FISHING_KEY)
 			assert.are.same({ "G" }, loaded.client.boundKeys.PAGLE_SWAP_GEAR)
@@ -1011,7 +1021,7 @@ describe("Each page's Defaults button", function()
 			["Per"] = 10,
 			["Show every catch"] = false,
 			["Animations"] = false,
-			["Tell me when a pinned Hunt's window opens"] = true,
+			["Announce open Hunt windows"] = true,
 			["Remind me about the Pagle companion"] = false,
 		}) do
 			setRow(loaded, "Announcements", label, value)
@@ -1028,7 +1038,7 @@ describe("Each page's Defaults button", function()
 			["Per"] = 5,
 			["Show every catch"] = true,
 			["Animations"] = true,
-			["Tell me when a pinned Hunt's window opens"] = false,
+			["Announce open Hunt windows"] = false,
 			["Remind me about the Pagle companion"] = true,
 		}, valuesOn(loaded, "Announcements"))
 		assert.are.equal(300, loaded.namespaces.Pagle.db.profile.announcements.budget.window) -- stored in seconds

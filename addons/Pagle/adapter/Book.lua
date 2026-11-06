@@ -344,8 +344,34 @@ end
 ---@field labelY number where its name's foot sits above its swallowtail end (BOOK-R17, BOOK-R19)
 
 -- Sets a ribbon's name (BOOK-R17): at 12, wrapping at a space; a word wider than the room inside the stitches, which
--- has no space to wrap at, sets the whole name smaller, down to RIBBON_LABEL_FLOOR, so it keeps off them. Each word is
--- measured unbounded; the name keeps all its words.
+-- has no space to wrap at, sets the whole name smaller, down to RIBBON_LABEL_FLOOR, so it keeps off them; and a name
+-- whose words break onto more than RIBBON_LABEL_LINES lines (esES "Las veinticuatro horas" took three, its last cut) is
+-- set a half size down at a time, to the same floor, until they take two. Each word is measured unbounded; the name
+-- keeps all its words.
+-- How many lines `label`'s words take at `room`, as the client breaks them: a word at a time, each line measured
+-- unbounded through the label, which is then given back its text and width. (Book.lua stands alone, FakePagle hands it
+-- to a Module's specs, so it keeps its own copy of adapter/Text.lua's ns.LineWidths count.)
+---@param label FontString
+---@param room number
+---@return integer
+local function linesOf(label, room)
+	local words, width = label:GetText() or "", label:GetWidth()
+	local lines, line = 0, nil
+	label:SetWidth(0)
+	for word in words:gmatch("%S+") do
+		local candidate = line and line .. " " .. word or word
+		label:SetText(candidate)
+		if line and label:GetStringWidth() > room then
+			lines, line = lines + 1, word
+		else
+			line = candidate
+		end
+	end
+	label:SetText(words)
+	label:SetWidth(width)
+	return lines + (line and 1 or 0)
+end
+
 ---@param label FontString
 ---@param words string
 local function setRibbonName(label, words)
@@ -357,9 +383,14 @@ local function setRibbonName(label, words)
 		widest = math.max(widest, label:GetStringWidth())
 	end
 	label:SetText(words)
+	local size = RIBBON_LABEL_SIZE
 	if widest > RIBBON_WORD_ROOM then
-		local size = math.floor(RIBBON_LABEL_SIZE * RIBBON_WORD_ROOM / widest * 2) / 2
-		label:SetFontObject(ns.ArtFaceFont("gilt", math.max(RIBBON_LABEL_FLOOR, size), true))
+		size = math.max(RIBBON_LABEL_FLOOR, math.floor(RIBBON_LABEL_SIZE * RIBBON_WORD_ROOM / widest * 2) / 2)
+		label:SetFontObject(ns.ArtFaceFont("gilt", size, true))
+	end
+	while size > RIBBON_LABEL_FLOOR and linesOf(label, RIBBON_LABEL_WIDTH) > RIBBON_LABEL_LINES do
+		size = size - 0.5
+		label:SetFontObject(ns.ArtFaceFont("gilt", size, true))
 	end
 	label:SetWidth(RIBBON_LABEL_WIDTH)
 end
