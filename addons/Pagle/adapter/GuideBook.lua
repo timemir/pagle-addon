@@ -33,8 +33,9 @@ ns.GUIDE_RIBBON = { color = rgb("A23A28"), unseen = 0.82, tick = rgb("FFF0BC") }
 local RIBBON = ns.GUIDE_RIBBON
 
 -- Where a tick sits on its ribbon: its top this far below the ribbon's (just under the book's edge, past the 2 units
--- the shell tucks under the band), centred across it.
-local TICK_DROP = 11
+-- the shell tucks under the band), centred across it. A name on two lines reaches higher up the ribbon: the tick then
+-- rises to keep TICK_CLEAR above it, as far as TICK_DROP_LEAST, a unit under the band.
+local TICK_DROP, TICK_CLEAR, TICK_DROP_LEAST = 11, 1.5, 3
 
 --- The guide's book: the shell's handle, the ribbons as they hang now, and the ticks drawn on the shell's ribbons.
 ---@class PagleGuideBook
@@ -62,11 +63,24 @@ local function tickOn(guideBook, ribbon)
 		tick:SetDesaturated(true)
 		tick:SetVertexColor(RIBBON.tick[1], RIBBON.tick[2], RIBBON.tick[3])
 		tick:SetBlendMode("ADD")
-		local box = tick.box
-		ns.PlaceSprite(tick, ribbon, (ribbon:GetWidth() - (box[3] - box[1])) / 2, TICK_DROP)
 		guideBook.ticks[ribbon] = tick
 	end
 	return tick
+end
+
+-- Puts `tick` on `ribbon` (ONB-R24): centred across it at TICK_DROP, or higher when the ribbon's name, as the shell
+-- wrapped it, reaches up to it. A ticked ribbon hangs at the shell's length (BOOK-R17): it is never the chosen one.
+---@param tick PagleSprite
+---@param ribbon Button
+local function placeTick(tick, ribbon)
+	local box = tick.box
+	local drop = TICK_DROP
+	local view = ribbon --[[@as PagleBookRibbonView]]
+	if view.labelY then
+		local wordsTop = view.labelY + view.label:GetStringHeight()
+		drop = math.max(TICK_DROP_LEAST, math.min(TICK_DROP, ns.BOOK_RIBBON.length - wordsTop - TICK_CLEAR - box[4]))
+	end
+	ns.PlaceSprite(tick, ribbon, (ribbon:GetWidth() - (box[3] - box[1])) / 2, drop)
 end
 
 --- Ticks the shell's ribbon of each seen step but the current one (ONB-R24), through the shell's ribbon frames
@@ -79,7 +93,9 @@ function ns.DrawGuideTicks(guideBook)
 	for _, ribbon in ipairs(guideBook.ribbons) do
 		local frame = guideBook.book:RibbonFrame(ribbon.id)
 		if frame then
-			tickOn(guideBook, frame):SetShown(ribbon.seen and not ribbon.current)
+			local tick = tickOn(guideBook, frame)
+			placeTick(tick, frame)
+			tick:SetShown(ribbon.seen and not ribbon.current)
 		end
 	end
 end

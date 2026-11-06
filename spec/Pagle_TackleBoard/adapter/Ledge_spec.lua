@@ -815,6 +815,45 @@ describe("the shop card (TKB-R106, SHOP-R41, TKB-R193)", function()
 		assert.are.equal(1, #fake.shopsOpened)
 	end)
 
+	-- The shop card of a board opened with SHOP_LINK reading `words`, and where its hand is put.
+	local function shopIn(words)
+		local fake = board.withHistory(FRESH)
+		local loaded = board.load(fake)
+		loaded.ns.L.SHOP_LINK = words
+		fake.login()
+		fake.enterWorld()
+		loaded.client.runTimers()
+		loaded.ns.OpenBoard()
+		local shop = loaded.ns.board.frame.parts.ledge.shop
+		return shop, { shop.handX, shop.handY }
+	end
+
+	it("keeps the pointing hand where the kit draws it while the words' last line ends before it (TKB-R106)", function()
+		-- English as the client draws it in IM Fell italic 14: "Coins go to the Curio" (102) and "Shop" (24). The fake
+		-- draws 6 a character, so these words wrap the same: "Coins to the Curio" (108) and "Shop", ending at 64 + 12.
+		local _, hand = shopIn("Coins to the Curio Shop")
+		assert.are.same({ 77, 27 }, hand)
+	end)
+
+	it(
+		"puts the pointing hand under the words, centred, when their last line is too long to have it after them"
+			.. " (TKB-R106)",
+		function()
+			-- "Münzen für den" and "Kuriositätenladen": the second line (19 bytes) runs from 7 to 121 on the card, over
+			-- the hand's place at 77 to 99, and leaves no room for it after.
+			local shop, hand = shopIn("Münzen für den Kuriositätenladen")
+			assert(64 + #"Kuriositätenladen" * 3 > 77, "the case runs over the hand")
+			assert.are.equal("Münzen für den Kuriositätenladen", shop.label:GetText(), "its words untouched")
+			assert.are.same({ 53, 42 }, hand)
+		end
+	)
+
+	it("puts the pointing hand right after the words' last line when it fits there (TKB-R106)", function()
+		-- "Coins for the" and "Curio Shop": the last line ends at 64 + 30, the hand 1 after it.
+		local _, hand = shopIn("Coins for the Curio Shop")
+		assert.are.same({ 95, 26 }, hand)
+	end)
+
 	it("prints Core's line instead while restricted, opening nothing", function()
 		local _, fake, _, ledge = opened(FRESH)
 		fake.setRestricted(true)

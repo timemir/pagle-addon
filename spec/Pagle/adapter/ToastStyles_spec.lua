@@ -657,6 +657,31 @@ describe("an Announcement drawn standing still (ONB-R34, wallet-and-shop.md › 
 		)
 	end
 
+	it(
+		"ends a long name 4 before the Coins as they draw, the coin and +N, on Torn Page, drawn the shell's way"
+			.. " (ANN-R80, ANN-R82)",
+		function()
+			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+			local bounds = dofile("spec/support/bounds.lua")
+			local loaded = styledCore()
+			local page = pageOf(loaded)
+			local announcement =
+				loaded.ns.DevPreviewAnnouncement("toast", "Öliges Schwarzmaul (eine /pagle dev preview)")
+			announcement.style = TORN_PAGE
+
+			local frame = loaded.ns.DrawStillAnnouncement(page, "toast", announcement)
+
+			local nameLeft, nameWidth = bounds.across(frame.text, frame)
+			local coinsLeft = bounds.across(frame.coins, frame)
+			assert.are.equal("+12", frame.coins.label:GetText())
+			assert(
+				frame.text:GetStringWidth() > (frame:GetWidth() - 34 - 34) - nameLeft,
+				"the name is longer than the room kept for it: the spec needs a longer one"
+			)
+			assert(nameLeft + nameWidth <= coinsLeft - 4, "the name runs under the Coins")
+		end
+	)
+
 	it("redraws the same frame on the same page, and a frame of each form apart", function()
 		local loaded = styledCore()
 		local page = pageOf(loaded)

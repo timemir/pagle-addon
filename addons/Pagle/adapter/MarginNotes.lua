@@ -59,6 +59,39 @@ local function rectIn(region, frame)
 	return { left = left * k, right = right * k, bottom = bottom * k, top = top * k }
 end
 
+-- How far past a word's inked span an arrow aims, so its 12-unit ring sits 2 clear of the word instead of on its
+-- letters: the arrow's point keeps 6 inside what it aims at (logic/MarginNotes.lua's NoteArrowPath), the ring's half.
+local RING_CLEAR = 14
+
+-- What an arrow aims at for `target`, in `frame`'s units (ns.NoteArrowPath's target): its rectangle, or for a font
+-- string its words' inked span as its justification lays them across it, widened by RING_CLEAR on every side, so the
+-- ring lands beside the words from whichever side the note is. Nil while it isn't laid out.
+---@param target Region
+---@param frame Frame
+---@return PagleRect?
+local function aimAt(target, frame)
+	local rect = rectIn(target, frame)
+	if not (rect and target.GetObjectType and target:GetObjectType() == "FontString") then
+		return rect
+	end
+	local words = target --[[@as FontString]]
+	local width = rect.right - rect.left
+	local inked = words:GetStringWidth() * words:GetEffectiveScale() / frame:GetEffectiveScale()
+	if inked > 0 and inked < width then
+		local justify = words:GetJustifyH()
+		local left = justify == "RIGHT" and rect.right - inked
+			or justify == "CENTER" and rect.left + (width - inked) / 2
+			or rect.left
+		rect.left, rect.right = left, left + inked
+	end
+	return {
+		left = rect.left - RING_CLEAR,
+		right = rect.right + RING_CLEAR,
+		bottom = rect.bottom - RING_CLEAR,
+		top = rect.top + RING_CLEAR,
+	}
+end
+
 -- Shows as much of the arrow as `reveal` says, segment by segment, the head once the curve is whole, and the ring at
 -- its size.
 ---@param arrow PagleNoteArrow
@@ -86,7 +119,7 @@ end
 local function drawArrow(arrow)
 	local target = arrow.to()
 	local from = rectIn(arrow.from, arrow)
-	local to = target and rectIn(target, arrow)
+	local to = target and aimAt(target, arrow)
 	if not (from and to) then
 		return
 	end
@@ -123,7 +156,7 @@ local function watch(arrow)
 		return
 	end
 	---@cast target Region
-	local from, to = rectIn(arrow.from, arrow), rectIn(target, arrow)
+	local from, to = rectIn(arrow.from, arrow), aimAt(target, arrow)
 	if not (from and to) then
 		return
 	end
@@ -194,6 +227,10 @@ end
 ---@field note PagleMarginNote? the note it shows
 ---@field inUse boolean showing a note, or still leaving
 
+--- How far a note's badge reaches past its paper's left and top edges (the kit's P.Note): what must stay clear of a
+--- note takes it in (adapter/FirstLooks.lua).
+ns.NOTE_BADGE_OUT = 12
+
 --- A Margin note's paper on `parent` (core/onboarding.md › UI; the kit's P.Note): Caveat 19 in the Angler's pencil,
 --- `width` wide and as tall as its text, with the red-pencil badge reading `n`. Only it takes the mouse (ONB-R51).
 ---@param parent Frame
@@ -204,7 +241,7 @@ function ns.NewMarginNoteFrame(parent)
 	frame.text = ns.GuideText(frame, "hand", 19, "hand", "", { wrap = true, spacing = 2.3 })
 	frame.text:SetPoint("TOPLEFT", frame, "TOPLEFT", 15, -10)
 	frame.badge = ns.ArtSprite(frame, "GuideParts", "note-badge", "OVERLAY", 1)
-	ns.PlaceSprite(frame.badge, frame, -12, -12)
+	ns.PlaceSprite(frame.badge, frame, -ns.NOTE_BADGE_OUT, -ns.NOTE_BADGE_OUT)
 	frame.number = ns.GuideText(frame, "handBold", 17, "red", "1", { justify = "CENTER" })
 	frame.number:SetDrawLayer("OVERLAY", 3)
 	frame.number:SetPoint("CENTER", frame, "TOPLEFT", 1, -1)

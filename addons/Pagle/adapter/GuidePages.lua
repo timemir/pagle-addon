@@ -594,16 +594,18 @@ local MOMENTS = {
 local LIST_WIDTH, ROW_HINTED, ROW_PLAIN, LIST_TOP = 274, 34.6, 21.6, 30
 local ITEM_X, ITEM_END, COUNT_ROOM = 43, 14, 64
 
--- An item's words, or its hint, on one line held to the list's paper (ns.FitGuideText): a longer one is set smaller,
--- then cut short, never past the paper's edge.
+-- An item's words, or its hint, at their size and wrapped to the list's paper, as the docked list writes them
+-- (adapter/Evening.lua): a longer one takes another line instead of running past the paper or being cut short. Returns
+-- how much lower than one line it ends: whole line boxes `lh` tall, counted from its height, so one line measured a
+-- little taller than its size still counts one.
 ---@param fontString FontString
----@param face PagleArtFace
 ---@param size number
----@param ink string
----@return FontString
-local function onPaper(fontString, face, size, ink)
-	ns.FitGuideText(fontString, face, size, ink, LIST_WIDTH - ITEM_X - ITEM_END)
-	return fontString
+---@param lh number
+---@return number
+local function onPaper(fontString, size, lh)
+	fontString:SetWidth(LIST_WIDTH - ITEM_X - ITEM_END)
+	local lines = math.max(1, math.floor((fontString:GetStringHeight() + lh - size) / lh + 0.5))
+	return (lines - 1) * lh
 end
 
 ---@param right Frame
@@ -619,10 +621,11 @@ local function newEvening(right, y)
 	list.rows = {}
 	y = LIST_TOP
 	for _, item in ipairs(ns.GuideEveningPreview(ns.Modules:Modules())) do
-		local words = onPaper(text(list, "print", 13.5, "body", item.text, ITEM_X, y + 2, 17.6), "print", 13.5, "body")
+		local words = text(list, "print", 13.5, "body", item.text, ITEM_X, y + 2, 17.6, { wrap = true })
 		words:SetWidth(0)
+		-- struck through its first line: as wide as its words, or the paper's room when they wrap
 		local inked = math.min(LIST_WIDTH - ITEM_X - ITEM_END, math.ceil(words:GetStringWidth()))
-		words:SetWidth(LIST_WIDTH - ITEM_X - ITEM_END)
+		local more = onPaper(words, 13.5, 17.6)
 		local strike = rule(list, ITEM_X, y + 11, math.max(1, inked), "strike", 0.6)
 		strike:SetDrawLayer("OVERLAY")
 		list.rows[#list.rows + 1] = {
@@ -634,9 +637,10 @@ local function newEvening(right, y)
 			strike = strike,
 		}
 		if item.hint then
-			onPaper(text(list, "italic", 12.5, "small", item.hint, ITEM_X, y + 19.6, 16.3), "italic", 12.5, "small")
+			local hint = text(list, "italic", 12.5, "small", item.hint, ITEM_X, y + more + 19.6, 16.3, { wrap = true })
+			more = more + onPaper(hint, 12.5, 16.3)
 		end
-		y = y + (item.hint and ROW_HINTED or ROW_PLAIN)
+		y = y + (item.hint and ROW_HINTED or ROW_PLAIN) + more
 	end
 	list:SetSize(LIST_WIDTH, y + 12)
 	ns.NewNineSlice(list, "GuideParts", "trk", 8)

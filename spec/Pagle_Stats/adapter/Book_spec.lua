@@ -280,7 +280,7 @@ describe("the Stats book's pages (STA-R70, STA-R74)", function()
 		book:RegisterPage("place", "left", writer("rows", draws, 1400))
 		loaded.ns.OpenBook({ page = "place", area = DARKSHORE })
 		local content = draws[1].content
-		local scroll = content:GetParent()
+		local scroll = content:GetParent():GetParent() -- the scroll frame scrolls the holder content sits in (BOOK-R21)
 
 		assert.are.equal(1400, content.height)
 		scroll:SetVerticalScroll(300)
@@ -297,7 +297,7 @@ describe("the Stats book's pages (STA-R70, STA-R74)", function()
 		local draws = {}
 		book:RegisterPage("place", "left", writer("rows", draws, 1400))
 		loaded.ns.OpenBook({ page = "place", area = DARKSHORE })
-		local scroll = draws[1].content:GetParent()
+		local scroll = draws[1].content:GetParent():GetParent()
 		-- The client lays the 1400 out under the body.
 		scroll.GetVerticalScrollRange = function()
 			return 1400 - 524

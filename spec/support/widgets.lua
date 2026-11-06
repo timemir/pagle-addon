@@ -253,6 +253,13 @@ function widgets.newWidget(kind, parent)
 	function widget:SetJustifyH(justify)
 		self.justifyH = justify
 	end
+	function widget:GetJustifyH()
+		return self.justifyH or "LEFT"
+	end
+	-- What kind of widget it is, as CreateFrame or Create<Region> made it: "Frame", "Button", "FontString", ….
+	function widget:GetObjectType()
+		return self.kind
+	end
 	function widget:SetTextColor(r, g, b, a)
 		self.textColor = { r, g, b, a }
 	end
@@ -555,6 +562,22 @@ function widgets.newWidget(kind, parent)
 	end
 	function widget.GetParent()
 		return parent
+	end
+	-- As the client's: the widget moves to `newParent`'s children, as another addon moving a frame into its own does.
+	function widget:SetParent(newParent)
+		if parent then
+			for n, child in ipairs(parent.children) do
+				if child == self then
+					table.remove(parent.children, n)
+					break
+				end
+			end
+		end
+		parent = newParent
+		self.parent = newParent
+		if newParent then
+			newParent.children[#newParent.children + 1] = self
+		end
 	end
 	if parent then
 		parent.children[#parent.children + 1] = widget

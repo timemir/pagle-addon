@@ -149,6 +149,39 @@ describe("a Legend crest on the client (LED-R153)", function()
 		assert.are.equal(13, largeSize)
 		assert.is_true(smallSize * 150 / 260 >= 9 - 0.25)
 	end)
+
+	-- German "UNGESCHRIEBEN" ran past the plaque onto its swallowtail ends on the Journal's 150-wide crest (1.1.1). The
+	-- fake measures 6 a byte whatever the size; the client's gilt capitals run near 0.65 of their size a letter, which
+	-- a spec stands in for here, so setting the word smaller narrows it.
+	it(
+		"led_r153 keeps the plaque's word on its flat run, setting a longer word smaller, the kit's as the kit",
+		function()
+			local loaded = loadCore()
+			local FLAT = 120 -- the plaque's flat run: 160 wide in the crest's box, its tails the outer eighths
+			local function measured(crest)
+				function crest.label.GetStringWidth(label)
+					return #label.text * 0.65 * label.fontObject.font[2]
+				end
+			end
+			local english = newCrest(loaded, 150)
+			measured(english)
+			english:SetLegend(QUEENFISH, false)
+			local kit = english.label.fontObject.font[2]
+			assert(english.label:GetStringWidth() <= FLAT, "the kit's word fits as it is")
+
+			loaded.ns.L.LEGEND_CREST_UNWRITTEN = "Ungeschrieben"
+			local german = newCrest(loaded, 150)
+			measured(german)
+			german:SetLegend(QUEENFISH, false)
+
+			assert.are.equal("UNGESCHRIEBEN", german.label:GetText())
+			assert(#"UNGESCHRIEBEN" * 0.65 * kit > FLAT, "at the kit's size it is wider than the flat run")
+			assert(german.label.fontObject.font[2] < kit, "set smaller")
+			assert(german.label:GetStringWidth() <= FLAT, "to fit the flat run")
+			assert.are.equal(FLAT, german.label:GetWidth(), "and held within it")
+			assert.are.equal(kit, english.label.fontObject.font[2])
+		end
+	)
 end)
 
 describe("a Legend crest's motion on the client (LED-R153)", function()

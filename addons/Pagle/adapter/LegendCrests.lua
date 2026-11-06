@@ -15,8 +15,12 @@ local Pagle = Pagle
 -- draws one at full size; a Module draws its own through Pagle.NewLegendCrest (the Journal's Legends spread).
 
 local BOX, WELL = ns.LEGEND_CREST_BOX, ns.LEGEND_CREST_WELL
--- The plaque's word is never smaller than this on screen, however small the crest is drawn.
-local LABEL_MIN = 9
+-- The plaque's word is never smaller than this on screen, however small the crest is drawn, unless it is set smaller
+-- to stay on the plaque's flat run, to LABEL_FIT_MIN.
+local LABEL_MIN, LABEL_FIT_MIN = 9, 7
+-- The share of the plaque (the crest's "lab" layer) its word may take across: its flat run, between its swallowtail
+-- ends. Every crest's plaque is the same 240 x 60 sprite, flat from texel 23 to 216; the word keeps a little inside.
+local PLAQUE_FLAT = 0.75
 -- The icon reaches a little under the well's ring, so no gap shows at its edge.
 local ICON_BLEED = 2
 -- The icon's sublevel on the ARTWORK layer: the well's z, 3 (adapter/ToastLayers.lua puts z 4 at 0).
@@ -26,6 +30,18 @@ local ICON_SUBLEVEL = -1
 ---@field box PagleLayeredHost the crest's box, BOX's size, scaled to the crest's width
 ---@field icon Texture
 ---@field label FontString
+
+-- The width of a crest's plaque, its "lab" layer, in the crest's box.
+---@param art PagleLegendCrestArt
+---@return number
+local function plaqueWidth(art)
+	for _, layer in ipairs(art.layers) do
+		if layer.name == "lab" then
+			return layer.w
+		end
+	end
+	return BOX.w
+end
 
 -- Puts `look` on the crest: its sprites, its icon or none, and its plaque's word at its ink, kept legible.
 ---@param crest PagleLegendCrestFrame
@@ -49,9 +65,20 @@ local function draw(crest, look)
 		icon:SetVertexColor(1, 0.94, 0.82)
 	end
 	local label, ink = crest.label, art.label.ink
-	local size = math.max(ink.size, LABEL_MIN / crest.box:GetScale())
-	ns.SetInkFont(label, ink, math.floor(size * 2 + 0.5) / 2)
+	local scale = crest.box:GetScale()
+	local size = math.floor(math.max(ink.size, LABEL_MIN / scale) * 2 + 0.5) / 2
+	ns.SetInkFont(label, ink, size)
 	label:SetText(ns.Capitals(ns.LegendCrestLabel(art.label.word)))
+	-- a word wider than the plaque's flat run (German "UNGESCHRIEBEN" ran onto its tails, 1.1.1) is set smaller to fit
+	-- it, measured unbounded; past LABEL_FIT_MIN on screen the client cuts it at the run's edge
+	local run = plaqueWidth(art) * PLAQUE_FLAT
+	label:SetWidth(0)
+	local natural = label:GetStringWidth()
+	if natural > run then
+		local fit = math.max(LABEL_FIT_MIN / scale, size * run / natural)
+		ns.SetInkFont(label, ink, math.floor(fit * 2) / 2)
+	end
+	label:SetWidth(run)
 	label:ClearAllPoints()
 	label:SetPoint("TOP", crest.box, "TOPLEFT", BOX.w / 2, -art.label.top)
 end

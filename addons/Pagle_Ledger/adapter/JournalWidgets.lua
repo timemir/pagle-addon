@@ -184,7 +184,15 @@ makers.kicker = function(parent)
 		self.label:SetText(block.text)
 		self.note:SetText(block.value or "")
 		self.note:SetShown(group and block.value ~= nil)
-		local noteW = block.value and group and math.min(self.note:GetStringWidth() + 1, width * 0.6) or 0
+		-- the note as wide as its words, to what the heading's words leave, and at least 0.6 of the line (German "7% des
+		-- Anglerbuchs vollständig (14 von 189)" was cut at 0.6 beside a short heading, 1.1.1); both measured unbounded
+		local noteW = 0
+		if block.value and group then
+			self.label:SetWidth(0)
+			self.note:SetWidth(0)
+			local room = math.max(width * 0.6, width - (self.label:GetStringWidth() + 1) - 8)
+			noteW = math.min(self.note:GetStringWidth() + 1, room)
+		end
 		self.note:SetWidth(math.max(1, noteW))
 		bound(self.label, width - noteW - (noteW > 0 and 8 or 0))
 		self.rule:SetShown(group)
@@ -377,6 +385,42 @@ makers.button = function(parent)
 	return widget
 end
 
+-- Fits a contents line's words, `label` showing `text`, to `room` (LED-R132): one line as wide as its words when they
+-- fit; otherwise two lines at `room`, measured unbounded first. Returns how wide its last line is, where the leader
+-- starts, and how much taller than one line it stands. The last line is found as the client breaks it, a word at a
+-- time, by measuring each line's words through the label before it is given back its text.
+---@param label FontString
+---@param text string
+---@param room number
+---@return number lastW
+---@return number drop
+local function fitLeaderWords(label, text, room)
+	label:SetWordWrap(false)
+	label:SetWidth(0)
+	if label:GetStringWidth() + 1 <= room then
+		bound(label, room)
+		return label:GetWidth(), 0
+	end
+	local oneLine = label:GetStringHeight()
+	local line, lastW
+	for word in text:gmatch("%S+") do
+		local candidate = line and line .. " " .. word or word
+		label:SetText(candidate)
+		local candidateW = label:GetStringWidth()
+		if line and candidateW > room then
+			label:SetText(word)
+			line, lastW = word, label:GetStringWidth()
+		else
+			line, lastW = candidate, candidateW
+		end
+	end
+	label:SetText(text)
+	label:SetWordWrap(true)
+	label:SetMaxLines(2)
+	label:SetWidth(room)
+	return math.min(lastW or 0, room), math.max(0, label:GetStringHeight() - oneLine)
+end
+
 ---@class LedgerLeaderWidget: LedgerJournalWidget
 ---@field numeral FontString
 ---@field value FontString
@@ -437,21 +481,23 @@ makers.leader = function(parent)
 		self.note:SetText(block.note or "")
 		bound(self.note, width * 0.25)
 		local noteW = block.note and self.note:GetWidth() + 8 or 0
-		self.value:ClearAllPoints()
-		self.value:SetPoint("TOPRIGHT", -noteW, -3)
-		self.note:ClearAllPoints()
-		self.note:SetPoint("TOPRIGHT", 0, -2)
 		local valueW = (block.value and self.value:GetWidth() or 0) + noteW
-		bound(self.label, width - left - valueW - 12)
+		-- words longer than their room (German "Kuriositäten: Plunder, Schätze, Unverzeichnetes", 1.1.1) wrap onto a
+		-- second line, the line standing that much taller, and its leader and value follow the last line
+		local lastW, drop = fitLeaderWords(self.label, block.text or "", width - left - valueW - 12)
+		self.value:ClearAllPoints()
+		self.value:SetPoint("TOPRIGHT", -noteW, -3 - drop)
+		self.note:ClearAllPoints()
+		self.note:SetPoint("TOPRIGHT", 0, -2 - drop)
 		self.dots:Hide()
 		if not pair then
-			local from = left + self.label:GetWidth() + 6
+			local from = left + lastW + 6
 			local to = width - valueW - 6
 			if to > from then
-				self.dots:Lay(from, 15, to - from)
+				self.dots:Lay(from, 15 + drop, to - from)
 			end
 		end
-		return (pair and not ruled) and 22 or 26
+		return ((pair and not ruled) and 22 or 26) + drop
 	end
 	return widget
 end
@@ -465,6 +511,19 @@ end
 -- columns' heads are set to fit them.
 local XP_COLUMN_W = 84
 local XP_HEAD_FLOOR = 9
+
+-- The widest of `label`'s words, each measured on its own through the label, which is then given back its text.
+---@param label FontString
+---@return number
+local function widestWordOf(label)
+	local text, widest = label:GetText() or "", 0
+	for word in text:gmatch("%S+") do
+		label:SetText(word)
+		widest = math.max(widest, label:GetStringWidth())
+	end
+	label:SetText(text)
+	return widest
+end
 
 -- A line of "Where your XP came from" (LED-R150): its source's name, then this climb's XP and all told's in two
 -- columns at the right; with `header`, the columns' heads in small capitals; with `off` (its Module is off, AXP-R90),
@@ -500,27 +559,52 @@ makers.xpSource = function(parent)
 		self.total:SetText(block.total or "")
 		-- the columns from the right: all told at the edge, this climb before it, the name in what is left
 		local column = math.min(XP_COLUMN_W, width / 4)
+		local room, wrapped = column - 6, false
+		for _, head in ipairs({ self.climb, self.total }) do
+			head:SetWordWrap(false)
+		end
 		if header then
-			-- heads too wide for their column (a longer language's) are set smaller, both alike, to XP_HEAD_FLOOR; past
-			-- it the client cuts them (#560)
-			local widest = 0
+			-- heads too wide for their column (a longer language's), measured unbounded, wrap onto two lines, both alike
+			-- (#560 set them smaller to one line, and German "DIESER AUFSTI…" was cut even so, 1.1.1); they are set
+			-- smaller only where a word is wider than the column, to XP_HEAD_FLOOR, past which the client cuts it
+			local widest, widestWord = 0, 0
 			for _, head in ipairs({ self.climb, self.total }) do
 				head:SetWidth(0)
 				widest = math.max(widest, head:GetStringWidth())
+				widestWord = math.max(widestWord, widestWordOf(head))
 			end
-			if widest > column - 6 then
-				local fit = math.max(XP_HEAD_FLOOR, math.floor(size * (column - 6) / widest * 2) / 2)
-				ns.JournalRestyle(self.climb, face, fit, figure)
-				ns.JournalRestyle(self.total, face, fit, figure)
+			if widest + 1 > room then
+				wrapped = true
+				local fit = size
+				if widestWord + 1 > room then
+					fit = math.max(XP_HEAD_FLOOR, math.floor(size * room / (widestWord + 1) * 2) / 2)
+				end
+				for _, head in ipairs({ self.climb, self.total }) do
+					ns.JournalRestyle(head, face, fit, figure)
+					head:SetWordWrap(true)
+					head:SetMaxLines(2)
+				end
+			end
+		end
+		-- the heads' one line, measured unbounded, to know how much taller two stand
+		local oneLine = 0
+		if wrapped then
+			for _, head in ipairs({ self.climb, self.total }) do
+				head:SetWidth(0)
+				oneLine = math.max(oneLine, head:GetStringHeight())
 			end
 		end
 		self.total:ClearAllPoints()
 		self.total:SetPoint("TOPRIGHT", self, "TOPLEFT", width, header and -4 or -3)
 		self.climb:ClearAllPoints()
 		self.climb:SetPoint("TOPRIGHT", self, "TOPLEFT", width - column, header and -4 or -3)
-		bound(self.total, column - 6)
-		bound(self.climb, column - 6)
+		bound(self.total, room)
+		bound(self.climb, room)
 		bound(self.label, math.max(1, width - 2 * column - 6))
+		local drop = 0
+		if wrapped then
+			drop = math.max(0, self.climb:GetStringHeight() - oneLine, self.total:GetStringHeight() - oneLine)
+		end
 		for _, strike in ipairs(self.strikes) do
 			strike:SetShown(off)
 		end
@@ -528,7 +612,7 @@ makers.xpSource = function(parent)
 		if same and before and before ~= block.value then
 			ns.JournalInk(self.climb)
 		end
-		return header and 20 or 22
+		return header and 20 + drop or 22
 	end
 	return widget
 end
@@ -1049,6 +1133,34 @@ local function newTile(parent, width)
 	return tile
 end
 
+-- Fits a tile's rank line to `room`, its text set (LED-R131), and returns how far its first line rises above its place
+-- at `lineY`. A line that fits is one line there, as wide as its words. A longer one (German "unbefischt · jede Fertigkeit",
+-- "Einheimischer · 63%", 1.1.1) wraps onto two lines whose last stays at the kit's place over the bar, rising into the
+-- room under a name of one line; with no room there, under a name of two, it stays one line and the client cuts it.
+---@param tile LedgerZoneTileView
+---@param room number
+---@param lineY number
+---@return number
+local function rankLineRise(tile, room, lineY)
+	local line = tile.line
+	line:SetWordWrap(false)
+	line:SetWidth(0)
+	if line:GetStringWidth() + 1 <= room then
+		bound(line, room)
+		return 0
+	end
+	local oneLine = line:GetStringHeight()
+	line:SetWordWrap(true)
+	line:SetMaxLines(2)
+	line:SetWidth(room)
+	local rise = math.max(0, line:GetStringHeight() - oneLine)
+	if lineY - rise >= NAME_Y + tile.name:GetStringHeight() + 2 then
+		return rise
+	end
+	line:SetWordWrap(false)
+	return 0
+end
+
 -- Fills a tile with `data` (LedgerZoneTile).
 ---@param tile LedgerZoneTileView
 ---@param data LedgerZoneTile
@@ -1080,8 +1192,6 @@ local function fillTile(tile, data, open)
 	local base = dashed and LINE_Y_DASHED or LINE_Y
 	local lineY = math.min(base + LINE_DROP, math.max(base, math.ceil(NAME_Y + tile.name:GetStringHeight() + 2)))
 	ns.JournalRestyle(tile.line, "italic", 13, dashed and INK.noteLight or INK.tileInk)
-	tile.line:ClearAllPoints()
-	tile.line:SetPoint("TOPLEFT", 10, -lineY)
 	tile.line:SetText(data.line or "")
 	-- "caught" and its check as wide as its words, to at most a little over half the row (a longer language's is cut there by the
 	-- client), and the rank line in what it leaves (#560: it ran out of the tile's left edge, over the rank line)
@@ -1091,7 +1201,8 @@ local function fillTile(tile, data, open)
 		bound(tile.line2, (w - 20) * 0.55)
 		line2W = tile.line2:GetWidth() + 6
 	end
-	bound(tile.line, w - 20 - line2W)
+	tile.line:ClearAllPoints()
+	tile.line:SetPoint("TOPLEFT", 10, -(lineY - rankLineRise(tile, w - 20 - line2W, lineY)))
 	tile.line2:ClearAllPoints()
 	tile.line2:SetPoint("TOPRIGHT", -8, -(lineY - 5))
 	ns.JournalAt(tile.barCase, tile, 10, lineY + 20)

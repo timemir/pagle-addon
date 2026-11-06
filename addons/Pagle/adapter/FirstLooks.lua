@@ -75,22 +75,6 @@ local function measure(window)
 	return scale, { left = left * scale, right = UIParent:GetWidth() - right * scale }
 end
 
--- What the notes' places were worked out from, to tell when the window moved or rescaled.
----@param window Frame
----@return string
-local function signature(window)
-	local scale, free = measure(window)
-	local width = window:GetWidth()
-	if not free then
-		return ("%s %s"):format(scale, width)
-	end
-	return ("%s %s %s %s %s"):format(scale, width, free.left, free.right, tostring(window:GetTop()))
-end
-
--- The room kept between two notes, and between a note and what it must leave in sight; and how far inside the
--- screen's top and bottom a note stays.
-local NOTE_GAP, SCREEN_EDGE = 8, 8
-
 -- `region`'s rectangle in UIParent's units (y up), nil unless it shows and is laid out.
 ---@param region Region?
 ---@return { left: number, right: number, bottom: number, top: number }?
@@ -105,6 +89,24 @@ local function rectOf(region)
 	local k = region:GetEffectiveScale() / UIParent:GetEffectiveScale()
 	return { left = left * k, right = right * k, bottom = bottom * k, top = top * k }
 end
+
+-- What the notes' places were worked out from, to tell when the window moved or rescaled.
+---@param window Frame
+---@return string
+local function signature(window)
+	local scale, free = measure(window)
+	local width = window:GetWidth()
+	if not free then
+		return ("%s %s"):format(scale, width)
+	end
+	-- whether its close is laid out yet: the notes keep off it once it is (unstack)
+	local close = rectOf((window --[[@as { close: Region? }]]).close) and "close" or "-"
+	return ("%s %s %s %s %s %s"):format(scale, width, free.left, free.right, tostring(window:GetTop()), close)
+end
+
+-- The room kept between two notes, and between a note and what it must leave in sight; and how far inside the
+-- screen's top and bottom a note stays.
+local NOTE_GAP, SCREEN_EDGE = 8, 8
 
 -- How far below the window's foot what hangs from it reaches, in UIParent's units: a book's ribbons (the shell's
 -- `frame.ribbons`, BOOK-R17), which the coach bar must not cover. 0 for a window with nothing hanging.
@@ -279,10 +281,11 @@ local function place()
 			if foot then
 				local left = (anchor.relativePoint == "TOPRIGHT" and foot.right or foot.left) + anchor.x
 				local top = foot.top + anchor.y
+				-- the paper and its badge, which reaches past its top left corner
 				placed[frame] = {
-					left = left,
+					left = left - ns.NOTE_BADGE_OUT,
 					right = left + frame:GetWidth(),
-					top = top,
+					top = top + ns.NOTE_BADGE_OUT,
 					bottom = top - frame:GetHeight(),
 					over = note.x + note.w > 0 and note.x < width,
 				}

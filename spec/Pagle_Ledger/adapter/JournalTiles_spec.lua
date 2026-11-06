@@ -116,6 +116,69 @@ describe("a zone tile on the Fish Journal's pages (LED-R131)", function()
 		assert.is_true(top(swamp.barFill) + 4 <= TILE_H)
 	end)
 
+	-- A rank line longer than its row was cut by the client: German "Einheimischer · 5…", "unbefischt · jede…" on Home's
+	-- tiles and "Stammgast ·…" beside "gefangen ✓" on a fish's (1.1.1). It wraps onto a second line above, its last at
+	-- the kit's place over the bar, where a one-line name leaves the room. The client's measures stood in: a line of
+	-- italic stands 14 tall, two 29.
+	local function twoLinesWhenWrapped(line)
+		line.GetStringHeight = function(self)
+			local wrapped = self.wordWrap and (self.width or 0) > 0 and #(self.text or "") * 6 > self.width
+			return wrapped and 29 or 14
+		end
+	end
+
+	it("led_r131 wraps a rank line longer than its row onto two lines, its last at the kit's place", function()
+		local loaded, tiles = drawnTiles({
+			{ name = "Tirisfal Glades", line = "unbefischt · jede Fertigkeit", faded = true },
+			{ name = "Duskwood", line = "Einheimischer · 63%", bar = 0.63, line2 = "gefangen" },
+			{ name = "Wetlands", line = "Local · 88%", bar = 0.88 },
+		})
+		for _, tile in ipairs(tiles) do
+			twoLinesWhenWrapped(tile.line)
+		end
+		assert(#tiles[1].line.text * 6 > tiles[1].tileW - 20, "the dashed tile's line is wider than its row")
+
+		local tirisfal, duskwood, wetlands = unpack(redrawn(loaded))
+
+		assert.are.same({ true, 2, tirisfal.tileW - 20, 49 - 15 }, {
+			tirisfal.line.wordWrap,
+			tirisfal.line.maxLines,
+			tirisfal.line:GetWidth(),
+			top(tirisfal.line),
+		})
+		local room = duskwood.tileW - 20 - duskwood.line2:GetWidth() - 6
+		assert(#duskwood.line.text * 6 > room, "the line beside caught is wider than what caught leaves")
+		assert.are.same({ true, room, 42 - 15, 37, 62 }, {
+			duskwood.line.wordWrap,
+			duskwood.line:GetWidth(),
+			top(duskwood.line),
+			top(duskwood.line2),
+			top(duskwood.barCase),
+		})
+		assert(top(duskwood.line) >= top(duskwood.name) + 14 + 2, "under the name's one line")
+		-- a line that fits stays one line at the kit's place, as wide as its words
+		assert.are.same({ false, 42, #"Local · 88%" * 6 + 1 }, {
+			wetlands.line.wordWrap,
+			top(wetlands.line),
+			wetlands.line:GetWidth(),
+		})
+	end)
+
+	it("led_r131 keeps a long rank line to one line, cut by the client, under a name of two lines", function()
+		local loaded, tiles = drawnTiles({
+			{ name = "Stranglethorn Vale", line = "Einheimischer · 63%", bar = 0.63, line2 = "gefangen" },
+		})
+		twoLinesWhenWrapped(tiles[1].line)
+		tiles[1].name.GetStringHeight = function()
+			return 38
+		end
+
+		local vale = redrawn(loaded)[1]
+
+		assert.are.same({ false, 48, 68 }, { vale.line.wordWrap, top(vale.line), top(vale.barCase) })
+		assert(10 + vale.line:GetWidth() <= vale.tileW - 8 - vale.line2:GetWidth(), "and clear of caught")
+	end)
+
 	-- "caught ✓" in a longer language ran out of the tile's left edge, over the rank line (#560): it keeps to at most
 	-- about half the line's room, and the rank line takes what it leaves.
 	it("led_r131 keeps a long caught line on its tile, and the rank line clear of it", function()

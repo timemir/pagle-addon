@@ -10,9 +10,10 @@ local Pagle = Pagle
 
 -- Pagle's minimap icon (CORE-R53–R56): Core's own round button on the minimap's edge, PagleMinimapButton, beside the
 -- compartment entry (adapter/Menu.lua). Together they are Pagle's menu. It embeds no library (CORE-R6). A left click
--- opens the compartment's menu, owned by the icon; the mouse over it shows the menu's tooltip. The player drags it
--- round the edge, by angle (logic/MinimapIcon.lua), never while restricted; its angle and shown state are kept in
--- PagleDB.global.minimap. Its own owner on the event frames, so no other Core file's registration replaces it.
+-- opens the compartment's menu, owned by the icon while Minimap is its parent, else by nothing (CORE-R54); the mouse
+-- over it shows the menu's tooltip. The player drags it round the edge, by angle (logic/MinimapIcon.lua), never while
+-- restricted; its angle and shown state are kept in PagleDB.global.minimap. Its own owner on the event frames, so no
+-- other Core file's registration replaces it.
 local OWNER = "Pagle minimap icon"
 
 -- The favicon (logic/MinimapIcon.lua).
@@ -88,14 +89,16 @@ local function startDragging(self)
 	self:SetScript("OnUpdate", followCursor)
 end
 
--- A left click opens Pagle's menu at once, owned by the icon, so hiding the icon closes it; other buttons do nothing
--- (CORE-R54). Unlike the compartment's, no menu of the client's closes after the click. It opens while restricted
--- too, as the compartment's does.
+-- A left click opens Pagle's menu at once, at the cursor; other buttons do nothing (CORE-R54). While Minimap is its
+-- parent the icon owns the menu, so hiding the icon closes it. Once another addon has moved it (EllesmereUI's flyout
+-- hides at any outside press, the menu's included), the menu belongs to nothing, as the compartment's does. The parent
+-- is read at each click. Unlike the compartment's, no menu of the client's closes after the click. It opens while
+-- restricted too, as the compartment's does.
 ---@param self table the button
 ---@param mouseButton string
 local function onClick(self, mouseButton)
 	if mouseButton == "LeftButton" then
-		ns.OpenMenu(self)
+		ns.OpenMenu(self:GetParent() == Minimap and self or nil)
 	end
 end
 
