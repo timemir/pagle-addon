@@ -1,5 +1,22 @@
 # Pagle
 
+## 1.2.1 (2026-11-06)
+
+Move the Session summary, and read every stamp.
+
+### Added
+
+- Shift-drag the Session summary (and the Write-up) to move it, and it stays where you put it. A small "Shift-drag to move" note next to its Close button says so. Settings › Announcements › Toast position › Reset puts it back in the middle of the screen, along with the toasts. (#583)
+- Hovering a toast or Nod shows "Shift-drag to move" until you've moved the toasts for the first time, or again after Reset. (#584)
+
+### Fixed
+
+- A toast with two stamps, such as "New variety" and "New record", no longer shrinks them until they're hard to read. When they don't fit beside the heading, the second stamp goes on a row of its own under the first. In the Widow's Web and Cartographer's Folio styles, and on toasts with a size ruler where a second row would crowd its numbers, they stay on one row as before. (#584)
+
+### TRANSLATORS
+
+- Español: fmartingr
+
 ## 1.2.0 (2026-11-06)
 
 Set your own fishing sound, and keep the next-action button out of the way.
