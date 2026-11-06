@@ -1,5 +1,23 @@
 # Pagle
 
+## 1.2.0 (2026-11-06)
+
+Set your own fishing sound, and keep the next-action button out of the way.
+
+### Added
+
+- The Fishing audio mix can be set up your way. Under its switch on the Fishing page, each channel (Master volume, Effects, Music, Ambience, Dialog) has a box and a volume slider, as in the game's own Sound settings: untick a channel to leave it as you have it, or pick how loud it plays while you fish. Master volume goes no lower than 10%, so you still hear the splash. Out of the box the mix is the same as before, so nothing changes until you change it. (#576)
+- The audio mix can play the game's sound on another output device while you fish, such as your headset, and switch back afterwards. The sound drops out for a moment as it switches. A device that isn't plugged in is skipped, and the row shows it as "(not found)". (#576)
+- A new option under Show the next-action button, "Hide until a fishing pole is in hand": with it on, the button stays hidden while you're out of your fishing gear and shows once a pole is in hand or you're fishing. The Fishing key still puts your fishing set on. It's off unless you turn it on. (#575)
+
+### Changed
+
+- "Keep sound when the game is in the background" is now called "Keep sound in the background", so it fits its row. It works as before. (#576)
+
+### TRANSLATORS
+
+- Español: fmartingr
+
 ## 1.1.2 (2026-11-06)
 
 Long names scroll, and the last cut labels fit.
