@@ -455,5 +455,7 @@ local helperGlobals = {
 }
 files["spec/**"] = { std = "lua51+busted", read_globals = helperGlobals }
 files["spec/support/*.lua"] = { globals = helperGlobals }
+-- The layout harness (scripts/measure-layout.sh) runs its tour under busted, with the specs' helper behind its own.
+files["scripts/measure-layout/**"] = { std = "lua51+busted", read_globals = helperGlobals }
 -- Backend-generated Recovery data fixture sets exactly the data addon's one global.
 files["spec/Pagle/fixtures/Recovery.lua"] = { globals = { "PagleRecoveryData" } }
