@@ -489,6 +489,54 @@ describe("the Fish Journal's widgets (ledger.md › UI)", function()
 		assert.are.same({}, loaded.client.tooltipLines())
 	end)
 
+	-- Home's contents II in German, "Kuriositäten: Plunder, Schätze, Unverzeichnetes", was cut to "…Unverzei…" (1.1.1). A
+	-- contents line too long for its room wraps onto a second line, its leader and value following the last. The
+	-- client's measures stood in: the print at 16 runs near 7.1 a letter, a line stands 19 tall.
+	it("led_r132 wraps a contents line too long for its room, its leader and value on the last line", function()
+		local german = "Kuriositäten: Plunder, Schätze, Unverzeichnetes"
+		local loaded = drawn({
+			{ kind = "leader", numeral = "II.", text = german, value = "5 / 31", place = { id = "home" } },
+			{ kind = "leader", numeral = "III.", text = "Legends", value = "0 / 3", place = { id = "home" } },
+		})
+		local function measured(widget)
+			function widget.label.GetStringWidth(label)
+				return #label.text * 7.1
+			end
+			function widget.label.GetStringHeight(label)
+				local wrapped = label.wordWrap and (label.width or 0) > 0 and #label.text * 7.1 > label.width
+				return wrapped and 38 or 19
+			end
+		end
+		for _, widget in ipairs(loaded.ns.journal.shown.left.drawn.leader) do
+			measured(widget)
+		end
+		local width = loaded.ns.journal.shown.left.width
+		local curios = loaded.ns.journal.shown.left.drawn.leader[1]
+		local room = width - 28 - curios.value:GetWidth() - 12
+		assert(#german * 7.1 > room, "the German is wider than its room")
+
+		loaded.ns.journal:Draw()
+
+		local legends
+		curios, legends = unpack(loaded.ns.journal.shown.left.drawn.leader)
+		assert.are.same({ german, true, 2, room }, {
+			curios.label:GetText(),
+			curios.label.wordWrap,
+			curios.label.maxLines,
+			curios.label:GetWidth(),
+		})
+		-- the value on the second line, and the leader from the last line's words to it
+		local valueY = curios.value.points[1][#curios.value.points[1]]
+		assert.are.equal(-3 - 19, valueY)
+		-- "Kuriositäten: Plunder, Schätze," fills the first line; "Unverzeichnetes" is the last
+		local last = #"Unverzeichnetes" * 7.1
+		assert(#"Kuriositäten: Plunder, Schätze," * 7.1 <= room, "the first line's words fit")
+		assert.are.same({ 28 + last + 6, -(15 + 19) }, { curios.dots.points[1][4], curios.dots.points[1][5] })
+		-- a line that fits stays one line
+		assert.is_false(legends.label.wordWrap)
+		assert.are.equal(#"Legends" * 7.1 + 1, legends.label:GetWidth())
+	end)
+
 	it("draws each kind of block with its words (ledger.md › UI)", function()
 		local loaded, texts = drawn({
 			{ kind = "kicker", text = "The Waters" },

@@ -377,6 +377,42 @@ makers.button = function(parent)
 	return widget
 end
 
+-- Fits a contents line's words, `label` showing `text`, to `room` (LED-R132): one line as wide as its words when they
+-- fit; otherwise two lines at `room`, measured unbounded first. Returns how wide its last line is, where the leader
+-- starts, and how much taller than one line it stands. The last line is found as the client breaks it, a word at a
+-- time, by measuring each line's words through the label before it is given back its text.
+---@param label FontString
+---@param text string
+---@param room number
+---@return number lastW
+---@return number drop
+local function fitLeaderWords(label, text, room)
+	label:SetWordWrap(false)
+	label:SetWidth(0)
+	if label:GetStringWidth() + 1 <= room then
+		bound(label, room)
+		return label:GetWidth(), 0
+	end
+	local oneLine = label:GetStringHeight()
+	local line, lastW
+	for word in text:gmatch("%S+") do
+		local candidate = line and line .. " " .. word or word
+		label:SetText(candidate)
+		local candidateW = label:GetStringWidth()
+		if line and candidateW > room then
+			label:SetText(word)
+			line, lastW = word, label:GetStringWidth()
+		else
+			line, lastW = candidate, candidateW
+		end
+	end
+	label:SetText(text)
+	label:SetWordWrap(true)
+	label:SetMaxLines(2)
+	label:SetWidth(room)
+	return math.min(lastW or 0, room), math.max(0, label:GetStringHeight() - oneLine)
+end
+
 ---@class LedgerLeaderWidget: LedgerJournalWidget
 ---@field numeral FontString
 ---@field value FontString
@@ -437,21 +473,23 @@ makers.leader = function(parent)
 		self.note:SetText(block.note or "")
 		bound(self.note, width * 0.25)
 		local noteW = block.note and self.note:GetWidth() + 8 or 0
-		self.value:ClearAllPoints()
-		self.value:SetPoint("TOPRIGHT", -noteW, -3)
-		self.note:ClearAllPoints()
-		self.note:SetPoint("TOPRIGHT", 0, -2)
 		local valueW = (block.value and self.value:GetWidth() or 0) + noteW
-		bound(self.label, width - left - valueW - 12)
+		-- words longer than their room (German "Kuriositäten: Plunder, Schätze, Unverzeichnetes", 1.1.1) wrap onto a
+		-- second line, the line standing that much taller, and its leader and value follow the last line
+		local lastW, drop = fitLeaderWords(self.label, block.text or "", width - left - valueW - 12)
+		self.value:ClearAllPoints()
+		self.value:SetPoint("TOPRIGHT", -noteW, -3 - drop)
+		self.note:ClearAllPoints()
+		self.note:SetPoint("TOPRIGHT", 0, -2 - drop)
 		self.dots:Hide()
 		if not pair then
-			local from = left + self.label:GetWidth() + 6
+			local from = left + lastW + 6
 			local to = width - valueW - 6
 			if to > from then
-				self.dots:Lay(from, 15, to - from)
+				self.dots:Lay(from, 15 + drop, to - from)
 			end
 		end
-		return (pair and not ruled) and 22 or 26
+		return ((pair and not ruled) and 22 or 26) + drop
 	end
 	return widget
 end
