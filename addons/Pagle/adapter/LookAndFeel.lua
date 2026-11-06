@@ -30,6 +30,7 @@ local registered = {}
 ---@field label FontString
 ---@field dropdown DropdownButton
 ---@field note FontString
+---@field measure FontString hidden, measuring the goods' names
 
 -- Core's widgets on a slot row's frame, by frame, and the slot each frame shows now (nil once released). Weak, as the
 -- panel's list owns the frames.
@@ -40,6 +41,10 @@ local slotOf = setmetatable({}, { __mode = "k" })
 
 -- Where the dropdown starts, from the row's top centre, and the gap the label keeps before it.
 local DROPDOWN_X, LABEL_GAP = -80, 8
+-- The dropdown's width: 220, wider for a longer good's name (German's "Wappen: Longjaw Mud Snapper"), its words and
+-- the room its text keeps from the edges and the arrow, up to 300, so it still ends short of where a row's button
+-- does (SET-R11); past that the client cuts the name with "...".
+local DROPDOWN_W, DROPDOWN_MAX, DROPDOWN_PAD = 220, 300, 44
 
 -- The widgets on `frame`, made the first time a slot row draws on it: the label at the left as a native row's, the
 -- dropdown beside it, and the note under the dropdown.
@@ -62,7 +67,11 @@ local function widgets(frame)
 		local note = frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
 		note:SetPoint("TOPLEFT", dropdown, "BOTTOMLEFT", 2, -2)
 		note:SetJustifyH("LEFT")
-		own = { label = label, dropdown = dropdown, note = note }
+		-- Measures the goods' names in the dropdown's font, hidden, so the dropdown's own text is never changed.
+		local measure = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+		measure:SetWordWrap(false)
+		measure:Hide()
+		own = { label = label, dropdown = dropdown, note = note, measure = measure }
 		widgetsOf[frame] = own
 	end
 	return own
@@ -94,6 +103,12 @@ local function draw(frame, slot)
 	local own = widgets(frame)
 	slotOf[frame] = slot.id
 	own.label:SetText(slot.label)
+	local widest = 0
+	for _, choice in ipairs(ns.SlotChoices(ns.goods, slot.id)) do
+		own.measure:SetText(choice.label)
+		widest = math.max(widest, own.measure:GetStringWidth())
+	end
+	own.dropdown:SetWidth(math.max(DROPDOWN_W, math.min(widest + DROPDOWN_PAD, DROPDOWN_MAX)))
 	own.dropdown:SetupMenu(menu(slot.id))
 	local more = ns.SlotMoreInShop(ns.goods, slot.id)
 	own.note:SetText(ns.RenderText(L.SETTINGS_SLOT_MORE, { more = more }))

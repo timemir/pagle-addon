@@ -285,6 +285,32 @@ describe("A slot dropdown", function()
 		end
 	)
 
+	it(
+		"widens its dropdown to its longest good's name, from 220 up to 300, so a longer language's name isn't cut"
+			.. " (SET-R51)",
+		function()
+			local loaded = coreWithModules()
+			local dropdown =
+				loaded.client.settings.dropdownOf(loaded.client.settings.rowNamed(showLook(loaded), "Journal binding"))
+			assert.are.equal(220, dropdown:GetWidth(), "Oak fits the native width")
+
+			-- A name like a German crest's, "Wappen: Longjaw Mud Snapper": wider than the 176 the native width leaves its
+			-- words on the fake, 6 a character.
+			loaded.ns.goods:SetPurchased({ ["ledger.binding.lapis"] = true })
+			local long = "Wappen: Longjaw Mud Snapper (Rare Silver)"
+			-- Renamed as a fish crest is once the client has the fish (VAR-R12).
+			for _, good in ipairs(loaded.ns.goods:OwnedOf("ledger.binding")) do
+				if good.id == "ledger.binding.lapis" then
+					good.name = long
+				end
+			end
+			dropdown =
+				loaded.client.settings.dropdownOf(loaded.client.settings.rowNamed(showLook(loaded), "Journal binding"))
+			assert(#long * 6 > 220 - 44, "the case is cut at the native width")
+			assert.are.equal(#long * 6 + 44, dropdown:GetWidth())
+		end
+	)
+
 	it("shows no note once every good for sale in the slot is owned (SET-R51)", function()
 		local loaded = coreWithModules()
 		loaded.ns.goods:SetPurchased({ ["ledger.binding.ivy"] = true, ["ledger.binding.lapis"] = true })
