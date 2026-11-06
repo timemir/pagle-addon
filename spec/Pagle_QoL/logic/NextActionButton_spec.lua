@@ -7,12 +7,19 @@ describe("QoL's next-action button logic", function()
 	local FISHING_ICON, SET_ICON, LURE_ICON, LAST_ICON, CLAM_ICON = 136245, 132932, 134335, 133001, 134432
 
 	describe("ns.ButtonShown", function()
-		-- What the button reads: the setting on, QoL not standing down, and no stretch, pole or gear step.
+		-- What the button reads: the setting on, Hide until a fishing pole is in hand off, QoL not standing down, and no
+		-- stretch, pole or gear step.
 		---@param fields table?
 		---@return PagleQoLButtonShownInput
 		local function input(fields)
-			local read =
-				{ setting = true, standingDown = false, stretch = false, poleInHand = false, gearReady = false }
+			local read = {
+				setting = true,
+				untilPole = false,
+				standingDown = false,
+				stretch = false,
+				poleInHand = false,
+				gearReady = false,
+			}
 			for key, value in pairs(fields or {}) do
 				read[key] = value
 			end
@@ -32,6 +39,15 @@ describe("QoL's next-action button logic", function()
 		it("is hidden with the setting off, or while QoL stands down (QOL-R72, QOL-R82)", function()
 			assert.is_false(ns.ButtonShown(input({ setting = false, poleInHand = true, stretch = true })))
 			assert.is_false(ns.ButtonShown(input({ standingDown = true, poleInHand = true, gearReady = true })))
+		end)
+
+		it("waits for a stretch or a pole with Hide until a fishing pole is in hand on (QOL-R72)", function()
+			-- The gear step alone no longer shows it.
+			assert.is_false(ns.ButtonShown(input({ untilPole = true, gearReady = true })))
+			assert.is_true(ns.ButtonShown(input({ untilPole = true, gearReady = true, poleInHand = true })))
+			assert.is_true(ns.ButtonShown(input({ untilPole = true, gearReady = true, stretch = true })))
+			assert.is_true(ns.ButtonShown(input({ untilPole = true, poleInHand = true })))
+			assert.is_true(ns.ButtonShown(input({ untilPole = true, stretch = true })))
 		end)
 	end)
 

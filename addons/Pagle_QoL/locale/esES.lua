@@ -107,6 +107,8 @@ ns.Locale("esES", function(L)
 	L.SETTINGS_FISHING_SET_NONE = "Ninguno (equipo intacto)"
 	L.SETTINGS_FISHING_SET_TOOLTIP = "La Tecla de pesca te lo pone si no llevas caña en la mano. El doble clic se lo salta."
 	L.SETTINGS_GEAR = "Equipo"
+	L.SETTINGS_HIDE_UNTIL_POLE = "Solo con la caña en la mano"
+	L.SETTINGS_HIDE_UNTIL_POLE_TOOLTIP = "Mantiene el botón oculto mientras no llevas tu ropa de pescar. Aparece en cuanto tienes una caña en la mano o estás pescando."
 	L.SETTINGS_LURE = "Señuelo"
 	L.SETTINGS_LURES = "Señuelos"
 	L.SETTINGS_LURES_AND_CLAMS = "Señuelos y almejas"

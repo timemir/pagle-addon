@@ -52,6 +52,8 @@ local TIPS = {
 	audio = "While you fish: effects at full; music, ambience and dialog muted; master untouched. Put back afterwards.",
 	autoLoot = "Only while you fish. Skipped if you already have auto-loot on.",
 	button = "Shows what your next press will do. Shift-drag to move.",
+	untilPole = "Keeps the button hidden while you're out of your fishing gear. It shows once a pole is in hand or "
+		.. "you're fishing.",
 	cozy = "Nothing pops up or plays. Every moment waits in the Session summary. A Legend's splash still shows, "
 		.. "silently.",
 	budget = "When toasts come close together, the smaller ones step down to a quiet Nod. Records always keep their "
@@ -147,6 +149,7 @@ local EXPECTED = {
 			{ "checkbox", "Keep sound when the game is in the background", under = true, of = "QoL" },
 			{ "checkbox", "Auto-loot while fishing", tip = TIPS.autoLoot, of = "QoL" },
 			{ "checkbox", "Show the next-action button", tip = TIPS.button, of = "QoL" },
+			{ "checkbox", "Hide until a fishing pole is in hand", under = true, tip = TIPS.untilPole, of = "QoL" },
 			{ "button", "Button position", under = true, caption = "Reset", of = "QoL" },
 		},
 	},
@@ -632,15 +635,21 @@ describe("Greying in the Settings tree", function()
 		assert.are.same({ "Swap gear", "Lure" }, greyedOn(loaded, "Fishing"))
 	end)
 
-	it("greys Button position while the next-action button is off (SET-R20)", function()
-		local loaded = ready()
+	it(
+		"greys Hide until a fishing pole is in hand and Button position while the button is off (SET-R20, SET-R31)",
+		function()
+			local loaded = ready()
 
-		setRow(loaded, "Fishing", "Show the next-action button", false)
-		assert.are.same({ "Swap gear", "Lure", "Button position" }, greyedOn(loaded, "Fishing"))
+			setRow(loaded, "Fishing", "Show the next-action button", false)
+			assert.are.same(
+				{ "Swap gear", "Lure", "Hide until a fishing pole is in hand", "Button position" },
+				greyedOn(loaded, "Fishing")
+			)
 
-		setRow(loaded, "Fishing", "Show the next-action button", true)
-		assert.are.same({ "Swap gear", "Lure" }, greyedOn(loaded, "Fishing"))
-	end)
+			setRow(loaded, "Fishing", "Show the next-action button", true)
+			assert.are.same({ "Swap gear", "Lure" }, greyedOn(loaded, "Fishing"))
+		end
+	)
 
 	it("greys the budget, its sliders and Show every catch in Cozy mode, and nothing else (SET-R30–R32)", function()
 		local loaded = ready()
@@ -795,6 +804,7 @@ describe("Each page's Defaults button", function()
 				"Auto-loot while fishing",
 				"Cast with",
 				"Fishing audio mix",
+				"Hide until a fishing pole is in hand",
 				"Keep sound when the game is in the background",
 				"Lure",
 				"Lures",
@@ -882,13 +892,14 @@ describe("Each page's Defaults button", function()
 				["Keep sound when the game is in the background"] = true,
 				["Auto-loot while fishing"] = false,
 				["Show the next-action button"] = false,
+				["Hide until a fishing pole is in hand"] = true,
 			}) do
 				setRow(loaded, "Fishing", label, value)
 			end
 
 			loaded.client.settings.defaults(loaded.client.settings.page("Fishing"))
 
-			-- qol.md › Settings' defaults: Both, Best I have, the Shiny Bauble, on, on, off, on, on.
+			-- qol.md › Settings' defaults: Both, Best I have, the Shiny Bauble, on, on, off, on, on, off.
 			assert.are.same({
 				["Cast with"] = "both",
 				["Fishing set"] = 3,
@@ -899,6 +910,7 @@ describe("Each page's Defaults button", function()
 				["Keep sound when the game is in the background"] = false,
 				["Auto-loot while fishing"] = true,
 				["Show the next-action button"] = true,
+				["Hide until a fishing pole is in hand"] = false,
 			}, valuesOn(loaded, "Fishing"))
 			assert.are.same({ "F" }, loaded.client.boundKeys.PAGLE_FISHING_KEY)
 			assert.are.same({ "G" }, loaded.client.boundKeys.PAGLE_SWAP_GEAR)

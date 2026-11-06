@@ -248,6 +248,25 @@ function ns.AddSettings(M, store)
 			store.evaluate()
 		end,
 	})
+	-- The gear step alone no longer shows the button (QOL-R72); a change re-evaluates, which shows or hides it at once
+	-- (QOL-R25). Greyed out while the button is off, keeping its value (SET-R31).
+	M:AddSetting("fishing", {
+		kind = "checkbox",
+		parent = "indicator",
+		label = L.SETTINGS_HIDE_UNTIL_POLE,
+		tooltip = L.SETTINGS_HIDE_UNTIL_POLE_TOOLTIP,
+		default = defaults.indicator.untilPole,
+		get = function()
+			return store.profile().indicator.untilPole
+		end,
+		set = function(value)
+			store.profile().indicator.untilPole = value
+			store.evaluate()
+		end,
+		isEnabled = function()
+			return store.profile().indicator.shown
+		end,
+	})
 	-- A row labelled Button position with a Reset button; qol.md gives it no tooltip. It is no value, so the page's
 	-- Defaults button leaves the place alone (SET-R21). Greyed out while the button is off.
 	M:AddSetting("fishing", {

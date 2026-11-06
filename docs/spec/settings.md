@@ -36,7 +36,8 @@ Fishing                                                    (QoL only)
   [Gear]                    Fishing set  ↳ Save what I'm wearing as my fishing set  ↳ Swap gear
   [Lures and clams]         Lures  ↳ Lure;  Open clams between Casts
   [While you fish]          Fishing audio mix  ↳ Keep sound when the game is in the background;
-                            Auto-loot while fishing;  Show the next-action button  ↳ Button position
+                            Auto-loot while fishing;  Show the next-action button  ↳ Hide until a fishing pole is in hand
+                            ↳ Button position
 Announcements
                             Cozy mode;  Interruption budget  ↳ Interruptions  ↳ Per;  Show every catch;  Animations;  Toast style;  Sound set
   [Hunts]                   Announce open Hunt windows;  Remind me about the Pagle companion
@@ -139,6 +140,7 @@ The rules below are authoritative; this sketch only summarises them.
   | | ↳ Keep sound when the game is in the background | checkbox | the audio mix is off | Track Q step 4 |
   | | Auto-loot while fishing | checkbox | | Track Q step 4 |
   | | Show the next-action button | checkbox | | Track Q step 5 |
+  | | ↳ Hide until a fishing pole is in hand | checkbox (QOL-R72) | the next-action button is off | 1.2.0 |
   | | ↳ Button position | button, caption "Reset" (QOL-R73) | the next-action button is off | Track Q step 5 |
 
   Track Q runs in parallel with M2 onward ([roadmap.md](roadmap.md#track-q-qol-v1)); a header arrives with its section's first row. Until Cast with exists, the Fishing key row has no parent and is never greyed. In M1 the page has no value row, so its Defaults button changes nothing.
