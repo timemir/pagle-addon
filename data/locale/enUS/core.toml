@@ -127,7 +127,7 @@ SETTINGS_TRACKER_RESET_TOOLTIP = "Shift-drag any Pagle tracker to move them all.
 # The Announcements page's Toast position row (SET-R30, ANN-R98): its label, its button and the tooltip.
 SETTINGS_TOAST_POSITION = "Toast position"
 SETTINGS_TOAST_RESET = "Reset"
-SETTINGS_TOAST_RESET_TOOLTIP = "Shift-drag a toast to move the toasts and Nods. This puts them back at the bottom of the screen."
+SETTINGS_TOAST_RESET_TOOLTIP = "Shift-drag a toast to move the toasts and Nods, or the Session summary to move it. This puts them all back where they started."
 SETTINGS_NO_MODULE = "Recording your Catches. Enable a Module to see them."
 SETTINGS_MODULES = "Modules"
 SETTINGS_MODULES_NOTE = "Turn Modules on or off in the AddOns list."
@@ -237,6 +237,8 @@ CARD_TIME = "Time fished"
 CARD_HOURS = "{card_hours_1:0} h {card_hours_2} min"
 CARD_COINS = 'Pagle Coins +{coins} |TInterface\MoneyFrame\UI-GoldIcon:0|t'
 CARD_CLOSE = "Close"
+# The shared hint where a Shift-drag moves something: the card (ANN-R102), the toasts (ANN-R98).
+SHIFT_DRAG_HINT = "Shift-drag to move"
 # A toast style's sample on the Curio Shop's preview stage (wallet-and-shop.md › UI, ANN-R80): its headline, its
 # one stamp, and the button that shows it through the lanes.
 TOAST_SAMPLE_TITLE = "New Species"

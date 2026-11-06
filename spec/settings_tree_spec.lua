@@ -80,7 +80,8 @@ local TIPS = {
 		.. "Companion.",
 	pasteExport = "Copy your Catch log as a Paste string, to paste on the Pagle website without the Companion.",
 	trackerPosition = "Shift-drag any Pagle tracker to move them all. This puts them back under the minimap.",
-	toastPosition = "Shift-drag a toast to move the toasts and Nods. This puts them back at the bottom of the screen.",
+	toastPosition = "Shift-drag a toast to move the toasts and Nods, or the Session summary to move it. This puts them all"
+		.. " back where they started.",
 	huntsTracker = "A small tracker under the minimap with the Hunts you've pinned on the board.",
 	statsTracker = "Shows this Session and your watched Dry spells under the minimap. Watching a Dry spell turns it on.",
 	watched = "Watch or stop watching from any fish's page in the Stats book.",
