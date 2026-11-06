@@ -174,7 +174,7 @@ value = "Conjunto de pesca"
 en = "Fishing set"
 
 [SETTINGS_FISHING_SET_NONE]
-value = "Ninguno (el equipo se queda como está)"
+value = "Ninguno (equipo intacto)"
 en = "None (gear stays as it is)"
 
 [SETTINGS_SAVE_FISHING_SET]

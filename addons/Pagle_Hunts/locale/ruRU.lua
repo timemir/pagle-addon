@@ -268,7 +268,7 @@ ns.Locale("ruRU", function(L)
 	L.WEEKDAYS_SHORT = { "Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб" }
 	L.WEEKDAY_CLOCK = "{weekday} {time}"
 	L.WEEKDAY_DATE = "{weekday} {shortDate}"
-	L.WINDOW_MOMENTS_SETTING = "Сообщать, когда открывается окно закреплённой охоты"
+	L.WINDOW_MOMENTS_SETTING = "Сообщать об открытии окна"
 	L.WINDOW_MOMENTS_TOOLTIP = "Тихий кивок, когда открывается окно закреплённой охоты. Исчезает, когда окно закрывается."
 	L.WINDOW_OPEN = "{name}: окно открыто"
 	L.WINDOW_OPENED = "{name}: окно открылось в {from}"

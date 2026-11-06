@@ -22,9 +22,8 @@ from pagle_data.locale_convert import (
 )
 from test_item_records import write_tree as write_items
 from test_lore import FAMILIES, ITEMS, OFF
+from tools_fixture import tool
 
-REPO = Path(__file__).resolve().parents[2]
-LUA = REPO / ".tools" / "bin" / "lua"
 
 GUARD = (
     "if not Pagle then -- luacheck: read globals Pagle (CORE-R11: the one read of Core outside adapter/)\n"
@@ -118,10 +117,8 @@ print("same")
 
 
 def lua_equal(before: Path, after: Path) -> None:
-    if not LUA.exists():
-        pytest.skip("no .tools/bin/lua")
     done = subprocess.run(
-        [str(LUA), "-", str(before), str(after)], input=COMPARE, capture_output=True, text=True, check=False
+        [str(tool("bin/lua")), "-", str(before), str(after)], input=COMPARE, capture_output=True, text=True, check=False
     )
     assert done.returncode == 0 and done.stdout.strip() == "same", done.stderr
 
@@ -188,8 +185,7 @@ def test_values_are_written_as_the_shapes_the_generator_reads() -> None:
 
 
 def test_the_converted_tree_generates_an_enus_that_builds_the_same_ns_l(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    if not LUA.exists():
-        pytest.skip("no .tools/bin/lua")
+    tool("bin/lua")
     root = tree(tmp_path)
     written = convert(root)
     assert "data/locale/enUS/locale.toml" in written
@@ -269,16 +265,17 @@ def test_it_refuses_a_tree_already_converted(tmp_path: Path, capsys: pytest.Capt
 
 
 def test_it_names_the_file_when_lua_cannot_build_the_table(tmp_path: Path) -> None:
+    lua = tool("bin/lua")
     bad = tmp_path / "enUS.lua"
     bad.write_text("local ns = select(2, ...)\nns.L = {\n\tA = nope(),\n}\n", encoding="utf-8")
     with pytest.raises(ConvertError, match="enUS.lua"):
-        evaluate(LUA, bad)
+        evaluate(lua, bad)
     bad.write_text("local ns = select(2, ...)\nns.L = { A = 5 }\n", encoding="utf-8")
     with pytest.raises(ConvertError, match="not text, an array or a table"):
-        evaluate(LUA, bad)
+        evaluate(lua, bad)
     bad.write_text('local ns = select(2, ...)\nns.L = { A = { ["7"] = "x" } }\n', encoding="utf-8")
     with pytest.raises(ConvertError, match="reads as a number"):
-        evaluate(LUA, bad)
+        evaluate(lua, bad)
 
 
 def test_main_reports_a_conversion_it_cannot_do(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:

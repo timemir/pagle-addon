@@ -269,7 +269,7 @@ ns.Locale("esES", function(L)
 	L.WEEKDAYS_SHORT = { "dom", "lun", "mar", "mié", "jue", "vie", "sáb" }
 	L.WEEKDAY_CLOCK = "{weekday} {time}"
 	L.WEEKDAY_DATE = "{weekday} {shortDate}"
-	L.WINDOW_MOMENTS_SETTING = "Avísame cuando se abra la franja de una Caza fijada"
+	L.WINDOW_MOMENTS_SETTING = "Avísame al abrirse una franja"
 	L.WINDOW_MOMENTS_TOOLTIP = "Un Gesto discreto cuando se abre la franja de una Caza fijada. Se desvanece cuando se cierra."
 	L.WINDOW_OPEN = "{name}: franja abierta"
 	L.WINDOW_OPENED = "{name}: franja abierta desde {from}"

@@ -388,7 +388,8 @@ end
 -- Fits a contents line's words, `label` showing `text`, to `room` (LED-R132): one line as wide as its words when they
 -- fit; otherwise two lines at `room`, measured unbounded first. Returns how wide its last line is, where the leader
 -- starts, and how much taller than one line it stands. The last line is found as the client breaks it, a word at a
--- time, by measuring each line's words through the label before it is given back its text.
+-- time, by measuring each line's words through the label before it is given back its text. Words that would run onto
+-- a third line make the second the last shown, which the client fills to `room` and cuts with its ellipsis.
 ---@param label FontString
 ---@param text string
 ---@param room number
@@ -402,12 +403,17 @@ local function fitLeaderWords(label, text, room)
 		return label:GetWidth(), 0
 	end
 	local oneLine = label:GetStringHeight()
-	local line, lastW
+	local line, lastW, lines = nil, nil, 1
 	for word in text:gmatch("%S+") do
 		local candidate = line and line .. " " .. word or word
 		label:SetText(candidate)
 		local candidateW = label:GetStringWidth()
 		if line and candidateW > room then
+			if lines == 2 then
+				lastW = room
+				break
+			end
+			lines = lines + 1
 			label:SetText(word)
 			line, lastW = word, label:GetStringWidth()
 		else

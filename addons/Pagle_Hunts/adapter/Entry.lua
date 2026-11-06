@@ -88,7 +88,8 @@ local function newChip(parent)
 end
 
 -- The smallest a chip's words shrink to before they are cut short; a note too long for one line even then wraps to
--- two at the chips' own size instead, its chip this much taller (a line of the small face).
+-- two at the chips' own size instead, its chip this much taller (a line of the small face). A chip stands as tall as
+-- its face as the three-slice draws it from the chip sprite: one line its box's height, two this much more.
 local CHIP_FLOOR, CHIP_LINE = 11, 15
 
 -- Dresses `chip` as `data` says, and sizes it to its words, no wider than `room` (the page's width): longer words
@@ -121,7 +122,7 @@ local function setChip(chip, data, room, oneLine)
 		chip.label:SetWidth(words)
 		chip.tooltip = data.tooltip
 		ns.SetTallThreeSlice(chip.face, "Parts", "chip", room, 11, CHIP_LINE, "BACKGROUND")
-		chip:SetSize(room, CHIP_HEIGHT + CHIP_LINE)
+		chip:SetSize(room, chip.face:GetHeight())
 		return room
 	end
 	if fitted then
@@ -141,7 +142,7 @@ local function setChip(chip, data, room, oneLine)
 	local width = math.min(math.ceil(chip.label:GetStringWidth()), words) + 2 * CHIP_PAD + badge
 	local face = data.badge and "chip-here" or data.short and "chip-red" or unconfirmed and "chip-unc" or "chip"
 	ns.SetThreeSlice(chip.face, "Parts", face, width, 11, "BACKGROUND")
-	chip:SetSize(width, CHIP_HEIGHT)
+	chip:SetSize(width, chip.face:GetHeight())
 	return width
 end
 

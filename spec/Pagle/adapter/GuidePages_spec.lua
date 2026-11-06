@@ -817,6 +817,49 @@ describe("the Off you go step (ONB-R38)", function()
 		end
 	)
 
+	-- A done item was struck through its first line only: a longer language's wrapped one kept its second unstruck.
+	it("onb_r62 strikes a done item on the First evening list through every line it wraps to", function()
+		local long = "Wirf einen Blick in den Kuriositätenladen"
+		local loaded = guideAt(
+			"box",
+			nil,
+			function()
+				return { [long] = 2 }
+			end,
+			nil,
+			function(L)
+				L.GUIDE_EVENING_ITEMS.shop = long
+			end
+		)
+		loaded.ns.onboarding:CompleteEveningItem("shop")
+		loaded.ns.onboarding:CompleteEveningItem("cast")
+		loaded.ns.guide:GoTo("off")
+		local list = loaded.ns.guidePages.evening
+
+		local function struck(id)
+			for _, row in ipairs(list.rows) do
+				if row.id == id then
+					local out = {}
+					for _, strike in ipairs(row.strikes) do
+						if strike.shown then
+							out[#out + 1] = { strike.width, strike.points[1][4], -strike.points[1][5] }
+						end
+					end
+					return out
+				end
+			end
+		end
+		-- at 6 a byte the paper's 217 holds "Wirf einen Blick in den" and not the next word, which takes the second line
+		assert.is_true(#long * 6 > 217)
+		local shop = struck("shop")
+		local y = shop[1] and shop[1][3]
+		assert.are.same({
+			{ #"Wirf einen Blick in den" * 6, 43, y },
+			{ #"Kuriositätenladen" * 6, 43, y + 17.6 },
+		}, shop)
+		assert.are.same({ { #"Make a Cast" * 6, 43, 30 + 11 } }, struck("cast"))
+	end)
+
 	it("names only the registered windows (ONB-R38, ONB-R102)", function()
 		local loaded = guideAt("off", { "Stats", "QoL" })
 

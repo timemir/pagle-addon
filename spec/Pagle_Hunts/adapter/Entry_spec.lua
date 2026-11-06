@@ -208,6 +208,21 @@ describe("a Hunt's entry on the board", function()
 			assert.is_false(after.face.tall ~= nil and after.face.tall[1]:IsShown())
 		end)
 
+		-- The chip's height was a constant beside its face's (22, and 22 + a line), equal only while the chip sprite's
+		-- box stood 22 tall: each now reads the other's one source, the face as the three-slice drew it.
+		it("hnt_r65 sizes a chip, one line or two, to its face as drawn from the chip sprite", function()
+			local run = start()
+			local long = "Von der Abendglocke bis tief in die Nacht: eine Laterne und ein stilles Ufer."
+			run.ns.L["hunt.fixture_snapper.note"] = long
+			local _, sprite = run.ns.ArtSpriteOf("Parts", "chip")
+			sprite.box[4] = 24 -- a taller chip sprite
+			local _, view = open(run, { mode = "board", hunt = "fixture_snapper" })
+
+			local wrapped, one = chipOf(view, long), chipOf(view, "After the lamps are lit.")
+			assert.are.same({ 24 + 15, 24 + 15 }, { wrapped.face:GetHeight(), wrapped.height })
+			assert.are.same({ 24, 24 }, { one.face:GetHeight(), one.height })
+		end)
+
 		it("draws an undone Hunt's dashed 'not yet' and only its effort Casts (HNT-R26)", function()
 			local run = start()
 			run.state.hunts.fixture_snapper = progress(0, 12, 12, 0)

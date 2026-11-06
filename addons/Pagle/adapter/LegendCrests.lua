@@ -69,13 +69,15 @@ local function draw(crest, look)
 	local size = math.floor(math.max(ink.size, LABEL_MIN / scale) * 2 + 0.5) / 2
 	ns.SetInkFont(label, ink, size)
 	label:SetText(ns.Capitals(ns.LegendCrestLabel(art.label.word)))
-	-- a word wider than the plaque's flat run (German "UNGESCHRIEBEN" ran onto its tails, 1.1.1) is set smaller to fit
-	-- it, measured unbounded; past LABEL_FIT_MIN on screen the client cuts it at the run's edge
+	-- a word wider than the plaque's flat run (German "UNGESCHRIEBEN" ran onto its tails, 1.1.1), or within a unit of
+	-- it, which a rounding in the client could still cut, is set smaller to a unit inside it, measured unbounded; past
+	-- LABEL_FIT_MIN on screen the client cuts it at the run's edge. It stays on one line.
 	local run = plaqueWidth(art) * PLAQUE_FLAT
+	label:SetWordWrap(false)
 	label:SetWidth(0)
 	local natural = label:GetStringWidth()
-	if natural > run then
-		local fit = math.max(LABEL_FIT_MIN / scale, size * run / natural)
+	if natural + 1 > run then
+		local fit = math.max(LABEL_FIT_MIN / scale, size * (run - 1) / natural)
 		ns.SetInkFont(label, ink, math.floor(fit * 2) / 2)
 	end
 	label:SetWidth(run)

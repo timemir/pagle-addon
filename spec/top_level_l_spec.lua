@@ -14,8 +14,32 @@ local WHILE_LOADING = {
 	["addons/Pagle/adapter/Core.lua"] = 1,
 }
 
--- Where the toolchain installs Lua 5.1's luac (scripts/setup.sh links no `luac` into .tools/bin).
-local LUAC = ".tools/lua/bin/luac"
+-- Where the toolchain installs Lua 5.1's luac (scripts/setup.sh links no `luac` into .tools/bin), in the .tools/ the
+-- gate runs its tools from: scripts/lib/tools.sh's tools_dir, the one copy of that rule ($PAGLE_TOOLS, this checkout's
+-- .tools/, or a linked worktree's main checkout's), so a fresh worktree needs no .tools/ of its own (DATA-R61).
+---@return string
+local function toolsDir()
+	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
+	local run = assert(io.popen([[bash -c 'source scripts/lib/tools.sh && tools_dir "$PWD"']]))
+	local dir = run:read("*l") or ".tools"
+	run:close()
+	return dir
+end
+local LUAC = toolsDir() .. "/lua/bin/luac"
+---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
+local luacFile = io.open(LUAC, "rb")
+if luacFile then
+	luacFile:close()
+end
+-- Without luac anywhere the spec skips, saying where it looked; in CI, which always installs it, it fails instead
+-- (GitHub Actions sets CI), as the "finds luac" case below asserts.
+---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no os
+if not luacFile and not os.getenv("CI") then
+	describe("No file reads ns.L at its top level (CORE-R8)", function()
+		pending("no " .. LUAC .. ": run scripts/setup.sh in the main checkout", function() end)
+	end)
+	return
+end
 
 ---@param path string
 ---@return string
@@ -255,7 +279,8 @@ describe("No file reads ns.L at its top level (CORE-R8)", function()
 		end
 	end)
 
-	it("finds luac where the toolchain installs it", function()
+	it("data_r61 finds luac where the toolchain installs it, failing in CI without it", function()
+		assert(luacFile, "no " .. LUAC .. ": CI installs every tool, so a missing one fails here")
 		assert.is_truthy(listing("addons/Pagle/logic/Size.lua"):find("main <", 1, true))
 	end)
 

@@ -195,6 +195,63 @@ describe("the tracker's Pagle Wagers block", function()
 			assert.is_false(r.ns.tracker.wagers.more:IsShown())
 		end)
 
+		-- The hint's line was cut before "why?" in every language, English's "New wagers with the Pagle companion" too
+		-- (207 of 195 in the client's face, 1.1.2's real-font measure). It is set a size down at a time, then wraps.
+		-- Redrawn here by folding the block and opening it again.
+		local function redraw(r)
+			r.ns.tracker.wagers.header:Click()
+			r.ns.tracker.wagers.header:Click()
+		end
+
+		it("hnt_r176 sets the companion hint's line a size down at a time to fit before why?", function()
+			local r = start({}, { hint = true })
+			local hint = r.ns.tracker.wagers.hint
+			local words = "New wagers with the Pagle companion"
+			local room = hint.text.width
+			assert.are.equal(words, hint.text.text)
+			-- the client's face, near 0.45 of its size a letter: wider than its room at the kit's 13, within it at 12
+			local k = (room - 1.5) / (#words * 12)
+			function hint.text.GetStringWidth(text)
+				return #text.text * k * text.fontObject.font[2]
+			end
+			assert(#words * k * 13 + 1 > room, "at the kit's size it fits, so this checks nothing")
+
+			redraw(r)
+
+			local size = hint.text.fontObject.font[2]
+			assert(size < 13 and size >= 11, "set smaller, to no less than 11: " .. size)
+			assert(hint.text:GetStringWidth() + 1 <= room, "and within its room")
+			assert.are.same(
+				{ words, false, room, 20 },
+				{ hint.text.text, hint.text:CanWordWrap(), hint.text.width, hint.height }
+			)
+		end)
+
+		it("hnt_r176 wraps the companion hint's line to two lines when even set small it runs into why?", function()
+			local r = start({}, { hint = true })
+			local hint = r.ns.tracker.wagers.hint
+			local words = "Apuestas nuevas con el acompañante de Pagle"
+			r.ns.L.TRACKER_HINT_MISSING = words
+			function hint.text.GetStringHeight(text)
+				return (text:CanWordWrap() and text.width > 0 and #text.text * 6 > text.width) and 30 or 15
+			end
+			redraw(r)
+			local room = hint.text.width
+			assert(#words * 6 + 1 > room, "the words fit their room in the fake, so this checks nothing")
+			local kit = hint.text.fontObject
+
+			assert.are.same({ words, true, 2, room }, {
+				hint.text.text,
+				hint.text:CanWordWrap(),
+				hint.text:GetMaxLines(),
+				hint.text.width,
+			})
+			assert.are.equal(kit, hint.text.fontObject, "wrapped at the kit's size")
+			-- a line taller, and the Hunts block's header under it
+			assert.are.equal(20 + 15, hint.height)
+			assert(topOf(r.ns.tracker.header) >= topOf(hint) + 20 + 15, "the Hunts header is under the hint's lines")
+		end)
+
 		it(
 			"loses a run that ends at the regroup the run's end sets, and goes with the last (HNT-R143, HNT-R42)",
 			function()

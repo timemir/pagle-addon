@@ -477,6 +477,82 @@ describe("a Module's First look (ONB-R56, ONB-R58, ONB-R90)", function()
 		assert.are.same({ "CENTER", loaded.env.UIParent, "BOTTOMLEFT", finish[3], finish[4] }, arrow.ring.points[1])
 	end)
 
+	-- Where the arrow to a First look's one note ends, where its 12-unit ring is centred: the note 190 left of the window
+	-- (600 to 1500 across, 200 to 900 up) and 100 down it, its target what `target(loaded, window)` makes there.
+	local function ringAt(target)
+		local made
+		local loaded = core(function(Pagle, loaded)
+			local M = Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+			local window = layOut(loaded.env.CreateFrame("Frame", nil, loaded.env.UIParent), 600, 200, 900, 700)
+			window:Hide()
+			made = target(loaded, window)
+			M:RegisterFirstLook({
+				id = "ledger.journal",
+				window = window,
+				title = "the Fish Journal",
+				notes = {
+					{
+						text = "Coins.",
+						target = function()
+							return made
+						end,
+						x = -190,
+						y = 100,
+						w = 176,
+					},
+				},
+			})
+			window:SetScript("OnShow", function()
+				M:ShowFirstLook("ledger.journal")
+			end)
+			return window
+		end)
+		loaded.ns.firstLooks:Window("ledger.journal"):Show()
+		loaded.client.update(0)
+		return noteFrame(loaded, 1).arrow.lines[14].endPoint
+	end
+
+	-- The ring kept 14 clear of a word's span above and below it too, and on rows stacked tight (Settings' 26-unit
+	-- rows, the ribbon tabs) that put it on the next row's words. Above and below, it now keeps within the word's row.
+	it("onb_r56 rings a word on a tight row within its row, off the row stacked under it", function()
+		local finish = ringAt(function(loaded, window)
+			local rows = {}
+			for i, words in ipairs({ "Angelset", "Muscheln" }) do
+				-- 26-unit rows, the first from 820 up, the second under it; each word 12 tall in its row's middle
+				local row = layOut(loaded.env.CreateFrame("Frame", nil, window), 1300, 820 - (i - 1) * 26, 200, 26)
+				rows[i] = row
+				local label = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+				label:SetText(words)
+				label:SetJustifyH("LEFT")
+				layOut(label, 1337, 827 - (i - 1) * 26, #words * 6, 12)
+				rows[i].label = label
+			end
+			return rows[1].label
+		end)
+
+		-- the arrow comes from the left, below the first row: its ring keeps over that row's foot, off the second row
+		assert(finish[4] - 6 >= 820, ("the ring reaches %g, under its row's foot at 820"):format(finish[4] - 6))
+		assert(finish[4] + 6 <= 846, "the ring runs over its row's top")
+		assert(finish[3] + 6 <= 1337 - 2, "the ring is on the word's letters")
+	end)
+
+	-- The client's FontString justifies its words in the middle until set otherwise.
+	it(
+		"onb_r56 aims beside a word where the client draws it, centred in its label when its justification is unset",
+		function()
+			local finish = ringAt(function(_, window)
+				local label = window:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+				label:SetText("PAGLE-MÜNZEN")
+				layOut(label, 1500, 500, 300, 14)
+				return label
+			end)
+
+			-- the words, 78 of the label's 300, start 111 in; the ring 2 clear left of them
+			local first = 1500 + (300 - #"PAGLE-MÜNZEN" * 6) / 2
+			assert.are.equal(first - 14 + 6, finish[3])
+		end
+	)
+
 	it("slides a note held over the window's edge off what another note points at (ONB-R56, ONB-R58)", function()
 		-- 100 free on the left: both notes overlap the edge from 8 to 184, and the second's target sits by the first,
 		-- 800 down to 765 on screen: it slides up off it, the shorter way, 8 clear of its top at 800
