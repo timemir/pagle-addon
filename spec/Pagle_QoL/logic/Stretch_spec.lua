@@ -627,6 +627,51 @@ describe("QoL's Fishing stretch logic", function()
 		end)
 	end)
 
+	describe("the output device's name in the lease", function()
+		-- A lease holding the device's entry, and one other.
+		local function leased(entry)
+			return { { name = "Sound_EnableMusic", orig = "1", set = "0" }, entry }
+		end
+
+		it("notes the name of the player's own device, by orig's index, on a new entry only (QOL-R68)", function()
+			local lease = leased({ name = "Sound_OutputDriverIndex", orig = "1", set = "2" })
+
+			ns.NameLeasedDevice(lease, { "System Default", "Speakers", "Headset" })
+			assert.are.equal("Speakers", lease[2].origName)
+			assert.is_nil(lease[1].origName)
+
+			ns.NameLeasedDevice(lease, { "System Default", "Headset", "Speakers" })
+			assert.are.equal("Speakers", lease[2].origName)
+		end)
+
+		it("notes no name when orig's index names no device (QOL-R68)", function()
+			local lease = leased({ name = "Sound_OutputDriverIndex", orig = "5", set = "2" })
+
+			ns.NameLeasedDevice(lease, { "System Default", "Speakers", "Headset" })
+
+			assert.is_nil(lease[2].origName)
+		end)
+
+		it("points orig at the player's device where it is now, after the devices reordered (QOL-R68)", function()
+			local lease = leased({ name = "Sound_OutputDriverIndex", orig = "1", set = "3", origName = "Speakers" })
+
+			ns.ResolveLeasedDevice(lease, { "System Default", "Monitor", "Speakers", "Headset" })
+
+			assert.are.same(
+				{ name = "Sound_OutputDriverIndex", orig = "2", set = "3", origName = "Speakers" },
+				lease[2]
+			)
+		end)
+
+		it("keeps the raw orig index when the player's device is gone (QOL-R68)", function()
+			local lease = leased({ name = "Sound_OutputDriverIndex", orig = "1", set = "2", origName = "Speakers" })
+
+			ns.ResolveLeasedDevice(lease, { "System Default", "Headset" })
+
+			assert.are.equal("1", lease[2].orig)
+		end)
+	end)
+
 	describe("ns.RestoreLease", function()
 		it("restores each CVar that still reads set to orig, and removes its entry (QOL-R63)", function()
 			local lease, cvars = {}, newCVars(playerValues())

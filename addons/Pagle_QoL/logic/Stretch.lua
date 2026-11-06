@@ -103,6 +103,7 @@ end
 ---@field name string
 ---@field orig string
 ---@field set string?
+---@field origName string? the output device's entry only: the name of the player's device at `orig` (QOL-R68)
 
 --- The soft-interact row, which the reel needs and can't be turned off (QOL-R62, probe B1).
 ---@type PagleQoLLeaseRow[]
@@ -175,6 +176,37 @@ function ns.OutputDeviceIndex(devices, name)
 		end
 	end
 	return nil
+end
+
+--- Notes on the output device's lease entry, once, the name of the player's own device: the one at its `orig` index
+--- in `devices`, the client's device names by index from 0 (QOL-R68).
+---@param lease PagleQoLLeaseEntry[] `PagleQoLDB.global.lease`, changed in place
+---@param devices string[]
+function ns.NameLeasedDevice(lease, devices)
+	for _, entry in ipairs(lease) do
+		if entry.name == ns.OUTPUT_DEVICE_CVAR and entry.origName == nil then
+			local name = devices[(tonumber(entry.orig) or -1) + 1]
+			if name ~= "" then
+				entry.origName = name
+			end
+		end
+	end
+end
+
+--- Points the output device's lease entry's `orig` at the player's own device where `devices` lists it now, so a
+--- restore after the devices reordered (one unplugged, then a /reload) puts back that device, not whatever took its
+--- index. A device no longer listed keeps the raw `orig` (QOL-R68).
+---@param lease PagleQoLLeaseEntry[] `PagleQoLDB.global.lease`, changed in place
+---@param devices string[]
+function ns.ResolveLeasedDevice(lease, devices)
+	for _, entry in ipairs(lease) do
+		if entry.name == ns.OUTPUT_DEVICE_CVAR and entry.origName then
+			local index = ns.OutputDeviceIndex(devices, entry.origName)
+			if index then
+				entry.orig = tostring(index)
+			end
+		end
+	end
 end
 
 --- The Fishing audio mix's rows under `audio` (QOL-R62, QOL-R68): each channel by its setting, then the output device

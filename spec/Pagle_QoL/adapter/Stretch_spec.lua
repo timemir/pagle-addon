@@ -935,6 +935,74 @@ describe("The audio mix and auto-loot leases", function()
 			end
 		)
 
+		it(
+			"puts the device back without a restart at logout or /reload, as the client reloads sound (QOL-R68)",
+			function()
+				local fake, client = startDevices(function(fake)
+					tick(fake, "Output device", "Headset")
+				end)
+				fake.fire("CastStarted")
+				client.cvarCalls = {}
+
+				fake.fireGameEvent("PLAYER_LOGOUT")
+
+				assert.are.equal("1", client.cvars.Sound_OutputDriverIndex)
+				assert.are.same({ "set Sound_OutputDriverIndex 1" }, callsOn(client, "Sound_OutputDriverIndex"))
+				assert.are.equal(0, restarts(client))
+			end
+		)
+
+		it("puts the player's own device back by name after the devices reordered (QOL-R68)", function()
+			local fake, client, loaded = startDevices(function(fake)
+				tick(fake, "Output device", "Headset")
+			end)
+			fake.fire("CastStarted")
+			local named
+			for _, entry in ipairs(leaseOf(loaded)) do
+				if entry.name == "Sound_OutputDriverIndex" then
+					named = entry.origName
+				end
+			end
+			assert.are.equal("Speakers", named)
+			-- A monitor's speakers appear before the player's, which move from index 1 to 2.
+			client.outputDevices = { "System Default", "Monitor", "Speakers", "Headset" }
+			client.cvars.Sound_OutputDriverIndex = "2"
+			client.cvarCalls = {}
+
+			client.mounted = true
+			fake.fireGameEvent("PLAYER_MOUNT_DISPLAY_CHANGED")
+
+			assert.are.equal("2", client.cvars.Sound_OutputDriverIndex)
+		end)
+
+		it(
+			"puts a leftover device back by name at ADDON_LOADED, or by its index when it's gone (QOL-R64, QOL-R68)",
+			function()
+				for _, case in ipairs({
+					{ { "System Default", "Monitor", "Speakers", "Headset" }, "2" },
+					{ { "System Default", "Headset" }, "1" },
+				}) do
+					local fake = newFakePagle()
+					local loaded = fake.load("Pagle_QoL", { holdAddonLoaded = true })
+					loaded.env.PagleQoLDB = {
+						global = {
+							schemaVersion = 1,
+							lease = {
+								{ name = "Sound_OutputDriverIndex", orig = "1", set = "3", origName = "Speakers" },
+							},
+						},
+					}
+					loaded.client.outputDevices = case[1]
+					loaded.client.cvars = { Sound_OutputDriverIndex = "3" }
+
+					loaded.client.fire("ADDON_LOADED", "Pagle_QoL")
+
+					assert.are.equal(case[2], loaded.client.cvars.Sound_OutputDriverIndex)
+					assert.are.same({}, leaseOf(loaded))
+				end
+			end
+		)
+
 		it("leases no device while QoL stands down (QOL-R82, QOL-R68)", function()
 			local fake, client = startDevices(function(fake, _, loaded)
 				tick(fake, "Output device", "Headset")

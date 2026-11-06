@@ -56,10 +56,18 @@ function ns.OutputDevices()
 	return devices
 end
 
+-- Whether PLAYER_LOGOUT has come: the client reloads its sound from the CVars after a logout or /reload anyway.
+local loggingOut = false
+
 -- Runs `change`, a lease or a restore, then restarts the sound system if it changed the output device, so the sound
--- moves to the device now (QOL-R68). A lease or restore that leaves the device as it was restarts nothing.
+-- moves to the device now (QOL-R68). A lease or restore that leaves the device as it was restarts nothing, nor does
+-- one at logout or /reload.
 ---@param change fun()
 local function changingSound(change)
+	if loggingOut then
+		change()
+		return
+	end
 	local before = GetCVar(ns.OUTPUT_DEVICE_CVAR)
 	change()
 	local after = GetCVar(ns.OUTPUT_DEVICE_CVAR)
@@ -78,6 +86,8 @@ end
 ---@param only table<string, true>?
 local function restoreLease(only)
 	if not InCombatLockdown() then
+		-- The player's own device by its name, where the client lists it now (QOL-R68).
+		ns.ResolveLeasedDevice(lease(), ns.OutputDevices())
 		ns.RestoreLease(lease(), cvars, only)
 	end
 end
@@ -109,6 +119,7 @@ function ns.ChangeLeaseSetting(change)
 	changingSound(function()
 		restoreLease(names)
 		ns.Lease(lease(), rows, cvars)
+		ns.NameLeasedDevice(lease(), devices)
 	end)
 end
 
@@ -166,7 +177,9 @@ function ns.StartStretch()
 	Pagle.RegisterCallback(OWNER, "CastStarted", function()
 		if stretch:CastStarted(ns.IsArmed()) then
 			changingSound(function()
-				ns.Lease(lease(), ns.LeaseRows(ns.db.profile, ns.OutputDevices()), cvars)
+				local devices = ns.OutputDevices()
+				ns.Lease(lease(), ns.LeaseRows(ns.db.profile, devices), cvars)
+				ns.NameLeasedDevice(lease(), devices)
 			end)
 		end
 		setOnUpdate()
@@ -192,6 +205,7 @@ function ns.StartStretch()
 	-- AceDB may have stripped the profile's defaults already (QOL-R30, QOL-R63). A restore that must wait stays in the
 	-- lease, saved for the leftover restore (QOL-R64).
 	Pagle.RegisterEvent(OWNER, "PLAYER_LOGOUT", function()
+		loggingOut = true
 		ns.LogOut()
 		ns.EndStretch()
 	end)
