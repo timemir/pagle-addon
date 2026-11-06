@@ -725,21 +725,6 @@ describe("a run's entry (HNT-R163)", function()
 end)
 
 describe("a run's entry in a longer language (HNT-R163, CORE-R8)", function()
-	-- The shown font string reading `text` on `widget`, or nil.
-	local function textOf(widget, text)
-		for _, child in ipairs(widget.children) do
-			if child.shown then
-				if child.text == text then
-					return child
-				end
-				local found = textOf(child, text)
-				if found then
-					return found
-				end
-			end
-		end
-	end
-
 	it("sets its kicker, a Hunt's name and its line a size down at a time before the client cuts them", function()
 		local r = oneOn({
 			prepare = function(loaded)

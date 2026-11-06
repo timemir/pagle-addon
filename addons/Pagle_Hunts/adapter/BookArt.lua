@@ -177,6 +177,7 @@ end
 ---@field left Texture
 ---@field middle Texture
 ---@field right Texture
+---@field tall Texture[]?   -- ns.SetTallThreeSlice's nine pieces, made at its first use
 
 --- Draws sprite `name` three-sliced on `frame`, `width` wide and its drawn element's height high: `cap` UI units of the
 --- element are kept at each end, with the sprite's margin outside them. Makes the slices the first time.
@@ -285,7 +286,14 @@ function ns.SetTallThreeSlice(frame, atlasName, name, width, cap, extra, layer, 
 		local x = -marginLeft
 		for c, column in ipairs(columns) do
 			local piece = slice.tall[(r - 1) * 3 + c]
-			cut(piece, atlas, sprite.x + column[1] * scale, sprite.y + row[1] * scale, column[2] * scale, row[2] * scale)
+			cut(
+				piece,
+				atlas,
+				sprite.x + column[1] * scale,
+				sprite.y + row[1] * scale,
+				column[2] * scale,
+				row[2] * scale
+			)
 			piece:SetSize(column[3], row[3])
 			piece:ClearAllPoints()
 			piece:SetPoint("TOPLEFT", frame, "TOPLEFT", x, y)

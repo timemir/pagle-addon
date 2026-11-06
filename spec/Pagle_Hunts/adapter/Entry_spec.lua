@@ -131,9 +131,10 @@ describe("a Hunt's entry on the board", function()
 				assert.are.same({ fonts.handLarge, 0 }, { view.window.fontObject, view.conditions:GetMaxLines() })
 
 				-- eleven zones in a longer language: twenty lines of conditions, 17.5 a line, or the most it is kept to
+				local rows = 20
 				view.conditions.GetStringHeight = function(self)
 					local most = self:GetMaxLines()
-					return (most > 0 and math.min(most, 20) or 20) * 17.5
+					return (most > 0 and math.min(most, rows) or rows) * 17.5
 				end
 				run.ns.board:Draw()
 
@@ -152,9 +153,7 @@ describe("a Hunt's entry on the board", function()
 				assert(foot <= page:GetHeight(), "the set line ends at " .. foot .. ", past the page")
 
 				-- a short entry again is laid as the kit lays it, every line of its conditions shown
-				view.conditions.GetStringHeight = function()
-					return 14
-				end
+				rows = 1
 				run.ns.board:Draw()
 				assert.are.same(
 					{ fonts.handLarge, 0, true },
