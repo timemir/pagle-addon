@@ -753,6 +753,10 @@ end
 
 -- The smallest a seal's words are set to fit it (ns.JournalSetSeal).
 local SEAL_TEXT_FLOOR = 7.5
+-- How much of a seal's square its words may take across and down: the wax (Core's media/books BookAtlas "seal") covers
+-- 104 of the sprite's 128 texels across its middle, a little less above and below, so its words keep inside that with
+-- a margin. The square less 10 reached past the wax: German "Anglerbuch" and "Besucher" sat on the parchment (1.1.1).
+local SEAL_ROOM = 0.75
 
 --- A wax seal with its words, tilted (LED-R132, LED-R135): the wax disc, or the empty ring for "not yet".
 ---@class LedgerSeal: Frame
@@ -760,6 +764,7 @@ local SEAL_TEXT_FLOOR = 7.5
 ---@field empty Texture
 ---@field label FontString
 ---@field size number
+---@field room number how far across and down its words may run: the wax's span, not the seal's square (SEAL_ROOM)
 ---@field textSize number its words' size, before they are set smaller to fit
 
 ---@param parent Frame
@@ -770,6 +775,7 @@ function ns.JournalSeal(parent, size, textSize)
 	local seal = CreateFrame("Frame", nil, parent) --[[@as LedgerSeal]]
 	seal:SetSize(size, size)
 	seal.size = size
+	seal.room = size * SEAL_ROOM
 	seal.textSize = textSize or 12
 	seal.wax = ns.JournalPiece(seal, "Book", "seal", "ARTWORK", 0)
 	seal.wax:SetAllPoints()
@@ -779,7 +785,7 @@ function ns.JournalSeal(parent, size, textSize)
 	seal.label =
 		ns.JournalLabel(seal, "gilt", textSize or 12, INK.wax, "", { justify = "CENTER", wrap = true, spacing = 1 })
 	seal.label:SetPoint("CENTER", 0, 1)
-	seal.label:SetWidth(size - 10)
+	seal.label:SetWidth(seal.room)
 	local tilt = math.rad(-8)
 	seal.wax:SetRotation(tilt)
 	seal.empty:SetRotation(tilt)
@@ -796,7 +802,7 @@ end
 function ns.JournalSetSeal(seal, text, earned)
 	seal.wax:SetShown(earned)
 	seal.empty:SetShown(not earned)
-	local label, room = seal.label, seal.size - 10
+	local label, room = seal.label, seal.room
 	-- its words wrap across the seal, but a word wider than it can't (a long Russian rank ran past the wax, #560): they are
 	-- set smaller until the widest word fits across and the lines down, to SEAL_TEXT_FLOOR
 	local size = seal.textSize
