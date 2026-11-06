@@ -37,7 +37,7 @@ en.wagerRuns = "{earnedRuns:0} Wager runs completed"
 
 [WINDOW_MOMENTS_SETTING]
 value = "Avísame al abrirse una franja"
-en = "Tell me when a pinned Hunt's window opens"
+en = "Announce open Hunt windows"
 
 [WINDOW_OPEN]
 value = "{name}: franja abierta"

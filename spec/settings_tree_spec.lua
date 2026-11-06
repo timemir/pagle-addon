@@ -163,7 +163,7 @@ local EXPECTED = {
 			{ "slot", "Sound set" },
 			{ "button", "Toast position", caption = "Reset", tip = TIPS.toastPosition },
 			{ "header", "Hunts", of = "Hunts" },
-			{ "checkbox", "Tell me when a pinned Hunt's window opens", tip = TIPS.windowMoments, of = "Hunts" },
+			{ "checkbox", "Announce open Hunt windows", tip = TIPS.windowMoments, of = "Hunts" },
 			{ "checkbox", "Remind me about the Pagle companion", tip = TIPS.companionHint, of = "Hunts" },
 		},
 	},
@@ -461,10 +461,7 @@ describe("The Settings tree, every Module loaded", function()
 			assert.is_true(loaded.namespaces.Pagle_Hunts.COMPANION_HINT_ON)
 			assert.are.same(expectedTree(), drawnTree(loaded))
 			local rows = pageAsWritten(loaded, loaded.client.settings.page("Announcements"))
-			assert.are.same(
-				{ "checkbox", "Tell me when a pinned Hunt's window opens" },
-				{ rows[#rows - 1][1], rows[#rows - 1][2] }
-			)
+			assert.are.same({ "checkbox", "Announce open Hunt windows" }, { rows[#rows - 1][1], rows[#rows - 1][2] })
 			assert.are.same({ "checkbox", "Remind me about the Pagle companion" }, { rows[#rows][1], rows[#rows][2] })
 		end
 	)
@@ -806,6 +803,7 @@ describe("Each page's Defaults button", function()
 			}, restoredOn(loaded, "Fishing"))
 			assert.are.same({
 				"Animations",
+				"Announce open Hunt windows",
 				"Cozy mode",
 				"Interruption budget",
 				"Interruptions",
@@ -813,7 +811,6 @@ describe("Each page's Defaults button", function()
 				"Remind me about the Pagle companion",
 				"Show every catch",
 				"Sound set",
-				"Tell me when a pinned Hunt's window opens",
 				"Toast style",
 			}, restoredOn(loaded, "Announcements"))
 			assert.are.same({
@@ -929,7 +926,7 @@ describe("Each page's Defaults button", function()
 			["Per"] = 10,
 			["Show every catch"] = false,
 			["Animations"] = false,
-			["Tell me when a pinned Hunt's window opens"] = true,
+			["Announce open Hunt windows"] = true,
 			["Remind me about the Pagle companion"] = false,
 		}) do
 			setRow(loaded, "Announcements", label, value)
@@ -946,7 +943,7 @@ describe("Each page's Defaults button", function()
 			["Per"] = 5,
 			["Show every catch"] = true,
 			["Animations"] = true,
-			["Tell me when a pinned Hunt's window opens"] = false,
+			["Announce open Hunt windows"] = false,
 			["Remind me about the Pagle companion"] = true,
 		}, valuesOn(loaded, "Announcements"))
 		assert.are.equal(300, loaded.namespaces.Pagle.db.profile.announcements.budget.window) -- stored in seconds

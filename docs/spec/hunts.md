@@ -653,7 +653,7 @@ A `huntRun` whose event is neither pooled nor delivered as a `huntEvent` in the 
 |---|---|---|---|
 | Show the Hunts tracker | Trackers | on/off | on |
 | Hunts tracker frame | Trackers (Core adds it from the slot, CORE-R42) | owned frames | `hunts.trackerframe.none` |
-| Tell me when a pinned Hunt's window opens | Announcements | on/off | off |
+| Announce open Hunt windows | Announcements | on/off | off |
 | Remind me about the Pagle companion | Announcements, after the window row (while the hint switch is on, as at 1.0, HNT-R172; SET-R32) | on/off | on |
 
 "Show completed", pins and the tracker's collapsed state are set on the board and tracker themselves, not in Settings.
