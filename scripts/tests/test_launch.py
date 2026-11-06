@@ -450,7 +450,10 @@ def test_check_9_reads_every_leased_cvar() -> None:
     cvars = leased_cvars(REPO)
 
     assert "SoftTargetInteract" in cvars and "autoLootDefault" in cvars and "Sound_EnableMusic" in cvars
-    assert len(cvars) == len(set(cvars)) >= 8
+    for cvar in ("Sound_MasterVolume", "Sound_SFXVolume", "Sound_DialogVolume", "Sound_OutputDriverIndex"):
+        assert cvar in cvars, cvar
+    assert "Sound_EnableAllSound" not in cvars
+    assert len(cvars) == len(set(cvars)) >= 15
 
 
 class FakeRunner:

@@ -42,6 +42,12 @@ describe("QoL's Fishing page with FakePagle", function()
 			{ "QoL", "checkbox", "Open clams between Casts", false },
 			{ "QoL", "header", "While you fish", false },
 			{ "QoL", "checkbox", "Fishing audio mix", false },
+			{ "QoL", "dropdown", "Master volume", true },
+			{ "QoL", "dropdown", "Effects", true },
+			{ "QoL", "dropdown", "Music", true },
+			{ "QoL", "dropdown", "Ambience", true },
+			{ "QoL", "dropdown", "Dialog", true },
+			{ "QoL", "dropdown", "Output device", true },
 			{ "QoL", "checkbox", "Keep sound when the game is in the background", true },
 			{ "QoL", "checkbox", "Auto-loot while fishing", false },
 			{ "QoL", "checkbox", "Show the next-action button", false },
@@ -280,7 +286,7 @@ describe("QoL's Fishing page with FakePagle", function()
 
 		-- qol.md › Settings › Tooltips, word for word; it gives the background option none.
 		assert.are.equal(
-			"While you fish: effects at full; music, ambience and dialog muted; master untouched. Put back afterwards.",
+			"While you fish: each channel and the output device as set below. Put back afterwards.",
 			audio.tooltip
 		)
 		assert.is_nil(background.tooltip)
@@ -304,12 +310,41 @@ describe("QoL's Fishing page with FakePagle", function()
 		rowOf(fake, "Auto-loot while fishing").set(false)
 
 		local profile = loaded.env.PagleQoLDB.profiles.Default
-		assert.are.same({ on = false, background = true }, profile.audio)
+		assert.are.same({ false, true }, { profile.audio.on, profile.audio.background })
 		assert.is_false(profile.autoLoot)
 		assert.is_false(rowOf(fake, "Fishing audio mix").get())
 		assert.is_true(rowOf(fake, "Keep sound when the game is in the background").get())
 		assert.is_false(rowOf(fake, "Auto-loot while fishing").get())
 	end)
+
+	it(
+		"gives the channel and device rows 1.1's mix as defaults, and the tooltips qol.md gives (QOL-R62, QOL-R68)",
+		function()
+			local fake = newFakePagle()
+			fake.load("Pagle_QoL")
+			fake.login()
+
+			local defaults, values = {}, {}
+			for _, label in ipairs({ "Master volume", "Effects", "Music", "Ambience", "Dialog", "Output device" }) do
+				defaults[#defaults + 1] = rowOf(fake, label).default
+				values[#values + 1] = rowOf(fake, label).get()
+			end
+
+			assert.are.same({ "keep", "100", "off", "off", "off", "" }, defaults)
+			assert.are.same(defaults, values)
+			assert.are.equal(
+				"Turns every channel up or down. It has no Off: you'd miss the splash.",
+				rowOf(fake, "Master volume").tooltip
+			)
+			assert.are.equal(
+				"Plays the game's sound here while you fish. The sound drops out for a moment as it switches, at the start and at the end.",
+				rowOf(fake, "Output device").tooltip
+			)
+			for _, label in ipairs({ "Effects", "Music", "Ambience", "Dialog" }) do
+				assert(rowOf(fake, label).tooltip == nil, label)
+			end
+		end
+	)
 
 	it("greys the background option out while the audio mix is off, keeping its value (SET-R20, SET-R31)", function()
 		local fake = newFakePagle()
@@ -744,7 +779,16 @@ describe("ns.AddSettings with a fake store", function()
 			input = "both",
 			lures = { mode = "best", item = 6529 },
 			clams = true,
-			audio = { on = true, background = false },
+			audio = {
+				on = true,
+				background = false,
+				master = "keep",
+				effects = 100,
+				music = "off",
+				ambience = "off",
+				dialog = "off",
+				device = "",
+			},
 			autoLoot = true,
 			indicator = { shown = true },
 		}
@@ -771,6 +815,10 @@ describe("ns.AddSettings with a fake store", function()
 			changeLease = function(change)
 				calls[#calls + 1] = { "changeLease" }
 				change(profile)
+			end,
+			-- The system default, then speakers and a headset, the speakers listed twice (QOL-R68).
+			outputDevices = function()
+				return { "System Default", "Speakers", "Speakers", "Headset" }
 			end,
 			-- Every item's name has loaded but the Aquadynamic Fish Lens's.
 			itemName = function(itemID)
@@ -883,10 +931,100 @@ describe("ns.AddSettings with a fake store", function()
 		rows["Keep sound when the game is in the background"].set(true)
 		rows["Auto-loot while fishing"].set(false)
 
-		assert.are.same({ on = false, background = true }, profile.audio)
+		assert.are.same({ false, true }, { profile.audio.on, profile.audio.background })
 		assert.is_false(profile.autoLoot)
 		assert.are.same({ { "changeLease" }, { "changeLease" }, { "changeLease" } }, calls)
 		assert.is_false(rows["Keep sound when the game is in the background"].isEnabled())
+	end)
+
+	it("offers each channel Don't change, Off and 10% to 100% in steps of 10; master no Off (QOL-R62)", function()
+		local rows = addRows()
+		local levels = {}
+		for level = 10, 100, 10 do
+			levels[#levels + 1] = { value = tostring(level), label = level .. "%" }
+		end
+		local function with(...)
+			local options = { ... }
+			for _, level in ipairs(levels) do
+				options[#options + 1] = level
+			end
+			return options
+		end
+		local keep, off = { value = "keep", label = "Don't change" }, { value = "off", label = "Off" }
+
+		assert.are.same(with(keep), rows["Master volume"].options())
+		for _, label in ipairs({ "Effects", "Music", "Ambience", "Dialog" }) do
+			assert.are.same(with(keep, off), rows[label].options(), label)
+		end
+	end)
+
+	it(
+		"stores a channel's volume as a number, Don't change and Off as words, through the lease change (QOL-R62, QOL-R65)",
+		function()
+			local rows, profile, calls = addRows()
+
+			rows["Master volume"].set("60")
+			rows["Effects"].set("off")
+			rows["Music"].set("30")
+			rows["Ambience"].set("keep")
+
+			assert.are.same({ 60, "off", 30, "keep", "off" }, {
+				profile.audio.master,
+				profile.audio.effects,
+				profile.audio.music,
+				profile.audio.ambience,
+				profile.audio.dialog,
+			})
+			assert.are.same({ "60", "off", "30", "keep" }, {
+				rows["Master volume"].get(),
+				rows["Effects"].get(),
+				rows["Music"].get(),
+				rows["Ambience"].get(),
+			})
+			assert.are.same({ { "changeLease" }, { "changeLease" }, { "changeLease" }, { "changeLease" } }, calls)
+		end
+	)
+
+	it("offers Don't change and each output device the client lists now, once each (QOL-R68)", function()
+		local rows, profile, calls = addRows()
+		local device = rows["Output device"]
+
+		assert.are.same({
+			{ value = "", label = "Don't change" },
+			{ value = "System Default", label = "System Default" },
+			{ value = "Speakers", label = "Speakers" },
+			{ value = "Headset", label = "Headset" },
+		}, device.options())
+		device.set("Headset")
+		assert.are.equal("Headset", profile.audio.device)
+		assert.are.equal("Headset", device.get())
+		assert.are.same({ { "changeLease" } }, calls)
+	end)
+
+	it("keeps a chosen device that isn't there now, listed as not found (QOL-R68)", function()
+		local rows, profile = addRows()
+		profile.audio.device = "USB Headset"
+
+		local options = rows["Output device"].options()
+
+		assert.are.same({ value = "USB Headset", label = "USB Headset (not found)" }, options[#options])
+		assert.are.equal(5, #options)
+		assert.are.equal("USB Headset", rows["Output device"].get())
+	end)
+
+	it("greys every row under the audio mix while it is off, keeping their values (SET-R31)", function()
+		local rows, profile = addRows()
+		local under = { "Master volume", "Effects", "Music", "Ambience", "Dialog", "Output device" }
+		for _, label in ipairs(under) do
+			assert(rows[label].isEnabled() == true, label)
+		end
+
+		profile.audio.on = false
+
+		for _, label in ipairs(under) do
+			assert(rows[label].isEnabled() == false, label)
+		end
+		assert.are.equal("100", rows["Effects"].get())
 	end)
 
 	it("resets the button's place through the store (QOL-R73)", function()

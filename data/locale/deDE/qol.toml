@@ -102,8 +102,56 @@ value = "Ton beim Angeln"
 en = "Fishing audio mix"
 
 [SETTINGS_AUDIO_MIX_TOOLTIP]
-value = "Während du angelst: Effekte voll; Musik, Umgebung und Dialoge stumm; Gesamtlautstärke unverändert. Danach wiederhergestellt."
-en = "While you fish: effects at full; music, ambience and dialog muted; master untouched. Put back afterwards."
+value = "Während du angelst: jeder Kanal und das Ausgabegerät wie unten eingestellt. Danach wiederhergestellt."
+en = "While you fish: each channel and the output device as set below. Put back afterwards."
+
+[SETTINGS_AUDIO_MASTER]
+value = "Gesamtlautstärke"
+en = "Master volume"
+
+[SETTINGS_AUDIO_MASTER_TOOLTIP]
+value = "Macht alle Kanäle lauter oder leiser. Ein Aus gibt es nicht: Sonst hörst du das Platschen nicht."
+en = "Turns every channel up or down. It has no Off: you'd miss the splash."
+
+[SETTINGS_AUDIO_EFFECTS]
+value = "Effekte"
+en = "Effects"
+
+[SETTINGS_AUDIO_MUSIC]
+value = "Musik"
+en = "Music"
+
+[SETTINGS_AUDIO_AMBIENCE]
+value = "Umgebung"
+en = "Ambience"
+
+[SETTINGS_AUDIO_DIALOG]
+value = "Dialoge"
+en = "Dialog"
+
+[SETTINGS_AUDIO_KEEP]
+value = "Nicht ändern"
+en = "Don't change"
+
+[SETTINGS_AUDIO_OFF]
+value = "Aus"
+en = "Off"
+
+[SETTINGS_AUDIO_LEVEL]
+value = "{level:0}%"
+en = "{level:0}%"
+
+[SETTINGS_AUDIO_DEVICE]
+value = "Ausgabegerät"
+en = "Output device"
+
+[SETTINGS_AUDIO_DEVICE_TOOLTIP]
+value = "Spielt den Ton des Spiels hier ab, während du angelst. Beim Umschalten fällt der Ton kurz aus, am Anfang und am Ende."
+en = "Plays the game's sound here while you fish. The sound drops out for a moment as it switches, at the start and at the end."
+
+[SETTINGS_AUDIO_DEVICE_MISSING]
+value = "{device} (nicht gefunden)"
+en = "{device} (not found)"
 
 [SETTINGS_BACKGROUND_SOUND]
 value = "Ton behalten, wenn das Spiel im Hintergrund ist"

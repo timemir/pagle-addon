@@ -258,6 +258,37 @@ describe("QoL's Fishing stretch logic", function()
 
 			assert.are.same({ { name = "SoftTargetInteract", orig = "2", set = "3" } }, lease)
 		end)
+
+		it(
+			"leases a CVar again at a new value keeping the player's orig, so the restore is theirs (QOL-R63, QOL-R65)",
+			function()
+				local lease, cvars = {}, newCVars({ Sound_SFXVolume = "0.4" })
+				ns.Lease(lease, { { name = "Sound_SFXVolume", value = "1.0" } }, cvars)
+
+				ns.Lease(lease, { { name = "Sound_SFXVolume", value = "0.5" } }, cvars)
+
+				assert.are.same({ { name = "Sound_SFXVolume", orig = "0.4", set = "0.5" } }, lease)
+				ns.RestoreLease(lease, cvars)
+				assert.are.equal("0.4", cvars.values.Sound_SFXVolume)
+				assert.are.same({}, lease)
+			end
+		)
+
+		it(
+			"stores the value it set when GetCVar reads nothing back, as while the sound system restarts (QOL-R68)",
+			function()
+				local lease, cvars = {}, newCVars({ Sound_OutputDriverIndex = "0" })
+				local set = cvars.set
+				function cvars.set(name, value)
+					set(name, value)
+					cvars.values[name] = nil
+				end
+
+				ns.Lease(lease, { { name = "Sound_OutputDriverIndex", value = "2" } }, cvars)
+
+				assert.are.same({ { name = "Sound_OutputDriverIndex", orig = "0", set = "2" } }, lease)
+			end
+		)
 	end)
 
 	describe("ns.LeaseRows", function()
@@ -325,6 +356,154 @@ describe("QoL's Fishing stretch logic", function()
 		end)
 	end)
 
+	describe("the Fishing audio mix's rows", function()
+		-- The CVar names and values of a row list, in order, as "name=value".
+		local function named(rows)
+			local list = {}
+			for i, row in ipairs(rows) do
+				list[i] = row.name .. "=" .. row.value
+			end
+			return list
+		end
+
+		-- The defaults' audio settings, with `changes` over them.
+		local function audio(changes)
+			local settings = {}
+			for key, value in pairs(ns.DB_DEFAULTS.profile.audio) do
+				settings[key] = value
+			end
+			for key, value in pairs(changes or {}) do
+				settings[key] = value
+			end
+			return settings
+		end
+
+		local DEVICES = { "System Default", "Speakers", "Headset" }
+
+		it("reproduces 1.1's mix under the defaults, byte for byte and in order (QOL-R62)", function()
+			assert.are.same({
+				"Sound_EnableSFX=1",
+				"Sound_SFXVolume=1.0",
+				"Sound_EnableMusic=0",
+				"Sound_EnableAmbience=0",
+				"Sound_EnableDialog=0",
+			}, named(ns.AudioMixRows(audio(), DEVICES)))
+			assert.are.same(
+				named(ns.LeaseRows({ audio = { on = true, background = true }, autoLoot = true })),
+				named(ns.LeaseRows({ audio = audio({ background = true }), autoLoot = true }, DEVICES))
+			)
+		end)
+
+		-- Each case: a channel, its setting, then the rows the mix leases for it (QOL-R62).
+		local CASES = {
+			{ "master", "keep", {} },
+			{ "master", 80, { "Sound_MasterVolume=0.8" } },
+			{ "master", 100, { "Sound_MasterVolume=1.0" } },
+			{ "effects", "keep", {} },
+			{ "effects", "off", { "Sound_EnableSFX=0" } },
+			{ "effects", 50, { "Sound_EnableSFX=1", "Sound_SFXVolume=0.5" } },
+			{ "music", "keep", {} },
+			{ "music", "off", { "Sound_EnableMusic=0" } },
+			{ "music", 30, { "Sound_EnableMusic=1", "Sound_MusicVolume=0.3" } },
+			{ "ambience", "keep", {} },
+			{ "ambience", "off", { "Sound_EnableAmbience=0" } },
+			{ "ambience", 100, { "Sound_EnableAmbience=1", "Sound_AmbienceVolume=1.0" } },
+			{ "dialog", "keep", {} },
+			{ "dialog", "off", { "Sound_EnableDialog=0" } },
+			{ "dialog", 5, { "Sound_EnableDialog=1", "Sound_DialogVolume=0.05" } },
+		}
+		for _, case in ipairs(CASES) do
+			it(
+				("leases %s for %s set to %s: nothing, its switch off, or its switch on and its volume (QOL-R62)"):format(
+					#case[3] == 0 and "nothing" or table.concat(case[3], ", "),
+					case[1],
+					tostring(case[2])
+				),
+				function()
+					local settings = {
+						master = "keep",
+						effects = "keep",
+						music = "keep",
+						ambience = "keep",
+						dialog = "keep",
+						device = "",
+					}
+					settings[case[1]] = case[2]
+
+					assert.are.same(case[3], named(ns.AudioMixRows(audio(settings), DEVICES)))
+				end
+			)
+		end
+
+		it("never turns master off and never leases Sound_EnableAllSound (QOL-R62)", function()
+			local rows = ns.AudioMixRows(
+				audio({ master = "off", effects = "off", music = 0, ambience = "off", dialog = "off" }),
+				DEVICES
+			)
+
+			for _, row in ipairs(rows) do
+				assert.are_not.equal("Sound_MasterVolume", row.name)
+				assert.are_not.equal("Sound_EnableAllSound", row.name)
+			end
+			assert.are.same({ "Sound_EnableMusic=1", "Sound_MusicVolume=0.0" }, { named(rows)[2], named(rows)[3] })
+		end)
+
+		it("leases the chosen output device by its index from 0, after the channels (QOL-R68)", function()
+			assert.are.same({
+				"Sound_EnableSFX=1",
+				"Sound_SFXVolume=1.0",
+				"Sound_EnableMusic=0",
+				"Sound_EnableAmbience=0",
+				"Sound_EnableDialog=0",
+				"Sound_OutputDriverIndex=2",
+			}, named(ns.AudioMixRows(audio({ device = "Headset" }), DEVICES)))
+			assert.are.same(
+				{ "Sound_OutputDriverIndex=0" },
+				named(ns.AudioMixRows(
+					audio({
+						effects = "keep",
+						music = "keep",
+						ambience = "keep",
+						dialog = "keep",
+						device = "System Default",
+					}),
+					DEVICES
+				))
+			)
+		end)
+
+		it("leases no device for Don't change, nor while the one chosen isn't there: unplugged (QOL-R68)", function()
+			local function deviceRows(device, devices)
+				local list = {}
+				for _, row in ipairs(ns.AudioMixRows(audio({ device = device }), devices)) do
+					if row.name == "Sound_OutputDriverIndex" then
+						list[#list + 1] = row.value
+					end
+				end
+				return list
+			end
+
+			assert.are.same({}, deviceRows("", DEVICES))
+			assert.are.same({}, deviceRows("USB Headset", DEVICES))
+			assert.are.same({}, deviceRows("Headset", { "System Default", "Speakers" }))
+			assert.are.same({}, deviceRows("Headset", {}))
+			assert.are.same({}, deviceRows("Headset", nil))
+			assert.are.same({ "1" }, deviceRows("Headset", { "System Default", "Headset", "Headset" }))
+		end)
+
+		it("leases no device and no channel while the audio mix is off (QOL-R62)", function()
+			local rows = ns.LeaseRows(
+				{ audio = audio({ on = false, master = 50, device = "Headset" }), autoLoot = false },
+				DEVICES
+			)
+
+			assert.are.same(
+				{ "SoftTargetInteract=3", "SoftTargetInteractRange=15", "SoftTargetInteractRangeIsHard=0" },
+				named(rows)
+			)
+		end)
+	end)
+
 	describe("ns.LeaseChange", function()
 		local ON = { audio = { on = true, background = true }, autoLoot = true }
 		local OFF = { audio = { on = false, background = true }, autoLoot = true }
@@ -376,6 +555,53 @@ describe("QoL's Fishing stretch logic", function()
 			lease, restore = ns.LeaseChange(ns.LeaseRows(noLoot), ns.LeaseRows(ON))
 			assert.are.same({ "autoLootDefault" }, names(lease))
 			assert.are.same({}, restore)
+		end)
+
+		it("leases a CVar again when its value changes: Effects from 100% to 50% (QOL-R65)", function()
+			local half = { audio = { on = true, background = true, effects = 50 }, autoLoot = true }
+
+			local lease, restore = ns.LeaseChange(ns.LeaseRows(ON), ns.LeaseRows(half))
+
+			assert.are.same({ { name = "Sound_SFXVolume", value = "0.5" } }, lease)
+			assert.are.same({}, restore)
+		end)
+
+		it(
+			"leases the switch off and restores the volume when a channel goes from a volume to Off (QOL-R65)",
+			function()
+				local half = { audio = { on = true, background = true, music = 50 }, autoLoot = true }
+				local off = { audio = { on = true, background = true, music = "off" }, autoLoot = true }
+
+				local lease, restore = ns.LeaseChange(ns.LeaseRows(half), ns.LeaseRows(off))
+
+				assert.are.same({ { name = "Sound_EnableMusic", value = "0" } }, lease)
+				assert.are.same({ Sound_MusicVolume = true }, restore)
+			end
+		)
+
+		it("restores a channel's CVars when it goes to Don't change (QOL-R65)", function()
+			local keep = { audio = { on = true, background = true, effects = "keep" }, autoLoot = true }
+
+			local lease, restore = ns.LeaseChange(ns.LeaseRows(ON), ns.LeaseRows(keep))
+
+			assert.are.same({}, lease)
+			assert.are.same({ Sound_EnableSFX = true, Sound_SFXVolume = true }, restore)
+		end)
+
+		it("leases a new device, and restores the device for Don't change (QOL-R65, QOL-R68)", function()
+			local devices = { "System Default", "Speakers", "Headset" }
+			local function on(device)
+				return { audio = { on = true, background = true, device = device }, autoLoot = true }
+			end
+
+			local lease, restore =
+				ns.LeaseChange(ns.LeaseRows(on("Headset"), devices), ns.LeaseRows(on("Speakers"), devices))
+			assert.are.same({ { name = "Sound_OutputDriverIndex", value = "1" } }, lease)
+			assert.are.same({}, restore)
+
+			lease, restore = ns.LeaseChange(ns.LeaseRows(on("Speakers"), devices), ns.LeaseRows(on(""), devices))
+			assert.are.same({}, lease)
+			assert.are.same({ Sound_OutputDriverIndex = true }, restore)
 		end)
 
 		it("changes nothing when the background option turns while the mix is off (QOL-R62, QOL-R65)", function()

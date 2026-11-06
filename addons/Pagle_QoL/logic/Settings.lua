@@ -8,6 +8,9 @@ local ns = select(2, ...)
 -- QoL's rows on Core's Fishing page (qol.md › Settings, SET-R20): pure logic, the handle and the store passed in
 -- (CORE-R7). Each Track Q step adds its section's rows here, in the order qol.md lists them.
 
+--- The step between the volumes a Fishing audio mix channel offers, in percent (QOL-R62, qol.md › Tunables).
+local AUDIO_LEVEL_STEP = 10
+
 --- What QoL's logic reads and changes a setting through: PagleQoLDB's profile and the adapter calls a change makes
 --- (CORE-R7). adapter/QoL.lua builds it. QoL's OnInitialize opens PagleQoLDB after the rows are added but before
 --- anything reads one: the page, the menu and `/pagle qol` all run later.
@@ -17,6 +20,7 @@ local ns = select(2, ...)
 ---@field setInput fun(input: PagleQoLInput) sets Input and re-evaluates at once (QOL-R18, QOL-R25)
 ---@field evaluate fun() re-evaluates the next action now, after a setting change (QOL-R25)
 ---@field changeLease fun(change: fun(profile: PagleQoLLeaseSettings)) changes a While you fish setting (QOL-R65)
+---@field outputDevices fun(): string[] the client's sound output devices now, by index from 0 (QOL-R68)
 ---@field itemName fun(itemID: integer): string? an item's name, or nil while its data loads (QOL-R54)
 ---@field fishingSetChoice fun(): integer the chosen set's ID, or ns.NO_FISHING_SET (QOL-R40)
 ---@field chooseFishingSet fun(setID: integer) chooses a set, or None (QOL-R40, QOL-R41)
@@ -200,7 +204,83 @@ function ns.AddSettings(M, store)
 			end)
 		end,
 	})
-	-- qol.md gives this row no tooltip. Greyed out while the audio mix is off, keeping its value (SET-R31).
+	-- The rows under the audio mix are greyed out while it is off, keeping their values (SET-R31).
+	local function audioOn()
+		return store.profile().audio.on
+	end
+	-- Each channel's level while you fish (QOL-R62): Don't change, Off (not for master, which has no switch) or a
+	-- volume from 10% to 100% in steps of 10. The dropdown's values are strings; the profile keeps a volume a number.
+	local channels = {
+		{ key = "master", label = L.SETTINGS_AUDIO_MASTER, tooltip = L.SETTINGS_AUDIO_MASTER_TOOLTIP },
+		{ key = "effects", label = L.SETTINGS_AUDIO_EFFECTS, canTurnOff = true },
+		{ key = "music", label = L.SETTINGS_AUDIO_MUSIC, canTurnOff = true },
+		{ key = "ambience", label = L.SETTINGS_AUDIO_AMBIENCE, canTurnOff = true },
+		{ key = "dialog", label = L.SETTINGS_AUDIO_DIALOG, canTurnOff = true },
+	}
+	for _, channel in ipairs(channels) do
+		M:AddSetting("fishing", {
+			kind = "dropdown",
+			parent = "audio",
+			label = channel.label,
+			tooltip = channel.tooltip,
+			default = tostring(defaults.audio[channel.key]),
+			get = function()
+				return tostring(store.profile().audio[channel.key])
+			end,
+			set = function(value)
+				store.changeLease(function(profile)
+					profile.audio[channel.key] = tonumber(value) or value
+				end)
+			end,
+			options = function()
+				local options = { { value = "keep", label = L.SETTINGS_AUDIO_KEEP } }
+				if channel.canTurnOff then
+					options[#options + 1] = { value = "off", label = L.SETTINGS_AUDIO_OFF }
+				end
+				for level = AUDIO_LEVEL_STEP, 100, AUDIO_LEVEL_STEP do
+					options[#options + 1] =
+						{ value = tostring(level), label = ns.Text(L.SETTINGS_AUDIO_LEVEL, { level = level }) }
+				end
+				return options
+			end,
+			isEnabled = audioOn,
+		})
+	end
+	-- The output device while you fish (QOL-R68): Don't change, then the devices the client lists now. A device chosen
+	-- that isn't there (unplugged) stays chosen and is listed as not found; no stretch leases it until it's back.
+	M:AddSetting("fishing", {
+		kind = "dropdown",
+		parent = "audio",
+		label = L.SETTINGS_AUDIO_DEVICE,
+		tooltip = L.SETTINGS_AUDIO_DEVICE_TOOLTIP,
+		default = defaults.audio.device,
+		get = function()
+			return store.profile().audio.device
+		end,
+		set = function(value)
+			store.changeLease(function(profile)
+				profile.audio.device = value
+			end)
+		end,
+		options = function()
+			local options = { { value = "", label = L.SETTINGS_AUDIO_KEEP } }
+			local listed = { [""] = true }
+			for _, device in ipairs(store.outputDevices()) do
+				if not listed[device] then
+					listed[device] = true
+					options[#options + 1] = { value = device, label = device }
+				end
+			end
+			local chosen = store.profile().audio.device
+			if not listed[chosen] then
+				options[#options + 1] =
+					{ value = chosen, label = ns.Text(L.SETTINGS_AUDIO_DEVICE_MISSING, { device = chosen }) }
+			end
+			return options
+		end,
+		isEnabled = audioOn,
+	})
+	-- qol.md gives this row no tooltip.
 	M:AddSetting("fishing", {
 		kind = "checkbox",
 		parent = "audio",
@@ -214,9 +294,7 @@ function ns.AddSettings(M, store)
 				profile.audio.background = value
 			end)
 		end,
-		isEnabled = function()
-			return store.profile().audio.on
-		end,
+		isEnabled = audioOn,
 	})
 	M:AddSetting("fishing", {
 		kind = "checkbox",

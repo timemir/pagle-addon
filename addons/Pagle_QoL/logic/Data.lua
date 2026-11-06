@@ -22,8 +22,19 @@ ns.DB_DEFAULTS = {
 		lures = { mode = "best", item = 6529 },
 		-- Open clams between Casts (QOL-R56).
 		clams = true,
-		-- While you fish: what a Fishing stretch leases besides soft-interact (QOL-R62).
-		audio = { on = true, background = false },
+		-- While you fish: what a Fishing stretch leases besides soft-interact (QOL-R62). Each channel is "keep" (Don't
+		-- change), "off" or a volume in percent, and the output device a name, "" for Don't change (QOL-R68): the
+		-- defaults are the mix 1.1 leased.
+		audio = {
+			on = true,
+			background = false,
+			master = "keep",
+			effects = 100,
+			music = "off",
+			ambience = "off",
+			dialog = "off",
+			device = "",
+		},
 		autoLoot = true,
 		-- The next-action button: Show the next-action button, and its place once Shift-drag moved it, as
 		-- { point, relativeTo = "UIParent", relativePoint, x, y } by name; nil (no default) is the default place

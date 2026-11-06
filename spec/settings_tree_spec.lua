@@ -33,6 +33,9 @@ local TRANSLATIONS_LINE = "Translations: Español by fmartingr"
 -- What the Locale headers give the tree rather than a string table: that line, and the Language dropdown's choice for
 -- each listed Locale the enUS client renders, by its own name (SET-R10 row 9b).
 local FROM_HEADERS = { [TRANSLATIONS_LINE] = true, ["Deutsch"] = true, ["Español"] = true }
+-- What the client gives the tree rather than a string table: the fake client's one sound output device, in the
+-- Output device dropdown (QOL-R68).
+local FROM_CLIENT = { ["System Default"] = true }
 
 local TIPS = {
 	fieldReport = "Copy what you've caught that Pagle's data doesn't know yet, and paste it into the issue form.",
@@ -49,7 +52,10 @@ local TIPS = {
 	swapGear = "Swaps between your fishing set and what you wore before (saved as Pagle Previous).",
 	lures = "A press before a cast applies a lure when none is on.",
 	clams = "One clam per press, never during a cast.",
-	audio = "While you fish: effects at full; music, ambience and dialog muted; master untouched. Put back afterwards.",
+	audio = "While you fish: each channel and the output device as set below. Put back afterwards.",
+	master = "Turns every channel up or down. It has no Off: you'd miss the splash.",
+	device = "Plays the game's sound here while you fish. The sound drops out for a moment as it switches, at the start "
+		.. "and at the end.",
 	autoLoot = "Only while you fish. Skipped if you already have auto-loot on.",
 	button = "Shows what your next press will do. Shift-drag to move.",
 	cozy = "Nothing pops up or plays. Every moment waits in the Session summary. A Legend's splash still shows, "
@@ -144,6 +150,12 @@ local EXPECTED = {
 			{ "checkbox", "Open clams between Casts", tip = TIPS.clams, of = "QoL" },
 			{ "header", "While you fish", of = "QoL" },
 			{ "checkbox", "Fishing audio mix", tip = TIPS.audio, of = "QoL" },
+			{ "dropdown", "Master volume", under = true, tip = TIPS.master, of = "QoL" },
+			{ "dropdown", "Effects", under = true, of = "QoL" },
+			{ "dropdown", "Music", under = true, of = "QoL" },
+			{ "dropdown", "Ambience", under = true, of = "QoL" },
+			{ "dropdown", "Dialog", under = true, of = "QoL" },
+			{ "dropdown", "Output device", under = true, tip = TIPS.device, of = "QoL" },
 			{ "checkbox", "Keep sound when the game is in the background", under = true, of = "QoL" },
 			{ "checkbox", "Auto-loot while fishing", tip = TIPS.autoLoot, of = "QoL" },
 			{ "checkbox", "Show the next-action button", tip = TIPS.button, of = "QoL" },
@@ -622,14 +634,21 @@ describe("Greying in the Settings tree", function()
 		assert.are.same({ "Swap gear", "Lure" }, greyedOn(loaded, "Fishing"))
 	end)
 
-	it("greys Keep sound while the audio mix is off (SET-R20, SET-R31)", function()
+	it("greys the audio mix's rows while it is off (SET-R20, SET-R31)", function()
 		local loaded = ready()
 
 		setRow(loaded, "Fishing", "Fishing audio mix", false)
-		assert.are.same(
-			{ "Swap gear", "Lure", "Keep sound when the game is in the background" },
-			greyedOn(loaded, "Fishing")
-		)
+		assert.are.same({
+			"Swap gear",
+			"Lure",
+			"Master volume",
+			"Effects",
+			"Music",
+			"Ambience",
+			"Dialog",
+			"Output device",
+			"Keep sound when the game is in the background",
+		}, greyedOn(loaded, "Fishing"))
 
 		setRow(loaded, "Fishing", "Fishing audio mix", true)
 		assert.are.same({ "Swap gear", "Lure" }, greyedOn(loaded, "Fishing"))
@@ -795,13 +814,19 @@ describe("Each page's Defaults button", function()
 				restoredOn(loaded, "Pagle")
 			)
 			assert.are.same({
+				"Ambience",
 				"Auto-loot while fishing",
 				"Cast with",
+				"Dialog",
+				"Effects",
 				"Fishing audio mix",
 				"Keep sound when the game is in the background",
 				"Lure",
 				"Lures",
+				"Master volume",
+				"Music",
 				"Open clams between Casts",
+				"Output device",
 				"Show the next-action button",
 			}, restoredOn(loaded, "Fishing"))
 			assert.are.same({
@@ -882,6 +907,12 @@ describe("Each page's Defaults button", function()
 				["Lure"] = qol.LURES[2].itemID,
 				["Open clams between Casts"] = false,
 				["Fishing audio mix"] = false,
+				["Master volume"] = "60",
+				["Effects"] = "off",
+				["Music"] = "30",
+				["Ambience"] = "keep",
+				["Dialog"] = "100",
+				["Output device"] = "System Default",
 				["Keep sound when the game is in the background"] = true,
 				["Auto-loot while fishing"] = false,
 				["Show the next-action button"] = false,
@@ -891,7 +922,8 @@ describe("Each page's Defaults button", function()
 
 			loaded.client.settings.defaults(loaded.client.settings.page("Fishing"))
 
-			-- qol.md › Settings' defaults: Both, Best I have, the Shiny Bauble, on, on, off, on, on.
+			-- qol.md › Settings' defaults: Both, Best I have, the Shiny Bauble, on, on, Don't change, 100%, Off, Off, Off,
+			-- Don't change, off, on, on.
 			assert.are.same({
 				["Cast with"] = "both",
 				["Fishing set"] = 3,
@@ -899,6 +931,12 @@ describe("Each page's Defaults button", function()
 				["Lure"] = 6529,
 				["Open clams between Casts"] = true,
 				["Fishing audio mix"] = true,
+				["Master volume"] = "keep",
+				["Effects"] = "100",
+				["Music"] = "off",
+				["Ambience"] = "off",
+				["Dialog"] = "off",
+				["Output device"] = "",
 				["Keep sound when the game is in the background"] = false,
 				["Auto-loot while fishing"] = true,
 				["Show the next-action button"] = true,
@@ -1323,7 +1361,11 @@ describe("The Settings tree's strings", function()
 		local tables = stringTables(loads)
 		local stray = {}
 		for _, string in ipairs(strings) do
-			if not FROM_HEADERS[string.text] and not fromStringTable(string.text, tables) then
+			if
+				not FROM_HEADERS[string.text]
+				and not FROM_CLIENT[string.text]
+				and not fromStringTable(string.text, tables)
+			then
 				stray[#stray + 1] = string.text
 			end
 		end

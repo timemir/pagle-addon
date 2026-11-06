@@ -85,6 +85,58 @@ en = "While you fish"
 value = "Mezcla de sonido para pescar"
 en = "Fishing audio mix"
 
+[SETTINGS_AUDIO_MIX_TOOLTIP]
+value = "Mientras pescas: cada canal y el dispositivo de salida, como se indica abajo. Todo vuelve a su sitio al acabar."
+en = "While you fish: each channel and the output device as set below. Put back afterwards."
+
+[SETTINGS_AUDIO_MASTER]
+value = "Volumen general"
+en = "Master volume"
+
+[SETTINGS_AUDIO_MASTER_TOOLTIP]
+value = "Sube o baja todos los canales. No se puede desactivar: no oirías el chapoteo."
+en = "Turns every channel up or down. It has no Off: you'd miss the splash."
+
+[SETTINGS_AUDIO_EFFECTS]
+value = "Efectos"
+en = "Effects"
+
+[SETTINGS_AUDIO_MUSIC]
+value = "Música"
+en = "Music"
+
+[SETTINGS_AUDIO_AMBIENCE]
+value = "Ambiente"
+en = "Ambience"
+
+[SETTINGS_AUDIO_DIALOG]
+value = "Diálogos"
+en = "Dialog"
+
+[SETTINGS_AUDIO_KEEP]
+value = "No cambiar"
+en = "Don't change"
+
+[SETTINGS_AUDIO_OFF]
+value = "Desactivado"
+en = "Off"
+
+[SETTINGS_AUDIO_LEVEL]
+value = "{level:0}%"
+en = "{level:0}%"
+
+[SETTINGS_AUDIO_DEVICE]
+value = "Dispositivo de salida"
+en = "Output device"
+
+[SETTINGS_AUDIO_DEVICE_TOOLTIP]
+value = "Reproduce aquí el sonido del juego mientras pescas. Al cambiar, el sonido se corta un momento, al empezar y al terminar."
+en = "Plays the game's sound here while you fish. The sound drops out for a moment as it switches, at the start and at the end."
+
+[SETTINGS_AUDIO_DEVICE_MISSING]
+value = "{device} (no encontrado)"
+en = "{device} (not found)"
+
 [SETTINGS_BACKGROUND_SOUND]
 value = "Mantener el sonido con el juego en segundo plano"
 en = "Keep sound when the game is in the background"
@@ -388,10 +440,6 @@ en = "If you walk off still dressed for it"
 [SETTINGS_FISHING_KEY_TOOLTIP]
 value = "Cada pulsación hace lo siguiente que toca: lanzar, recoger, o un señuelo, equipo o almeja cuando haga falta."
 en = "Each press does the next single thing: cast, reel, or a lure, gear or clam when needed."
-
-[SETTINGS_AUDIO_MIX_TOOLTIP]
-value = "Mientras pescas: efectos al máximo; música, ambiente y diálogos en silencio; volumen general intacto. Todo vuelve a su sitio al acabar."
-en = "While you fish: effects at full; music, ambience and dialog muted; master untouched. Put back afterwards."
 
 [CONFLICT_TURNED_OFF_QOL]
 value = "Pagle: Pagle QoL desactivado. Escribe /reload para terminar. Pagle sigue registrando tus Capturas."
