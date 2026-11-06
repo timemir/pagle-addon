@@ -276,6 +276,69 @@ describe("a toast in a composed toast style", function()
 		end
 	)
 
+	-- Pushes a toast in style `styleID` whose kicker leaves the first row room for one plate of two (the second-row
+	-- spec's above), as `/pagle dev preview` pushes its sample in the style it names, and returns its frame.
+	local function twoStamped(loaded, styleID)
+		local function raised(moment)
+			moment.kind, moment.module, moment.moduleTitle, moment.moduleOrder, moment.raised =
+				"spec", "Pagle", "Pagle", 0, 0
+			return moment
+		end
+		local announcement = loaded.ns.MakeAnnouncement({
+			raised({ rung = "toast", title = "New Species of the Far Sea", text = "Nightfin Snapper", coins = 5 }),
+			raised({ rung = "nod", title = "Rank up" }),
+			raised({ rung = "nod", title = "New here" }),
+		}) --[[@as PagleAnnouncement]]
+		announcement.style = styleID
+		loaded.ns.lanes:Push(announcement)
+		loaded.client.advance(0)
+		return loaded.ns.announcementFrames.toast
+	end
+
+	-- Each stamp's centre's depth down the page.
+	local function depths(toast)
+		local out = {}
+		for i, stamp in ipairs(toast.stamps) do
+			if stamp.shown then
+				out[#out + 1] = -select(5, toast.pivots[i]:GetPoint())
+			end
+		end
+		return out
+	end
+
+	it(
+		"hangs the same toast's stamps in two rows in Storm Front, whose art leaves the second row clear (#582)",
+		function()
+			local loaded = composedCore()
+
+			local rows = depths(twoStamped(loaded, STORM))
+
+			assert.are.equal(2, #rows)
+			assert.is_true(rows[2] > rows[1])
+		end
+	)
+
+	for _, case in ipairs({
+		{ "core.toaststyle.spider", "Widow's Web's spider on its thread" },
+		{ "ledger.toaststyle.cartographer", "the Cartographer's Folio's compass rose" },
+	}) do
+		it(
+			"keeps the stamps to one row in "
+				.. case[1]
+				.. ", where "
+				.. case[2]
+				.. " is drawn over a second row's place (#582, #584, ANN-R82)",
+			function()
+				local loaded = composedCore()
+
+				local rows = depths(twoStamped(loaded, case[1]))
+
+				assert.are.equal(2, #rows)
+				assert.are.equal(rows[1], rows[2])
+			end
+		)
+	end
+
 	it(
 		"keeps a ruled toast's stamps to one row in a style whose second row would reach down to the ruler's numbers"
 			.. " (#582, ANN-R22, ANN-R82)",

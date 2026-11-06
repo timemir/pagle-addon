@@ -924,6 +924,9 @@ local RECORD_DROP = 19
 -- How far a ruled toast's numbers (the landed record's and the old one's, in the hand at 19) stand above the ruler's
 -- own top: a second row of stamps there ends at least this far above it, or the stamps keep to one row.
 local RULER_RISE = 8
+-- Composed styles whose own art, drawn over the words (ANN-R82's "over" host), covers where a second row would hang:
+-- Widow's Web's spider on its thread and the Cartographer's Folio's compass rose (#584's review): one row for them.
+local ONE_ROW_STYLES = { ["core.toaststyle.spider"] = true, ["ledger.toaststyle.cartographer"] = true }
 
 -- The smallest a toast's kicker steps down to, to leave its stamps room: the size it had before #467 (a composed
 -- style's own kit size).
@@ -1335,7 +1338,7 @@ local function drawComposedToast(frame, display, style)
 		rights = { x, second },
 		gap = 2,
 		left = box.x,
-		rows = (announcement.fighting or lowest > rulerTop - RULER_RISE) and 1 or 2,
+		rows = (announcement.fighting or lowest > rulerTop - RULER_RISE or ONE_ROW_STYLES[style.id]) and 1 or 2,
 		withRecord = page.ruled == true,
 	}, {
 		font = fonts.what,
