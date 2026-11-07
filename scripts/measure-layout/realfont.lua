@@ -203,6 +203,7 @@ end
 ---@field lines string[]
 ---@field natural number
 ---@field shown number
+---@field widest number the widest line it shows, before its box holds it: the word wider than its box, when that cuts it
 ---@field height number
 ---@field cut string? why it is cut: "wider than its box", "more than N lines", "taller than its box"
 ---@field file string
@@ -250,6 +251,7 @@ function RealFont.layout(region)
 	for _, line in ipairs(lines) do
 		shown = math.max(shown, (RealFont.width(line, file, size)))
 	end
+	local widest = shown
 	if width then
 		shown = math.min(shown, width)
 	end
@@ -257,6 +259,7 @@ function RealFont.layout(region)
 		lines = lines,
 		natural = natural,
 		shown = shown,
+		widest = widest,
 		height = #lines * lineHeight,
 		cut = cut,
 		file = file,

@@ -196,6 +196,84 @@ describe("the Ledger's onboarding", function()
 			end
 		)
 
+		describe("the note in its real face, over Core's foot (ONB-R36, 1.3.5)", function()
+			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+			local RealFont = dofile("scripts/measure-layout/realfont.lua")
+			local width = RealFont.width
+			local FOOT_TOP = 486
+
+			-- The Your Ledger step on Core's own guide in `language` on a client of that language, the Ledger's and
+			-- Core's guide texts measured in their real faces (a ruRU client's FRIZQT___CYR, which isn't bundled, in
+			-- RealFont's stand-in), `wider` times as wide when given. Returns the step as drawn.
+			local function step(language, wider)
+				RealFont.width = function(...)
+					local w, estimated = width(...)
+					return w * (wider or 1), estimated
+				end
+				local loaded = loadAddon(
+					"Pagle",
+					foreverWith({
+						GetLocale = function()
+							return language
+						end,
+						PagleDB = { global = { language = language } },
+					}),
+					{ also = { "Pagle_Ledger" } }
+				)
+				enterWorld(loaded, 3)
+				local core, ledgerNs = loaded.namespaces.Pagle, loaded.namespaces.Pagle_Ledger
+				core.db.profile.announcements.motion = false
+				for _, ns in ipairs({ core, ledgerNs }) do
+					for _, name in ipairs({ "GuideText", "JournalLabel" }) do
+						local make = rawget(ns, name)
+						if make then
+							ns[name] = function(...)
+								return RealFont.patch(make(...))
+							end
+						end
+					end
+				end
+				core.guide:Open("ledger")
+				assert.are.same({}, loaded.client.errors)
+				return assert(ledgerNs.guideLedger)
+			end
+
+			after_each(function()
+				RealFont.width = width
+			end)
+
+			-- A region's top, from its one anchor.
+			local function topOf(region)
+				return -region.points[1][5]
+			end
+
+			it("onb_r36 holds ruRU's long note between the account paragraph and the foot, over neither", function()
+				for _, wider in ipairs({ false, 1.1 }) do
+					local view = step("ruRU", wider or nil)
+					local note = view.note:IsShown() and view.note or view.wideNote
+					local times = ("%s times the stand-in"):format(wider or 1)
+					local size = select(2, RealFont.face(note.text))
+
+					assert(
+						topOf(note) >= topOf(view.account) + view.account:GetStringHeight(),
+						"note over the account paragraph, " .. times
+					)
+					assert(topOf(note) + note:GetHeight() <= FOOT_TOP + 1e-6, "note on the foot, " .. times)
+					assert(size >= 14.5, ("set at %s, %s"):format(size, times))
+				end
+			end)
+
+			it("onb_r36 leaves the note at the hand's 19, whole, in enUS, deDE and esES", function()
+				for _, language in ipairs({ "enUS", "deDE", "esES" }) do
+					local view = step(language)
+					local note = view.note:IsShown() and view.note or view.wideNote
+					assert.are.equal(19, select(2, RealFont.face(note.text)))
+					assert.are.equal(0, note.text:GetMaxLines())
+					assert.is_true(topOf(note) + note:GetHeight() <= FOOT_TOP + 1e-6)
+				end
+			end)
+		end)
+
 		it(
 			"reads the Ledger's state again each time it shows: kept since the first Catch (ONB-R36, LED-R146)",
 			function()

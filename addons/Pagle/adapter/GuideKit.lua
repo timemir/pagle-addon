@@ -423,7 +423,9 @@ end
 ---@field badge Texture?
 ---@field number FontString?
 ---@field arrow Frame?
----@field FitAbove fun(self: PagleGuideNote, bottom: number)
+---@field FitAbove fun(self: PagleGuideNote, bottom: number, top: number?)
+---@field fitted true? whether FitAbove set its words smaller or cut them
+---@field size number the size its words are set at, the hand's 19 unless one word is wider than its room (1.3.5)
 
 -- A note's words: the hand at 19, their lines 2.3 apart, and the paper's room round them (10 over, 11 under), which
 -- makes the note as tall as its words and 21.
@@ -443,6 +445,44 @@ end
 ---@type (fun(note: Frame, target: Region): Frame)?
 ns.DrawNoteArrow = nil
 
+-- The widest of `words`' words (split at spaces) in its font now, measured unbounded; its text and `room` set again.
+---@param words FontString
+---@param room number
+---@return number
+local function widestWord(words, room)
+	local text, widest = words:GetText() or "", 0
+	words:SetWidth(0)
+	for word in text:gmatch("%S+") do
+		words:SetText(word)
+		widest = math.max(widest, words:GetStringWidth())
+	end
+	words:SetText(text)
+	words:SetWidth(room)
+	return widest
+end
+
+-- Sets a note's words smaller when one of them is wider than its `room`, in half-unit steps down to FIT_FLOOR of their
+-- size, so the client needn't break a word across lines (1.3.5: ruRU's "открывает" beside the drawn Pagle menu).
+-- Returns the size they are set at.
+---@param words FontString
+---@param room number
+---@return number
+local function fitWords(words, room)
+	local size = NOTE_SIZE
+	if widestWord(words, room) <= room then
+		return size
+	end
+	local floor = math.ceil(NOTE_SIZE * FIT_FLOOR * 2) / 2
+	repeat
+		size = size - 0.5
+		words:SetFontObject(ns.ArtFaceFont("hand", size))
+		words:SetSpacing(NOTE_SPACING)
+	until size - 0.5 < floor or widestWord(words, room) <= room
+	local color = INKS.hand
+	words:SetTextColor(color[1], color[2], color[3])
+	return size
+end
+
 ---@param parent Frame
 ---@param text string
 ---@param x number
@@ -460,6 +500,7 @@ function ns.NewGuideNote(parent, text, x, y, w, target, n)
 		spacing = NOTE_SPACING,
 	})
 	note.text:SetPoint("TOPLEFT", note, "TOPLEFT", 15, -10)
+	note.size = fitWords(note.text, w - 28)
 	note:SetSize(w, math.floor(note.text:GetStringHeight() + NOTE_PAD + 0.5))
 	ns.GuideAt(note, parent, x, y)
 	note.paper = ns.NewNineSlice(note, "GuideParts", "note", 6)
@@ -478,16 +519,29 @@ function ns.NewGuideNote(parent, text, x, y, w, target, n)
 	--- Holds the note's paper above `bottom` on its parent, such as « back at the left page's foot (#605): a note that
 	--- ends there is left as drawn; a longer one's words are set smaller, in half-unit steps down to FIT_FLOOR of their
 	--- size, and one too tall even then keeps the lines that fit (one at least), the client cutting the last with
-	--- "...". The paper follows its words. For a note with no arrow: one drawn to a target isn't drawn again.
+	--- "...". The paper follows its words. For a note with no arrow: one drawn to a target isn't drawn again. `top`,
+	--- from 1.3.5, is where the note now starts on its parent, for one a page moves after making it (the Ledger's
+	--- Your Ledger note); the place it was made at when nil. Called again, it fits the note from its own size again.
 	---@param self PagleGuideNote
 	---@param bottom number
-	function note.FitAbove(self, bottom)
+	---@param top number?
+	function note.FitAbove(self, bottom, top)
 		local words = self.text
-		local room = bottom - y - NOTE_PAD
+		if self.fitted then
+			self.fitted = nil
+			words:SetMaxLines(0)
+			words:SetFontObject(ns.ArtFaceFont("hand", self.size))
+			words:SetSpacing(NOTE_SPACING)
+			local color = INKS.hand
+			words:SetTextColor(color[1], color[2], color[3])
+			self:SetHeight(math.floor(words:GetStringHeight() + NOTE_PAD + 0.5))
+		end
+		local room = bottom - (top or y) - NOTE_PAD
 		if words:GetStringHeight() <= room then
 			return
 		end
-		local size, floor = NOTE_SIZE, math.ceil(NOTE_SIZE * FIT_FLOOR * 2) / 2
+		self.fitted = true
+		local size, floor = self.size, math.ceil(NOTE_SIZE * FIT_FLOOR * 2) / 2
 		while words:GetStringHeight() > room and size - 0.5 >= floor do
 			size = size - 0.5
 			words:SetFontObject(ns.ArtFaceFont("hand", size))

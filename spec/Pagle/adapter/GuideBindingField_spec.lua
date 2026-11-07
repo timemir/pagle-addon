@@ -129,6 +129,66 @@ describe("the binding field's words in a longer language (ONB-R40)", function()
 		assert.are.equal("PagleArtFace_italic_10_5", note.fontObject.name)
 		assert.are.equal(2, note:GetMaxLines())
 	end)
+
+	describe("the dashed cap's words in their real face (1.3.5)", function()
+		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+		local RealFont = dofile("scripts/measure-layout/realfont.lua")
+		local width = RealFont.width
+
+		-- A Fishing key field, unbound, on a client of `language`, its words measured in their real faces (a ruRU
+		-- client's FRIZQT___CYR, which isn't bundled, in RealFont's stand-in), `wider` times as wide when given.
+		-- Returns the dashed cap's words.
+		local function waiting(language, wider)
+			RealFont.width = function(...)
+				local w, estimated = width(...)
+				return w * (wider or 1), estimated
+			end
+			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+			local _, stubs = dofile("spec/support/client.lua")()
+			local loaded = loadCore({ BUILD_ENTRY }, { global = { language = language } }, {
+				GetLocale = function()
+					return language
+				end,
+				CreateFont = RealFont.keepNamed(stubs.CreateFont),
+			})
+			enterWorld(loaded)
+			local ns = loaded.ns
+			local GuideText = ns.GuideText
+			ns.GuideText = function(...)
+				return RealFont.patch(GuideText(...))
+			end
+			local page = loaded.env.CreateFrame("Frame", nil, loaded.env.UIParent)
+			page:SetSize(442, 546)
+			local fishing = ns.NewGuideBindingField(page, "PAGLE_FISHING_KEY", "Fishing key")
+			assert.are.same({}, loaded.client.errors)
+			return fishing.waitWords
+		end
+
+		after_each(function()
+			RealFont.width = width
+		end)
+
+		it("onb_r40 sets ruRU's words smaller until they take two lines in the cap, whole", function()
+			for _, wider in ipairs({ false, 1.1 }) do
+				local words = waiting("ruRU", wider or nil)
+				local layout = RealFont.layout(words)
+				local times = ("%s times the stand-in"):format(wider or 1)
+
+				assert(layout.cut == nil, ("%s at %s, %s"):format(tostring(layout.cut), layout.size, times))
+				assert.are.equal(2, #layout.lines)
+				assert(layout.size < 14 and layout.size >= 10.5, ("set at %s, %s"):format(layout.size, times))
+			end
+		end)
+
+		it("onb_r40 leaves the words at 14 on one line in enUS, deDE and esES", function()
+			for _, language in ipairs({ "enUS", "deDE", "esES" }) do
+				local layout = RealFont.layout(waiting(language))
+				assert.are.equal(14, layout.size)
+				assert.are.equal(1, #layout.lines)
+				assert.is_nil(layout.cut)
+			end
+		end)
+	end)
 end)
 
 describe("the binding field's states (ONB-R40)", function()

@@ -132,6 +132,43 @@ local function page(loaded, id, side)
 	return loaded.ns.guideBook.sides[id][side].content
 end
 
+---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+local RealFont = dofile("scripts/measure-layout/realfont.lua")
+local realWidth = RealFont.width
+
+-- Puts RealFont's widths back after realGuide made them wider.
+local function restoreWidths()
+	RealFont.width = realWidth
+end
+
+-- The guide open at step `id` in `language` on a client of that language, every guide text measured in its real face
+-- (a ruRU client's FRIZQT___CYR, which isn't bundled, in RealFont's stand-in), `wider` times as wide when given, as a
+-- face that much wider would draw it (a describe using it restores the widths after each case). Returns Core's ns and
+-- the step's left and right pages.
+local function realGuide(id, language, wider)
+	RealFont.width = function(...)
+		local w, estimated = realWidth(...)
+		return w * (wider or 1), estimated
+	end
+	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+	local _, stubs = dofile("spec/support/client.lua")()
+	local loaded = loadCore({ BUILD_ENTRY }, { global = { language = language } }, {
+		GetLocale = function()
+			return language
+		end,
+		CreateFont = RealFont.keepNamed(stubs.CreateFont),
+	})
+	enterWorld(loaded, 3)
+	local ns = loaded.ns
+	local GuideText = ns.GuideText
+	ns.GuideText = function(...)
+		return RealFont.patch(GuideText(...))
+	end
+	ns.guide:Open(id)
+	assert.are.same({}, loaded.client.errors)
+	return ns, page(loaded, id, "left"), page(loaded, id, "right")
+end
+
 -- Every shown font string's text under `widget`, depth first, in the order made.
 local function texts(widget, out)
 	out = out or {}
@@ -330,6 +367,45 @@ describe("the Welcome step (ONB-R30)", function()
 				"Pagle comes in five parts. Turn any of them off in the AddOns list and it leaves no trace."
 			)
 		)
+	end)
+
+	describe("the letter in its real face, over the foot line (1.3.5)", function()
+		after_each(restoreWidths)
+
+		-- The Welcome step's left page in `language`, measured in real faces (realGuide), and the load's words.
+		local function welcome(language, wider)
+			local ns, left = realGuide("welcome", language, wider)
+			return left, ns.L
+		end
+
+		it("onb_r30 sets ruRU's long letter smaller, so it and its signature end over the foot line", function()
+			for _, wider in ipairs({ false, 1.1 }) do
+				local left, L = welcome("ruRU", wider or nil)
+				local signed = assert(find(left, L.GUIDE_WELCOME_SIGNED))
+				local foot = assert(find(left, L.GUIDE_WELCOME_FOOT))
+				local last = assert(find(left, L.GUIDE_WELCOME_LETTER[3]))
+				local size = select(2, RealFont.face(last))
+				local times = ("%s times the stand-in"):format(wider or 1)
+
+				assert(bottom(signed) <= top(foot) - 8, "signature on the foot line, " .. times)
+				assert(bottom(last) < top(signed), "last paragraph on the signature, " .. times)
+				-- smaller than the hand's 23, to three quarters of it at the least, every paragraph at one size
+				assert(size < 23 and size >= 17.5, ("set at %s, %s"):format(size, times))
+				for i = 1, 2 do
+					assert.are.equal(size, select(2, RealFont.face(find(left, L.GUIDE_WELCOME_LETTER[i]))))
+				end
+			end
+		end)
+
+		it("onb_r30 leaves the letter at the hand's 23 in enUS, deDE and esES", function()
+			for _, language in ipairs({ "enUS", "deDE", "esES" }) do
+				local left, L = welcome(language)
+				for i = 1, 3 do
+					assert.are.equal(23, select(2, RealFont.face(find(left, L.GUIDE_WELCOME_LETTER[i]))))
+				end
+				assert.is_true(bottom(find(left, L.GUIDE_WELCOME_SIGNED)) <= top(find(left, L.GUIDE_WELCOME_FOOT)))
+			end
+		end)
 	end)
 
 	it("closes with I’ll find my own way, setting skipped (ONB-R26)", function()
@@ -546,6 +622,35 @@ describe("the What's in the box step (ONB-R31, ONB-R91)", function()
 		assert.is_true(reads(left, "Click a name to open it. |cff9a2a1a/pagle|r opens Settings."))
 	end)
 
+	describe("the menu's note in its real face (1.3.5)", function()
+		after_each(restoreWidths)
+
+		-- The note's words on the left page, in `language`, measured in real faces (realGuide).
+		local function noteWords(language, wider)
+			local ns, left = realGuide("box", language, wider)
+			return assert(find(left, ns.GuideRedPencil(ns.L.GUIDE_BOX_MENU_NOTE)))
+		end
+
+		it("onb_r31 sets ruRU's note smaller so no word is wider than its room, the client breaking none", function()
+			for _, wider in ipairs({ false, 1.1 }) do
+				local words = noteWords("ruRU", wider or nil)
+				local layout = RealFont.layout(words)
+				local times = ("%s times the stand-in"):format(wider or 1)
+
+				assert(layout.cut == nil, ("%s at %s, %s"):format(tostring(layout.cut), layout.size, times))
+				assert(layout.size < 19 and layout.size >= 14.5, ("set at %s, %s"):format(layout.size, times))
+			end
+		end)
+
+		it("onb_r31 leaves the note at the hand's 19 in enUS, deDE and esES", function()
+			for _, language in ipairs({ "enUS", "deDE", "esES" }) do
+				local layout = RealFont.layout(noteWords(language))
+				assert.are.equal(19, layout.size)
+				assert.is_nil(layout.cut)
+			end
+		end)
+	end)
+
 	it("leaves out a Module that is off, counting what's on in its kicker (ONB-R102)", function()
 		local loaded = guideAt("box", { "Hunts", "QoL" })
 		local right = page(loaded, "box", "right")
@@ -646,9 +751,6 @@ describe("the Moments step (ONB-R34, ONB-R35)", function()
 	end)
 
 	describe("the toast sample's name, in its real face (#621)", function()
-		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
-		local RealFont = dofile("scripts/measure-layout/realfont.lua")
-
 		-- Patches every font string under `widget` to measure in its real face (RealFont.patch), each line `wider`
 		-- times as wide when given, up to its box.
 		local function measureReal(widget, wider)

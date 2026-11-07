@@ -116,11 +116,14 @@ local function heldTo(fontString, room)
 end
 
 -- Fits the dashed cap's words in it (ONB-R40): on one line at their size when they fit, else wrapped to two lines
--- at the size that lets them, down to WAIT_FLOOR.
+-- at the size that lets them, down to WAIT_FLOOR: first the size two lines' room suggests, then, measured as the client
+-- wraps them, half a size smaller at a time while they still take more than two lines (1.3.5). Still longer at the
+-- floor, the client ends the second line with an ellipsis.
 ---@param field PagleGuideBindingField
 local function fitWait(field)
 	local words, room = field.waitWords, CAP_W - 2 * CAP_PAD
 	words:SetWordWrap(false)
+	words:SetMaxLines(0)
 	words:SetFontObject(ns.ArtFaceFont("italic", WAIT_SIZE))
 	words:SetWidth(0)
 	local natural = words:GetStringWidth()
@@ -128,7 +131,18 @@ local function fitWait(field)
 		-- two lines hold about twice the room, less what a line break wastes
 		local size = math.max(WAIT_FLOOR, math.min(WAIT_SIZE, math.floor(WAIT_SIZE * room * 1.8 / natural * 2) / 2))
 		words:SetFontObject(ns.ArtFaceFont("italic", size))
-		words:SetWordWrap(true)
+		words:SetWidth(room)
+		-- more than two lines as wrapped: taller than two of its one-line height
+		local function overTwo()
+			words:SetWordWrap(false)
+			local line = words:GetStringHeight()
+			words:SetWordWrap(true)
+			return words:GetStringHeight() > 2 * line + 0.5
+		end
+		while overTwo() and size - 0.5 >= WAIT_FLOOR do
+			size = size - 0.5
+			words:SetFontObject(ns.ArtFaceFont("italic", size))
+		end
 		words:SetMaxLines(2)
 	end
 	local ink = ns.GUIDE_INKS.waiting

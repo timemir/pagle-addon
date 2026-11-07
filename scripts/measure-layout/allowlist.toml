@@ -40,6 +40,46 @@ stop = "core.onboarding.evening"
 reason = "First evening strikes through the steps already done: the rule over the words is the design."
 
 [[allow]]
+kind = "cut"
+text = "*"
+stop = "core.onboarding.step.*"
+detail = "wider than its box: * wide in 382"
+languages = ["pseudo"]
+reason = """A Field guide page's title, kicker or other line held to its column (ns.NewGuideTitle, ns.FitGuideText): \
+set smaller, to three quarters of its size, then cut with the client's "…", never into the spine (ONB-R30's #592 \
+note; #602 left the pseudo-locale's as designed). Its padded pseudo words are wider than any real language's. \
+1.3.5."""
+
+[[allow]]
+kind = "cut"
+text = "*ďöübĺé ŕïğħţ-сĺïсķ*"
+stop = "core.onboarding.step.casting"
+detail = "more than * line*"
+languages = ["pseudo"]
+reason = """The Casting page's double right-click note, held 8 above « back (ONB-R32's #605 note): set smaller to \
+three quarters of its size, then cut to the lines that fit, the last ending in "…". The pseudo-locale's is cut \
+to one line by design, as #616 measured. 1.3.5."""
+
+[[allow]]
+kind = "cut"
+text = "Экипировка"
+stop = "core.onboarding.step.casting"
+languages = ["ruRU"]
+reason = """The Casting page's sample next-action face's label on its slip (QoL's fitFaceLabel, QOL-R70): held to its \
+share of the row, set smaller to three quarters of its 18, then cut with "…". At that floor of 13.5 the word is 76 \
+wide in 69, an estimate (FRIZQT___CYR measured in Marcellus) and silent under the pseudo-locale. 1.3.5."""
+
+[[allow]]
+kind = "cut"
+text = "по умолчанию: ничего не назначено"
+stop = "core.onboarding.step.*"
+detail = "more than 2 lines*"
+languages = ["ruRU"]
+reason = """A binding field's note right of its dashed cap (ONB-R40): two lines at most, set smaller down to 10.5, \
+then ended by the client with "…" inside the field. ruRU's needs three lines at 10.5 in the room left of a \
+128-wide cap (Casting and Fishing clothes). 1.3.5."""
+
+[[allow]]
 kind = "overlap"
 text = "*"
 other = "(rule)"
