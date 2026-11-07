@@ -945,6 +945,12 @@ local RULER_RISE = 8
 -- Composed styles whose own art, drawn over the words (ANN-R82's "over" host), covers where a second row would hang:
 -- Widow's Web's spider on its thread and the Cartographer's Folio's compass rose (#584's review): one row for them.
 local ONE_ROW_STYLES = { ["core.toaststyle.spider"] = true, ["ledger.toaststyle.cartographer"] = true }
+-- Composed styles whose own art, drawn over the words, rests over the end of the name line's room, by its layer's name
+-- in the style's rungs: Ink and Koi's koi (it swims off along the line and back, and on a still sample it stays) and
+-- the Town Crier's Proclamation's seal on its ribbons. A long name's end, in a longer language, was hidden under it
+-- (#592: deDE "Öliges Schwarzmaul" under the koi), so the line's room ends before it, as before a second row of
+-- stamps.
+local NAME_ART = { ["ledger.toaststyle.koi"] = "fx1", ["ledger.toaststyle.crier"] = "front" }
 
 -- The smallest a toast's kicker steps down to, to leave its stamps room: the size it had before #467 (a composed
 -- style's own kit size).
@@ -1071,8 +1077,8 @@ local function secondRowLeft(stamps, placed, record)
 end
 
 -- A toast's name line's room once its stamps hang (#582): `room`, or, when a second row of stamps hangs beside the
--- line, less, to end STAMP_NAME_GAP before that row: the line's clip ends with its room (ANN-R101), so the name never
--- shows nearer the plates than that.
+-- line (or a composed style's art rests over the line's end, nameArtLeft), less, to end STAMP_NAME_GAP before that
+-- row: the line's clip ends with its room (ANN-R101), so the name never shows nearer the plates than that.
 -- With less, the line is written again in it (writeName, writeToastVariety) and the block placed again. Returns the
 -- room and the line's width as writeToastVariety gives it (`line` as it was when the room stays).
 ---@param frame PagleAnnouncementFrame
@@ -1097,6 +1103,22 @@ local function roomBesideStamps(frame, headline, look, fonts, inks, room, line, 
 	line = writeToastVariety(frame, look, fonts.name, inks.name, narrower)
 	rows.placeBlock()
 	return narrower, line
+end
+
+-- Where the art NAME_ART names for a composed style starts on its rung, as `place` fits it to the page (its resting
+-- place, ANN-R82), or nil for a style or rung without it.
+---@param style PagleToastStyle
+---@param rung PagleToastRung
+---@param place fun(box: PagleToastBox): PagleToastBox
+---@return number?
+local function nameArtLeft(style, rung, place)
+	local name = NAME_ART[style.id]
+	for _, art in ipairs(name and rung.layers or {}) do
+		if art.name == name then
+			return place(art).x
+		end
+	end
+	return nil
 end
 
 -- The toast page's red ruling line, which the Torn Page's art draws across the page under the kicker, and which every
@@ -1379,11 +1401,17 @@ local function drawComposedToast(frame, display, style)
 	ruler.record:ClearAllPoints()
 	ruler.record:SetPoint("CENTER", frame.recordPivot, "CENTER")
 
-	-- The clip the name is written out in, round the name as written, in its room as the stamps leave it.
+	-- The clip the name is written out in, round the name as written, in its room as the stamps and the art over the
+	-- line's end leave it.
 	local room
+	local row = secondRowLeft(stamps, placed, record)
+	local art = nameArtLeft(style, rung, place)
+	if art then
+		row = math.min(row or art, art)
+	end
 	room, line = roomBesideStamps(frame, headline, look, fonts, inks, lineWidth, line, {
 		left = box.x,
-		row = secondRowLeft(stamps, placed, record),
+		row = row,
 		placeBlock = placeBlock,
 	})
 	local clip = frame.nameClip --[[@as Frame]]
