@@ -204,8 +204,8 @@ function ns.AddSettings(M, store)
 			end)
 		end,
 	})
-	-- The rows under the audio mix are greyed out while it is off, keeping their values; a channel's row is hidden
-	-- instead, as its native control can't grey (SET-R31).
+	-- The rows under the audio mix are greyed out while it is off, keeping their values. A channel's row can't grey
+	-- (its native control reads no modify predicate), so it stays shown and live, and is never hidden (SET-R31).
 	local function audioOn()
 		return store.profile().audio.on
 	end
