@@ -18,7 +18,7 @@ Read in-game results (Lua errors, the Catch log, CVars, addon state) from the cl
 
 ### Hotfix path
 
-One command from a committed fix to its tagged release and pagle-backend's pin-bump pull request: `scripts/hotfix.sh start <version>`, then `scripts/hotfix.sh ship <version> [--merge-bump]`. The fix and its changelog section go in one pull request; the script merges on green, tags the tested tree at once, waits for the Release, and starts the backend's pin bump. Its header has the steps.
+One command from a committed fix to its tagged release and pagle-backend's pin bump: `scripts/hotfix.sh start <version>`, then `scripts/hotfix.sh ship <version>`. The fix and its changelog section go in one pull request; the script merges on green, tags the tested tree at once and waits for the Release. pagle-backend's CI runs locally while its Actions minutes are off, so the script then runs the backend's `ci/local-pin-bump.sh` when `HOTFIX_BACKEND_DIR` names a pagle-backend checkout, or prints the commands for the Operator, and stops with the add-on released. Its header has the steps.
 
 ### Launch runbook
 
