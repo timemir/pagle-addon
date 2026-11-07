@@ -278,17 +278,21 @@ describe("a toast in a composed toast style", function()
 
 	-- Pushes a toast in style `styleID` whose kicker leaves the first row room for one plate of two (the second-row
 	-- spec's above), as `/pagle dev preview` pushes its sample in the style it names, and returns its frame.
-	local function twoStamped(loaded, styleID)
+	local function twoStamped(loaded, styleID, more)
 		local function raised(moment)
 			moment.kind, moment.module, moment.moduleTitle, moment.moduleOrder, moment.raised =
 				"spec", "Pagle", "Pagle", 0, 0
 			return moment
 		end
-		local announcement = loaded.ns.MakeAnnouncement({
+		local moments = {
 			raised({ rung = "toast", title = "New Species of the Far Sea", text = "Nightfin Snapper", coins = 5 }),
 			raised({ rung = "nod", title = "Rank up" }),
 			raised({ rung = "nod", title = "New here" }),
-		}) --[[@as PagleAnnouncement]]
+		}
+		for _, title in ipairs(more or {}) do
+			moments[#moments + 1] = raised({ rung = "nod", title = title })
+		end
+		local announcement = loaded.ns.MakeAnnouncement(moments) --[[@as PagleAnnouncement]]
 		announcement.style = styleID
 		loaded.ns.lanes:Push(announcement)
 		loaded.client.advance(0)
@@ -337,6 +341,23 @@ describe("a toast in a composed toast style", function()
 				assert.are.equal(rows[1], rows[2])
 			end
 		)
+
+		it("folds four stamps there into two and a +2, still in one row (#582, 1.2.3, ANN-R11, ANN-R82)", function()
+			local loaded = composedCore()
+
+			local toast = twoStamped(loaded, case[1], { "Skill", "Trophy" })
+
+			local texts = {}
+			for _, stamp in ipairs(toast.stamps) do
+				if stamp.shown then
+					texts[#texts + 1] = stamp.label:GetText()
+				end
+			end
+			-- The two ranked highest (ANN-R2), then the +N.
+			assert.are.same({ 3, "+2" }, { #texts, texts[3] })
+			local rows = depths(toast)
+			assert.are.same({ rows[1], rows[1] }, { rows[2], rows[3] })
+		end)
 	end
 
 	it(

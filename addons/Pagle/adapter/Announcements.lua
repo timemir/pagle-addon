@@ -23,7 +23,8 @@ local OWNER = "Pagle announcements"
 
 local textureOf = ns.TextureOf
 
--- Stamp slots on a frame: the 4 stamps shown, the "+N" for the rest (ANN-R11) and the "Refresh +N" (REF-R7).
+-- Stamp slots on a frame: the 4 stamps shown (a toast's at most 3 plates with its "+N", #582), the "+N" for the rest
+-- (ANN-R11) and the "Refresh +N" (REF-R7).
 local STAMP_SLOTS = ns.MOMENT_STAMPS + 2
 -- Held headlines "While you were fighting" lists, a row each; "+N more" under them counts the rest.
 local DIGEST_ROWS = 3
@@ -290,19 +291,31 @@ local function ticketMarkup(height)
 	)
 end
 
+-- The most plates a toast's stamps and their "+N" take together (#582, 1.2.3, ANN-R11): three, as two rows hold them
+-- at 10 or 11 and leave the name line its room. Four squeezed to the last resort's 8 and left the name ~60 units, so
+-- with four or more a toast shows the two ranked highest and "+N" for the rest. A Nod, a banner and the splash show 4.
+local TOAST_STAMPS = 3
+
 -- Fills a frame's stamps from an Announcement: its stamp texts from the `from`th (the first), "+N" for those beyond 4
--- (ANN-R11) and "Refresh +N" for its tickets (REF-R7), each set by `set`. Returns the ones showing, in order, for the
--- frame to place.
+-- (ANN-R11), the two together at most `most` plates (with none, all 4 the Announcement holds), and "Refresh +N" for its
+-- tickets (REF-R7), each set by `set`. Returns the ones showing, in order, for the frame to place.
 ---@param frame PagleAnnouncementFrame
 ---@param announcement PagleAnnouncement
 ---@param set fun(stamp: PagleStamp, text: string)
 ---@param from integer?
+---@param most integer?
 ---@return PagleStamp[]
-local function fillStamps(frame, announcement, set, from)
+local function fillStamps(frame, announcement, set, from, most)
 	local showing = {}
 	local labels = { unpack(announcement.stamps, from or 1) }
-	if announcement.more > 0 then
-		labels[#labels + 1] = ns.RenderText(L.ANNOUNCEMENT_STAMPS_MORE, { more = announcement.more })
+	local more = announcement.more
+	-- The stamps that don't fit in `most` plates with the "+N" are the lowest ranked (ANN-R2): they fold into it.
+	while most and #labels + (more > 0 and 1 or 0) > most do
+		labels[#labels] = nil
+		more = more + 1
+	end
+	if more > 0 then
+		labels[#labels + 1] = ns.RenderText(L.ANNOUNCEMENT_STAMPS_MORE, { more = more })
 	end
 	if (announcement.tickets or 0) > 0 then
 		labels[#labels + 1] = ticketMarkup(STAMP_TICKET)
@@ -1003,7 +1016,7 @@ local function setStampRows(frame, announcement, set, setRecord, layout, kicker,
 		end
 		stamps = fillStamps(frame, announcement, function(stamp, text)
 			set(stamp, text, scale)
-		end)
+		end, nil, TOAST_STAMPS)
 		setRecord(scale)
 		ruler.stampScale = scale
 		local widths = {}
