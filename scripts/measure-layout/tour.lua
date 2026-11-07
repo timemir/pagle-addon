@@ -339,18 +339,31 @@ local function measure(root, name, memo, regions, findings)
 	end
 end
 
--- The surfaces shown now: every shown frame the addons made whose parent they didn't make (UIParent, the minimap).
+-- The surfaces shown now: every shown frame the addons made whose parent they didn't make (UIParent, the minimap),
+-- except Core's tracker dock: its anchor draws nothing and only stacks the trackers parented to it (CORE-R70, CORE-R72),
+-- each one its Module's own, on its own ground or none, so each shown docked tracker is a surface instead. Taken as
+-- one, the First evening list's paper covered over half the stack, and the plain Hunts tracker under it, over the
+-- world by design, was judged against that paper (#618).
 ---@param client table
+---@param dock table? Core's dock anchor (ns.dockFrame)
 ---@return { frame: table, name: string }[]
-local function surfaces(client)
-	local made = {}
-	for _, frame in ipairs(client.frames) do
-		made[frame] = true
+local function surfaces(client, dock)
+	local made, index = {}, {}
+	for i, frame in ipairs(client.frames) do
+		made[frame], index[frame] = true, i
 	end
 	local out = {}
-	for index, frame in ipairs(client.frames) do
-		if not made[frame.parent] and visible(frame) then
-			out[#out + 1] = { frame = frame, name = surfaceName(frame, index) }
+	for i, frame in ipairs(client.frames) do
+		if frame == dock then
+			if visible(frame) then
+				for _, child in ipairs(frame.children or {}) do
+					if index[child] and visible(child) then
+						out[#out + 1] = { frame = child, name = surfaceName(child, index[child]) }
+					end
+				end
+			end
+		elseif not made[frame.parent] and visible(frame) then
+			out[#out + 1] = { frame = frame, name = surfaceName(frame, i) }
 		end
 	end
 	return out
@@ -395,7 +408,7 @@ describe("the layout harness", function()
 				[env.MinimapCluster] = { 1920 - 230, 0, 1920, 240 },
 				[env.Minimap] = { 1920 - 218, 20, 1920 - 20, 218 },
 			}
-			for _, surface in ipairs(surfaces(client)) do
+			for _, surface in ipairs(surfaces(client, core.dockFrame)) do
 				measure(surface.frame, surface.name, memo, regions, found)
 			end
 			local file = ("%02d-%s.jsonl"):format(run.index, stop)

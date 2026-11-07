@@ -23,7 +23,7 @@ deDE NEW     cut     "Neue Wetten mit dem Pagle-Begleiter"
         wider than its box: 208 wide in 181; at core.onboarding.letter, core.announce.toast, … and 39 more
 ```
 
-A finding names its kind, its text, what it is and the tour stops it's on. A text that's on many stops, such as the docked tracker's, is one finding.
+A finding names its kind, its text, what it is and the tour stops it's on. A text that's on many stops, such as the docked tracker's, is one finding. Each frame the addons made on the client's own frames is a surface, except Core's tracker dock: its anchor draws nothing, so each tracker docked in it is a surface of its own, with its own ground or none (#618).
 
 ## What it checks
 
