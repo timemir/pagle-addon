@@ -10,12 +10,15 @@
     .tools/bin/python scripts/generate-data.py --explain <itemID|areaID>
                                                           write nothing; print every layer's value for it and
                                                           which won
-    .tools/bin/python scripts/generate-data.py --translators
+    .tools/bin/python scripts/generate-data.py --translators [--since <tag>]
                                                           write nothing; print the CHANGELOG's TRANSLATORS block
-                                                          from the listed Locales' headers
-    .tools/bin/python scripts/generate-data.py --check-changelog <version>
+                                                          from the listed Locales' headers (with --since, only
+                                                          for those whose translations changed since that tag)
+    .tools/bin/python scripts/generate-data.py --check-changelog <version> [--since <tag>]
                                                           write nothing; fail if that release's CHANGELOG entry
-                                                          lacks the TRANSLATORS block
+                                                          lacks a TRANSLATORS line for a language whose
+                                                          translations changed since the previous release tag,
+                                                          or credits one whose translations did not
     .tools/bin/python scripts/generate-data.py --stale    write nothing; list, per Locale, every translated string
                                                           (interface and Lore) whose EN snapshot is not today's English,
                                                           as same fields or fields changed; --json for a script

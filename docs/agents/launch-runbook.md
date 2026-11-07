@@ -275,7 +275,7 @@ The 1.0.1 skeleton, for `CHANGELOG.md` above 1.0.0:
 - {a rule changed by a live check, and what it now does} (#{n})
 ```
 
-From 1.1, once a listed language has translators, a release's entry also carries a `### TRANSLATORS` block: paste what `.tools/bin/python scripts/generate-data.py --translators` prints, and run `.tools/bin/python scripts/generate-data.py --check-changelog <version>` before the tag (docs/translations.md › Credits). Neither applies to 1.0.0 or 1.0.1.
+From 1.1, a release that changes a listed language's translations (any file under `data/locale/<code>/` or `data/lore/<code>/` since the previous release tag) also carries a `### TRANSLATORS` block in its entry, and a release that changes none carries no block: paste what `.tools/bin/python scripts/generate-data.py --translators --since <previous tag>` prints, if anything, and run `.tools/bin/python scripts/generate-data.py --check-changelog <version>` before the tag (docs/translations.md › Credits). Neither applies to 1.0.0 or 1.0.1.
 
 ### 8.2 Before GO
 
