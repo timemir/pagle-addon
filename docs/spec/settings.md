@@ -277,7 +277,7 @@ This file adds no data. Each row's value lives with its owner:
 | Saving, Units | `PagleDB.profile.reloadReminder`, `PagleDB.profile.lengthUnit` ([catch-log.md](core/catch-log.md#data)), `PagleDB.profile.clockFormat` ([core/README.md](core/README.md#data)), `PagleDB.global.language` (catch-log.md, from 1.1) |
 | Cozy mode, the budget, Show every catch, Animations | `PagleDB.profile.announcements` |
 | Every slot dropdown | `PagleDB.profile.appearance[slot]` (SHOP-R32) |
-| Tracker position | `PagleDB.profile.dock.point` (Core README Data) |
+| Tracker position, Show trackers only while fishing | `PagleDB.profile.dock.point`, and from 1.3 `PagleDB.profile.dock.onlyWhileFishing` (Core README Data) |
 | Toast position | `PagleDB.profile.announcements.point` (ANN-R98) and `PagleDB.profile.cards.point` (ANN-R102) |
 | Fishing | `PagleQoLDB` (qol.md Data), the fishing set per character in `global.gear[guid]` |
 | Hunts' rows | `PagleHuntsDB.profile.tracker.shown`, `profile.windowMoments`, `profile.companionHint` (only while its switch is on, HNT-R172) |
