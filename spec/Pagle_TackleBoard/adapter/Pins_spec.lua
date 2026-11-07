@@ -249,6 +249,105 @@ describe("a pinned goal's foot (TKB-R102, #596)", function()
 	end)
 end)
 
+describe("a pinned goal's text (TKB-R102, #604)", function()
+	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+	local RealFont = dofile("scripts/measure-layout/realfont.lua")
+
+	-- Where `region` lies on the screen, from its anchors: { left, top, right, bottom }.
+	local function rect(region)
+		return assert(RealFont.rect(region, {}), "placed on the screen")
+	end
+
+	-- The board with each paper's goal text, progress and foot measured in their real faces (RealFont.patch), and
+	-- `haul` as a Haul Notice's goal text when given.
+	local function realOpened(records, haul)
+		return opened(records, {
+			prepare = function(l)
+				if haul then
+					l.ns.L.GOAL_TEXT.n.haul = { one = haul, other = haul }
+				end
+				local NewGoalSlip = l.ns.NewGoalSlip
+				l.ns.NewGoalSlip = function(...)
+					local slip = NewGoalSlip(...)
+					for _, key in ipairs({ "text", "progress", "where", "here", "stranded" }) do
+						RealFont.patch(slip[key])
+					end
+					return slip
+				end
+			end,
+		})
+	end
+
+	-- The size a font string is set at, as the client draws it.
+	local function size(fontString)
+		return select(2, RealFont.face(fontString))
+	end
+
+	-- That a paper's progress line ends above the top of its foot's words, whichever shows.
+	local function progressAboveFoot(slip)
+		local foot = slip.here:IsShown() and slip.here or slip.stranded:IsShown() and slip.stranded or slip.where
+		assert(rect(slip.progress)[4] <= rect(foot)[2] + 1e-9, "the progress line ends above the foot")
+	end
+
+	it("sets a Notice's goal that wraps smaller, on one line if it fits so, its progress above the foot", function()
+		-- German's sample: "Vorgebirge des Hügellands" sat right under "3 von 30" (#604).
+		local _, _, frame = realOpened(startedLog(HAUL_HERE), "{count} Fänge in Vorgebirge des Hügellands")
+
+		local slip = notice(frame, 1).goal
+		assert.are.equal("30 Fänge in Vorgebirge des Hügellands", slip.text:GetText())
+		assert.is_true(size(slip.text) < 15)
+		assert.are.equal(1, #RealFont.layout(slip.text).lines)
+		assert.is_false(slip.text:IsTruncated())
+		progressAboveFoot(slip)
+	end)
+
+	it("wraps a Notice's goal too long for one line on two, set smaller, its progress above the foot", function()
+		local _, _, frame =
+			realOpened(startedLog(RARITY, HAUL_HERE), "{count} Fänge einer ungewöhnlichen Variante oder besser")
+
+		-- English's rarity Notice wrapped too, and comes back to one line
+		local english = notice(frame, 1).goal
+		assert.are.equal("3 Catches of an uncommon variety or better", english.text:GetText())
+		assert.is_false(english.text:IsTruncated())
+		progressAboveFoot(english)
+		local slip = notice(frame, 2).goal
+		assert.are.equal("30 Fänge einer ungewöhnlichen Variante oder besser", slip.text:GetText())
+		assert.are.equal(2, #RealFont.layout(slip.text).lines)
+		assert.is_true(size(slip.text) >= 15 * 0.7)
+		assert.is_false(slip.text:IsTruncated())
+		progressAboveFoot(slip)
+	end)
+
+	it("keeps a goal that fits at its size, and its progress where it was", function()
+		local _, _, frame = realOpened(startedLog(EXPEDITION, HAUL_HERE))
+
+		local slip, poster = notice(frame, 1).goal, expedition(frame, 1).goal
+		assert.are.equal(15, size(slip.text))
+		assert.are.equal(19, size(poster.text))
+		-- one line of IM Fell at 15 under the goal's top, then the 4 between them
+		assert.is.near(rect(slip.text)[2] + 15 * 1.27 + 4, rect(slip.progress)[2], 0.1)
+		progressAboveFoot(slip)
+		progressAboveFoot(poster)
+	end)
+
+	it("cuts a goal too long even at its smallest, its hover leading with the whole of it", function()
+		local long = "{count} Catches of an uncommon variety or better, each in a different zone of a different continent,"
+			.. " at dawn, in the rain, with a lure on"
+		local loaded, _, frame = realOpened(startedLog(HAUL_HERE), long)
+
+		local slip = notice(frame, 1).goal
+		assert.is_true(slip.text:IsTruncated())
+		assert.are.equal(10.5, size(slip.text))
+		progressAboveFoot(slip)
+		hover(slip)
+		assert.are.equal(
+			"30 Catches of an uncommon variety or better, each in a different zone of a different continent, at dawn,"
+				.. " in the rain, with a lure on",
+			loaded.ns.BoardHoverLines()[1]
+		)
+	end)
+end)
+
 describe('"I\'m here" (TKB-R121)', function()
 	it("stops after a zone change, and comes back on returning", function()
 		local _, fake, frame = opened(startedLog(EXPEDITION, HAUL_HERE))

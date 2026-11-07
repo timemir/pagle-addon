@@ -423,6 +423,13 @@ end
 ---@field badge Texture?
 ---@field number FontString?
 ---@field arrow Frame?
+---@field FitAbove fun(self: PagleGuideNote, bottom: number)
+
+-- A note's words: the hand at 19, their lines 2.3 apart, and the paper's room round them (10 over, 11 under), which
+-- makes the note as tall as its words and 21.
+local NOTE_SIZE, NOTE_SPACING, NOTE_PAD = 19, 2.3, 21
+-- The most lines a note held over what is under it keeps when too tall even at its smallest (FitAbove).
+local NOTE_MOST_LINES = 6
 
 --- `text` with each *term* in the red pencil (the canvas's <b>): one font string has one face, so it keeps the hand.
 ---@param text string
@@ -447,13 +454,13 @@ ns.DrawNoteArrow = nil
 function ns.NewGuideNote(parent, text, x, y, w, target, n)
 	local note = CreateFrame("Frame", nil, parent) --[[@as PagleGuideNote]]
 	note:SetFrameLevel(parent:GetFrameLevel() + 20)
-	note.text = ns.GuideText(note, "hand", 19, "hand", ns.GuideRedPencil(text), {
+	note.text = ns.GuideText(note, "hand", NOTE_SIZE, "hand", ns.GuideRedPencil(text), {
 		wrap = true,
 		width = w - 28,
-		spacing = 2.3,
+		spacing = NOTE_SPACING,
 	})
 	note.text:SetPoint("TOPLEFT", note, "TOPLEFT", 15, -10)
-	note:SetSize(w, math.floor(note.text:GetStringHeight() + 21 + 0.5))
+	note:SetSize(w, math.floor(note.text:GetStringHeight() + NOTE_PAD + 0.5))
 	ns.GuideAt(note, parent, x, y)
 	note.paper = ns.NewNineSlice(note, "GuideParts", "note", 6)
 	if n then
@@ -466,6 +473,38 @@ function ns.NewGuideNote(parent, text, x, y, w, target, n)
 	end
 	if target and ns.DrawNoteArrow then
 		note.arrow = ns.DrawNoteArrow(note, target)
+	end
+
+	--- Holds the note's paper above `bottom` on its parent, such as « back at the left page's foot (#605): a note that
+	--- ends there is left as drawn; a longer one's words are set smaller, in half-unit steps down to FIT_FLOOR of their
+	--- size, and one too tall even then keeps the lines that fit (one at least), the client cutting the last with
+	--- "...". The paper follows its words. For a note with no arrow: one drawn to a target isn't drawn again.
+	---@param self PagleGuideNote
+	---@param bottom number
+	function note.FitAbove(self, bottom)
+		local words = self.text
+		local room = bottom - y - NOTE_PAD
+		if words:GetStringHeight() <= room then
+			return
+		end
+		local size, floor = NOTE_SIZE, math.ceil(NOTE_SIZE * FIT_FLOOR * 2) / 2
+		while words:GetStringHeight() > room and size - 0.5 >= floor do
+			size = size - 0.5
+			words:SetFontObject(ns.ArtFaceFont("hand", size))
+			words:SetSpacing(NOTE_SPACING)
+		end
+		if words:GetStringHeight() > room then
+			for lines = NOTE_MOST_LINES, 1, -1 do
+				words:SetMaxLines(lines)
+				if words:GetStringHeight() <= room then
+					break
+				end
+			end
+		end
+		-- its ink again, as a new font object can bring its own
+		local color = INKS.hand
+		words:SetTextColor(color[1], color[2], color[3])
+		self:SetHeight(math.floor(words:GetStringHeight() + NOTE_PAD + 0.5))
 	end
 	return note
 end

@@ -1156,4 +1156,55 @@ describe("QoL's steps on Core's own book", function()
 		assert.is.near(298.5 + grown, placeOf(field(right, "PAGLE_FISHING_KEY"))[2], 1e-9)
 		assert.are.same({}, loaded.client.errors)
 	end)
+
+	describe("the double right-click's note (ONB-R32, #605)", function()
+		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+		local RealFont = dofile("scripts/measure-layout/realfont.lua")
+		-- « back's words' top on a left page: its button at 508, its words 2.5 under it (ONB-R23).
+		local BACK_WORDS = 510.5
+
+		-- The Casting step on Core's own book, its note reading `words` (the kit's when nil), Core's guide texts
+		-- measured in their real faces: the note, its paper and its words' font string.
+		local function castingNote(words)
+			local loaded = enterWorld(loadAddon("Pagle_QoL", FOREVER_GLOBALS), 3)
+			local core = loaded.namespaces.Pagle
+			core.db.profile.announcements.motion = false
+			if words then
+				loaded.namespaces.Pagle_QoL.L.GUIDE_CASTING_NOTE = words
+			end
+			local GuideText = core.GuideText
+			core.GuideText = function(...)
+				return RealFont.patch(GuideText(...))
+			end
+			core.guide:Open("casting")
+			local left = core.guideBook.sides.casting.left.content
+			local note = assert(
+				all(left, function(region)
+					return region.paper ~= nil and type(region.text) == "table"
+				end)[1],
+				"no note on the left page"
+			)
+			assert.are.same({}, loaded.client.errors)
+			return note, note.text
+		end
+
+		it("keeps the kit's note at its size, on the lines it wraps to", function()
+			local note, text = castingNote()
+
+			assert.are.equal(19, select(2, RealFont.face(text)))
+			assert.are.equal(0, text:GetMaxLines())
+			assert.are.equal(math.floor(text:GetStringHeight() + 21 + 0.5), note:GetHeight())
+			assert.is_true(placeOf(note)[2] + note:GetHeight() <= BACK_WORDS - 8)
+		end)
+
+		it("sets a longer note smaller, then cuts it short, never over « back", function()
+			local once = "A *double right-click* on the water casts and reels too, but never changes your clothes."
+			local note, text = castingNote(once .. " " .. once .. " " .. once)
+
+			assert.are.equal(14.5, select(2, RealFont.face(text)))
+			assert.is_true(text:IsTruncated())
+			assert.are.equal(math.floor(text:GetStringHeight() + 21 + 0.5), note:GetHeight())
+			assert.is_true(placeOf(note)[2] + note:GetHeight() <= BACK_WORDS - 8)
+		end)
+	end)
 end)

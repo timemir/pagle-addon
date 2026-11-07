@@ -232,6 +232,9 @@ end
 
 -- The sample faces' pitch on the Casting step's left page, and the least room between two faces' label slips.
 local FACE_PITCH, SLIP_GAP = 97.6, 8
+-- Where « back's words start down a left page (Core's, ONB-R23: its button at 508, its words 2.5 under), and how far
+-- over them the double right-click's note ends at the lowest (#605).
+local BACK_WORDS_Y, NOTE_GAP = 510.5, 8
 
 -- Holds a sample face's label to its share of the row (FACE_PITCH less SLIP_GAP, its slip's ends included): a longer
 -- one is set smaller, then cut short, and its slip drawn to it, so two faces' labels never run together.
@@ -356,7 +359,12 @@ local function buildCasting(left, right, nav)
 	end
 	local smallY = math.max(320.8, under + 12)
 	local small = paragraph(left, L.GUIDE_CASTING_SMALL, smallY, true)
-	nav.Note(left, L.GUIDE_CASTING_NOTE, 56, math.max(400, below(small, smallY, 13.5, 18.225) + 14), 300)
+	local note = nav.Note(left, L.GUIDE_CASTING_NOTE, 56, math.max(400, below(small, smallY, 13.5, 18.225) + 14), 300)
+	-- a longer note is set smaller, then cut short, never over « back (#605); an older Core's note is drawn as it is
+	local fitting = note --[[@as { FitAbove: (fun(self: Frame, bottom: number))? }]]
+	if fitting.FitAbove then
+		fitting.FitAbove(note, BACK_WORDS_Y - NOTE_GAP)
+	end
 
 	heading(right, L.GUIDE_CHOICE_KICKER, L.GUIDE_CHOICE_TITLE, 25)
 	local resting = write(right, "italic", 13.5, "red", "", COLUMN_X, 70, 18, { width = COLUMN })
