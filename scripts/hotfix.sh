@@ -25,7 +25,10 @@
 #      checkout's ci/local-pin-bump.sh (its PRJ-R66), which opens or updates the bump pull request and runs the
 #      backend's local CI on it, the image fold check included (its OPS-R11); without it, this prints the commands
 #      for the Operator. Either way it stops there, with the add-on released: merging the bump, and deploying it with
-#      the backend's ci/local-promote.sh (its OPS-R12), stay the Operator's.
+#      the backend's ci/local-promote.sh (its OPS-R12), stay the Operator's. It says what the pin bump did, from the
+#      `local-pin-bump: outcome=` line the backend ends with (or, from an older backend checkout, its GREEN, RED and
+#      "nothing to do" lines): GREEN with the pull request, RED, the pin at this version already, the pin left on a
+#      commit (its OPS-R131), or a new ranked policy needed first (its TRU-R72). RED and the new policy stop it red.
 #
 # Needs gh 2.40 or later, signed in with push access to both repositories (the Mac's gh; WSL's 2.4 is too old), and
 # git 2.38 or later. Run it from the hotfix branch's checkout or worktree. Step 6 also needs what the backend's local
@@ -210,24 +213,109 @@ ship() {
 	[[ $zips == 1 ]] || fail "the $version Release has $zips zip assets, not one"
 	say "Release $version is published; players can download it"
 
-	# 6. The backend's pin bump, local while its Actions minutes are off (pagle-backend OPS-R9, PRJ-R66).
-	if [[ -n ${HOTFIX_BACKEND_DIR:-} ]]; then
-		[[ -x $HOTFIX_BACKEND_DIR/ci/local-pin-bump.sh ]] \
-			|| fail "HOTFIX_BACKEND_DIR ($HOTFIX_BACKEND_DIR) has no ci/local-pin-bump.sh; $version is released, bump the backend by hand"
-		say "running pagle-backend's local pin bump in $HOTFIX_BACKEND_DIR; its local CI takes a while"
-		(cd "$HOTFIX_BACKEND_DIR" && ci/local-pin-bump.sh) \
-			|| fail "the backend's local pin bump failed (above); $version is released, so run ci/local-pin-bump.sh there again once fixed"
-		say "$version is released and pagle-backend's bump pull request passed its local CI"
-		say "next, the Operator's: merge it by hand, then in $HOTFIX_BACKEND_DIR run ci/local-promote.sh <merge commit>"
+	# 6. The backend's pin bump.
+	backend_bump "$version"
+}
+
+# --- 6. the backend's pin bump, local while its Actions minutes are off (pagle-backend OPS-R9, PRJ-R66)
+
+# What ci/local-pin-bump.sh did, as `<outcome> [key=value]...`, from the transcript of a backend checkout that
+# predates its outcome line: its GREEN, RED and "nothing to do" lines.
+legacy_outcome() { # <transcript> <exit status>
+	local n pin
+	n=$(sed -n 's/^local-pin-bump: GREEN: pull request #\([0-9][0-9]*\).*/\1/p' "$1" | tail -n 1)
+	[[ -z $n ]] || { echo "green pr=$n"; return; }
+	n=$(sed -n 's/^local-pin-bump: RED: pull request #\([0-9][0-9]*\).*/\1/p' "$1" | tail -n 1)
+	[[ -z $n ]] || { echo "red pr=$n"; return; }
+	if (($2 == 0)); then
+		if grep -q '^pin-bump: the pin names a wow-fish commit' "$1"; then
+			echo "commit-pin-by-hand"
+			return
+		fi
+		pin=$(sed -n 's/^pin-bump: .* is not newer than the pinned \([^ ;]*\); nothing to do$/\1/p' "$1" | tail -n 1)
+		[[ -z $pin ]] || { echo "up-to-date pin=$pin"; return; }
+		if grep -q '^pin-bump: .* has no Release yet' "$1"; then
+			echo "no-release"
+			return
+		fi
+		echo "unknown"
 	else
+		echo "failed"
+	fi
+}
+
+# The value of <key> in an outcome's key=value details, empty when it has none.
+outcome_value() { # <key> <outcome>
+	local word
+	for word in $2; do
+		[[ $word != "$1="* ]] || { echo "${word#*=}"; return 0; }
+	done
+	return 0
+}
+
+backend_bump() { # <version>
+	local version=$1
+	if [[ -z ${HOTFIX_BACKEND_DIR:-} ]]; then
 		say "$version is released. pagle-backend's CI runs locally, so its pin bump is the Operator's, in a pagle-backend checkout:"
 		say "  ci/local-pin-bump.sh                 # opens the bump pull request and runs local CI on it"
 		say "  ci/local-promote.sh <merge commit>   # after merging it by hand: deploys it"
 		say "or set HOTFIX_BACKEND_DIR to that checkout and ship $version again: the steps before this one are done"
+		return
 	fi
+	[[ -x $HOTFIX_BACKEND_DIR/ci/local-pin-bump.sh ]] \
+		|| fail "HOTFIX_BACKEND_DIR ($HOTFIX_BACKEND_DIR) has no ci/local-pin-bump.sh; $version is released, bump the backend by hand"
+	say "running pagle-backend's local pin bump in $HOTFIX_BACKEND_DIR; its local CI takes a while"
+	local transcript status result
+	transcript=$(mktemp)
+	set +e
+	(cd "$HOTFIX_BACKEND_DIR" && ci/local-pin-bump.sh) 2>&1 | tee "$transcript"
+	status=${PIPESTATUS[0]}
+	set -e
+	result=$(sed -n 's/^local-pin-bump: outcome=//p' "$transcript" | tail -n 1)
+	[[ -n $result ]] || result=$(legacy_outcome "$transcript" "$status")
+	rm -f "$transcript"
+	local pr pin release
+	pr=$(outcome_value pr "$result")
+	pin=$(outcome_value pin "$result")
+	release=$(outcome_value release "$result")
+	case ${result%% *} in
+	green)
+		say "$version is released and pagle-backend's bump pull request #$pr passed its local CI"
+		say "next, the Operator's: review and merge #$pr by hand, then in $HOTFIX_BACKEND_DIR run ci/local-promote.sh <merge commit>"
+		;;
+	red)
+		fail "$version is released, but pagle-backend's bump pull request #$pr failed its local CI (above); fix it there, then run ci/local-pin-bump.sh again"
+		;;
+	up-to-date)
+		say "$version is released; pagle-backend's pin is at ${pin:-$version} already, so there is no bump to make"
+		;;
+	commit-pin)
+		say "$version is released; pagle-backend's pin stays on the wow-fish commit $pin, which ${release:-$version} doesn't hold (its OPS-R131), so no bump pull request was opened"
+		say "a commit pin moves to the tag of the release that holds it; until then there is nothing to bump"
+		;;
+	commit-pin-by-hand)
+		say "$version is released, but pagle-backend's pin is in commit form and this checkout's ci/local-pin-bump.sh doesn't move it, so no bump pull request was opened"
+		say "next, the Operator's: make the tag-form pin by hand (as pagle-backend#417 and #429 were), or run ci/local-pin-bump.sh from a pagle-backend checkout of main that has pagle-backend#430, which writes it"
+		;;
+	policy-needed)
+		fail "$version is released, but it changes a file pagle-backend's ranked policy hashes after the pinned commit $pin, so the pin stays: a new ranked policy is needed first (its OPS-R131, TRU-R72)"
+		;;
+	no-release)
+		fail "pagle-backend's pin bump saw no pagle-addon Release, though $version is published; run ci/local-pin-bump.sh there again"
+		;;
+	unknown)
+		say "$version is released; pagle-backend's local pin bump finished without saying what it did (above): check its bump pull request by hand"
+		;;
+	*)
+		fail "the backend's local pin bump failed (above); $version is released, so run ci/local-pin-bump.sh there again once fixed"
+		;;
+	esac
 }
 
 # --- main
+
+# Sourced (by scripts/tests/test_hotfix.py), it only defines the functions.
+[[ ${BASH_SOURCE[0]} == "$0" ]] || return 0
 
 (($# >= 2)) || usage
 command=$1
