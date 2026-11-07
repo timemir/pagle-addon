@@ -24,6 +24,8 @@ local REFRESH, HIGHLIGHT = 60, 2
 -- the goal's words start, the right edge of its words, where its foot sits, and how wide its words wrap.
 local NOTICE = { left = 13, top = 34, right = 223, foot = 93, wrap = 210, barDown = 4 }
 local POSTER = { left = 22, top = 36, right = 338, foot = 131, wrap = 300, barDown = 6 }
+-- How far under the goal's words its progress line starts.
+local PROGRESS_GAP = 4
 -- Where a paper's tacks go (each tack's top left): a Notice's at its top centre; a poster's at its left corner and,
 -- on the right, clear of the wax seal and its pay (the kit's right tack, at 337, sat on the seal's "60").
 local NOTICE_TACKS, POSTER_TACKS = { { 110.5, -5 } }, { { 8, 5 }, { 284, 5 } }
@@ -143,7 +145,7 @@ function ns.NewGoalSlip(slot, poster)
 	slip.text = ns.ArtWrap(slip, poster and "PosterGoal" or "Goal", box.wrap, poster and 2 or 1.5)
 	slip.text:SetPoint("TOPLEFT", box.left, -box.top)
 	slip.progress = ns.ArtText(slip, poster and "PosterProgress" or "Progress")
-	slip.progress:SetPoint("TOPLEFT", slip.text, "BOTTOMLEFT", 0, -4)
+	slip.progress:SetPoint("TOPLEFT", slip.text, "BOTTOMLEFT", 0, -PROGRESS_GAP)
 	slip.bar = ns.NewBoardBar(slip)
 
 	-- Its foot: where it is worked, "I'm here" or "no longer catchable"; one of the three shows.
@@ -215,7 +217,8 @@ function ns.NewGoalSlip(slot, poster)
 		self:SetFrameLevel(level + 10)
 		ns.PinHover(self, self.paper, 0, 2)
 		if self.view then
-			showHover(self, self.view)
+			-- a goal cut short on its paper (fitGoal) has the whole of it first
+			showHover(self, self.view, self.text:IsTruncated() and { self.view.text } or nil)
 		end
 	end)
 	slip:SetScript("OnLeave", function(self)
@@ -262,6 +265,18 @@ local function fitFoot(slip, box)
 	ns.FitArtText(words, key, right - x)
 end
 
+-- Holds a paper's goal to the room over its progress line (TKB-R102, #604): the progress line, which follows the
+-- goal's words down, ends no lower than the top of the foot. A goal that fits keeps its size, as drawn before; a longer
+-- one (one that wraps on a Notice, a third line on a poster) is set smaller, down to 70% of its size, which may bring it
+-- back to one line, and one too long even then keeps the lines that fit, the last cut with "…" by the client, its
+-- hover having the whole of it (ns.FitArtLines).
+---@param slip TackleGoalSlipView
+---@param box table NOTICE or POSTER
+local function fitGoal(slip, box)
+	local room = box.foot - box.top - PROGRESS_GAP - slip.progress:GetStringHeight()
+	ns.FitArtLines(slip.text, slip.poster and "PosterGoal" or "Goal", room)
+end
+
 --- Draws one goal's lines on its paper (TKB-R102), and lays it on its pin at `lean`: the board's pins, and the Field
 --- guide's sample Notices, whose goal has no ID (adapter/GuidePage.lua).
 ---@param slip TackleGoalSlipView
@@ -282,6 +297,7 @@ function ns.DrawGoalSlip(slip, goal, view, lean)
 	end
 	slip.text:SetText(view.text)
 	slip.progress:SetText(view.progress)
+	fitGoal(slip, box)
 	local barLeft = box.left + slip.progress:GetStringWidth() + 9
 	slip.bar:SetBar(box.right - barLeft, view.fill)
 	slip.bar:ClearAllPoints()

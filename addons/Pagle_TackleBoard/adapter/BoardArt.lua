@@ -288,6 +288,39 @@ function ns.FitArtText(fontString, key, width)
 	return fitted
 end
 
+-- The most lines a text held to a height keeps when it is too tall even at SHRINK_FLOOR (ns.FitArtLines).
+local MOST_LINES = 4
+
+--- Holds a wrapping font string in the board's font `key`, its text and width already set, to `height`: back at its
+--- font's size, a text whose lines are taller than `height` (as the client wraps and measures them) is set smaller, in
+--- half-unit steps down to SHRINK_FLOOR of its size, so it may come back to fewer lines; one still too tall keeps the
+--- lines that fit (one at least), the client cutting the last with "...". The text is never rewritten, and its line
+--- spacing is kept. Returns the size it is set at.
+---@param fontString FontString
+---@param key string
+---@param height number
+---@return number
+function ns.FitArtLines(fontString, key, height)
+	local def = ns.BOARD_FONTS[key]
+	local face, size = ns.BOARD_FONT_FACES[def[1]], def[2]
+	local floor = def[2] * SHRINK_FLOOR
+	fontString:SetMaxLines(0)
+	Pagle.SetFace(fontString, face, size)
+	while fontString:GetStringHeight() > height and size - 0.5 >= floor do
+		size = size - 0.5
+		Pagle.SetFace(fontString, face, size)
+	end
+	if fontString:GetStringHeight() > height then
+		for lines = MOST_LINES, 1, -1 do
+			fontString:SetMaxLines(lines)
+			if fontString:GetStringHeight() <= height then
+				break
+			end
+		end
+	end
+	return size
+end
+
 --- Holds two one-line font strings side by side in `width`, `gap` apart, each in its font (`leftKey`, `rightKey`) and
 --- its text already set: both as they are while they fit; else the left keeps as much as the right leaves it, and at
 --- least half, and each shrinks to its share (ns.FitArtText).
