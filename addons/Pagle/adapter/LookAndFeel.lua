@@ -189,24 +189,33 @@ Pagle.RegisterCallback(OWNER, "AppearanceChanged", function(_, slotID)
 	end
 end)
 
--- The Curio Shop row (SET-R50 item 3): pressing it closes the panel first, as the shop would open behind it, then
--- opens the shop, which prints SHOP-R41's line while restricted (SET-R12).
+-- The Curio Shop row (SET-R50 item 3), drawn by Core (adapter/Settings.lua's ns.SettingsButtonRow, #606): pressing it
+-- closes the panel first, as the shop would open behind it, then opens the shop, which prints SHOP-R41's line while
+-- restricted (SET-R12).
 ---@return SettingsInitializer
 local function shopRow()
-	return CreateSettingsButtonInitializer(L.SETTINGS_SHOP_ROW, L.SETTINGS_SHOP_BUTTON, function()
-		HideUIPanel(SettingsPanel)
-		Pagle.OpenShop()
-	end, nil, true)
+	return ns.SettingsButtonRow({
+		label = L.SETTINGS_SHOP_ROW,
+		caption = L.SETTINGS_SHOP_BUTTON,
+		onClick = function()
+			HideUIPanel(SettingsPanel)
+			Pagle.OpenShop()
+		end,
+	})
 end
 
--- The Collection row (SET-R50 item 3): pressing it closes the panel first, then opens the Collection through the first
--- On Module's def.collection (CORE-R45); left out when no On Module offers one.
+-- The Collection row (SET-R50 item 3), drawn by Core as the Curio Shop row is: pressing it closes the panel first, then
+-- opens the Collection through the first On Module's def.collection (CORE-R45); left out when no On Module offers one.
 ---@return SettingsInitializer
 local function collectionRow()
-	return CreateSettingsButtonInitializer(L.SETTINGS_COLLECTION_ROW, L.SETTINGS_COLLECTION_BUTTON, function()
-		HideUIPanel(SettingsPanel)
-		ns.OpenCollection()
-	end, nil, true)
+	return ns.SettingsButtonRow({
+		label = L.SETTINGS_COLLECTION_ROW,
+		caption = L.SETTINGS_COLLECTION_BUTTON,
+		onClick = function()
+			HideUIPanel(SettingsPanel)
+			ns.OpenCollection()
+		end,
+	})
 end
 
 --- Builds Look and Feel (SET-R50) on its registered page, once, when Core registers its Settings (every enabled

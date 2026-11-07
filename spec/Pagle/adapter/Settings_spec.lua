@@ -72,8 +72,9 @@ describe("The Settings root with no Module On", function()
 			end
 		end
 
-		-- The paragraph, the five status rows, the note, Getting started's three (SET-R10 rows 4–6) and the Field
-		-- report row (row 7, from 1.2.4): the fake panel draws a row of a template only through
+		-- The paragraph, the five status rows, the note, Getting started's three (SET-R10 rows 4–6), the Field
+		-- report row (row 7, from 1.2.4) and the Catch log row (row 12, from 1.3.3, #606): the fake panel draws a row
+		-- of a template only through
 		-- its XML mixin's Init, and raises an error if Core writes InitFrame, Resetter or GetExtent onto an
 		-- initializer (spec/support/settings.lua).
 		local template = assert(loaded.client.templates.PagleSettingsRowTemplate, "Core's XML defines the template")
@@ -90,6 +91,7 @@ describe("The Settings root with no Module On", function()
 			"Margin notes",
 			"First evening list",
 			"Field report",
+			"Catch log",
 			-- The Translations line (SET-R10): esES is listed with fmartingr's name, and ruRU, listed with no
 			-- translator, is credited by nobody (spec/Pagle/adapter/Translations_spec.lua).
 			"Translations: Español by fmartingr",

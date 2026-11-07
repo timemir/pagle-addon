@@ -355,28 +355,36 @@ local function statusList()
 	return list
 end
 
--- The Field report row (CORE-R40, SET-R10 row 4): "Field report" with the button "Open Field report", "Open Field
--- report (3)" while the count is above 0, read each time the row is drawn (SET-R12). Core draws it as a native button
--- row looks, since a native button is a fixed 200 wide and a longer caption ran past both its sides (#593): the label
--- in the native face, cut short before the button, and the button as controlButton draws it. Its tooltip is SET-R10's,
--- and the search finds it by its label and its caption. Pressing it closes the panel first, since the box would open
--- behind it; while restricted Pagle.OpenFieldReport then prints REP-R44's line (SET-R12).
+--- A button row Core draws, as ns.SettingsButtonRow takes it.
+---@class PagleSettingsButtonRow
+---@field label string
+---@field caption string|fun(): string
+---@field search string? the caption the search finds it by, when `caption` is a function
+---@field tooltip string?
+---@field onClick fun()
+
+--- A button row Core draws itself as a native button row looks (SET-R5), since a native button is a fixed 200 wide and
+--- a longer caption ran past both its sides (#593, #606): the label in the native face, cut short before the button,
+--- and the button as controlButton draws it, its caption read each time the row is drawn when it is a function
+--- (SET-R12). Over the row and its button, the label and the tooltip's line, as a native button row shows them (the
+--- label alone with no tooltip). Named by its label, with its tooltip, as a native row is, for the tree's readers; the
+--- search finds it by its label and `search`, its caption when that is a string.
+---@param row PagleSettingsButtonRow
 ---@return SettingsInitializer
-local function fieldReportRow()
+local function buttonRow(row)
 	local function draw(frame)
 		local own = widgets(frame)
 		own.name:SetFontObject("GameFontNormal")
-		rowLabel(own, L.SETTINGS_FIELD_REPORT_ROW, ROW_W / 2 + CONTROL_X - GAP - NAME_X)
-		controlButton(own, frame, ns.FieldReportButtonText(Pagle.GetFieldReportCount()), function()
-			HideUIPanel(SettingsPanel)
-			Pagle.OpenFieldReport()
-		end)
+		rowLabel(own, row.label, ROW_W / 2 + CONTROL_X - GAP - NAME_X)
+		local caption = row.caption
+		controlButton(own, frame, type(caption) == "function" and caption() or caption --[[@as string]], row.onClick)
 		own.button:SetEnabled(true)
-		-- the tooltip over the row and over its button, as a native button row shows it
 		local function showTooltip(owner)
 			GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
-			GameTooltip:SetText(L.SETTINGS_FIELD_REPORT_ROW)
-			GameTooltip:AddLine(L.SETTINGS_FIELD_REPORT_TOOLTIP, 1, 1, 1, true)
+			GameTooltip:SetText(row.label)
+			if row.tooltip then
+				GameTooltip:AddLine(row.tooltip, 1, 1, 1, true)
+			end
 			GameTooltip:Show()
 		end
 		local function hideTooltip()
@@ -387,13 +395,31 @@ local function fieldReportRow()
 			region:SetScript("OnLeave", hideTooltip)
 		end
 	end
-	-- Named by its label, with its tooltip, as a native row is, for the tree's readers.
-	local initializer = Settings.CreateElementInitializer(
-		ROW_TEMPLATE,
-		{ draw = draw, name = L.SETTINGS_FIELD_REPORT_ROW, tooltip = L.SETTINGS_FIELD_REPORT_TOOLTIP }
-	)
-	initializer:AddSearchTags(L.SETTINGS_FIELD_REPORT_ROW, L.SETTINGS_FIELD_REPORT_BUTTON)
+	local initializer =
+		Settings.CreateElementInitializer(ROW_TEMPLATE, { draw = draw, name = row.label, tooltip = row.tooltip })
+	initializer:AddSearchTags(row.label, row.search or row.caption)
 	return initializer
+end
+ns.SettingsButtonRow = buttonRow
+
+-- The Field report row (CORE-R40, SET-R10 row 7): "Field report" with the button "Open Field report", "Open Field
+-- report (3)" while the count is above 0, read each time the row is drawn (SET-R12), drawn by Core (buttonRow, #593).
+-- Its tooltip is SET-R10's. Pressing it closes the panel first, since the box would open behind it; while restricted
+-- Pagle.OpenFieldReport then prints REP-R44's line (SET-R12).
+---@return SettingsInitializer
+local function fieldReportRow()
+	return buttonRow({
+		label = L.SETTINGS_FIELD_REPORT_ROW,
+		caption = function()
+			return ns.FieldReportButtonText(Pagle.GetFieldReportCount())
+		end,
+		search = L.SETTINGS_FIELD_REPORT_BUTTON,
+		tooltip = L.SETTINGS_FIELD_REPORT_TOOLTIP,
+		onClick = function()
+			HideUIPanel(SettingsPanel)
+			Pagle.OpenFieldReport()
+		end,
+	})
 end
 
 -- The Units section (CORE-R40, SET-R10 row 9): the length unit's dropdown, showing the unit in use (LOG-R69), then
@@ -469,14 +495,18 @@ local function pagleWebsiteSection(category, layout)
 		end
 	)
 	Settings.CreateCheckbox(category, tooltips, L.SETTINGS_ANGLER_TOOLTIPS_TOOLTIP)
-	-- SET-R10 row 12 (PST-R50): "Catch log" with the button "Copy for the website", which opens the export window.
-	-- Pressing it closes the panel first, since the window would open behind it; while restricted
-	-- Pagle.OpenPasteExport then prints its line (SET-R12).
-	local export = CreateSettingsButtonInitializer(L.SETTINGS_PASTE_ROW, L.SETTINGS_PASTE_BUTTON, function()
-		HideUIPanel(SettingsPanel)
-		Pagle.OpenPasteExport()
-	end, L.SETTINGS_PASTE_TOOLTIP, true)
-	layout:AddInitializer(export)
+	-- SET-R10 row 12 (PST-R50): "Catch log" with the button "Copy for the website", which opens the export window,
+	-- drawn by Core (buttonRow, #606). Pressing it closes the panel first, since the window would open behind it;
+	-- while restricted Pagle.OpenPasteExport then prints its line (SET-R12).
+	layout:AddInitializer(buttonRow({
+		label = L.SETTINGS_PASTE_ROW,
+		caption = L.SETTINGS_PASTE_BUTTON,
+		tooltip = L.SETTINGS_PASTE_TOOLTIP,
+		onClick = function()
+			HideUIPanel(SettingsPanel)
+			Pagle.OpenPasteExport()
+		end,
+	}))
 	-- SET-R10 row 13: the Translations line, only while a listed language the client can render has translators.
 	local credits = ns.TranslatorCredits(GetLocale())
 	if credits then
