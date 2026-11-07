@@ -610,8 +610,8 @@ describe("Only while fishing (CORE-R88, SET-R46)", function()
 			}, rowsOf(loaded, trackers))
 			local row = trackers.layout.initializers[2]
 			assert.are.equal(
-				"Hides every Pagle tracker until a fishing pole is in hand or you cast. They stay up for a minute"
-					.. " after your last Cast, so a quick weapon swap doesn't hide them.",
+				"Shows the trackers while a fishing pole is in hand. Once you put it away, they stay up for a minute"
+					.. " after your last Cast, then hide.",
 				row:GetTooltip()
 			)
 			local setting = loaded.client.settings.variables[WHILE_FISHING]

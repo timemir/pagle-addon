@@ -1974,8 +1974,8 @@ value = "Rastreadores solo al pescar"
 en = "Show trackers only while fishing"
 
 [SETTINGS_TRACKERS_WHILE_FISHING_TOOLTIP]
-value = "Oculta todos los rastreadores de Pagle hasta que tengas una caña en la mano o lances. Siguen visibles un minuto después de tu último Lance, así que un cambio rápido de arma no los oculta."
-en = "Hides every Pagle tracker until a fishing pole is in hand or you cast. They stay up for a minute after your last Cast, so a quick weapon swap doesn't hide them."
+value = "Muestra los rastreadores mientras tengas una caña en la mano. Al guardarla, siguen visibles un minuto después de tu último Lance y luego se ocultan."
+en = "Shows the trackers while a fishing pole is in hand. Once you put it away, they stay up for a minute after your last Cast, then hide."
 
 [SETTINGS_TOAST_RESET_TOOLTIP]
 value = "Arrastra con Mayús un aviso emergente para mover los avisos emergentes y los Gestos, o el Resumen de sesión para moverlo. Esto los devuelve a todos a su sitio."

@@ -338,8 +338,8 @@ value = "Трекеры только на рыбалке"
 en = "Show trackers only while fishing"
 
 [SETTINGS_TRACKERS_WHILE_FISHING_TOOLTIP]
-value = "Трекеры Pagle скрыты, пока в руках нет удочки и вы не забрасываете её. После последнего заброса они остаются ещё минуту, так что быстрая смена оружия их не скроет."
-en = "Hides every Pagle tracker until a fishing pole is in hand or you cast. They stay up for a minute after your last Cast, so a quick weapon swap doesn't hide them."
+value = "Трекеры видны, пока в руках удочка. Когда вы её уберёте, они останутся ещё на минуту после последнего заброса, а затем скроются."
+en = "Shows the trackers while a fishing pole is in hand. Once you put it away, they stay up for a minute after your last Cast, then hide."
 
 [SETTINGS_TOAST_POSITION]
 value = "Положение плашек"
