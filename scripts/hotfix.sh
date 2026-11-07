@@ -1,14 +1,12 @@
 #!/usr/bin/env bash
-# The hotfix path: one command from a committed fix to a tagged release and the backend's pin-bump pull request,
+# The hotfix path: one command from a committed fix to a tagged release and the backend's pin bump,
 # each step waiting on the one before and stopping at the first failure. Every step is idempotent, so a run that
 # stopped (a red check, a lost connection) is run again with the same arguments and picks up where it was.
 #
 #   scripts/hotfix.sh start <version>                # a hotfix/<version> branch off origin/main, with the
 #                                                    # changelog's <version> section started for you to fill in
-#   scripts/hotfix.sh ship <version> [--merge-bump]  # the committed branch: push, pull request, Check green, merge,
-#                                                    # tag, Release workflow, then pagle-backend's pin-bump
-#                                                    # workflow and its pull request's checks; --merge-bump merges
-#                                                    # that too, which deploys (pagle-backend OPS-R12, OPS-R13)
+#   scripts/hotfix.sh ship <version>                 # the committed branch: push, pull request, Check green, merge,
+#                                                    # tag, Release workflow, then pagle-backend's local pin bump
 #
 # What ship does, in order, and what it won't do:
 #   1. The changelog's first section must be `## <version> (<date>)`, finished (no {placeholder} left): the
@@ -22,18 +20,19 @@
 #      is new and the script waits for main's own Check run of it instead. Never moves or deletes a tag.
 #   5. Waits for the Release workflow (release.yml) and checks the GitHub Release has its one zip: players can
 #      download from here.
-#   6. Starts pagle-backend's pin-bump workflow (its PRJ-R66), which otherwise runs once a day, and waits for the
-#      bump pull request's checks (its image fold check gates the bump, OPS-R11). With --merge-bump it merges that
-#      pull request; main's run then promotes to production. Without it, the dev merges by hand.
+#   6. The backend's pin bump. pagle-backend's CI runs locally while its Actions minutes are off (its OPS-R9), so its
+#      pin-bump workflow doesn't run. With HOTFIX_BACKEND_DIR set to a pagle-backend checkout, this runs that
+#      checkout's ci/local-pin-bump.sh (its PRJ-R66), which opens or updates the bump pull request and runs the
+#      backend's local CI on it, the image fold check included (its OPS-R11); without it, this prints the commands
+#      for the Operator. Either way it stops there, with the add-on released: merging the bump, and deploying it with
+#      the backend's ci/local-promote.sh (its OPS-R12), stay the Operator's.
 #
 # Needs gh 2.40 or later, signed in with push access to both repositories (the Mac's gh; WSL's 2.4 is too old), and
-# git 2.38 or later. Run it from the hotfix branch's checkout or worktree. Set HOTFIX_BACKEND to point at another
-# backend repository, for trying it out.
+# git 2.38 or later. Run it from the hotfix branch's checkout or worktree. Step 6 also needs what the backend's local
+# CI needs: Docker, and bash 4 or later on PATH.
 set -euo pipefail
 
 addon=timemir/pagle-addon
-backend=${HOTFIX_BACKEND:-timemir/pagle-backend}
-bump_branch=wow-fish-pin-bump
 
 say() {
 	echo "hotfix: $*"
@@ -150,21 +149,8 @@ run_on_commit() { # <repo> <workflow> <sha>
 	echo "$id"
 }
 
-# The pin-bump workflow's newest run, started by us: the newest run that began after <since>.
-run_after() { # <repo> <workflow> <since, ISO 8601>
-	local id i
-	for ((i = 0; i < 36; i++)); do
-		id=$(gh run list -R "$1" --workflow "$2" --limit 5 --json databaseId,createdAt \
-			--jq "[.[] | select(.createdAt >= \"$3\")] | sort_by(.createdAt) | last | .databaseId // empty")
-		[[ -z $id ]] || break
-		sleep 5
-	done
-	[[ -n $id ]] || fail "no $2 run started in $1 after 3 minutes"
-	echo "$id"
-}
-
 ship() {
-	local version=$1 merge_bump=$2 branch
+	local version=$1 branch
 	gh_ok
 	branch=$(git branch --show-current)
 	[[ -n $branch && $branch != main ]] || fail "run ship from the hotfix branch, not from ${branch:-a detached HEAD}"
@@ -224,28 +210,20 @@ ship() {
 	[[ $zips == 1 ]] || fail "the $version Release has $zips zip assets, not one"
 	say "Release $version is published; players can download it"
 
-	# 6. The backend's pin bump.
-	local bump_pr title since
-	bump_pr=$(gh pr list -R "$backend" --head "$bump_branch" --state open --json number,title --jq '.[0].number // empty')
-	title=$(gh pr list -R "$backend" --head "$bump_branch" --state open --json number,title --jq '.[0].title // empty')
-	if [[ -z $bump_pr || $title != *" $version" ]]; then
-		since=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-		gh workflow run -R "$backend" pin-bump.yml || fail "couldn't start pin-bump.yml in $backend"
-		say "started pin-bump.yml in $backend"
-		gh run watch -R "$backend" --exit-status "$(run_after "$backend" pin-bump "$since")" \
-			|| fail "pin-bump.yml failed in $backend"
-		bump_pr=$(gh pr list -R "$backend" --head "$bump_branch" --state open --json number,title \
-			--jq ".[] | select(.title | endswith(\" $version\")) | .number" | head -n 1)
-		[[ -n $bump_pr ]] || fail "pin-bump.yml opened no pull request for $version in $backend (was the Release seen as latest?)"
-	fi
-	say "the bump pull request is $backend#$bump_pr"
-	checks_green "$backend" "$bump_pr"
-	if [[ $merge_bump == yes ]]; then
-		say "merging $backend#$bump_pr; its main run then promotes to production (OPS-R12)"
-		gh pr merge -R "$backend" "$bump_pr" --squash || fail "couldn't merge $backend#$bump_pr"
-		say "merged; watch https://github.com/$backend/actions and compare production's head with Clever Cloud's deployed commit (OPS-R13)"
+	# 6. The backend's pin bump, local while its Actions minutes are off (pagle-backend OPS-R9, PRJ-R66).
+	if [[ -n ${HOTFIX_BACKEND_DIR:-} ]]; then
+		[[ -x $HOTFIX_BACKEND_DIR/ci/local-pin-bump.sh ]] ||
+			fail "HOTFIX_BACKEND_DIR ($HOTFIX_BACKEND_DIR) has no ci/local-pin-bump.sh; $version is released, bump the backend by hand"
+		say "running pagle-backend's local pin bump in $HOTFIX_BACKEND_DIR; its local CI takes a while"
+		(cd "$HOTFIX_BACKEND_DIR" && ci/local-pin-bump.sh) ||
+			fail "the backend's local pin bump failed (above); $version is released, so run ci/local-pin-bump.sh there again once fixed"
+		say "$version is released and pagle-backend's bump pull request passed its local CI"
+		say "next, the Operator's: merge it by hand, then in $HOTFIX_BACKEND_DIR run ci/local-promote.sh <merge commit>"
 	else
-		say "the bump is green; review and merge https://github.com/$backend/pull/$bump_pr (or ship again with --merge-bump)"
+		say "$version is released. pagle-backend's CI runs locally, so its pin bump is the Operator's, in a pagle-backend checkout:"
+		say "  ci/local-pin-bump.sh                 # opens the bump pull request and runs local CI on it"
+		say "  ci/local-promote.sh <merge commit>   # after merging it by hand: deploys it"
+		say "or set HOTFIX_BACKEND_DIR to that checkout and ship $version again: the steps before this one are done"
 	fi
 }
 
@@ -262,14 +240,13 @@ start)
 	start "$version"
 	;;
 ship)
-	merge_bump=no
 	for arg in "$@"; do
 		case $arg in
-		--merge-bump) merge_bump=yes ;;
+		--merge-bump) fail "--merge-bump is gone while pagle-backend's CI is local: merge the bump by hand, then run its ci/local-promote.sh" ;;
 		*) usage ;;
 		esac
 	done
-	ship "$version" "$merge_bump"
+	ship "$version"
 	;;
 *) usage ;;
 esac
