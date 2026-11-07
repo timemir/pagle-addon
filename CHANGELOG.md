@@ -1,5 +1,17 @@
 # Pagle
 
+## 1.3.1 (2026-11-07)
+
+A clearer word on when the trackers show.
+
+### Changed
+
+- The tooltip of Settings › Trackers › "Show trackers only while fishing" now says plainly when they show: while a fishing pole is in hand, and for a minute after your last cast once you put it away. (#613)
+
+### TRANSLATORS
+
+- Español: fmartingr
+
 ## 1.3.0 (2026-11-07)
 
 Trackers only while you fish.
