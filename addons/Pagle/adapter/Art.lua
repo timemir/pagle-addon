@@ -220,16 +220,17 @@ end
 local SHRINK_FLOOR = 0.7
 
 --- Holds a font string in the art's font `key`, its text already set, to `width`: a text too wide shrinks to fit,
---- down to SHRINK_FLOOR of the font's size, and one still too wide ends in "...".
+--- down to `floor` of the font's size (SHRINK_FLOOR when nil), and one still too wide ends in "...".
 ---@param fontString FontString
 ---@param key string
 ---@param width number
-function ns.ShrinkToFit(fontString, key, width)
+---@param floor number?
+function ns.ShrinkToFit(fontString, key, width, floor)
 	fontString:SetWidth(0)
 	local natural = fontString:GetStringWidth()
 	if natural > width then
 		local def = FONTS[key]
-		local size = math.max(math.ceil(def[2] * SHRINK_FLOOR), math.floor(def[2] * width / natural))
+		local size = math.max(math.ceil(def[2] * (floor or SHRINK_FLOOR)), math.floor(def[2] * width / natural))
 		ns.faces:Set(fontString, FACES[def[1]], size)
 	end
 	fontString:SetWidth(math.min(fontString:GetStringWidth(), width))

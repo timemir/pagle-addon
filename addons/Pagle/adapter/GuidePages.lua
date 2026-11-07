@@ -160,6 +160,11 @@ end
 -- How much of a banner the window shows, in the banner's own units (the kit's cut of the canvas's banner): its middle,
 -- seal, words and labels.
 local BANNER_CUT = { width = 695, height = 290 }
+-- How far the toast sample's name may shrink, as a share of its font, before it is cut with "…": further than a live
+-- toast's 0.7, which scrolls a longer name instead (ANN-R101), as a still sample can't (#621). The Russian "Масляный
+-- черноротик" measures 251 at 22 (0.7 of the Name font's 31) in the 235 before the Coins; at 18 it measures 206, room
+-- for a face 14% wider, as the client's FRIZQT___CYR may be beside the harness's stand-in.
+local SAMPLE_NAME_FLOOR = 0.58
 
 ---@param page Frame
 ---@param form "toast"|"nod"|"banner"
@@ -192,7 +197,7 @@ end
 local function drawSample(window)
 	local form = window.form
 	local announcement = ns.DevPreviewAnnouncement(form, L.GUIDE_MOMENTS_SAMPLE_TEXT) --[[@as PagleAnnouncement]]
-	local frame = ns.DrawStillAnnouncement(window, form, announcement)
+	local frame = ns.DrawStillAnnouncement(window, form, announcement, form == "toast" and SAMPLE_NAME_FLOOR or nil)
 	local w, h = window:GetWidth() - 8, window:GetHeight() - 4
 	local width, height = frame:GetWidth(), frame:GetHeight()
 	if form == "banner" then

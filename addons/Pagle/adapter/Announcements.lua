@@ -116,6 +116,7 @@ local TICKS = 20
 ---@field body Frame? a toast's page and words, which slide in under the frame the lanes anchor
 ---@field nameClip Frame? the clip a toast's name is written out in
 ---@field nameScroll number? how far a toast's name line too long for its room scrolls (ANN-R101), nil for none
+---@field nameFloor number? how far a still toast's name line may shrink, below a live one's 0.7 (#621, ONB-R34)
 ---@field pivots Frame[]? the points a toast's stamps grow about
 ---@field recordPivot Frame? the point the ruler's New record stamp grows about
 ---@field rays PagleSprite? a banner's or the splash's
@@ -535,19 +536,21 @@ local function printed(font, text)
 	return (type(font) ~= "table" or font.caps) and ns.Capitals(text) or text
 end
 
--- ns.ShrinkToFit for either kind of font.
+-- ns.ShrinkToFit for either kind of font, down to `floor` of its size (0.7 when nil).
 ---@param fontString FontString
 ---@param font PagleWordsFont
 ---@param width number
-local function shrink(fontString, font, width)
+---@param floor number?
+local function shrink(fontString, font, width, floor)
 	if type(font) ~= "table" then
-		ns.ShrinkToFit(fontString, font --[[@as string]], width)
+		ns.ShrinkToFit(fontString, font --[[@as string]], width, floor)
 		return
 	end
 	fontString:SetWidth(0)
 	local natural = fontString:GetStringWidth()
 	if natural > width then
-		ns.SetInkFont(fontString, font, math.max(math.ceil(font.size * 0.7), math.floor(font.size * width / natural)))
+		local least = math.ceil(font.size * (floor or 0.7))
+		ns.SetInkFont(fontString, font, math.max(least, math.floor(font.size * width / natural)))
 	end
 	fontString:SetWidth(math.min(fontString:GetStringWidth(), width))
 end
@@ -566,8 +569,8 @@ local function setFontAt(fontString, font, size)
 end
 
 -- A headline's text, its name line under the kicker, in the Angler's hand: held to `width`, its font shrinking to fit
--- first. Again, narrower, when a second row of stamps takes the end of its room (#582). Returns the height it measures
--- at its font's own size, before any shrink.
+-- first (to the frame's nameFloor of its size, a still sample's, else 0.7). Again, narrower, when a second row of
+-- stamps takes the end of its room (#582). Returns the height it measures at its font's own size, before any shrink.
 ---@param frame PagleAnnouncementFrame
 ---@param text string
 ---@param fonts { what: PagleWordsFont, name: PagleWordsFont }
@@ -580,7 +583,7 @@ local function writeName(frame, text, fonts, inks, width)
 	ns.Ink(line, inks.name)
 	line:SetText(text)
 	local height = line:GetStringHeight()
-	shrink(line, fonts.name, width)
+	shrink(line, fonts.name, width, frame.nameFloor)
 	line:Show()
 	return height
 end
@@ -2401,12 +2404,15 @@ local stills = setmetatable({}, { __mode = "k" })
 --- Draws `announcement` as a `form` ("toast", "nod" or "banner") standing still on `parent` (ONB-R34, as the Curio
 --- Shop's stage draws its toast): a frame of that form there, made on the first call and redrawn on each, in the
 --- toast style the announcement carries or else the equipped one (ANN-R80), shown. It doesn't move or expire, and
---- nothing reaches the lanes, the sounds or the Session summary. Its parent places and scales it.
+--- nothing reaches the lanes, the sounds or the Session summary. Its parent places and scales it. With `nameFloor`,
+--- a toast's name line too long for its room may shrink to that share of its font, past a live toast's 0.7, before
+--- it is cut (the Field guide's Moments sample, #621).
 ---@param parent Frame
 ---@param form "toast"|"nod"|"banner"
 ---@param announcement PagleAnnouncement
+---@param nameFloor number?
 ---@return PagleAnnouncementFrame
-function ns.DrawStillAnnouncement(parent, form, announcement)
+function ns.DrawStillAnnouncement(parent, form, announcement, nameFloor)
 	local byForm = stills[parent]
 	if not byForm then
 		byForm = {}
@@ -2417,6 +2423,7 @@ function ns.DrawStillAnnouncement(parent, form, announcement)
 		frame = ns.NewStillAnnouncementFrame(parent, form)
 		byForm[form] = frame
 	end
+	frame.nameFloor = nameFloor
 	ns.DrawAnnouncement(frame, { announcement = announcement, form = form, overflow = 0 })
 	frame:Show()
 	return frame
