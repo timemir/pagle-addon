@@ -1,5 +1,17 @@
 # Pagle
 
+## 1.3.0 (2026-11-07)
+
+Trackers only while you fish.
+
+### Added
+
+- Settings › Trackers › "Show trackers only while fishing" hides every Pagle tracker (Hunts, Pagle Wagers, Stats and the Tackle Board) until a fishing pole is in hand or you cast. They stay up for a minute after your last cast, so a quick weapon swap doesn't hide them. It's off by default, so nothing changes unless you tick it. (#600)
+
+### TRANSLATORS
+
+- Español: fmartingr
+
 ## 1.2.4 (2026-11-07)
 
 The Session summary moves like a window, and longer languages fit.
