@@ -27,8 +27,10 @@ it whole. Accepted for 1.1.1."""
 kind = "cut"
 text = "* (* /pagle dev*)"
 stop = "core.announce.*"
-reason = """A designed truncation: a toast's name that doesn't fit its clip scrolls so the whole name is read (#573); \
-the harness sees one still frame. The sample is /pagle dev preview's long one."""
+reason = """A designed truncation: a toast's name that doesn't fit its clip scrolls so the whole name is read (#573, \
+ANN-R101); the harness sees one still frame, with Animations off, where it's cut at its smallest font. The Nod and \
+the Legend splash shrink theirs to a floor and then cut it (ns.ShrinkToFit). The sample is /pagle dev preview's \
+long one; measured in the toasts' real faces since #620."""
 
 [[allow]]
 kind = "overlap"

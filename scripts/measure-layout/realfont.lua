@@ -9,11 +9,16 @@
 --   RealFont.patch(fontString)   -- one font string measures in its real face; nothing else changes
 --   RealFont.install()           -- every font string the fake client makes from here on (the harness's helper)
 --
+-- A font string's face is the one SetFont gave it, else its font object's: a font object table, or the name of one
+-- CreateFont made (SetFontObject("PagleArtName"), as the art's fonts, the toasts' among them, are set), which the
+-- client keeps in a global of that name and RealFont.keepNamed keeps here (#620).
+--
 -- What it can't know: kerning (advances are summed), the client's exact line height (the face's ascent plus descent,
 -- or MEASURE_LINE times the size), faces the add-on doesn't bundle (the client's own, such as FRIZQT__ and the ruRU
--- faces, measure in Marcellus as a stand-in) and glyphs a face lacks (Cyrillic in the Latin faces is estimated from a
--- Latin look-alike). A finding that rests on any of those is marked estimated. Under the pseudo-locale
--- (MEASURE_LANG=pseudo), a glyph a face lacks measures as the face's notdef box, which is what the client draws for it.
+-- faces, and its own font objects, such as GameFontNormal, measure in Marcellus as a stand-in) and glyphs a face
+-- lacks (Cyrillic in the Latin faces is estimated from a Latin look-alike). A finding that rests on any of those is
+-- marked estimated. Under the pseudo-locale (MEASURE_LANG=pseudo), a glyph a face lacks measures as the face's notdef
+-- box, which is what the client draws for it.
 
 local RealFont = {}
 
@@ -73,7 +78,30 @@ function RealFont.plain(text)
 	)
 end
 
---- The face file and size a font string draws in, and whether the face is a stand-in.
+-- The font objects CreateFont made, by name: the client keeps each in a global of its name, so SetFontObject given
+-- the name draws in it. RealFont.keepNamed fills it.
+---@type table<string, table>
+local named = {}
+
+--- Wraps the client's `createFont` so each font object it makes is kept by its name, as the client keeps it in a
+--- global: a font string set to that name (SetFontObject("PagleArtName"), as the art's fonts are set) then measures
+--- in the face and size the font object was given, then and after any later SetFont on it. RealFont.install wraps
+--- the fake client's; a spec can pass the result as its CreateFont global.
+---@param createFont fun(name: string?, ...): table
+---@return fun(name: string?, ...): table
+function RealFont.keepNamed(createFont)
+	return function(name, ...)
+		local font = createFont(name, ...)
+		if type(name) == "string" then
+			named[name] = font
+		end
+		return font
+	end
+end
+
+--- The face file and size a font string draws in, and whether the face is a stand-in. SetFont's, else its font
+--- object's: a font object table, or one RealFont.keepNamed kept by the name SetFontObject was given. A font object
+--- the add-on didn't make (the client's own, such as GameFontNormal) measures in the stand-in at DEFAULT_SIZE.
 ---@param region table
 ---@return string file
 ---@return number size
@@ -81,6 +109,9 @@ end
 function RealFont.face(region)
 	local font = region.font
 	local object = region.fontObject
+	if type(object) == "string" then
+		object = named[object]
+	end
 	if not font and type(object) == "table" then
 		font = object.font
 	end
@@ -257,20 +288,30 @@ function RealFont.patch(widget)
 	return widget
 end
 
---- Makes every font string the fake client makes from now on measure in its real face (RealFont.patch): wraps the
---- global dofile so that each load of spec/support/widgets.lua makes its widgets through RealFont.patch. Call it
---- before spec/support/addon.lua loads; spec/support/ itself is unchanged, so every spec keeps 6 units a byte.
+--- Makes every font string the fake client makes from now on measure in its real face (RealFont.patch), and every
+--- font object its CreateFont makes known by name (RealFont.keepNamed): wraps the global dofile so that each load of
+--- spec/support/widgets.lua makes its widgets through RealFont.patch, and each client spec/support/client.lua makes
+--- keeps its font objects. Call it before spec/support/addon.lua loads; spec/support/ itself is unchanged, so every
+--- spec keeps 6 units a byte.
 function RealFont.install()
 	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 	local realDofile = dofile
 	rawset(_G, "dofile", function(path, ...)
 		local result = realDofile(path, ...)
-		-- The path addon.lua and client.lua load it by.
+		-- The paths addon.lua and client.lua load them by.
 		if path == "spec/support/widgets.lua" and type(result) == "table" and not result.realFont then
 			result.realFont = true
 			local newWidget = result.newWidget
 			result.newWidget = function(kind, parent)
 				return RealFont.patch(newWidget(kind, parent))
+			end
+		elseif path == "spec/support/client.lua" and type(result) == "function" then
+			-- A fresh client and its stubs; its CreateFont keeps what it makes by name.
+			local newClient = result
+			result = function(...)
+				local client, stubs = newClient(...)
+				stubs.CreateFont = RealFont.keepNamed(stubs.CreateFont)
+				return client, stubs
 			end
 		end
 		return result

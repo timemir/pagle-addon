@@ -11,7 +11,8 @@
 -- error the addons raised on the tour) and, per stop, NN-<stop>.jsonl (the stop's name, then every shown region of
 -- every shown surface with its screen rect) for the PNGs.
 
-local RealFont = dofile("scripts/measure-layout/realfont.lua")
+-- The RealFont helper.lua installed: the one that knows the client's font objects by name, as the toasts are set.
+local RealFont = assert(MEASURE_REALFONT, "run with --helper=scripts/measure-layout/helper.lua")
 local json = require("dkjson")
 
 local LANGUAGE = os.getenv("MEASURE_LANG") or "enUS"
