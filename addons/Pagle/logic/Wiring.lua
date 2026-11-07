@@ -1036,10 +1036,14 @@ local function storedDock(wiring)
 	return wiring.host.db().profile.dock
 end
 
---- Whether "Show trackers only while fishing" is on (SET-R46, PagleDB.profile.dock.onlyWhileFishing).
+--- Whether "Show trackers only while fishing" is on (SET-R46, PagleDB.profile.dock.onlyWhileFishing). Off before
+--- login step 1 has opened PagleDB, and once AceDB has stripped its defaults at PLAYER_LOGOUT, dropping an empty
+--- `dock`.
 ---@return boolean
 function DockWiring:OnlyWhileFishing()
-	return storedDock(self).onlyWhileFishing == true
+	local db = self.host.db()
+	local stored = db and db.profile.dock
+	return type(stored) == "table" and stored.onlyWhileFishing == true
 end
 
 --- The Trackers page's "Show trackers only while fishing" (SET-R46): saved, and the dock shown or hidden at once.

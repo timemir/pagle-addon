@@ -471,6 +471,17 @@ describe("Only while fishing (CORE-R88, SET-R46)", function()
 		assert.are.same({}, loaded.client.errors)
 	end)
 
+	it("reads no setting at a Cast after PLAYER_LOGOUT, when AceDB has stripped the defaults (CORE-R88)", function()
+		local loaded = coreWithTrackers(nil, ROSTER)
+		dockFixture(loaded, "Hunts", 10, 40)
+		enterWorld(loaded)
+		loaded.client.fire("PLAYER_LOGOUT")
+
+		loaded.ns.Fire("CastStarted")
+
+		assert.are.same({}, loaded.client.errors)
+	end)
+
 	it("shows the dock at login with a pole already in hand (CORE-R88)", function()
 		local first = whileFishing()
 		local loaded = coreWithTrackers(first.env.PagleDB, ROSTER)
