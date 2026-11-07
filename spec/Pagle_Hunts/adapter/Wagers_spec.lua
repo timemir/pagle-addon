@@ -56,7 +56,13 @@ end
 ---@return HuntsRun
 local function start(options)
 	local now, origin = options.now or THU_11, options.origin
+	local inLanguage
+	if options.language then
+		inLanguage = newFakePagle()
+		inLanguage.language = options.language -- what Pagle.GetLanguage answers: the Module's strings and Core's faces
+	end
 	local r = hunts.start({
+		fake = inLanguage,
 		from = now - SERVER_TIME,
 		names = true,
 		events = pool,
@@ -280,6 +286,53 @@ describe("the wager strip (HNT-R161)", function()
 		assert.is_true(name:GetWidth() < #name.text * 6)
 	end)
 
+	describe("its name in its real face (from 1.3.5)", function()
+		-- The Board in `language` with the shore run on, named `words` when given, the strip's words measured in their
+		-- real faces (`wider` times as wide when given); the strip's name and its ink's size.
+		local function stripName(language, wider, words)
+			local r = oneOn({ language = language })
+			if words then
+				r.ns.L["event.fixture_shore.name"] = words
+			end
+			r.ns.ToggleBoard()
+			hunts.measureReal(r.ns.board:Page(place(r), "left"), wider)
+			r.ns.board:Draw()
+			local strip = shownWith(r.ns.board:Page(place(r), "left"), "stripRun")[1]
+			local name = textOf(strip, r.ns.BoardTimeline({ mode = "board" }).strip.name)
+			return name, r.ns.WAGER_INKS.tkName.size
+		end
+
+		it("hnt_r161 keeps English's name at its ink's size", function()
+			local name, size = stripName("enUS")
+
+			assert.are.equal("Shore Wager", name.text)
+			assert.are.equal(size, hunts.sizeOf(name))
+			assert.is_true(hunts.whole(name))
+		end)
+
+		it(
+			"hnt_r161 sets a name too long for what the fit rule leaves it smaller in half steps so it shows whole,"
+				.. ' as Russian\'s "Форель на заре" beside its "closes in …", even in a face 10% wider',
+			function()
+				for _, wider in ipairs({ false, 1.1 }) do
+					local name, size = stripName("ruRU", wider or nil, "Форель на заре")
+					local at = hunts.sizeOf(name)
+
+					assert(hunts.whole(name, wider or nil), ("cut at %s, %s times the stand-in"):format(at, wider or 1))
+					assert.is_true(at < size)
+					assert.is_true(at >= 11.5)
+				end
+			end
+		)
+
+		it("hnt_r161 cuts a name still too long at 11.5, about 70% of its ink's size, only then", function()
+			local name = stripName("enUS", nil, string.rep("A long wager name ", 3))
+
+			assert.are.equal(11.5, hunts.sizeOf(name))
+			assert.is_false(hunts.whole(name))
+		end)
+	end)
+
 	it('adds "+1 more on the table" with a second run on, naming the one that closes first', function()
 		-- A pushed run of fixture_vale, on from an hour ago to tomorrow (HNT-R151): it ends before the shore's.
 		local r = oneOn({
@@ -494,6 +547,10 @@ describe("a WAGERS row's margin label on a 12-hour clock (HNT-R161, HNT-R60)", f
 	it('is set a size down when it is past its room, so "until Sat 5:00 PM" isn\'t cut short', function()
 		local r = oneOn()
 		r.ns.ToggleBoard()
+		-- in its real face: the fake's widths don't shrink with the size, and past the tight size a label keeps getting
+		-- smaller to its floor (HNT-R51, from 1.3.5)
+		hunts.measureReal(r.ns.board:Page(place(r), "left"))
+		r.ns.board:Draw()
 		local fonts = r.ns.BoardFonts()
 		local function label()
 			local row = shownWith(r.ns.board:Page(place(r), "left"), "runKey")[1]
@@ -512,6 +569,7 @@ describe("a WAGERS row's margin label on a 12-hour clock (HNT-R161, HNT-R60)", f
 		margin, room = label()
 		assert.are.equal("until Sat 5:00 PM", margin.text)
 		assert.are.equal(fonts.marginTight, margin.fontObject)
+		assert.is_true(hunts.whole(margin))
 		assert.are.equal(room, margin:GetWidth()) -- still bound to its room, cut only past even that
 		assert.are.same({}, bounds.overflows(r.ns.board:Page(place(r), "left")))
 	end)

@@ -90,6 +90,8 @@ local RIGHT, CLOSES_GAP, PIP, PIP_GAP, STAMP_W, MORE_GAP, NAME_GAP, ZONES_GAP, Z
 ns.WAGER_STRIP_ROOM, ns.WAGER_HINT_ROOM = STRIP_HEIGHT + 8, 4
 -- "closes in …"'s size: the board's count hand (ns.BoardFonts().count).
 local CLOSES_SIZE = 17
+-- The least size the run's name (the ticket's name ink, 16.5) is set at before the client cuts it short: about 70%.
+local NAME_FLOOR = 11.5
 
 ---@class WagerPip: Frame
 ---@field pip true
@@ -306,13 +308,16 @@ local function drawTicket(view, strip)
 	view.mark:SetMark(strip.mark --[[@as string[] ]])
 	local right = drawRight(view, strip)
 	local room = view.width - right - NAME_GAP - NAME_X
+	ns.SetWagerInk(view.name, view.name.ink) -- measured at its ink's size, whatever the last draw set it at
 	local fit = ns.WagerStripFit({
 		room = room,
 		name = natural(view.name, strip.name or ""),
 		more = strip.more and natural(view.more, strip.more) + MORE_GAP or 0,
 		zones = strip.zones and natural(view.zones, strip.zones) + ZONES_GAP or 0,
 	})
-	local nameWidth = ns.FitWagerText(view.name, strip.name or "", fit.name)
+	-- a name too long for what the fit rule leaves it is set smaller in half steps before the client cuts it (a longer
+	-- language's "Форель на заре" beside its "closes in …")
+	local nameWidth = ns.ShrinkWagerText(view.name, strip.name or "", fit.name, NAME_FLOOR)
 	centred(view.name, button, NAME_X)
 	if fit.zones then
 		ns.FitWagerText(view.zones, strip.zones --[[@as string]], fit.zones - ZONES_GAP)
