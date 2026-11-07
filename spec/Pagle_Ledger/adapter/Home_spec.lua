@@ -264,6 +264,115 @@ describe("the Journal's Home, left page", function()
 			assert.are.same({ 0, 80 }, { pageScroll(loaded, "left"), pageScroll(loaded, "right") })
 		end
 	)
+
+	describe("its tabs, in their real face", function()
+		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+		local RealFont = dofile("scripts/measure-layout/realfont.lua")
+
+		-- Home's three tabs drawn in `language` (its Locale applied, the continents named as that client names
+		-- them), each label measured in its real face (a ruRU client's, which isn't bundled, in RealFont's stand-in),
+		-- `wider` times as wide when given, as a face that much wider would draw it. Returns the tab views and the
+		-- page's width.
+		local function drawnTabs(language, continents, other, wider)
+			local _, loaded = openJournal({
+				catalogue = fixture(),
+				log = { cast(ELWYNN, MACKEREL), cast(NOWHERE, SKULL) },
+				itemNames = ITEM_NAMES,
+				areaNames = ZONE_NAMES,
+				mapNames = { [1415] = continents[1], [1414] = continents[2] },
+				modules = function(fake)
+					fake.language = language
+				end,
+			})
+			if other then
+				loaded.ns.L.OTHER_WATERS = other
+			end
+			local journal = loaded.ns.journal
+			for _, tab in ipairs(journal.shown.left.drawn.tabs[1].tabs) do
+				RealFont.patch(tab.label)
+				if wider then
+					function tab.label:GetStringWidth()
+						local width, box = RealFont.layout(self).natural * wider, self:GetWidth()
+						return box > 0 and math.min(width, box) or width
+					end
+				end
+			end
+			journal:Draw()
+			assert.are.same({}, loaded.client.errors)
+			return journal.shown.left.drawn.tabs[1].tabs, journal.shown.left.width
+		end
+
+		local function left(region)
+			local anchor = region.points[1]
+			return type(anchor[2]) == "number" and anchor[2] or anchor[4]
+		end
+
+		-- Whether a tab's label shows whole: its box holds it at the width it measures.
+		local function whole(label, wider)
+			return RealFont.layout(label).natural * (wider or 1) <= label:GetWidth() + 1e-6
+		end
+
+		-- "Другие воды" was cut to 68 of its 94 in the layout harness: the tabs were laid one after another at 15,
+		-- the last given what the others left.
+		it(
+			"led_r130 sets ruRU's tabs smaller together so each shows whole, even in a face 10% wider than the stand-in",
+			function()
+				for _, wider in ipairs({ false, 1.1 }) do
+					local views, width = drawnTabs(
+						"ruRU",
+						{ "Восточные королевства", "Калимдор" },
+						nil,
+						wider or nil
+					)
+					local size = select(2, RealFont.face(views[1].label))
+					for i = 1, 3 do
+						local label = views[i].label
+						assert(
+							whole(label, wider),
+							("%s cut at %s, %s times"):format(label:GetText(), size, wider or 1)
+						)
+						assert.are.equal(size, select(2, RealFont.face(label)))
+						if i > 1 then
+							assert(left(views[i]) >= left(views[i - 1]) + views[i - 1]:GetWidth() + 8, "apart")
+						end
+					end
+					assert.are.equal("Другие воды", views[3].label:GetText())
+					assert(left(views[3]) + views[3]:GetWidth() <= width, "inside the page")
+					assert.is_true(size < 15)
+					assert.is_true(size >= 11)
+				end
+			end
+		)
+
+		it("led_r130 cuts the widest views first, at the floor, when even that is too wide", function()
+			local views, width = drawnTabs(
+				"enUS",
+				{ "[Eastern Kingdoms padding padding]", "[Kalimdor]" },
+				"[Other waters padding padding]"
+			)
+			assert.are.equal(11, select(2, RealFont.face(views[1].label)))
+			assert.is_true(whole(views[2].label))
+			assert.is_false(whole(views[1].label))
+			assert.is_false(whole(views[3].label))
+			assert(left(views[3]) + views[3]:GetWidth() <= width, "inside the page")
+			-- the two long ones are cut to the same room
+			assert(math.abs(views[1].label:GetWidth() - views[3].label:GetWidth()) < 1, "cut alike")
+		end)
+
+		it("led_r130 leaves English, German and Spanish views at 15, whole", function()
+			for language, names in pairs({
+				enUS = { "Eastern Kingdoms", "Kalimdor" },
+				deDE = { "Östliche Königreiche", "Kalimdor" },
+				esES = { "Reinos del Este", "Kalimdor" },
+			}) do
+				local views = drawnTabs(language, names)
+				for i = 1, 3 do
+					assert.are.equal(15, select(2, RealFont.face(views[i].label)))
+					assert(whole(views[i].label), language .. ": " .. views[i].label:GetText() .. " cut")
+				end
+			end
+		end)
+	end)
 end)
 
 -- Seeds the celebrated set: level 12 celebrated in this climb, so the shown level is 12 (LED-R36).
