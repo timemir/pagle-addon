@@ -224,6 +224,11 @@ end
 -- art has them: the paragraphs at 87.4, 183.6 and 279.7, the signature at 345.8, the promises 85.8 apart from 89.3.
 local LETTER_Y, LETTER_GAP, SIGNED_GAP = 87.4, 11.97, 9.98
 local PROMISE_Y, DISC, PROMISE_GAP = 89.3, 46, 17.98
+-- The letter's hand and line box, the signature's, the foot line's place, and the least room from the signature to
+-- it: a letter whose signature would end lower is set smaller, all three paragraphs at one size and their line boxes
+-- as tall for it, in half steps to LETTER_FLOOR, three quarters of the hand (1.3.5).
+local LETTER_SIZE, LETTER_LH, SIGNED_SIZE, FOOT_Y, FOOT_GAP = 23, 28.06, 30, 505.8, 8
+local LETTER_FLOOR = 17.5
 
 --- Welcome (ONB-R30, board 2): the letter in the hand, signed under its last line, with the foot line; the three
 --- promises beside their wax discs, the third naming the roster's size. Core's foot carries "I’ll find my own way"
@@ -234,15 +239,34 @@ local WELCOME = {
 		ns.NewGuideKicker(left, L.GUIDE_WELCOME_KICKER)
 		ns.NewGuideTitle(left, L.GUIDE_WELCOME_TITLE)
 		local y = LETTER_Y
+		local letter = {}
 		for i, words in ipairs(L.GUIDE_WELCOME_LETTER) do
 			if i > 1 then
 				y = y + LETTER_GAP
 			end
-			y = below(text(left, "hand", 23, "hand", words, X, y, 28.06, { wrap = true, width = W }), y, 23, 28.06)
+			letter[i] = text(left, "hand", LETTER_SIZE, "hand", words, X, y, LETTER_LH, { wrap = true, width = W })
+			y = below(letter[i], y, LETTER_SIZE, LETTER_LH)
 		end
-		text(left, "handBold", 30, "body", L.GUIDE_WELCOME_SIGNED, X, y + SIGNED_GAP, 30)
+		-- a letter that would sign on the foot line is set smaller, its paragraphs laid again from the first (1.3.5)
+		local size = LETTER_SIZE
+		while y + SIGNED_GAP + SIGNED_SIZE > FOOT_Y - FOOT_GAP and size - 0.5 >= LETTER_FLOOR do
+			size = size - 0.5
+			local lh = size * LETTER_LH / LETTER_SIZE
+			y = LETTER_Y
+			for i, paragraph in ipairs(letter) do
+				if i > 1 then
+					y = y + LETTER_GAP
+				end
+				paragraph:SetFontObject(ns.ArtFaceFont("hand", size))
+				paragraph:SetTextColor(unpack(ns.GUIDE_INKS.hand, 1, 3))
+				paragraph:SetSpacing(lh - size)
+				ns.GuideAt(paragraph, left, X, y + (lh - size) / 2)
+				y = below(paragraph, y, size, lh)
+			end
+		end
+		text(left, "handBold", SIGNED_SIZE, "body", L.GUIDE_WELCOME_SIGNED, X, y + SIGNED_GAP, SIGNED_SIZE)
 		-- the foot line on one line across the column, set smaller when longer, never into the gutter (#592)
-		local foot = text(left, "italic", 13, "note", L.GUIDE_WELCOME_FOOT, X, 505.8, 18.2)
+		local foot = text(left, "italic", 13, "note", L.GUIDE_WELCOME_FOOT, X, FOOT_Y, 18.2)
 		ns.FitGuideText(foot, "italic", 13, "note", W)
 
 		ns.NewGuideKicker(right, L.GUIDE_WELCOME_RIGHT_KICKER)

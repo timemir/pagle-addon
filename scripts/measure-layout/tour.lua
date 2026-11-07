@@ -253,10 +253,12 @@ local function measure(root, name, memo, regions, findings)
 	for _, t in ipairs(texts) do
 		local region, layout, ink = t.region, t.layout, t.seen
 		if layout.cut then
+			-- a word wider than its box reports that word's width (its widest line), not the whole text's on one line
+			local wide = layout.cut == "a word wider than its box" and layout.widest or layout.natural
 			find(
 				"cut",
 				region.text,
-				("%s: %.0f wide in %.0f"):format(layout.cut, layout.natural, region:GetWidth() or 0),
+				("%s: %.0f wide in %.0f"):format(layout.cut, wide, region:GetWidth() or 0),
 				layout.estimated
 			)
 		end

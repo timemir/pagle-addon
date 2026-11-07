@@ -58,3 +58,31 @@ describe("the layout harness's font objects (#620)", function()
 		assert.are.same({ "IMFeENrm28P.ttf", ns.ArtFontSize("What") }, { file, size })
 	end)
 end)
+
+describe("the layout harness's cut words (1.3.5)", function()
+	-- A wrapping font string `width` wide in Marcellus at `size`, reading `text`, as the fake client keeps one.
+	local function wrapping(text, width, size)
+		return {
+			kind = "FontString",
+			text = text,
+			font = { "Interface\\AddOns\\Pagle\\media\\fonts\\Marcellus-Regular.ttf", size },
+			wordWrap = true,
+			GetWidth = function()
+				return width
+			end,
+		}
+	end
+
+	it("measures the widest line it shows, so a word wider than its box reports that word's width", function()
+		local note = wrapping("one two three", 40, 19)
+		local layout = RealFont.layout(note)
+		local widest = 0
+		for _, word in ipairs({ "one", "two", "three" }) do
+			widest = math.max(widest, (RealFont.width(word, "Marcellus-Regular.ttf", 19)))
+		end
+
+		assert.are.equal("a word wider than its box", layout.cut)
+		assert.are.equal(widest, layout.widest)
+		assert.is_true(layout.widest < layout.natural)
+	end)
+end)

@@ -103,8 +103,9 @@ local BOX_Y, ROW_H, ROW_H_FOUR = 125.7, 50, 40
 -- running into it: the box at least BODY_GAP under the paragraph over it; the note NOTE_DROP under the account
 -- paragraph's top (the kit's, for its two lines), or NOTE_GAP under its foot when it wraps longer. The right page's
 -- words end above FOOT_TOP, clear of Core's foot (the skip link and Next », ONB-R23): a note that would pass it is
--- written across the column instead, fewer lines, and lifted to end there if it still would.
-local BODY_GAP, NOTE_DROP, NOTE_GAP, FOOT_TOP = 8, 46.3, 14, 486
+-- written across the column instead, fewer lines, and lifted to end there if it still would, but never onto the
+-- account paragraph: one that would start less than LIFT_GAP under its foot is set smaller, then cut short (1.3.5).
+local BODY_GAP, NOTE_DROP, NOTE_GAP, FOOT_TOP, LIFT_GAP = 8, 46.3, 14, 486, 2
 -- The box's right edge for its words (its XP and "read just now" end there), and the least room a row's title and the
 -- heading keep before them: a longer one is set smaller, then cut short (#592).
 local BOX_RIGHT, BOX_GAP = 397, 10
@@ -221,6 +222,12 @@ local function fillBox(view, page)
 	ns.JournalAt(view.account, right, 30, below)
 	local noteY = below + math.max(NOTE_DROP, view.account:GetStringHeight() + NOTE_GAP)
 	local note, wide = view.note, view.wideNote
+	-- across the column, a note too tall to end at the foot from LIFT_GAP under the account paragraph is set smaller,
+	-- then cut short, to fit there (Core's FitAbove, from 1.3.5; an older Core's note is lifted as before)
+	local fitting = wide --[[@as { FitAbove: (fun(self: Frame, bottom: number, top: number?))? }]]
+	if fitting.FitAbove then
+		fitting.FitAbove(wide, FOOT_TOP, below + view.account:GetStringHeight() + LIFT_GAP)
+	end
 	local shown = noteY + note:GetHeight() <= FOOT_TOP and note or wide
 	note:SetShown(shown == note)
 	wide:SetShown(shown == wide)

@@ -110,24 +110,154 @@ describe("the binding field's words in a longer language (ONB-R40)", function()
 		assert.are.same({}, bounds.overflows(swap))
 	end)
 
-	it("sets a note still over two lines at its least size on two, which the client ends with an ellipsis", function()
-		local loaded, swap = field("PAGLE_SWAP_GEAR", "Umziehen")
-		local note = swap.note
-		-- three lines of words at every size, as the client measures them with no line cap; two with the cap, as it
-		-- counts only the lines it draws
-		local caps = {}
-		note.GetStringHeight = function(self)
-			caps[#caps + 1] = self:GetMaxLines()
-			return (self:GetMaxLines() > 0 and 2 or 3) * 14
+	it(
+		"sets a note still over three lines at its least size on three, which the client ends with an ellipsis",
+		function()
+			local loaded, swap = field("PAGLE_SWAP_GEAR", "Umziehen")
+			local note = swap.note
+			-- five lines of words at every size, as the client measures them with no line cap; as many as the cap lets it
+			-- draw with one, as it counts only the lines it draws; one line's 14 unwrapped
+			local caps = {}
+			note.GetStringHeight = function(self)
+				caps[#caps + 1] = self:GetMaxLines()
+				if self.wordWrap == false then
+					return 14
+				end
+				return (self:GetMaxLines() > 0 and self:GetMaxLines() or 5) * 14
+			end
+			loaded.ns.L.GUIDE_BIND_DEFAULT = ("Standard: nichts belegt, jede Taste ist frei wählbar. "):rep(3)
+
+			swap:Refresh()
+
+			-- measured at every size from 13 down to the least, 10.5, each with no cap; then one line unwrapped and the
+			-- words wrapped at the least size, which take more than two lines: capped at three (1.3.5)
+			assert.are.same({ 0, 0, 0, 0, 0, 0, 0 }, caps)
+			assert.are.equal("PagleArtFace_italic_10_5", note.fontObject.name)
+			assert.are.equal(3, note:GetMaxLines())
+			-- the three lines stood on the field's middle, but never nearer its top than 8
+			assert.are.equal(-8, note.points[1][5])
 		end
-		loaded.ns.L.GUIDE_BIND_DEFAULT = ("Standard: nichts belegt, jede Taste ist frei wählbar. "):rep(3)
+	)
 
-		swap:Refresh()
+	describe("the dashed cap's words in their real face (1.3.5)", function()
+		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+		local RealFont = dofile("scripts/measure-layout/realfont.lua")
+		local width = RealFont.width
 
-		-- measured at every size from 13 down to the least, 10.5, each with no cap; then capped at two lines
-		assert.are.same({ 0, 0, 0, 0, 0 }, caps)
-		assert.are.equal("PagleArtFace_italic_10_5", note.fontObject.name)
-		assert.are.equal(2, note:GetMaxLines())
+		-- A binding field (the Fishing key's unless `action` and `label` are given), unbound, on a client of
+		-- `language`, its words measured in their real faces (a ruRU client's FRIZQT___CYR, which isn't bundled, in
+		-- RealFont's stand-in), `wider` times as wide when given. Returns the field.
+		local function unbound(language, wider, action, label)
+			RealFont.width = function(...)
+				local w, estimated = width(...)
+				return w * (wider or 1), estimated
+			end
+			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+			local _, stubs = dofile("spec/support/client.lua")()
+			local loaded = loadCore({ BUILD_ENTRY }, { global = { language = language } }, {
+				GetLocale = function()
+					return language
+				end,
+				CreateFont = RealFont.keepNamed(stubs.CreateFont),
+			})
+			enterWorld(loaded)
+			local ns = loaded.ns
+			local GuideText = ns.GuideText
+			ns.GuideText = function(...)
+				return RealFont.patch(GuideText(...))
+			end
+			local page = loaded.env.CreateFrame("Frame", nil, loaded.env.UIParent)
+			page:SetSize(442, 546)
+			local made = ns.NewGuideBindingField(page, action or "PAGLE_FISHING_KEY", label or "Fishing key")
+			assert.are.same({}, loaded.client.errors)
+			return made, ns.L
+		end
+
+		-- The dashed cap's words of a Fishing key field, as `unbound` makes it.
+		local function waiting(language, wider)
+			return unbound(language, wider).waitWords
+		end
+
+		-- The Casting page's Fishing key field and the Fishing clothes page's Swap gear field, as `unbound` makes
+		-- them, each labelled as its page labels it (SETTINGS_FISHING_KEY, SETTINGS_SWAP_GEAR: Pagle_QoL's strings).
+		local FIELDS = {
+			PAGLE_FISHING_KEY = {
+				ruRU = "Клавиша рыбалки",
+				enUS = "Fishing key",
+				deDE = "Angeltaste",
+				esES = "Tecla de pesca",
+			},
+			PAGLE_SWAP_GEAR = {
+				ruRU = "Переодеться",
+				enUS = "Swap gear",
+				deDE = "Ausrüstung wechseln",
+				esES = "Cambiar equipo",
+			},
+		}
+
+		-- Where the note's top stands under the field's (its one anchor, TOPRIGHT on the field's TOPLEFT).
+		local function noteTop(note)
+			return -note.points[1][5]
+		end
+
+		after_each(function()
+			RealFont.width = width
+		end)
+
+		it("onb_r40 sets ruRU's words smaller until they take two lines in the cap, whole", function()
+			for _, wider in ipairs({ false, 1.1 }) do
+				local words = waiting("ruRU", wider or nil)
+				local layout = RealFont.layout(words)
+				local times = ("%s times the stand-in"):format(wider or 1)
+
+				assert(layout.cut == nil, ("%s at %s, %s"):format(tostring(layout.cut), layout.size, times))
+				assert.are.equal(2, #layout.lines)
+				assert(layout.size < 14 and layout.size >= 10.5, ("set at %s, %s"):format(layout.size, times))
+			end
+		end)
+
+		it("onb_r40 lets ruRU's note take a third line at its least size, whole and inside the field", function()
+			for action, labels in pairs(FIELDS) do
+				for _, wider in ipairs({ false, 1.1 }) do
+					local made = unbound("ruRU", wider or nil, action, labels.ruRU)
+					local layout = RealFont.layout(made.note)
+					local times = ("%s, %s times the stand-in"):format(action, wider or 1)
+
+					assert(layout.cut == nil, ("%s at %s, %s"):format(tostring(layout.cut), layout.size, times))
+					assert(#layout.lines == 3, ("%d lines, %s"):format(#layout.lines, times))
+					assert.are.equal(10.5, layout.size)
+					assert.are.equal(3, made.note:GetMaxLines())
+					-- the three lines stand inside the field's 62, clear of its 8 edge
+					local top = noteTop(made.note)
+					assert(
+						top >= 8 and top + layout.height <= 62 - 8,
+						("%s to %s, %s"):format(top, top + layout.height, times)
+					)
+				end
+			end
+		end)
+
+		it("onb_r40 keeps the note where it was, on at most two lines, in enUS, deDE and esES", function()
+			for action, labels in pairs(FIELDS) do
+				for _, language in ipairs({ "enUS", "deDE", "esES" }) do
+					local made = unbound(language, nil, action, labels[language])
+					local layout = RealFont.layout(made.note)
+					assert(#layout.lines <= 2, ("%s %s: %d lines"):format(language, action, #layout.lines))
+					assert.is_nil(layout.cut)
+					assert.are.equal(2, made.note:GetMaxLines())
+					assert.are.equal(22.3 + 2.275, noteTop(made.note))
+				end
+			end
+		end)
+
+		it("onb_r40 leaves the words at 14 on one line in enUS, deDE and esES", function()
+			for _, language in ipairs({ "enUS", "deDE", "esES" }) do
+				local layout = RealFont.layout(waiting(language))
+				assert.are.equal(14, layout.size)
+				assert.are.equal(1, #layout.lines)
+				assert.is_nil(layout.cut)
+			end
+		end)
 	end)
 end)
 
