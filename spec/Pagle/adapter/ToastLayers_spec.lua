@@ -360,6 +360,97 @@ describe("a toast in a composed toast style", function()
 		end)
 	end
 
+	-- A toast in `styleID` naming a fish 40 letters long (240 at the fake's 6 a letter), with one stamp and 5 Coins: it
+	-- fits the room before the Coins, but not the room before the art over its end. With `still`, drawn standing still on
+	-- a stage as the Field guide's Moments sample is (ONB-R34), else pushed to the lanes.
+	local function longNamed(loaded, styleID, still)
+		local function raised(moment)
+			moment.kind, moment.module, moment.moduleTitle, moment.moduleOrder, moment.raised =
+				"spec", "Pagle", "Pagle", 0, 0
+			return moment
+		end
+		local announcement = loaded.ns.MakeAnnouncement({
+			raised({
+				rung = "toast",
+				title = "New Species",
+				text = "Nightfin Snapper of the Far Southern Seas",
+				coins = 5,
+			}),
+			raised({ rung = "nod", title = "Rank up" }),
+		}) --[[@as PagleAnnouncement]]
+		announcement.style = styleID
+		if still then
+			local stage = loaded.env.CreateFrame("Frame", nil, loaded.env.UIParent)
+			return loaded.ns.DrawStillAnnouncement(stage, "toast", announcement)
+		end
+		loaded.ns.lanes:Push(announcement)
+		loaded.client.advance(0)
+		return loaded.ns.announcementFrames.toast
+	end
+
+	-- The layer of the rung named `name`.
+	local function layerOf(rung, name)
+		for _, layer in ipairs(rung.layers) do
+			if layer.name == name then
+				return layer
+			end
+		end
+		error("no layer " .. name)
+	end
+
+	for _, case in ipairs({
+		{ "ledger.toaststyle.koi", "fx1", "Ink and Koi's koi" },
+		{ "ledger.toaststyle.crier", "front", "the Town Crier's Proclamation's seal on its ribbons" },
+	}) do
+		local styleID, layerName, what = case[1], case[2], case[3]
+
+		it(
+			"ends the name line's room 8 before "
+				.. what
+				.. ", drawn over the words where it rests, so a long name scrolls clear of it (#592, ANN-R82, ANN-R101)",
+			function()
+				local loaded = composedCore()
+				local rung = artOf(loaded, styleID, "toast")
+				local art = layerOf(rung, layerName)
+				assert(rung.text.x + 240 > art.x, "the name ends before the art: the spec needs a longer one")
+
+				local toast = longNamed(loaded, styleID)
+				loaded.client.update(7.1)
+
+				assert(toast.nameScroll and toast.nameScroll > 0, "the name scrolls")
+				assert.is_true(near(art.x - 8, rung.text.x - 4 + toast.nameClip:GetWidth()))
+			end
+		)
+
+		it(
+			"holds the name to that room on a still sample, as the Field guide's Moments toast is (#592, ONB-R34)",
+			function()
+				local loaded = composedCore()
+				local rung = artOf(loaded, styleID, "toast")
+				local art = layerOf(rung, layerName)
+
+				local toast = longNamed(loaded, styleID, true)
+
+				assert.is_nil(toast.nameScroll)
+				assert.is_true(toast.text:GetWidth() <= art.x - 8 - rung.text.x + 1e-6)
+				assert.is_true(rung.text.x - 4 + toast.nameClip:GetWidth() <= art.x - 4 + 1e-6)
+			end
+		)
+	end
+
+	it("leaves a name that ends before Ink and Koi's koi as it was written (#592, ANN-R82)", function()
+		local loaded, M = composedCore()
+		equip(loaded, "ledger.toaststyle.koi")
+
+		raiseStamped(loaded, M)
+		loaded.client.update(7.1)
+
+		local toast = loaded.ns.announcementFrames.toast
+		assert.is_nil(toast.nameScroll)
+		assert.are.same({ "Nightfin Snapper", 16 * 6 }, { toast.text:GetText(), toast.text:GetWidth() })
+		assert.are.equal(16 * 6 + 8, toast.nameClip:GetWidth())
+	end)
+
 	it(
 		"keeps a ruled toast's stamps to one row in a style whose second row would reach down to the ruler's numbers"
 			.. " (#582, ANN-R22, ANN-R82)",

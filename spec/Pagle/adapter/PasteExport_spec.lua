@@ -424,6 +424,41 @@ describe("The Settings root's export button (SET-R10 row 12, SET-R12)", function
 		)
 	end)
 
+	it(
+		"draws the row itself, the button from where a native row's control starts and as wide as its caption, with its"
+			.. " search tags and its tooltip over the row and the button (SET-R5, SET-R10 row 12, #606)",
+		function()
+			local loaded = loadCore(history(2, FIRST))
+			-- 37 characters: 222 wide in the fake, past a native button's 200 with its padding
+			loaded.ns.L.SETTINGS_PASTE_BUTTON = "Copy the whole Catch log for the site"
+			enterWorld(loaded, 2)
+
+			local _, row = websiteRows(loaded)
+
+			local button = loaded.client.settings.buttonsOf(row.frame)[1]
+			assert.are.equal("PagleSettingsRowTemplate", row.initializer.template)
+			assert.are.equal("Copy the whole Catch log for the site", button.text)
+			assert.are.equal(37 * 6 + 24, button:GetWidth())
+			assert.are.same({ "TOPLEFT", row.frame, "TOP", -40, 3 }, { button:GetPoint() })
+			assert.are.same({ "CATCH LOG", "COPY THE WHOLE CATCH LOG FOR THE SITE" }, row.initializer.searchTags)
+			-- its label in a native row's face
+			local label
+			for _, child in ipairs(row.frame.children) do
+				if child.kind == "FontString" and child.shown and child.text == "Catch log" then
+					label = child
+				end
+			end
+			assert.are.equal("GameFontNormal", assert(label).fontObject)
+			-- the tooltip, as a native button row shows it: its label, then its line, over the row and the button
+			local tip = "Copy your Catch log as a Paste string, to paste on the Pagle website without the Companion."
+			for _, region in ipairs({ row.frame, button }) do
+				region:GetScript("OnEnter")(region)
+				assert.are.same({ "Catch log", tip }, loaded.client.tooltipLines())
+				region:GetScript("OnLeave")(region)
+			end
+		end
+	)
+
 	it("closes the Settings panel first, then opens the window", function()
 		local loaded = withCasts(2)
 		local Pagle = loaded.env.Pagle

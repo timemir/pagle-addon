@@ -9,10 +9,14 @@ local PARAGRAPH =
 -- Oak (default), Lapis (tier 3) and Ivy (tier 1), and with two zone crests in Core's crest slot, earned goods
 -- (SHOP-R23): The Old Oak, earned, and The Desert Sun, not. `options.saved` is a PagleDB; `options.noLedger` leaves the Ledger
 -- unregistered (off); `options.hunts` registers Hunts (order 20) with a Trackers slot; `options.collection` is the
--- Ledger's def.collection (CORE-R45). Returns the loaded addon.
+-- Ledger's def.collection (CORE-R45); `options.L` replaces Core's strings before its pages are built. Returns the
+-- loaded addon.
 local function coreWithModules(options)
 	options = options or {}
 	local loaded = loadCore(nil, options.saved)
+	for key, text in pairs(options.L or {}) do
+		loaded.ns.L[key] = text
+	end
 	local Pagle = loaded.env.Pagle
 	if not options.noLedger then
 		local ledger = Pagle.RegisterModule({
@@ -62,7 +66,7 @@ local function showLook(loaded)
 end
 
 -- Each shown row as one line: a header "# <name>", a paragraph's text, a slot dropdown "<label> = <selected good>"
--- then its note "  <note>" while shown, a button row "<label> [<caption>]".
+-- then its note "  <note>" while shown, a button row "<label> [<caption>]", whether Blizzard's or Core's own (#606).
 local function lines(rows, settings)
 	local out = {}
 	for _, row in ipairs(rows) do
@@ -74,7 +78,10 @@ local function lines(rows, settings)
 			for _, text in ipairs(settings.notesOf(row)) do
 				out[#out + 1] = "  " .. text
 			end
-		elseif initializer.template == "SettingButtonControlTemplate" then
+		elseif
+			initializer.template == "SettingButtonControlTemplate"
+			or (initializer:GetName() and settings.buttonsOf(frame)[1])
+		then
 			out[#out + 1] = ("%s [%s]"):format(initializer:GetName(), settings.buttonsOf(frame)[1]:GetText())
 		else
 			for _, text in ipairs(settings.textsOf(frame)) do
@@ -479,6 +486,54 @@ describe("The Collection button", function()
 		assert.are.equal(1, #loaded.client.errors)
 		assert.matches("no Collection today", loaded.client.errors[1])
 	end)
+end)
+
+-- More looks' button rows, which Core draws itself as a native button row looks (SET-R5, SET-R50, #606): a native
+-- button is a fixed 200 wide, and a longer caption ran past both its sides.
+describe("More looks' button rows", function()
+	for _, case in ipairs({
+		{ label = "Buy more looks with Pagle Coins", key = "SETTINGS_SHOP_BUTTON" },
+		{ label = "Every look, and how to earn it", key = "SETTINGS_COLLECTION_BUTTON", collection = true },
+	}) do
+		it(
+			("draws %q itself, the button from where a native row's control starts and as wide as its caption, found by"):format(
+				case.label
+			) .. " its label and caption, its label alone over the row and the button (SET-R5, SET-R50, #606)",
+			function()
+				-- 37 characters: 222 wide in the fake, past a native button's 200 with its padding
+				local loaded = coreWithModules({
+					collection = case.collection and function() end or nil,
+					L = { [case.key] = "Open it all, every last look and coin" },
+				})
+
+				local row = loaded.client.settings.rowNamed(showLook(loaded), case.label)
+
+				local button = loaded.client.settings.buttonsOf(row.frame)[1]
+				assert.are.equal("PagleSettingsRowTemplate", row.initializer.template)
+				assert.are.equal("Open it all, every last look and coin", button.text)
+				assert.are.equal(37 * 6 + 24, button:GetWidth())
+				assert.are.same({ "TOPLEFT", row.frame, "TOP", -40, 3 }, { button:GetPoint() })
+				assert.are.same(
+					{ case.label:upper(), "OPEN IT ALL, EVERY LAST LOOK AND COIN" },
+					row.initializer.searchTags
+				)
+				assert.is_nil(row.initializer:GetTooltip())
+				local label
+				for _, child in ipairs(row.frame.children) do
+					if child.kind == "FontString" and child.shown and child.text == case.label then
+						label = child
+					end
+				end
+				assert.are.equal("GameFontNormal", assert(label).fontObject)
+				-- no tooltip line: the label alone, as a native row with none shows it
+				for _, region in ipairs({ row.frame, button }) do
+					region:GetScript("OnEnter")(region)
+					assert.are.same({ case.label }, loaded.client.tooltipLines())
+					region:GetScript("OnLeave")(region)
+				end
+			end
+		)
+	end
 end)
 
 describe("The Curio Shop button", function()

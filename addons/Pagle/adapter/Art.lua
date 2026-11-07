@@ -769,7 +769,7 @@ local NAME_PAGES = {
 	["ledger.toaststyle.hall"] = { toast = 0.075, ["toast-ruled"] = 0.112, high = 0.076, nod = 0.108 },
 	["ledger.toaststyle.hex"] = { toast = 0.036, ["toast-ruled"] = 0.022, high = 0.029, nod = 0.096 },
 	["ledger.toaststyle.ice"] = { toast = 0.459, ["toast-ruled"] = 0.718, high = 0.467, nod = 0.659 },
-	["ledger.toaststyle.koi"] = { toast = 0.419, ["toast-ruled"] = 0.622, high = 0.431, nod = 0.558 },
+	["ledger.toaststyle.koi"] = { toast = 0.457, ["toast-ruled"] = 0.622, high = 0.455, nod = 0.558 },
 	["ledger.toaststyle.legend"] = { toast = 0.645, ["toast-ruled"] = 0.714, high = 0.643, nod = 0.680 },
 	["ledger.toaststyle.lion"] = { toast = 0.452, ["toast-ruled"] = 0.761, high = 0.499, nod = 0.709 },
 	["ledger.toaststyle.prestige"] = { toast = 0.027, ["toast-ruled"] = 0.029, high = 0.030, nod = 0.032 },
