@@ -1,5 +1,17 @@
 # Pagle
 
+## 1.5.0 (2026-11-08)
+
+Put the Pagle button anywhere.
+
+### Added
+
+- Settings › Pagle › "Detach from the minimap" takes the Pagle button off the minimap's edge. Drag it anywhere on your screen; it stays where you put it, even after a reload or a change of UI scale. Untick it to put the button back on the minimap. "Show the minimap icon" still hides it completely, and Pagle's menu stays in the game's add-on button either way. (#636)
+
+### TRANSLATORS
+
+- Español: fmartingr
+
 ## 1.4.0 (2026-11-07)
 
 New leaderboards on pagle.app.
