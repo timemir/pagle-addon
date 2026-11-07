@@ -1,5 +1,13 @@
 # Pagle
 
+## 1.4.0 (2026-11-07)
+
+New leaderboards on pagle.app.
+
+### Changed
+
+- Pagle now tells pagle.app how many Tackle Board tasks and Pagle Wagers you've completed, so they get their own leaderboards, all-time and monthly. Your whole history counts, not just what you do from now on. Nothing changes in the game. (#633)
+
 ## 1.3.5 (2026-11-07)
 
 Russian fits everywhere.
