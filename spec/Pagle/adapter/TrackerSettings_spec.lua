@@ -59,16 +59,13 @@ describe("The Trackers page's frame row", function()
 
 		enterWorld(loaded)
 
-		assert.are.same(
-			{
-				"Tracker position",
-				"Show trackers only while fishing",
-				"Hunts",
-				"Show the Hunts tracker",
-				"Hunts tracker frame",
-			},
-			names(showTrackers(loaded))
-		)
+		assert.are.same({
+			"Tracker position",
+			"Show trackers only while fishing",
+			"Hunts",
+			"Show the Hunts tracker",
+			"Hunts tracker frame",
+		}, names(showTrackers(loaded)))
 	end)
 
 	it("is the slot dropdown, listing only the slot's owned goods (SET-R44, SET-R51, SHOP-R30)", function()
