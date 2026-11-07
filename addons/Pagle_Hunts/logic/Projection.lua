@@ -409,6 +409,22 @@ function ns.TicketsEarned(state)
 	return state.tickets
 end
 
+--- A Hunts state's completed runs (HNT-R146): the `completedAt` of each known run that is completed, whatever its
+--- source, rotation or pushed, ascending, so one per run the completed-run count counts (HNT-R148); an empty list with
+--- none. A new list, never the state's. For Pagle's backend (pagle-backend PRJ-R103), read after done.
+---@param state HuntsState
+---@return integer[]
+function ns.RunsCompleted(state)
+	local times = {}
+	for _, run in pairs(state.runs or {}) do
+		if run.completedAt then
+			times[#times + 1] = run.completedAt
+		end
+	end
+	table.sort(times)
+	return times
+end
+
 ---@class HuntsJournalHunt
 ---@field id string
 ---@field set string

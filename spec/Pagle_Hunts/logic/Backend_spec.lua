@@ -1,5 +1,5 @@
 -- Hunts' projection for Pagle's backend (#223): ns.BindProjections, ns.CoinsEarned, ns.ActivityXPEarned (#76 item
--- 15) and ns.JournalValues with the Pagle Wagers ladder (logic/Projection.lua; HNT-R178), on
+-- 15), ns.RunsCompleted (HNT-R146) and ns.JournalValues with the Pagle Wagers ladder (logic/Projection.lua; HNT-R178), on
 -- FakePagle over the fixture Hunt list and catalogue. The backend's driver folds the Catch log through logic/ alone
 -- (spec/logic_alone_spec.lua), so the binding must fold the Hunts as the client's projection does.
 
@@ -190,6 +190,69 @@ describe("Hunts' projection for the backend (#223)", function()
 		local reported = client.global.tickets.earned.Hunts
 		assert.are.equal(reported, ns.TicketsEarned(state))
 		assert.is_true(reported > 0)
+	end)
+
+	describe("the completed runs (HNT-R146, HNT-R148, from 1.4)", function()
+		local PUSHED_START = hunts.at(12, 0)
+		local LATER_START = hunts.at(20, 0)
+
+		-- poolRun's rotation run, then a pushed run of fixture_vale completed by one Cast in Elwynn with an Oily
+		-- Blackmouth and an uncommon item, then a later rotation run of fixture_shore with only a Deviate Fish: logged
+		-- and fished, never completed.
+		---@param fake table
+		local function threeRuns(fake)
+			poolRun(fake)
+			append(fake, {
+				hunts.record(
+					"run",
+					hunts.runPayload("fixture_vale", PUSHED_START, PUSHED_START + 3 * 86400, "p"),
+					PUSHED_START
+				),
+				cast(12, DAY, { zone = C.ELWYNN }, { C.BLACKMOUTH, C.UNCOMMON }),
+				hunts.record(
+					"run",
+					hunts.runPayload("fixture_shore", LATER_START, LATER_START + 3 * 86400),
+					LATER_START
+				),
+				cast(20, DUSK, DARKSHORE, { C.DEVIATE }),
+			})
+		end
+
+		it("gives the completedAt of the one completed run: the Nightfin's Cast that completed it", function()
+			local state, ns = foldByDriver(driverFake(poolRun))
+
+			assert.are.same({ hunts.at(10, NIGHT) }, ns.RunsCompleted(state))
+		end)
+
+		it("gives none with no run completed, as an empty list", function()
+			local bound, ns = boundByBackend()
+
+			assert.are.same({}, ns.RunsCompleted(bound:GetState() --[[@as HuntsState]]))
+		end)
+
+		it("gives rotation and pushed runs alike, ascending, and leaves out a run not completed", function()
+			local state, ns = foldByDriver(driverFake(threeRuns))
+
+			assert.are.equal("p", state.runs["fixture_vale@" .. PUSHED_START].source)
+			assert.is_truthy(state.runs["fixture_shore@" .. LATER_START])
+			assert.are.same({ hunts.at(10, NIGHT), hunts.at(12, DAY) }, ns.RunsCompleted(state))
+		end)
+
+		it("gives one per run the completed-run count counts, as the client's projection holds it", function()
+			local client = login(threeRuns)
+			local state, ns = foldByDriver(driverFake(threeRuns))
+
+			assert.are.same(client.ns.State(), state)
+			assert.are.equal(state.settled, #ns.RunsCompleted(state))
+		end)
+
+		it("hands out a new list: changing it leaves the state as it was", function()
+			local state, ns = foldByDriver(driverFake(poolRun))
+
+			ns.RunsCompleted(state)[1] = 0
+
+			assert.are.equal(hunts.at(10, NIGHT), state.runs[RUN_KEY].completedAt)
+		end)
 	end)
 
 	it("counts a title a retirement completed by the server time, as the client's done does (HNT-R23)", function()
