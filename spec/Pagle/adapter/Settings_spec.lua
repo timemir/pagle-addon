@@ -1047,7 +1047,7 @@ describe("A Module's button row", function()
 			local label = ("Save what I'm wearing as my fishing set, all of it "):rep(2):sub(1, 55)
 			registerQoL(loaded):AddSetting("trackers", { kind = "button", label = label, onClick = function() end })
 			loaded.client.fire("PLAYER_LOGIN")
-			local frame = loaded.client.settings.show(loaded.client.settings.page("Trackers"))[3].frame
+			local frame = loaded.client.settings.show(loaded.client.settings.page("Trackers"))[4].frame
 
 			local button = loaded.client.settings.buttonsOf(frame)[1]
 			assert.are.equal("GameFontNormalSmall", button.normalFontObject)
@@ -1069,7 +1069,7 @@ describe("A Module's button row", function()
 			local label = ("Save what I'm wearing as my fishing set, all of it "):rep(2):sub(1, 80)
 			registerQoL(loaded):AddSetting("trackers", { kind = "button", label = label, onClick = function() end })
 			loaded.client.fire("PLAYER_LOGIN")
-			local frame = loaded.client.settings.show(loaded.client.settings.page("Trackers"))[3].frame
+			local frame = loaded.client.settings.show(loaded.client.settings.page("Trackers"))[4].frame
 
 			local button = loaded.client.settings.buttonsOf(frame)[1]
 			local text = button:GetFontString()
@@ -1091,10 +1091,10 @@ describe("A Module's button row", function()
 		loaded.client.fire("PLAYER_LOGIN")
 		local rows = loaded.client.settings.show(loaded.client.settings.page("Trackers"))
 
-		-- the panel's list hands the long row's frame to the short row
-		local frame = rows[3].frame
-		rows[3].initializer:Resetter(frame)
-		rows[4].initializer:InitFrame(frame)
+		-- the panel's list hands the long row's frame to the short row (after Core's two rows and the QoL header)
+		local frame = rows[4].frame
+		rows[4].initializer:Resetter(frame)
+		rows[5].initializer:InitFrame(frame)
 
 		local button = loaded.client.settings.buttonsOf(frame)[1]
 		assert.are.equal("Save my set", button.text)
