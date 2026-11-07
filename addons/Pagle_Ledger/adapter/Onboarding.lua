@@ -67,6 +67,19 @@ local function fit(label, face, size, hex, room)
 	return label
 end
 
+-- As fit, from the label's own `size` again: a label refilled with shorter words is set back at its size.
+---@param label FontString
+---@param face LedgerArtFace
+---@param size number
+---@param hex string
+---@param room number
+---@return FontString
+local function refit(label, face, size, hex, room)
+	label:SetFontObject(ns.JournalFont(face, size))
+	label:SetTextColor(ns.JournalRGB(hex))
+	return fit(label, face, size, hex, room)
+end
+
 -- Places a guide part (a sprite of the guide's atlas, `nav.Part`'s) so its drawn element's top left is at (x, y).
 ---@param part Texture
 ---@param parent Frame
@@ -92,6 +105,9 @@ local BOX_Y, ROW_H, ROW_H_FOUR = 125.7, 50, 40
 -- words end above FOOT_TOP, clear of Core's foot (the skip link and Next », ONB-R23): a note that would pass it is
 -- written across the column instead, fewer lines, and lifted to end there if it still would.
 local BODY_GAP, NOTE_DROP, NOTE_GAP, FOOT_TOP = 8, 46.3, 14, 486
+-- The box's right edge for its words (its XP and "read just now" end there), and the least room a row's title and the
+-- heading keep before them: a longer one is set smaller, then cut short (#592).
+local BOX_RIGHT, BOX_GAP = 397, 10
 
 --- One line of the box: its mark, title, line and XP, and the dots under it.
 ---@class LedgerGuideRowView
@@ -111,6 +127,7 @@ local BODY_GAP, NOTE_DROP, NOTE_GAP, FOOT_TOP = 8, 46.3, 14, 486
 ---@field crest LedgerPrestigeFrameWidget
 ---@field since FontString
 ---@field heading FontString
+---@field readNow FontString
 ---@field fill Texture
 ---@field shadow Texture
 ---@field edges Texture[]
@@ -154,6 +171,7 @@ end
 local function fillBox(view, page)
 	local right = view.right
 	view.heading:SetText(page.heading)
+	refit(view.heading, "sc", 15, INK.title, BOX_RIGHT - view.readNow:GetStringWidth() - BOX_GAP - 45)
 	local pitch = #page.rows >= 4 and ROW_H_FOUR or ROW_H
 	local height = 37 + #page.rows * pitch + 9
 	view.fill:SetSize(W, height)
@@ -186,9 +204,13 @@ local function fillBox(view, page)
 			row.title:SetText(data.title)
 			ns.JournalAt(row.line, right, 71, y + 28.7)
 			row.line:SetText(data.line)
+			refit(row.line, "italic", 12.5, LINE_INK, BOX_RIGHT - 71)
 			row.xp:ClearAllPoints()
-			row.xp:SetPoint("TOPRIGHT", right, "TOPLEFT", 397, -(y + 8))
+			row.xp:SetPoint("TOPRIGHT", right, "TOPLEFT", BOX_RIGHT, -(y + 8))
 			row.xp:SetText(data.xp or "")
+			-- the title ends before the XP: a longer one is set smaller, then cut short, never under it
+			local xpWidth = data.xp and row.xp:GetStringWidth() + BOX_GAP or 0
+			refit(row.title, "print", 15, INK.title, BOX_RIGHT - xpWidth - 71)
 			row.xp:SetTextColor(ns.JournalRGB(data.credited and INK.red or SINCE_INK))
 			if i < #page.rows then
 				row.dots:Lay(45, y + pitch - 0.5, 352)
@@ -254,7 +276,7 @@ function ns.DrawGuideLedgerStep(left, right, nav)
 		edges[i] = ns.JournalTint(right, INK.rule, 1, "BORDER", 1)
 	end
 	local heading = text(right, "sc", 15, INK.title, "", 45, boxY + 15.3)
-	text(right, "italic", 12.5, RULE_INK, L.GUIDE_READ_NOW, 397, boxY + 16, { right = true })
+	local readNow = text(right, "italic", 12.5, RULE_INK, L.GUIDE_READ_NOW, BOX_RIGHT, boxY + 16, { right = true })
 	local hr = ns.JournalTint(right, INK.rule, 1)
 	hr:SetSize(352, 1)
 	ns.JournalAt(hr, right, 45, boxY + 36.3)
@@ -278,6 +300,7 @@ function ns.DrawGuideLedgerStep(left, right, nav)
 		crest = crest,
 		since = since,
 		heading = heading,
+		readNow = readNow,
 		fill = fill,
 		shadow = shadow,
 		edges = edges,

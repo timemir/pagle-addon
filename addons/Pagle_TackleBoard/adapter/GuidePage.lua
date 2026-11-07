@@ -36,6 +36,9 @@ local TERM_INK, ASIDE_INK = "3E220C", "6A4A28"
 -- follows a text that can wrap is laid from its measured foot, so a longer translation pushes it down instead of
 -- running into it. The facts and Start my board keep the kit's places while their words are the kit's length.
 local BODY_GAP, FACT_GAP, START_GAP = 10, 5, 6
+-- The Campfire's and the Fly Box's lines' tops beside their samples, and the least room under the Campfire's before
+-- the Fly Box's: a Campfire line that wraps longer pushes the Fly Box, its line with it, down (#592).
+local FIRE_TEXT_Y, BOX_TEXT_Y, SIDE_GAP = 271.5, 366.9, 8
 -- How small a line held to its room may be set, as a share of its size: past that the client cuts it short with "...".
 local FIT_FLOOR = 0.75
 -- The room the Fly Box's name keeps on the box's plate, centred on it (the box is 214 wide).
@@ -337,15 +340,17 @@ local function buildLeft(left, nav)
 	local page = {
 		notices = drawNotices(left, nav, sample, down),
 		fire = drawFire(left, nav, sample, down),
-		box = drawBox(left, nav, sample, down),
 	}
 	local campfire = ns.Text(L.GUIDE_CAMPFIRE, {
 		campfire = inked(TERM_INK, L.GUIDE_CAMPFIRE_TERM),
 		kindling = inked(TERM_INK, L.GUIDE_KINDLING_TERM),
 	})
-	write(left, "GuideSide", campfire, 184, 271.5 + down, 18.9, 228)
+	local fireY = FIRE_TEXT_Y + down
+	local fireText = write(left, "GuideSide", campfire, 184, fireY, 18.9, 228)
+	local boxDown = down + math.max(0, below(fireText, "GuideSide", fireY, 18.9) + SIDE_GAP - (BOX_TEXT_Y + down))
+	page.box = drawBox(left, nav, sample, boxDown)
 	local flyBox = ns.Text(L.GUIDE_FLY_BOX, { flybox = inked(TERM_INK, L.FLY_BOX) })
-	write(left, "GuideSide", flyBox, 184, 366.9 + down, 18.9, 228)
+	write(left, "GuideSide", flyBox, 184, BOX_TEXT_Y + boxDown, 18.9, 228)
 	return page --[[@as TackleGuidePage]]
 end
 
