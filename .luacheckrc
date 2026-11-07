@@ -463,5 +463,7 @@ files["spec/**"] = { std = "lua51+busted", read_globals = helperGlobals }
 files["spec/support/*.lua"] = { globals = helperGlobals }
 -- The layout harness (scripts/measure-layout.sh) runs its tour under busted, with the specs' helper behind its own.
 files["scripts/measure-layout/**"] = { std = "lua51+busted", read_globals = helperGlobals }
+-- The name pages' probe (scripts/measure-name-pages.py, #582) draws every toast style under busted the same way.
+files["scripts/measure-name-pages/**"] = { std = "lua51+busted", read_globals = helperGlobals }
 -- Backend-generated Recovery data fixture sets exactly the data addon's one global.
 files["spec/Pagle/fixtures/Recovery.lua"] = { globals = { "PagleRecoveryData" } }

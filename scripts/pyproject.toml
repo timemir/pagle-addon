@@ -31,6 +31,7 @@ files = [
     "scripts/render-crate-sounds.py",
     "scripts/launch.py",
     "scripts/measure-layout.py",
+    "scripts/measure-name-pages.py",
 ]
 python_version = "3.12"
 strict = true

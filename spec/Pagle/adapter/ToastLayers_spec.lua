@@ -732,8 +732,9 @@ describe("a toast announcing a variety in a composed toast style (#424, VAR-R26,
 	end
 
 	it(
-		"shows the art in the medallion, tints its front and back in the rarity's colour, writes the gem and name and"
-			.. " inks the stamp's plate, its word cream on it (#582), the band beside the ruler (VAR-R26, ANN-R22)",
+		"shows the art in the medallion, tints its front and back in the rarity's colour, writes the gem and name, the"
+			.. " name light on the Deep Lure's dark page (#582, 1.2.3), and inks the stamp's plate, its word cream on it"
+			.. " (#582), the band beside the ruler (VAR-R26, ANN-R22)",
 		function()
 			local loaded, M = composedCore()
 			equip(loaded, DEEP)
@@ -755,9 +756,11 @@ describe("a toast announcing a variety in a composed toast style (#424, VAR-R26,
 				toast.variety:GetText(),
 				toast.gem.shown,
 			})
+			-- The Deep Lure writes light on its dark page: the name is Rare's blue lifted toward white, not its dark ink.
+			local name = toast.variety.textColor
 			assert.are.same(
-				{ rgb(rare.ink), rgb(rare.color) },
-				{ rgb(toast.variety.textColor), rgb(toast.gem.fill.color) }
+				{ true, true, rgb(rare.color) },
+				{ name[3] > name[2] and name[2] > name[1], name[1] > rare.color[1], rgb(toast.gem.fill.color) }
 			)
 			local stamp = toast.stamps[1]
 			assert.are.same(
@@ -856,6 +859,187 @@ describe("a toast announcing a variety in a composed toast style (#424, VAR-R26,
 				end
 				loaded.client.advance(10)
 			end
+		end
+	)
+
+	-- An ink's WCAG relative luminance, and its contrast ratio with a page of relative luminance `page`.
+	local function relative(color)
+		local linear = {}
+		for i = 1, 3 do
+			local c = color[i]
+			linear[i] = c <= 0.03928 and c / 12.92 or ((c + 0.055) / 1.055) ^ 2.4
+		end
+		return luminance(linear)
+	end
+	local function onPage(color, page)
+		local l = relative(color)
+		return (math.max(l, page) + 0.05) / (math.min(l, page) + 0.05)
+	end
+
+	-- Whether `color` is `base` moved toward `target` (white or black), every channel by one share of the way, so its
+	-- hue is kept.
+	local function toward(color, base, target)
+		local share
+		for i = 1, 3 do
+			if math.abs(target[i] - base[i]) > 1e-6 then
+				local this = (color[i] - base[i]) / (target[i] - base[i])
+				if this < -1e-3 or this > 1 + 1e-3 or (share and math.abs(this - share) > 0.01) then
+					return false
+				end
+				share = share or this
+			elseif math.abs(color[i] - base[i]) > 1e-3 then
+				return false
+			end
+		end
+		return true
+	end
+
+	-- The rarity's colour lifted toward white until its relative luminance is 0.55, as VAR-R28 gives it.
+	local function lifted(color)
+		local function at(share)
+			return {
+				color[1] + (1 - color[1]) * share,
+				color[2] + (1 - color[2]) * share,
+				color[3] + (1 - color[3]) * share,
+			}
+		end
+		if relative(color) >= 0.55 then
+			return color
+		end
+		local low, high = 0, 1
+		for _ = 1, 30 do
+			local share = (low + high) / 2
+			if relative(at(share)) >= 0.55 then
+				high = share
+			else
+				low = share
+			end
+		end
+		return at(high)
+	end
+
+	-- The variety's name a frame shows once the style `id` is drawn on it, and how light that style's page is behind
+	-- the name line there, as adapter/Art.lua's generated NAME_PAGES measured it from the art.
+	local function drawnIn(loaded, frame, id, page)
+		local announcement = frame.display.announcement
+		announcement.style = id
+		loaded.ns.DrawAnnouncement(frame, frame.display)
+		return rgb(frame.variety.textColor), loaded.ns.NamePageLuminance(loaded.ns.ToastStyleOf(id), page)
+	end
+
+	it(
+		"writes the variety's name on the name line in the ink of its hue that reads best on each style's measured page,"
+			.. " at 4.5:1 at least, in every style and rarity, on the toast, ruled and gilt pages and the Nod (#582,"
+			.. " 1.2.3, VAR-R28)",
+		function()
+			local loaded, M = composedCore({ motion = false })
+			local ids = {}
+			for id in pairs(loaded.ns.TOAST_STYLES) do
+				ids[#ids + 1] = id
+			end
+			table.sort(ids)
+			-- Each case raises a toast or Nod naming a variety of the rarity `key`, and returns its frame and its page.
+			local cases = {}
+			function cases.catch(key)
+				loaded.ns.moments:RaiseCatchToast({
+					rung = "toast.low",
+					kind = "catch",
+					title = "Decent · 34.2 cm",
+					text = "Firefin Snapper",
+					nodLine = "Firefin Snapper · Coral · Decent · 34.2 cm",
+					icon = 6359,
+					cast = CAST,
+					variety = {
+						name = "Coral",
+						rarity = key,
+						before = "Firefin Snapper ·",
+						after = "· Decent · 34.2 cm",
+					},
+				})
+				loaded.client.advance(0)
+				return loaded.ns.announcementFrames.toast, "toast"
+			end
+			function cases.ruled(key)
+				return raiseRecord(loaded, M, key), "toast-ruled"
+			end
+			function cases.gilt(key)
+				M:RaiseMoment({
+					rung = "toast.high",
+					kind = "spec",
+					title = "Zone Master",
+					text = "Raw Bristle Whisker Catfish",
+					icon = 6291,
+					cast = CAST,
+				})
+				M:RaiseMoment({
+					rung = "toast.low",
+					kind = "newVariety",
+					title = "New variety",
+					text = "Coral",
+					icon = 6291,
+					cast = CAST,
+					art = ART,
+					variety = { name = "Coral", rarity = key },
+				})
+				loaded.client.advance(0)
+				return loaded.ns.announcementFrames.toast, "high"
+			end
+			-- The catch toast with the Interruption budget spent, stepped down to a Nod (ANN-R31).
+			function cases.nod(key)
+				local budget = loaded.ns.db.profile.announcements.budget
+				budget.count = 0
+				cases.catch(key)
+				budget.count = 40
+				return loaded.ns.announcementFrames.nod, "nod"
+			end
+			local light = 0
+			for _, case in ipairs({ "catch", "ruled", "gilt", "nod" }) do
+				for _, rarity in ipairs(loaded.ns.VARIETY_RARITIES) do
+					local frame, page = cases[case](rarity.key)
+					local label = ("%s, %s"):format(case, rarity.key)
+					assert(frame.variety.shown, label .. ": no variety's name")
+					if page == "nod" then
+						assert.are.equal("nod", frame.display.form, label)
+					else
+						assert.are.equal(page, loaded.ns.ToastPage(frame.display.announcement).page, label)
+					end
+					for _, id in ipairs(ids) do
+						label = ("%s, %s, %s"):format(case, id, rarity.key)
+						local name, behind = drawnIn(loaded, frame, id, page)
+						assert(behind, label .. ": NAME_PAGES has no measure of this page")
+						-- The two inks of its hue VAR-R28 starts from, and the one of them that reads better.
+						local ink, light_ = rgb(rarity.ink), lifted(rarity.color)
+						local better = onPage(light_, behind) > onPage(ink, behind) and light_ or ink
+						if onPage(better, behind) >= 4.5 then
+							for i = 1, 3 do
+								assert(math.abs(better[i] - name[i]) < 1e-4, label .. ": not the better of the two")
+							end
+						else
+							-- One of the two moved on in its hue, the lifted colour lighter or the ink darker, only as
+							-- far as 4.5:1 needs.
+							assert(
+								toward(name, light_, { 1, 1, 1 }) or toward(name, ink, { 0, 0, 0 }),
+								label .. ": not one of the two inks moved on in its hue"
+							)
+							assert(onPage(name, behind) < 4.6, label .. ": moved further than 4.5:1 needs")
+						end
+						assert(
+							onPage(name, behind) >= 4.5,
+							("%s: the name contrasts %.2f with its page (%.3f)"):format(
+								label,
+								onPage(name, behind),
+								behind
+							)
+						)
+						if better == light_ then
+							light = light + 1
+						end
+					end
+					loaded.client.advance(10)
+				end
+			end
+			-- The dark pages take the lifted colour: twenty styles' every page and Nod, in each rarity, and a few more.
+			assert.is_true(light >= 20 * 4 * 4)
 		end
 	)
 
