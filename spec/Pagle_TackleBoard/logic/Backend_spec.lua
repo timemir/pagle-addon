@@ -1,5 +1,5 @@
 -- The Tackle Board's projection for Pagle's backend (#223): ns.BindProjections, ns.CoinsEarned,
--- ns.ActivityXPEarned and ns.TicketsSpent (logic/Projection.lua; #76 item 15; REF-R9), on FakePagle over the fixture catalogue. The backend's driver folds the Catch log through
+-- ns.ActivityXPEarned, ns.TicketsSpent and ns.TasksCompleted (logic/Projection.lua; #76 item 15; REF-R9; TKB-R61), on FakePagle over the fixture catalogue. The backend's driver folds the Catch log through
 -- logic/ alone (spec/logic_alone_spec.lua), so the binding must fold a started board as the client's projection does.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
@@ -100,6 +100,47 @@ describe("the Tackle Board's projection for the backend (#223)", function()
 		local bound, ns = boundByBackend({})
 
 		assert.are.equal(0, ns.ActivityXPEarned(bound:GetState() --[[@as TackleBoardState]]))
+	end)
+
+	describe("the tasks completed (TKB-R61, from 1.4)", function()
+		it("counts the Notice and the Expedition done together: 2", function()
+			local bound, ns = boundByBackend()
+
+			assert.are.equal(2, ns.TasksCompleted(bound:GetState() --[[@as TackleBoardState]]))
+		end)
+
+		it("gives 0 before Start", function()
+			local bound, ns = boundByBackend({})
+
+			assert.are.equal(0, ns.TasksCompleted(bound:GetState() --[[@as TackleBoardState]]))
+		end)
+
+		it(
+			"never counts a rerolled Notice: it was replaced, never done, and its replacement counts once done",
+			function()
+				-- A Notice of five Catches, taken down for a Notice of one, which the next Catch in Durotar completes.
+				local records = board.join(history(), {
+					issue(T + 5, "n;haul;1;10;5;14"),
+					board.reroll(T + 6, board.idAt(T + 5), ONE),
+				})
+				local rerolled, ns = boundByBackend(records)
+				local done, nsDone = boundByBackend(board.join(records, { cast(T + 7, DUROTAR, { BLACKMOUTH }) }))
+
+				local state = rerolled:GetState() --[[@as TackleBoardState]]
+				assert.is_nil(state.goals[board.idAt(T + 5)])
+				assert.is_nil(state.goals[board.idAt(T + 6)].doneDay)
+				assert.are.equal(2, ns.TasksCompleted(state))
+				assert.are.equal(3, nsDone.TasksCompleted(done:GetState() --[[@as TackleBoardState]]))
+			end
+		)
+
+		it("reads the tally the tally plate shows (TKB-R106)", function()
+			local bound, ns = boundByBackend()
+
+			local state = bound:GetState() --[[@as TackleBoardState]]
+			assert.are.equal(state.tally.notices + state.tally.expeditions, ns.TasksCompleted(state))
+			assert.are.same({ notices = 1, expeditions = 1 }, state.tally)
+		end)
 	end)
 
 	it("gives the Journal the 30 Fly Box patterns in pattern order, the last six rare (ANG Journal values)", function()

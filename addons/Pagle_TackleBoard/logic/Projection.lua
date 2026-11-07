@@ -509,6 +509,15 @@ function ns.TicketsSpent(state)
 	return state.ticketsSpent
 end
 
+--- A Tackle Board state's tasks completed for life (TKB-R61): its tally, Notices and Expeditions together, 0 before
+--- Start. For Pagle's backend (pagle-backend PRJ-R103), which reads it after each record. Only a completion adds to the
+--- tally (TKB-R60), so a rerolled Notice, taken down and never done (TKB-R55), is never in it.
+---@param state TackleBoardState
+---@return integer
+function ns.TasksCompleted(state)
+	return state.tally.notices + state.tally.expeditions
+end
+
 --- The Tackle Board's Journal values for Pagle's backend (#223, the Angler page's Journal values): `flies`, the 30
 --- Fly Box patterns in pattern order, each its ID and whether it is one of the rare six (TKB-R62). The tied ones are
 --- in the state itself.
