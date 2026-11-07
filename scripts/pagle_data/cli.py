@@ -3,9 +3,10 @@ removes a Lore.lua whose lore file is gone; --check writes nothing and fails if 
 read-only modes write nothing and print no warning: --propose-aliases prints the alias candidates not yet committed
 (DATA-R32), --min-build <n> the facts that would lose confirmation if only builds >= n counted (DATA-R57), and
 --explain <id> every layer's value for an item or an area and which won, --translators the CHANGELOG's TRANSLATORS block
-from the Locales' headers and --check-changelog <version> whether that release's entry has it (DATA-R114,
-docs/translations.md › Credits). --stale lists the translations whose EN snapshot is not today's English,
---stale-issue <code> prints the body of a Locale's "translations stale" issue, and --drop-stale removes the stale
+from the Locales' headers (with --since <tag>, only the languages whose translations changed since that tag) and
+--check-changelog <version> whether that release's entry credits just the languages whose translations changed since
+the previous release tag (DATA-R114, docs/translations.md › Credits). --stale lists the translations whose EN snapshot
+is not today's English, --stale-issue <code> prints the body of a Locale's "translations stale" issue, and --drop-stale removes the stale
 translations whose {fields} changed from the Locales' TOML and then runs as with no flag (DATA-R114,
 docs/translations.md › Drift and the stale issue). --lock rewrites data/hunts/released.lock
 from the Hunt list and data/forever/varieties.lock from varieties.toml, and writes nothing else (DATA-R95,
@@ -22,7 +23,7 @@ from pathlib import Path
 
 from pagle_data.aliases import proposal_toml
 from pagle_data.baseline import AREA_LOOT
-from pagle_data.credits import CHANGELOG, check_changelog, translators_block
+from pagle_data.credits import CHANGELOG, changed_locales, check_changelog, previous_tag, translators_block
 from pagle_data.db2 import AREAS
 from pagle_data.drift import (
     FIELDS_CHANGED,
@@ -95,13 +96,22 @@ def _parser() -> argparse.ArgumentParser:
         "--translators",
         action="store_true",
         help="write nothing; print the TRANSLATORS block for a release's CHANGELOG entry: one line for each listed"
-        " Locale with translators, from the headers in data/locale/ (DATA-R114)",
+        " Locale with translators, from the headers in data/locale/; with --since TAG, only for those whose"
+        " translations changed since TAG (DATA-R114)",
     )
     modes.add_argument(
         "--check-changelog",
         metavar="VERSION",
-        help=f"write nothing; fail if {CHANGELOG}'s entry for VERSION ships a listed Locale with translators and lacks"
-        " the TRANSLATORS block, or a line of it (DATA-R114); run it before the tag",
+        help=f"write nothing; fail if {CHANGELOG}'s entry for VERSION lacks the TRANSLATORS block, or a line of it, for"
+        " a listed Locale with translators whose translations changed since the previous release tag, or credits one"
+        " whose translations did not (DATA-R114); with no tag before VERSION, every such Locale is wanted. Run it"
+        " before the tag",
+    )
+    parser.add_argument(
+        "--since",
+        metavar="TAG",
+        help="with --translators or --check-changelog: the release to compare data/locale/<code>/ and"
+        " data/lore/<code>/ with (--check-changelog's default: the greatest release tag below VERSION) (DATA-R114)",
     )
     modes.add_argument(
         "--stale",
@@ -291,12 +301,41 @@ def _listed_before(root: Path, base: str | None) -> dict[str, bool] | None:
         raise DataError([f"the base for the coverage rule, {ref}: {error}"]) from error
 
 
+def _check_changelog(root: Path, layers: Layers, version: str, since: str | None) -> int:
+    """--check-changelog: judges the entry against the languages changed since `since`, or since the release tag before
+    `version`; with neither, against every listed Locale with translators (DATA-R114)."""
+    since = since if since is not None else previous_tag(root, version)
+    changed = None
+    if since is None:
+        print(
+            f"{PROG}: no release tag before {version}, so every listed language with translators is credited",
+            file=sys.stderr,
+        )
+    else:
+        try:
+            changed = changed_locales(root, since)
+        except LookupError as error:
+            print(f"{PROG}: --check-changelog against {since}: {error}", file=sys.stderr)
+            return 1
+    problems = Problems()
+    check_changelog(root, layers.locale.headers, version, problems, changed, since)
+    if problems.found:
+        for problem in problems.found:
+            print(f"{PROG}: {problem}", file=sys.stderr)
+        return 1
+    against = "every listed language" if since is None else f"the languages whose translations changed since {since}"
+    print(f"{PROG}: {CHANGELOG}'s entry for {version} credits the translators of {against} (DATA-R114)")
+    return 0
+
+
 def main(argv: Sequence[str], root: Path) -> int:
     """Runs the command line on the repo at root; returns the exit code."""
     parser = _parser()
     args = parser.parse_args(argv)
     if args.json and not (args.stale or args.stale_issue is not None):
         parser.error("--json goes with --stale or --stale-issue")
+    if args.since is not None and not (args.translators or args.check_changelog is not None):
+        parser.error("--since goes with --translators or --check-changelog")
     if args.stale or args.stale_issue is not None or args.drop_stale:
         # DATA-R114: a tree with a stale string fails the generator's checks, which is what these modes are for, so
         # they read the TOML themselves and run before the checks.
@@ -323,20 +362,26 @@ def main(argv: Sequence[str], root: Path) -> int:
     if args.explain is not None:
         return _print_explain(layers, args.explain)
     if args.translators:
-        block = translators_block(layers.locale.headers)
-        if not block:
+        changed = None
+        if args.since is not None:
+            try:
+                changed = changed_locales(root, args.since)
+            except LookupError as error:
+                print(f"{PROG}: --since {args.since}: {error}", file=sys.stderr)
+                return 1
+        block = translators_block(layers.locale.headers, changed)
+        if not block and changed is not None:
+            print(
+                f"{PROG}: no listed language's translations changed since {args.since}; the entry needs no TRANSLATORS"
+                " block",
+                file=sys.stderr,
+            )
+        elif not block:
             print(f"{PROG}: no listed Locale has translators; the entry needs no TRANSLATORS block", file=sys.stderr)
         print(block, end="")
         return 0
     if args.check_changelog is not None:
-        problems = Problems()
-        check_changelog(root, layers.locale.headers, args.check_changelog, problems)
-        if problems.found:
-            for problem in problems.found:
-                print(f"{PROG}: {problem}", file=sys.stderr)
-            return 1
-        print(f"{PROG}: {CHANGELOG}'s entry for {args.check_changelog} credits the translators (DATA-R114)")
-        return 0
+        return _check_changelog(root, layers, args.check_changelog, args.since)
     if args.lock:
         write_atomic(root / LOCK, lock_toml(hunt_list_of(layers), event_list_of(layers)).encode("utf-8"))
         print(f"{PROG}: wrote {LOCK}")
