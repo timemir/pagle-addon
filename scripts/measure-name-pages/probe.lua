@@ -2,14 +2,18 @@
 -- its Nod, each drawn naming a variety, as the client draws them with Animations off. For each it writes the band the
 -- name line takes (from the line's left to the end of its room, a name long enough to fill it) and every texture drawn
 -- under the words there, with its place on the screen, for the Python half to composite from the BLP art and measure.
--- Not a spec: its name keeps it out of the check gate's busted run.
+-- Not a spec: its name keeps it out of the check gate's busted run. It runs under the layout harness's helper, so its
+-- font strings measure in their real faces, those set by a font object's name (the toasts' and Nod's, through the
+-- art's fonts) among them (#620, #625).
 --
---   NAME_PAGES_OUT=<file> .tools/bin/busted scripts/measure-name-pages/probe.lua
+--   NAME_PAGES_OUT=<file> .tools/bin/busted --helper=scripts/measure-layout/helper.lua \
+--     scripts/measure-name-pages/probe.lua
 --
 -- Writes <file>: one JSON object a line, { style, page, band = { left, top, right, bottom }, textures = { ... } },
 -- each texture { tex, color, tc, rect, vc, desaturated, alpha, blend, layer, sub, fl } in draw order.
 
-local RealFont = dofile("scripts/measure-layout/realfont.lua")
+-- The RealFont the helper installed: the one that knows the client's font objects by name, as the toasts are set.
+local RealFont = assert(MEASURE_REALFONT, "run with --helper=scripts/measure-layout/helper.lua")
 local json = require("dkjson")
 
 local OUT = assert(os.getenv("NAME_PAGES_OUT"), "NAME_PAGES_OUT names the file to write")
