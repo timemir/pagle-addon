@@ -999,6 +999,15 @@ function ns.WireShop(host, seams)
 	return open
 end
 
+-- Whether `/pagle dev tour` runs now (CORE-R66): what its stops open isn't the Angler's doing, so it ticks no First
+-- evening item and shows no Margin note or First look, marking nothing (CORE-R68), and the dock shows (CORE-R88). The
+-- tour stops' own TourShow samples write nothing anyway. False before ns.WireDev has built the tour. A running
+-- `/pagle trailer` counts too: its scenes open the windows, not the Angler.
+---@return boolean
+local function isTouring()
+	return (ns.tour ~= nil and ns.tour:IsRunning()) or (ns.trailer ~= nil and ns.trailer.state == "running")
+end
+
 --- Where the tracker dock is drawn: adapter/Dock.lua's anchor frame on the client, or FakePagle's record of it.
 ---@class PagleDockView
 ---@field watch fun(tracker: PagleTracker)       -- a tracker docked: reflow as its frame shows, hides or resizes, and
@@ -1007,20 +1016,60 @@ end
 ---@field place fun(point: PagleDockPoint)       -- puts the dock's anchor at `point`
 ---@field stopMoving fun(): PagleDockPoint?      -- ends a drag in progress where the dock is now, returning that point
 --- to save; nil with none in progress
+---@field poleInHand fun(): boolean               -- whether a fishing pole is in the main hand now (CORE-R88)
+---@field setShown fun(shown: boolean)           -- shows or hides the whole dock, every docked tracker with it, leaving
+--- each tracker's own shown state as its Module set it (CORE-R72, CORE-R88)
 
 --- The tracker dock (CORE-R70–R72) as ns.dock (ns.WireDock).
 ---@class PagleDockWiring
 ---@field package host PagleHost
 ---@field package view PagleDockView
 ---@field package trackers PagleDock
+---@field package stretch PagleDockStretch the dock's fishing stretch (CORE-R88)
 local DockWiring = {}
 DockWiring.__index = DockWiring
 
 -- PagleDB.profile.dock: its default is in PAGLEDB_DEFAULTS (logic/Migrations.lua).
 ---@param wiring PagleDockWiring
----@return { point: PagleDockPoint? }
+---@return { point: PagleDockPoint?, onlyWhileFishing: boolean? }
 local function storedDock(wiring)
 	return wiring.host.db().profile.dock
+end
+
+--- Whether "Show trackers only while fishing" is on (SET-R46, PagleDB.profile.dock.onlyWhileFishing). Off before
+--- login step 1 has opened PagleDB, and once AceDB has stripped its defaults at PLAYER_LOGOUT, dropping an empty
+--- `dock`.
+---@return boolean
+function DockWiring:OnlyWhileFishing()
+	local db = self.host.db()
+	local stored = db and db.profile.dock
+	return type(stored) == "table" and stored.onlyWhileFishing == true
+end
+
+--- The Trackers page's "Show trackers only while fishing" (SET-R46): saved, and the dock shown or hidden at once.
+---@param value boolean
+function DockWiring:SetOnlyWhileFishing(value)
+	storedDock(self).onlyWhileFishing = value == true
+	self:Refresh()
+end
+
+--- Whether the dock shows its trackers now (CORE-R88): ns.DockShown over the setting, the main hand, the dock's
+--- fishing stretch and a running tour.
+---@return boolean
+function DockWiring:Shown()
+	return ns.DockShown({
+		onlyWhileFishing = self:OnlyWhileFishing(),
+		poleInHand = self.view.poleInHand(),
+		stretch = self.stretch:IsRunning(),
+		touring = isTouring(),
+	})
+end
+
+--- Shows or hides the whole dock as CORE-R88 has it now. The adapter calls it as the main hand changes
+--- (PLAYER_EQUIPMENT_CHANGED); the dock's own Cast listeners, the setting, a tour's start and end and the trailer's do
+--- too.
+function DockWiring:Refresh()
+	self.view.setShown(self:Shown())
 end
 
 --- The docked trackers, in stack order (CORE-R70).
@@ -1086,19 +1135,39 @@ end
 --- The tracker dock (CORE-R70–R72) as ns.dock, over PagleDB.profile.dock (core/README.md › Data), and
 --- `M:RegisterTracker` on every Module handle. The anchor is placed at ModulesChanged, at dock.point or under the
 --- minimap; each docked tracker is watched and the stack reflowed. A drag in progress when restriction starts stops
---- where it is and is saved.
+--- where it is and is saved. The whole dock shows or hides by CORE-R88 ("Show trackers only while fishing") at login,
+--- at each Cast's start and its stretch's end, and on dock:Refresh.
 ---@param host PagleHost
 ---@param view PagleDockView
 function ns.WireDock(host, view)
 	local trackers = ns.NewDock()
+	local stretch = ns.NewDockStretch()
 	---@type PagleDockWiring
-	local dock = setmetatable({ host = host, view = view, trackers = trackers }, DockWiring)
+	local dock = setmetatable({ host = host, view = view, trackers = trackers, stretch = stretch }, DockWiring)
 	ns.dock = dock
 
-	-- Its own owner on the bus. CORE-R19: every enabled Module has registered, so every tracker is in.
+	-- Its own owner on the bus. CORE-R19: every enabled Module has registered, so every tracker is in. The dock shows
+	-- or hides by CORE-R88 from login on: with a pole already in hand, it shows.
 	host.listen("Pagle dock", "ModulesChanged", function()
 		view.place(dock:Anchor())
 		view.reflow()
+		dock:Refresh()
+	end)
+	-- CORE-R88: a Cast starts or goes on with the dock's fishing stretch, which ends DOCK_STRETCH_SECONDS after the
+	-- last Cast's end with no Cast since.
+	host.listen("Pagle dock", "CastStarted", function()
+		stretch:CastStarted()
+		dock:Refresh()
+	end)
+	host.listen("Pagle dock", "CastEnded", function()
+		local count = stretch:CastEnded()
+		if count then
+			host.after(ns.DOCK_STRETCH_SECONDS, function()
+				if stretch:Elapsed(count) then
+					dock:Refresh()
+				end
+			end)
+		end
 	end)
 	-- CORE-R71: the dock never moves while restricted.
 	host.listen("Pagle dock", "RestrictionChanged", function(_, isRestricted)
@@ -1346,6 +1415,12 @@ function ns.WireDev(host, show, showGlyphs, tour, globals, skillChanged, fonts)
 		call = host.call,
 		clock = tour.clock,
 		print = host.print,
+		-- The dock shows while a tour runs (CORE-R88).
+		changed = function()
+			if ns.dock then
+				ns.dock:Refresh()
+			end
+		end,
 	})
 	---@class PagleModuleHandle
 	local ModuleHandle = ns.ModuleHandle
@@ -1841,15 +1916,6 @@ function ns.WireLetter(host, view)
 			host.print(ns.RenderText(ns.L.DEV_LETTER_NONE, { dev_letter_none_1 = id, ids = table.concat(ids, ", ") }))
 		end
 	end)
-end
-
--- Whether `/pagle dev tour` runs now (CORE-R66): what its stops open isn't the Angler's doing, so it ticks no First
--- evening item and shows no Margin note or First look, marking nothing (CORE-R68). The tour stops' own TourShow
--- samples write nothing anyway. False before ns.WireDev has built the tour. A running `/pagle trailer` counts too: its
--- scenes open the windows, not the Angler.
----@return boolean
-local function isTouring()
-	return (ns.tour ~= nil and ns.tour:IsRunning()) or (ns.trailer ~= nil and ns.trailer.state == "running")
 end
 
 --- Where the First evening list is drawn: adapter/Evening.lua's tracker, FakePagle's record of it.

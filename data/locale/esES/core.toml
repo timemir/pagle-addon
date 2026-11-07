@@ -1969,6 +1969,14 @@ en = "Pagle is stopped: your Catch log can't be read, and nothing has been chang
 value = "Arrastra con Mayús cualquier rastreador de Pagle para moverlos todos. Esto los devuelve bajo el minimapa."
 en = "Shift-drag any Pagle tracker to move them all. This puts them back under the minimap."
 
+[SETTINGS_TRACKERS_WHILE_FISHING]
+value = "Rastreadores solo al pescar"
+en = "Show trackers only while fishing"
+
+[SETTINGS_TRACKERS_WHILE_FISHING_TOOLTIP]
+value = "Oculta todos los rastreadores de Pagle hasta que tengas una caña en la mano o lances. Siguen visibles un minuto después de tu último Lance, así que un cambio rápido de arma no los oculta."
+en = "Hides every Pagle tracker until a fishing pole is in hand or you cast. They stay up for a minute after your last Cast, so a quick weapon swap doesn't hide them."
+
 [SETTINGS_TOAST_RESET_TOOLTIP]
 value = "Arrastra con Mayús un aviso emergente para mover los avisos emergentes y los Gestos, o el Resumen de sesión para moverlo. Esto los devuelve a todos a su sitio."
 en = "Shift-drag a toast to move the toasts and Nods, or the Session summary to move it. This puts them all back where they started."

@@ -6,10 +6,13 @@ if not Pagle then
 	return
 end
 
--- The tracker dock on the client (CORE-R70–R72): one invisible anchor frame on UIParent, under the minimap cluster
--- or at dock.point, that each docked tracker frame is anchored to, top to bottom. Core reparents no tracker: it only
--- sets each frame's anchor, and makes it take a left-button drag, so a Shift-drag of any of them moves the anchor and
--- with it the stack. The stacking rules are logic/Dock.lua's; the wiring is ns.WireDock's (logic/Wiring.lua).
+-- The tracker dock on the client (CORE-R70–R72, CORE-R88): one invisible anchor frame on UIParent, under the minimap
+-- cluster or at dock.point, that each docked tracker frame is parented and anchored to, top to bottom. Core sets each
+-- frame's parent and anchor, and makes it take a left-button drag, so a Shift-drag of any of them moves the anchor and
+-- with it the stack; it never shows or hides a tracker itself, which is its Module's (CORE-R72). Hiding the anchor
+-- hides the whole stack, each tracker keeping its own shown state, for "Show trackers only while fishing" (CORE-R88).
+-- No docked tracker is a secure frame, so that is allowed in combat and while restricted. The stacking and shown rules
+-- are logic/Dock.lua's; the wiring is ns.WireDock's (logic/Wiring.lua).
 local L = ns.L
 
 -- The anchor, sized to the stack so the client keeps the whole stack on screen. Unnamed, so the client's layout cache
@@ -83,6 +86,8 @@ end
 ---@param tracker PagleTracker
 local function watch(tracker)
 	local frame = tracker.frame
+	-- In the anchor, so it shows and hides with the dock (CORE-R88). Same strata, and the anchor has UIParent's scale.
+	frame:SetParent(anchor)
 	frame:EnableMouse(true)
 	frame:RegisterForDrag("LeftButton")
 	frame:HookScript("OnDragStart", startDrag)
@@ -97,22 +102,70 @@ local function watch(tracker)
 	frame:HookScript("OnSizeChanged", reflow)
 end
 
+-- Whether a fishing pole is in the main hand (CORE-R88): its item's class and subclass, read without the item's data
+-- being loaded.
+---@return boolean
+local function poleInHand()
+	local itemID = GetInventoryItemID("player", 16) -- the main hand (INVSLOT_MAINHAND)
+	if not itemID then
+		return false
+	end
+	local _, _, _, _, _, classID, subclassID = C_Item.GetItemInfoInstant(itemID)
+	return ns.IsFishingPole(classID, subclassID)
+end
+
+-- Shows or hides the whole stack (CORE-R88). A drag in progress when it hides ends there, as when the dragged tracker
+-- hides.
+---@param shown boolean
+local function setShown(shown)
+	if not shown and dragged then
+		stopDrag()
+	end
+	anchor:SetShown(shown)
+end
+
 ns.WireDock(ns.host, {
 	watch = watch,
 	reflow = reflow,
 	place = place,
 	stopMoving = stopMoving,
+	poleInHand = poleInHand,
+	setShown = setShown,
 })
 
--- The Trackers page's first row (SET-R40): "Tracker position", a button "Reset" that puts the dock back under the
--- minimap. Never greyed out; pressed while restricted it does nothing (ns.dock:Reset), since the dock never moves
--- then (CORE-R71). This row never registers the page alone (SET-R1, ns.IsPageRegistered).
----@param _ SettingsCategory
+-- CORE-R88: a pole going in hand shows the dock at once, and one coming off hides it at once unless the dock's fishing
+-- stretch runs. Before login step 1 has opened PagleDB there is no setting to read yet; ModulesChanged decides then.
+Pagle.RegisterEvent("Pagle dock", "PLAYER_EQUIPMENT_CHANGED", function()
+	if ns.db then
+		ns.dock:Refresh()
+	end
+end)
+
+-- The Trackers page's Core rows, which never register the page alone (SET-R1, ns.IsPageRegistered). First
+-- (SET-R40), "Tracker position", a button "Reset" that puts the dock back under the minimap: never greyed out, and
+-- pressed while restricted it does nothing (ns.dock:Reset), since the dock never moves then (CORE-R71). Then
+-- (SET-R46, from 1.3) "Show trackers only while fishing", a native checkbox, off by default and restored by Defaults,
+-- that shows or hides the dock at once (CORE-R88).
+---@param category SettingsCategory
 ---@param layout SettingsLayout
-ns.CoreSettingsRows.trackers = function(_, layout)
+ns.CoreSettingsRows.trackers = function(category, layout)
 	layout:AddInitializer(
 		CreateSettingsButtonInitializer(L.SETTINGS_TRACKER_POSITION, L.SETTINGS_TRACKER_RESET, function()
 			ns.dock:Reset()
 		end, L.SETTINGS_TRACKER_RESET_TOOLTIP, true)
 	)
+	local whileFishing = Settings.RegisterProxySetting(
+		category,
+		"Pagle_Core_trackers_onlyWhileFishing",
+		Settings.VarType.Boolean,
+		L.SETTINGS_TRACKERS_WHILE_FISHING,
+		false,
+		function()
+			return ns.dock:OnlyWhileFishing()
+		end,
+		function(value)
+			ns.dock:SetOnlyWhileFishing(value)
+		end
+	)
+	Settings.CreateCheckbox(category, whileFishing, L.SETTINGS_TRACKERS_WHILE_FISHING_TOOLTIP)
 end

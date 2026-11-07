@@ -59,10 +59,13 @@ describe("The Trackers page's frame row", function()
 
 		enterWorld(loaded)
 
-		assert.are.same(
-			{ "Tracker position", "Hunts", "Show the Hunts tracker", "Hunts tracker frame" },
-			names(showTrackers(loaded))
-		)
+		assert.are.same({
+			"Tracker position",
+			"Show trackers only while fishing",
+			"Hunts",
+			"Show the Hunts tracker",
+			"Hunts tracker frame",
+		}, names(showTrackers(loaded)))
 	end)
 
 	it("is the slot dropdown, listing only the slot's owned goods (SET-R44, SET-R51, SHOP-R30)", function()
@@ -151,6 +154,7 @@ describe("The Trackers page's frame row", function()
 
 		assert.are.same({
 			"Tracker position",
+			"Show trackers only while fishing",
 			"Hunts",
 			"Show the Hunts tracker",
 			"Hunts tracker frame",
@@ -166,7 +170,10 @@ describe("The Trackers page's frame row", function()
 			trackerModule(loaded, "Stats", 30, { noRows = true })
 			enterWorld(loaded)
 
-			assert.are.same({ "Tracker position", "Stats", "Stats tracker frame" }, names(showTrackers(loaded)))
+			assert.are.same(
+				{ "Tracker position", "Show trackers only while fishing", "Stats", "Stats tracker frame" },
+				names(showTrackers(loaded))
+			)
 		end
 	)
 end)

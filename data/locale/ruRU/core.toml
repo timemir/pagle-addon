@@ -333,6 +333,14 @@ en = "Reset"
 value = "Перетащите любой трекер Pagle с Shift, чтобы сдвинуть их все. Эта кнопка вернёт их под миникарту."
 en = "Shift-drag any Pagle tracker to move them all. This puts them back under the minimap."
 
+[SETTINGS_TRACKERS_WHILE_FISHING]
+value = "Трекеры только на рыбалке"
+en = "Show trackers only while fishing"
+
+[SETTINGS_TRACKERS_WHILE_FISHING_TOOLTIP]
+value = "Трекеры Pagle скрыты, пока в руках нет удочки и вы не забрасываете её. После последнего заброса они остаются ещё минуту, так что быстрая смена оружия их не скроет."
+en = "Hides every Pagle tracker until a fishing pole is in hand or you cast. They stay up for a minute after your last Cast, so a quick weapon swap doesn't hide them."
+
 [SETTINGS_TOAST_POSITION]
 value = "Положение плашек"
 en = "Toast position"

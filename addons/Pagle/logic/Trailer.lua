@@ -267,9 +267,20 @@ function ns.NewTrailer(options)
 	local L = ns.L
 	local trailer = { state = "idle", ticket = 0, restores = {} }
 
+	-- The dock shows while the trailer runs (CORE-R88): told as it starts running and as it stops.
+	local function changed()
+		if options.changed then
+			options.changed()
+		end
+	end
+
 	function trailer:Stop(reason)
 		self.ticket = self.ticket + 1
+		local wasRunning = self.state == "running"
 		self.state = "idle"
+		if wasRunning then
+			changed()
+		end
 		local restores = self.restores
 		self.restores = {}
 		for i = #restores, 1, -1 do
@@ -321,6 +332,7 @@ function ns.NewTrailer(options)
 				return
 			end
 			self.state = "running"
+			changed()
 			local ticket = self.ticket
 			for _, cue in ipairs(ns.TRAILER_CUES) do
 				local at, action, text = cue[1], cue[2], cue[3]

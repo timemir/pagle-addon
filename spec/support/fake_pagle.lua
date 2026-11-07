@@ -1620,6 +1620,11 @@ part(function(fake, _, ns, host)
 		stopMoving = function()
 			return nil
 		end,
+		-- No pole in hand; the fake's dock is always laid out, shown or not (CORE-R88).
+		poleInHand = function()
+			return false
+		end,
+		setShown = function() end,
 	})
 
 	local function stack()

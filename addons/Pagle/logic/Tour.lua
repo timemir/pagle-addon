@@ -139,6 +139,8 @@ end
 ---@field call fun(fn: function, ...: any): ... -- calls fn; an error is reported, not raised (securecallfunction)
 ---@field clock fun(): string               -- the local time, as screenshot files are named by it: "14:03:22"
 ---@field print fun(line: string)
+---@field changed fun()?                    -- called as a tour starts and as it ends, IsRunning already true or false:
+--- the dock shows while one runs (CORE-R88)
 
 -- A tour under way: its stops, the one on screen and whether `tour stop` asked it to end.
 ---@class PagleTourRun
@@ -179,6 +181,9 @@ end
 local function finish(tour, why)
 	local L, options, run = ns.L, tour.options, tour.run --[[@as PagleTourRun]]
 	tour.run = nil
+	if options.changed then
+		options.changed()
+	end
 	if why == "done" then
 		options.print(ns.RenderText(L.DEV_TOUR_DONE, { clock = options.clock() }))
 	elseif why == "stopped" then
@@ -254,6 +259,9 @@ local function start(tour, module)
 	end
 	local shoot = options.canScreenshot()
 	tour.run = { stops = stops, index = 0, stopping = false, shoot = shoot }
+	if options.changed then
+		options.changed()
+	end
 	local from = (shoot and L.DEV_TOUR_START or L.DEV_TOUR_START_MANUAL)
 	options.print(ns.RenderText(from, { stops = count(#stops), clock = options.clock() }))
 	nextStop(tour)

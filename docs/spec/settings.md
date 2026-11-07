@@ -14,7 +14,7 @@ This file is the one place that shows Pagle's whole Settings tree: which rows si
 - the looks themselves, ownership and equipping (SHOP-R20–R35)
 - Key Bindings › AddOns, where QoL's bindings are also listed (QOL-R1)
 
-**Uses from Core:** CORE-R17, CORE-R32, CORE-R33, CORE-R40–R44, CORE-R71, `Pagle.GetEquipped`, `Pagle.SetEquipped`, `Pagle.IsOwned`, `Pagle.OpenShop`, `Pagle.OpenFieldReport`, `Pagle.GetFieldReportCount`, `Pagle.OpenPasteExport`.
+**Uses from Core:** CORE-R17, CORE-R32, CORE-R33, CORE-R40–R44, CORE-R71, CORE-R88, `Pagle.GetEquipped`, `Pagle.SetEquipped`, `Pagle.IsOwned`, `Pagle.OpenShop`, `Pagle.OpenFieldReport`, `Pagle.GetFieldReportCount`, `Pagle.OpenPasteExport`.
 
 ## Rules
 
@@ -44,7 +44,7 @@ Announcements
   [Hunts]                   Announce open Hunt windows;  Remind me about the Pagle companion
                             (while Hunts' companion hint switch is on, as at 1.0: HNT-R172)
 Trackers
-                            Tracker position  [Reset]
+                            Tracker position  [Reset];  Show trackers only while fishing   (the checkbox from 1.3)
   [Hunts]                   Show the Hunts tracker;  Hunts tracker frame
   [Stats]                   Show the live tracker  ↳ Watched Dry spells;  Stats tracker frame
   [Tackle Board]            Show goals workable here;  Tackle Board tracker frame
@@ -189,7 +189,7 @@ The rules below are authoritative; this sketch only summarises them.
 
 ### Trackers
 
-- **SET-R40** The Trackers page starts with Core's one row (from M5, with the page): "Tracker position", a button "Reset" that puts the tracker dock back at its default place (CORE-R70, CORE-R71). Tooltip: "Shift-drag any Pagle tracker to move them all. This puts them back under the minimap." It is never greyed out; pressed while restricted, it does nothing, since the dock never moves then (CORE-R71). Then come the tracker Modules' sections, in `def.order`, which is also their order in the dock (CORE-R70).
+- **SET-R40** The Trackers page starts with Core's rows: first (from M5, with the page) "Tracker position", a button "Reset" that puts the tracker dock back at its default place (CORE-R70, CORE-R71). Tooltip: "Shift-drag any Pagle tracker to move them all. This puts them back under the minimap." It is never greyed out; pressed while restricted, it does nothing, since the dock never moves then (CORE-R71). From 1.3 the checkbox of SET-R46 follows it. Then come the tracker Modules' sections, in `def.order`, which is also their order in the dock (CORE-R70). Core's rows never register the page alone (SET-R1).
 - **SET-R41** **Hunts** (from M5):
 
   | Header | Row | Kind | Values · default | Tooltip |
@@ -214,7 +214,14 @@ The rules below are authoritative; this sketch only summarises them.
 
   Before the board is started, the section is these two rows as usual, with the checkbox greyed out; its tooltip (tackle-board.md) always points at the root's "Start my board". There is no separate note.
 - **SET-R44** Core adds each Module's "Trackers"-category slot dropdown as the last row of that Module's section (CORE-R42). It has no parent, so it isn't indented, and it is never greyed out, even while its tracker is off: the look is kept for when the tracker shows, and it is also on Look and Feel.
-- **SET-R45** The Trackers page's Defaults button restores the three checkboxes (Hunts on, Stats off, Tackle Board on) and the three frames to their default goods (SET-R60). It leaves Stats' watches and the dock's position alone.
+- **SET-R45** The Trackers page's Defaults button restores the three checkboxes (Hunts on, Stats off, Tackle Board on) and the three frames to their default goods (SET-R60), and from 1.3 "Show trackers only while fishing" to off (SET-R46). It leaves Stats' watches and the dock's position alone.
+- **SET-R46** *From 1.3 (rule set pagle-2026g).* The Trackers page's second Core row, after Tracker position, before the Modules' sections:
+
+  | Row | Kind | Values · default | Greyed out when | Tooltip |
+  |---|---|---|---|---|
+  | Show trackers only while fishing | checkbox (native, `Settings.CreateCheckbox`) | off (CORE-R88, `PagleDB.profile.dock.onlyWhileFishing`) | | "Hides every Pagle tracker until a fishing pole is in hand or you cast. They stay up for a minute after your last Cast, so a quick weapon swap doesn't hide them." |
+
+  It shows or hides the whole dock at once (CORE-R88) and leaves the tracker Modules' own Show rows as they are: a tracker shows only while its own row and the dock both let it. It is never greyed out, whatever trackers are on.
 
 ### Look and Feel
 
@@ -270,7 +277,7 @@ This file adds no data. Each row's value lives with its owner:
 | Saving, Units | `PagleDB.profile.reloadReminder`, `PagleDB.profile.lengthUnit` ([catch-log.md](core/catch-log.md#data)), `PagleDB.profile.clockFormat` ([core/README.md](core/README.md#data)), `PagleDB.global.language` (catch-log.md, from 1.1) |
 | Cozy mode, the budget, Show every catch, Animations | `PagleDB.profile.announcements` |
 | Every slot dropdown | `PagleDB.profile.appearance[slot]` (SHOP-R32) |
-| Tracker position | `PagleDB.profile.dock.point` (Core README Data) |
+| Tracker position, Show trackers only while fishing | `PagleDB.profile.dock.point`, and from 1.3 `PagleDB.profile.dock.onlyWhileFishing` (Core README Data) |
 | Toast position | `PagleDB.profile.announcements.point` (ANN-R98) and `PagleDB.profile.cards.point` (ANN-R102) |
 | Fishing | `PagleQoLDB` (qol.md Data), the fishing set per character in `global.gear[guid]` |
 | Hunts' rows | `PagleHuntsDB.profile.tracker.shown`, `profile.windowMoments`, `profile.companionHint` (only while its switch is on, HNT-R172) |

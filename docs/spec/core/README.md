@@ -178,8 +178,14 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
 
 - **CORE-R70** Core owns one HUD anchor, the **tracker dock**, by default under the minimap cluster at its right edge. Module trackers stack in it. A Module docks its tracker with `M:RegisterTracker{ id, order, frame }`; the dock stacks visible frames top to bottom by the tracker's `order` (Core's First evening list 1, ONB-R60; Hunts 10, Stats 20, Tackle Board 30; ties by Module name), with fixed spacing, and reflows when one hides, resizes or its Module is disabled.
 - **CORE-R71** The player moves the dock by Shift-dragging any docked tracker; the whole stack moves. The position is saved and can be reset from the Trackers page (CORE-R40). It never moves while restricted. If it overlaps Blizzard's own tracker, the player moves it.
-- **CORE-R72** A Module decides when its own tracker is shown (each Module's setting); the dock only stacks. With no tracker visible, the dock shows nothing.
+- **CORE-R72** A Module decides when its own tracker is shown (each Module's setting); the dock only stacks. With no tracker visible, the dock shows nothing. *From 1.3,* CORE-R88 can hide the whole dock as well; a tracker then shows only while its Module shows it **and** the dock shows.
 - **CORE-R73** Each tracker is a native objective-tracker-style block. Its frame is drawn by its Module, which reads its equipped tracker-frame look from Core (`Pagle.GetEquipped`).
+- **CORE-R88** *From 1.3 (rule set pagle-2026g).* **Show trackers only while fishing** (`PagleDB.profile.dock.onlyWhileFishing`, the Trackers page's checkbox, SET-R46; default off). Off, the dock shows as before 1.3. On, the whole dock (every docked tracker: the First evening list, Hunts' tracker with its Pagle Wagers block, Stats' live tracker and the Tackle Board's) shows only while at least one of these holds, and is hidden otherwise:
+  - **a fishing pole is in hand:** the main hand's item (slot 16) is a weapon of the fishing pole subclass (`C_Item.GetItemInfoInstant` class 2, subclass 20), read at login and at each `PLAYER_EQUIPMENT_CHANGED`. Core reads this itself: it doesn't need QoL.
+  - **the dock's fishing stretch runs:** it starts at Core's `CastStarted` and ends 60 s after the last `CastEnded` (any outcome) with no `CastStarted` since. It is Core's own, kept in memory and gone at a `/reload`; unlike QoL's Fishing stretch (QOL-R61) it starts whether or not QoL is enabled or armed, and a pole coming off, mounting or restriction doesn't end it, so a weapon swap mid-stretch leaves the dock up.
+  - **`/pagle dev tour` or `/pagle trailer` runs** (CORE-R66): their stops and scenes show trackers, so the dock shows from the tour's start to its end.
+
+  So the dock shows at once as a pole goes in hand or a Cast starts, and hides at the stretch's end, or at once as the pole comes off when no stretch runs. Ticking the box hides the dock at once if none holds; unticking shows it at once. Core shows and hides the dock as a whole (each docked frame is a child of the dock's anchor), never a tracker itself: each tracker's own shown and collapsed states (Hunts' `profile.tracker`, Stats' and the Tackle Board's `profile.tracker`) stay as their Module and the Angler set them. No docked tracker is a secure frame (HNT-R193), so showing or hiding the dock is allowed in combat and while restricted, and it follows this rule there too. While the dock is hidden, no Shift-drag can start (CORE-R71); one in progress as it hides ends there and is saved, as when the dragged tracker hides.
 
 ### Releases
 
@@ -195,11 +201,12 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
 
 ## Data
 
-Core's SavedVariables are specified in [catch-log.md](catch-log.md#data). This file adds two `PagleDB.profile` keys:
+Core's SavedVariables are specified in [catch-log.md](catch-log.md#data). This file adds these `PagleDB.profile` keys:
 
 | Key | Type | Default |
 |---|---|---|
 | `dock.point` | `{ point, relativeTo = "UIParent", relativePoint, x, y }` or `nil` | `nil` (CORE-R70 default) |
+| `dock.onlyWhileFishing` | boolean, "Show trackers only while fishing" (CORE-R88, from 1.3); AceDB's default gives a profile that has none | `false` |
 | `books` | each movable book's saved position by its id, `{ point, relativePoint, x, y }` in UIParent's units ([book.md](book.md#data), BOOK-R5) | `{}` |
 | `clockFormat` | `"24h"`, `"12h"`, or `nil` to follow the game's clock (CORE-R87) | `nil`; the root's Defaults button sets it back to `nil` (SET-R13) |
 
@@ -373,13 +380,14 @@ Fishing, Session, wallet, Activity XP (`ActivityXPChanged`), Refresh (`TicketsCh
 - **Settings root and topic pages:** native Settings panels; layout in `docs/spec/settings.md`. Look reference: `prototypes/settings-tree/` (variant B).
 - **Compartment menu:** the native Addon Compartment dropdown (CORE-R50).
 - **Minimap icon:** Core's own round minimap button with the favicon (CORE-R53).
-- **Tracker dock:** an invisible anchor; each docked tracker draws itself.
+- **Tracker dock:** an invisible anchor, the parent of every docked tracker; each docked tracker draws itself.
 
 ## Settings
 
 | Option | Values | Default |
 |---|---|---|
 | Tracker position (Trackers page, SET-R40) | button "Reset": puts the dock back at its default place (CORE-R71) | |
+| Show trackers only while fishing (`profile.dock.onlyWhileFishing`, Trackers page, SET-R46; from 1.3) | on / off | off (CORE-R88) |
 | Clock (`profile.clockFormat`, the root's Units section, SET-R10) | Follow the game's clock / 24-hour / 12-hour | Follow the game's clock (CORE-R87) |
 | Language (`global.language`, the root's Units section, SET-R10 row 9b; from 1.1) | Game default / English / each listed language the client can render | Game default (CORE-R8); the root's Defaults button leaves it (SET-R13) |
 
@@ -395,6 +403,7 @@ The other Core options are in each topic file's Settings section.
 | Tracker order | First evening list 1, Hunts 10, Stats 20, TackleBoard 30 | CORE-R70 |
 | Dock default offset | 10 px below the minimap cluster, right-aligned | CORE-R70 |
 | Dock spacing between trackers | 8 px | CORE-R70 |
+| Dock's fishing stretch: seconds after the last Cast's end (from 1.3) | 60, the same as QoL's Fishing stretch (QOL-R61) | CORE-R88 |
 
 ## Edge cases
 
