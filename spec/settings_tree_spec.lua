@@ -136,7 +136,7 @@ local EXPECTED = {
 			{ "dropdown", "Language", tip = TIPS.language },
 			{ "header", "Pagle menu" },
 			{ "checkbox", "Show the minimap icon", tip = TIPS.minimapIcon },
-			{ "checkbox", "Detach from the minimap", tip = TIPS.minimapDetach },
+			{ "checkbox", "Detach from the minimap", under = true, tip = TIPS.minimapDetach },
 			{ "header", "Pagle website" },
 			{ "checkbox", "Show other Anglers on player tooltips", tip = TIPS.anglerTooltips },
 			{ "button", "Catch log", caption = "Copy for the website", tip = TIPS.pasteExport },
@@ -616,6 +616,16 @@ describe("Greying in the Settings tree", function()
 		assert.are.same({}, greyedOn(loaded, "Announcements"))
 		assert.are.same({ "Show goals workable here" }, greyedOn(loaded, "Trackers"))
 		assert.are.same({}, greyedOn(loaded, "Look and Feel"))
+	end)
+
+	it("greys Detach from the minimap while the minimap icon is hidden (SET-R10 row 10a, CORE-R56)", function()
+		local loaded = ready()
+
+		setRow(loaded, "Pagle", "Show the minimap icon", false)
+		assert.are.same({ "Detach from the minimap" }, greyedOn(loaded, "Pagle"))
+
+		setRow(loaded, "Pagle", "Show the minimap icon", true)
+		assert.are.same({}, greyedOn(loaded, "Pagle"))
 	end)
 
 	it("greys the Fishing key under Double right-click, and not under the other two (SET-R20)", function()

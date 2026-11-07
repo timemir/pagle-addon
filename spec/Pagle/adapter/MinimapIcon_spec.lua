@@ -565,28 +565,31 @@ describe("Detach from the minimap", function()
 		assert.are.same({ false }, savedMode(loaded))
 	end)
 
-	it("greys while the icon is hidden, keeping its value, as the Announcements page's rows do (SET-R10, SET-R31)", function()
-		local loaded = loggedIn()
-		local row = select(3, menuRows(loaded))
-		detachSetting(loaded):SetValue(true)
-		local shown = loaded.client.settings.show(loaded.client.settings.category("Pagle"))
-		local function live()
-			for _, drawn in ipairs(shown) do
-				if drawn.initializer == row then
-					return drawn.frame.enabled
+	it(
+		"greys while the icon is hidden, keeping its value, as the Announcements page's rows do (SET-R10, SET-R31)",
+		function()
+			local loaded = loggedIn()
+			local row = select(3, menuRows(loaded))
+			detachSetting(loaded):SetValue(true)
+			local shown = loaded.client.settings.show(assert(loaded.client.settings.category("Pagle")))
+			local function live()
+				for _, drawn in ipairs(shown) do
+					if drawn.initializer == row then
+						return drawn.frame.enabled
+					end
 				end
+				error("the detach row isn't shown")
 			end
-			error("the detach row isn't shown")
+			assert.is_true(live())
+
+			shownSetting(loaded):SetValue(false)
+			assert.are.same({ false, true }, { live(), detachSetting(loaded):GetValue() })
+
+			shownSetting(loaded):SetValue(true)
+			assert.is_true(live())
+			assert.are.same({ "Pagle_Core_minimapIcon" }, row.evaluateStateVariables)
 		end
-		assert.is_true(live())
-
-		shownSetting(loaded):SetValue(false)
-		assert.are.same({ false, true }, { live(), detachSetting(loaded):GetValue() })
-
-		shownSetting(loaded):SetValue(true)
-		assert.is_true(live())
-		assert.are.same({ "Pagle_Core_minimapIcon" }, row.evaluateStateVariables)
-	end)
+	)
 end)
 
 describe("The detached minimap icon", function()
@@ -605,32 +608,39 @@ describe("The detached minimap icon", function()
 		assert.are.equal(225, loaded.ns.db.global.minimap.angle)
 	end)
 
-	it("reads the spot in UIParent's units however the minimap is scaled, and from the icon itself (CORE-R53)", function()
-		local loaded, button = loggedInOnScreen()
-		loaded.env.MinimapCluster:SetScale(2)
-		-- Another addon put the icon somewhere: its centre is at 800, 400 in its own units, 1600, 800 on the screen.
-		button.screenCenter = { 800, 400 }
+	it(
+		"reads the spot in UIParent's units however the minimap is scaled, and from the icon itself (CORE-R53)",
+		function()
+			local loaded, button = loggedInOnScreen()
+			loaded.env.MinimapCluster:SetScale(2)
+			-- Another addon put the icon somewhere: its centre is at 800, 400 in its own units, 1600, 800 on the screen.
+			button.screenCenter = { 800, 400 }
 
-		detachSetting(loaded):SetValue(true)
+			detachSetting(loaded):SetValue(true)
 
-		assert.are.same({ 1600, 800 }, screenPlaceOf(loaded, button))
-	end)
+			assert.are.same({ 1600, 800 }, screenPlaceOf(loaded, button))
+		end
+	)
 
-	it("moves anywhere on the screen with a plain left-drag, keeping its grip, and saves the spot (CORE-R53)", function()
-		local loaded, button = detached()
-		local spot = onScreenAt(225)
+	it(
+		"moves anywhere on the screen with a plain left-drag, keeping its grip, and saves the spot (CORE-R53)",
+		function()
+			local loaded, button = detached()
+			local spot = onScreenAt(225)
 
-		dragFrom(loaded, button, { spot[1] + 4, spot[2] + 4 }, { 604, 304 })
+			dragFrom(loaded, button, { spot[1] + 4, spot[2] + 4 }, { 604, 304 })
 
-		assert.are.same({ 600, 300 }, screenPlaceOf(loaded, button))
-		assert.are.same(
-			{ true, { x = 600 / 1920, y = 300 / 1080 } },
-			{ loaded.ns.db.global.minimap.detached, loaded.ns.db.global.minimap.point }
-		)
-		assert.are.same({ 225, loaded.env.UIParent }, { loaded.ns.db.global.minimap.angle, button:GetParent() })
-		assert.is_nil(button:GetScript("OnUpdate"))
-		assert.is_false(button.highlightLocked)
-	end)
+			assert.are.same({ 600, 300 }, screenPlaceOf(loaded, button))
+			local minimap = loaded.ns.db.global.minimap
+			assert.are.same(
+				{ true, 600, 300 },
+				{ minimap.detached, round(minimap.point.x * 1920), round(minimap.point.y * 1080) }
+			)
+			assert.are.same({ 225, loaded.env.UIParent }, { loaded.ns.db.global.minimap.angle, button:GetParent() })
+			assert.is_nil(button:GetScript("OnUpdate"))
+			assert.is_false(button.highlightLocked)
+		end
+	)
 
 	it("stays whole on the screen, however far past its edge it is dragged (CORE-R53)", function()
 		local loaded, button = detached()
@@ -643,15 +653,17 @@ describe("The detached minimap icon", function()
 
 	it("reads the cursor in UIParent's units at any UI scale (CORE-R53)", function()
 		local loaded, button = detached()
-		-- UI scale 2: the 1920 x 1080 screen is 960 x 540 units, so the icon's spot is clamped to it at the drag.
+		-- UI scale 2: the 1920 x 1080 pixel screen is 960 x 540 units.
 		loaded.env.UIParent:SetScale(2)
 		loaded.env.UIParent:SetSize(960, 540)
 		loaded.client.fire("UI_SCALE_CHANGED")
 
-		dragFrom(loaded, button, { 1000, 600 }, { 1200, 400 })
+		-- The icon is at the same pixels as before; the drag moves it to 1200, 400 pixels, 600, 200 units.
+		dragFrom(loaded, button, onScreenAt(225), { 1200, 400 })
 
 		local point = loaded.ns.db.global.minimap.point
 		assert.are.same({ 600, 200 }, { round(point.x * 960), round(point.y * 540) })
+		assert.are.same({ 600, 200 }, screenPlaceOf(loaded, button))
 	end)
 
 	it("opens Pagle's menu on a click without a drag, owned by the icon, and doesn't move (CORE-R54)", function()
@@ -751,7 +763,8 @@ describe("The detached minimap icon", function()
 	end)
 
 	it("comes back on the screen from a saved spot off it (CORE-R53)", function()
-		local loaded, button = loggedInOnScreen({ global = { minimap = { detached = true, point = { x = 3, y = -1 } } } })
+		local loaded, button =
+			loggedInOnScreen({ global = { minimap = { detached = true, point = { x = 3, y = -1 } } } })
 
 		assert.are.same({ 1904.5, 15.5 }, screenPlaceOf(loaded, button))
 	end)
@@ -763,7 +776,8 @@ describe("The detached minimap icon", function()
 	end)
 
 	it("keeps its spot on the screen as the UI scale or the window changes (CORE-R53)", function()
-		local loaded, button = loggedInOnScreen({ global = { minimap = { detached = true, point = { x = 0.25, y = 0.75 } } } })
+		local loaded, button =
+			loggedInOnScreen({ global = { minimap = { detached = true, point = { x = 0.25, y = 0.75 } } } })
 
 		loaded.env.UIParent:SetSize(1366, 768)
 		loaded.client.fire("UI_SCALE_CHANGED")
@@ -772,6 +786,26 @@ describe("The detached minimap icon", function()
 		loaded.env.UIParent:SetSize(1000, 1000)
 		loaded.client.fire("DISPLAY_SIZE_CHANGED")
 		assert.are.same({ 250, 750 }, screenPlaceOf(loaded, button))
+	end)
+
+	it("listens for the UI scale and the window only while detached (CORE-R53, CORE-R23)", function()
+		local loaded = loggedInOnScreen()
+		local function listening()
+			local n = 0
+			for _, frame in ipairs(loaded.client.frames) do
+				if frame.events.UI_SCALE_CHANGED or frame.events.DISPLAY_SIZE_CHANGED then
+					n = n + 1
+				end
+			end
+			return n
+		end
+		assert.are.equal(0, listening())
+
+		detachSetting(loaded):SetValue(true)
+		assert.are.equal(1, listening())
+
+		detachSetting(loaded):SetValue(false)
+		assert.are.equal(0, listening())
 	end)
 
 	it("hides and shows with Show the minimap icon, keeping its spot (CORE-R56)", function()
@@ -793,7 +827,7 @@ describe("The detached minimap icon", function()
 		assert.are.same({ false, { 960, 540 } }, { button:IsShown(), screenPlaceOf(loaded, button) })
 	end)
 
-	it("can be ticked while the icon is hidden, and shows detached once the icon is shown (CORE-R56)", function()
+	it("detaches even while the icon is hidden, which then shows detached (CORE-R56)", function()
 		local loaded, button = loggedInOnScreen({ global = { minimap = { hide = true } } })
 
 		detachSetting(loaded):SetValue(true)

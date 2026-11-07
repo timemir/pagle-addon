@@ -453,9 +453,12 @@ local function unitsSection(category, layout)
 	ns.LanguageRow(category)
 end
 
--- The Pagle menu section (CORE-R40, SET-R10 row 10): Show the minimap icon, on unless PagleDB.global.minimap.hide
--- (CORE-R56). It has no default, so the root's Defaults button leaves it, restoring only the reminder and the length
--- unit (SET-R13): where the icon is, and whether it shows, are the player's account-wide choices, not a profile's.
+-- The Pagle menu section (CORE-R40, SET-R10 rows 10 and 10a): Show the minimap icon, on unless
+-- PagleDB.global.minimap.hide (CORE-R56), and under it, from 1.5, its child Detach from the minimap
+-- (PagleDB.global.minimap.detached, CORE-R53), greyed while the icon is hidden as the Announcements page greys a row
+-- whose parent is off (SET-R31), keeping its value. Neither has a default, so the root's Defaults button leaves them,
+-- restoring only the reminder and the length unit (SET-R13): where the icon is, and whether it shows, are the player's
+-- account-wide choices, not a profile's.
 ---@param category SettingsCategory
 ---@param layout SettingsLayout
 local function pagleMenuSection(category, layout)
@@ -469,7 +472,20 @@ local function pagleMenuSection(category, layout)
 		ns.IsMinimapIconShown,
 		ns.SetMinimapIconShown
 	)
-	Settings.CreateCheckbox(category, shown, L.SETTINGS_MINIMAP_ICON_TOOLTIP)
+	local shownRow = Settings.CreateCheckbox(category, shown, L.SETTINGS_MINIMAP_ICON_TOOLTIP)
+	local detached = Settings.RegisterProxySetting(
+		category,
+		"Pagle_Core_minimapDetach",
+		Settings.VarType.Boolean,
+		L.SETTINGS_MINIMAP_DETACH,
+		nil,
+		ns.IsMinimapIconDetached,
+		ns.SetMinimapIconDetached
+	)
+	local detachRow = Settings.CreateCheckbox(category, detached, L.SETTINGS_MINIMAP_DETACH_TOOLTIP)
+	detachRow:SetParentInitializer(shownRow)
+	detachRow:AddModifyPredicate(ns.IsMinimapIconShown)
+	detachRow:AddEvaluateStateCVar("Pagle_Core_minimapIcon")
 end
 
 -- The Pagle website section (SET-R10 row 11, VIEW-R30): Show other Anglers on player tooltips, bound to

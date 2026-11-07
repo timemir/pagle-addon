@@ -429,6 +429,8 @@ ns.Locale("deDE", function(L)
 	L.SETTINGS_LOOK_PARAGRAPH = "Optiken, die dir gehören. Wähle eine hier, in der Sammlung des Fischjournals oder mit »Nutzen« im Kuriositätenladen; alle drei ändern dasselbe."
 	L.SETTINGS_MARGIN_NOTES = "Randnotizen"
 	L.SETTINGS_MARGIN_NOTES_TOOLTIP = "Erklärt Dinge, wenn sie zum ersten Mal passieren."
+	L.SETTINGS_MINIMAP_DETACH = "Von der Minikarte lösen"
+	L.SETTINGS_MINIMAP_DETACH_TOOLTIP = "Damit kannst du den Pagle-Knopf überallhin auf dem Bildschirm ziehen, weg vom Rand der Minikarte. Nicht angehakt, sitzt er wieder am Rand."
 	L.SETTINGS_MINIMAP_ICON = "Minikartensymbol anzeigen"
 	L.SETTINGS_MINIMAP_ICON_TOOLTIP = "Ein runder Pagle-Knopf am Rand der Minikarte, der das Pagle-Menü öffnet. Das Menü steckt auch im AddOns-Knopf an der Minikarte."
 	L.SETTINGS_MODULES = "Module"

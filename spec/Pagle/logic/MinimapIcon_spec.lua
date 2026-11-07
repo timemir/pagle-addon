@@ -86,7 +86,14 @@ describe("ns.DetachedIconCenter", function()
 
 	it("reads nothing from a point that isn't one (CORE-R53)", function()
 		local nan = 0 / 0
-		for _, point in ipairs({ "corner", {}, { x = 0.5 }, { x = "0.5", y = 0.5 }, { x = nan, y = 0.5 }, { x = 0.5, y = math.huge } }) do
+		for _, point in ipairs({
+			"corner",
+			{},
+			{ x = 0.5 },
+			{ x = "0.5", y = 0.5 },
+			{ x = nan, y = 0.5 },
+			{ x = 0.5, y = math.huge },
+		}) do
 			assert.is_nil(ns.DetachedIconCenter(point, 1920, 1080, 31))
 		end
 		assert.is_nil(ns.DetachedIconCenter(nil, 1920, 1080, 31))
