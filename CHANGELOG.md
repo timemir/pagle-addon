@@ -1,5 +1,13 @@
 # Pagle
 
+## 1.3.5 (2026-11-07)
+
+Russian fits everywhere.
+
+### Fixed
+
+- Russian text no longer runs over, under or out of its place in the Field guide, the Fish Journal and the Hunts board. The guide's letter, notes and key-binding labels fit, and the "nothing bound" note reads in full (#630). The Journal's continent tabs and its no-match search line fit (#629). The Hunts board's "show completed" box, the Pagle Wagers strip, the timeline's margin labels and the Wagers ladder's titles fit (#631). English, German and Spanish look exactly as before.
+
 ## 1.3.4 (2026-11-07)
 
 Sharper variety names, and a Russian name that fits.
