@@ -787,6 +787,31 @@ local function drawWagers(view, look, content)
 	return (y == from and look.first or y) + WAGERS_GAP
 end
 
+-- How small the empty line's words are set before they're cut instead: three quarters of their look's size.
+local EMPTY_FLOOR = 0.75
+
+-- Draws the empty line at `y` (HNT-R77), "Pin a Hunt to keep it here.", on one line in the room every line's words
+-- keep, to the look's right: too long for it, set smaller in half steps to EMPTY_FLOOR of its size, and past that cut
+-- short with "…", never past the room (#618; German's ran 2 past it, Russian's off the tracker).
+---@param view HuntsTrackerView
+---@param look HuntsTrackerLook
+---@param y number
+local function drawEmpty(view, look, y)
+	view.emptyLine:ClearAllPoints()
+	view.emptyLine:SetPoint("TOPLEFT", 0, -y)
+	view.emptyLine:SetSize(look.width, EXTRA_LINE)
+	local empty, sub = view.empty, look.sub
+	local room = math.max(1, look.right - look.x - 14)
+	setFont(empty, sub)
+	empty:SetText(ns.L.TRACKER_EMPTY)
+	empty:SetWordWrap(false)
+	empty:SetMaxLines(0)
+	empty:ClearAllPoints()
+	empty:SetPoint("TOPLEFT", look.x + 14, -2)
+	ns.FitText(empty, sub[1], sub[2], room - 1, sub[2] * EMPTY_FLOOR, sub[4], sub[3])
+	empty:SetWidth(room)
+end
+
 --- Draws `content` on a tracker block in `look` (HNT-R76, HNT-R79, HNT-R175): the paper under both blocks; the Pagle
 --- Wagers block while a run is on, its header, each run's lines and "+{n} more wagers on the table"; under it the
 --- Hunts header with its mark, each Hunt's dot, name and label with its second line, "+N more" or the empty line.
@@ -805,13 +830,7 @@ function ns.DrawTrackerBlock(view, look, content)
 	view.emptyLine:SetShown(content.empty)
 	view.empty:SetShown(content.empty)
 	if content.empty then
-		setFont(view.empty, look.sub)
-		view.empty:SetText(ns.L.TRACKER_EMPTY)
-		view.emptyLine:ClearAllPoints()
-		view.emptyLine:SetPoint("TOPLEFT", 0, -y)
-		view.emptyLine:SetSize(look.width, EXTRA_LINE)
-		view.empty:ClearAllPoints()
-		view.empty:SetPoint("TOPLEFT", look.x + 14, -2)
+		drawEmpty(view, look, y)
 		y = y + EXTRA_LINE
 	end
 	-- a block collapsed to its header keeps no room for the ornament: the header sits beside it
