@@ -455,7 +455,7 @@ ns.Locale("deDE", function(L)
 	L.SETTINGS_TOAST_RESET = "Zurücksetzen"
 	L.SETTINGS_TOAST_RESET_TOOLTIP = "Ziehe eine Einblendung mit gedrückter Umschalttaste, um Einblendungen und Winke zu verschieben, oder die Sitzungsübersicht, um sie zu verschieben. Dies setzt alle wieder an ihren Ausgangsplatz."
 	L.SETTINGS_TRACKERS_WHILE_FISHING = "Tracker nur beim Angeln"
-	L.SETTINGS_TRACKERS_WHILE_FISHING_TOOLTIP = "Blendet alle Pagle-Tracker aus, bis du eine Angelrute in der Hand hast oder auswirfst. Nach deinem letzten Wurf bleiben sie noch eine Minute sichtbar, damit ein kurzer Waffenwechsel sie nicht ausblendet."
+	L.SETTINGS_TRACKERS_WHILE_FISHING_TOOLTIP = "Zeigt die Tracker, solange du eine Angelrute in der Hand hast. Legst du sie weg, bleiben sie noch eine Minute nach deinem letzten Wurf sichtbar und verschwinden dann."
 	L.SETTINGS_TRACKER_POSITION = "Tracker-Position"
 	L.SETTINGS_TRACKER_RESET = "Zurücksetzen"
 	L.SETTINGS_TRACKER_RESET_TOOLTIP = "Ziehe einen Pagle-Tracker mit gedrückter Umschalttaste, um alle zu verschieben. Dies setzt sie wieder unter die Minikarte."

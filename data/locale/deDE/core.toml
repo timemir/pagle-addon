@@ -338,8 +338,8 @@ value = "Tracker nur beim Angeln"
 en = "Show trackers only while fishing"
 
 [SETTINGS_TRACKERS_WHILE_FISHING_TOOLTIP]
-value = "Blendet alle Pagle-Tracker aus, bis du eine Angelrute in der Hand hast oder auswirfst. Nach deinem letzten Wurf bleiben sie noch eine Minute sichtbar, damit ein kurzer Waffenwechsel sie nicht ausblendet."
-en = "Hides every Pagle tracker until a fishing pole is in hand or you cast. They stay up for a minute after your last Cast, so a quick weapon swap doesn't hide them."
+value = "Zeigt die Tracker, solange du eine Angelrute in der Hand hast. Legst du sie weg, bleiben sie noch eine Minute nach deinem letzten Wurf sichtbar und verschwinden dann."
+en = "Shows the trackers while a fishing pole is in hand. Once you put it away, they stay up for a minute after your last Cast, then hide."
 
 [SETTINGS_TOAST_POSITION]
 value = "Position der Einblendungen"

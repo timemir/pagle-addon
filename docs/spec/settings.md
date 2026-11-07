@@ -219,7 +219,7 @@ The rules below are authoritative; this sketch only summarises them.
 
   | Row | Kind | Values · default | Greyed out when | Tooltip |
   |---|---|---|---|---|
-  | Show trackers only while fishing | checkbox (native, `Settings.CreateCheckbox`) | off (CORE-R88, `PagleDB.profile.dock.onlyWhileFishing`) | | "Hides every Pagle tracker until a fishing pole is in hand or you cast. They stay up for a minute after your last Cast, so a quick weapon swap doesn't hide them." |
+  | Show trackers only while fishing | checkbox (native, `Settings.CreateCheckbox`) | off (CORE-R88, `PagleDB.profile.dock.onlyWhileFishing`) | | "Shows the trackers while a fishing pole is in hand. Once you put it away, they stay up for a minute after your last Cast, then hide." |
 
   It shows or hides the whole dock at once (CORE-R88) and leaves the tracker Modules' own Show rows as they are: a tracker shows only while its own row and the dock both let it. It is never greyed out, whatever trackers are on.
 

@@ -455,7 +455,7 @@ ns.Locale("ruRU", function(L)
 	L.SETTINGS_TOAST_RESET = "Сбросить"
 	L.SETTINGS_TOAST_RESET_TOOLTIP = "Перетащите плашку с Shift, чтобы сдвинуть плашки и кивки, или итоги сессии, чтобы сдвинуть их. Эта кнопка вернёт всё на свои места."
 	L.SETTINGS_TRACKERS_WHILE_FISHING = "Трекеры только на рыбалке"
-	L.SETTINGS_TRACKERS_WHILE_FISHING_TOOLTIP = "Трекеры Pagle скрыты, пока в руках нет удочки и вы не забрасываете её. После последнего заброса они остаются ещё минуту, так что быстрая смена оружия их не скроет."
+	L.SETTINGS_TRACKERS_WHILE_FISHING_TOOLTIP = "Трекеры видны, пока в руках удочка. Когда вы её уберёте, они останутся ещё на минуту после последнего заброса, а затем скроются."
 	L.SETTINGS_TRACKER_POSITION = "Положение трекеров"
 	L.SETTINGS_TRACKER_RESET = "Сбросить"
 	L.SETTINGS_TRACKER_RESET_TOOLTIP = "Перетащите любой трекер Pagle с Shift, чтобы сдвинуть их все. Эта кнопка вернёт их под миникарту."
