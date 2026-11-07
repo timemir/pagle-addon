@@ -312,7 +312,7 @@ ADR 0008 names the record call `Pagle.AppendRecord`; it lives on the handle so C
 ---@field init? fun(): table       -- custom: returns a Settings initializer (e.g. Stats' watched Dry spells)
 ```
 
-Rows map onto the native Settings initializers, except a keybinding row, which Core draws itself so that it can grey out (SET-R20). A checkboxSlider row's native control can't grey, so while its `isEnabled` is false it is hidden (SET-R31); `AddSetting` raises a Lua error for an unknown `topic` or `kind`.
+Rows map onto the native Settings initializers, except a keybinding row, which Core draws itself so that it can grey out (SET-R20). A checkboxSlider row's native control can't grey, so while its `isEnabled` is false it is hidden (SET-R31); *from 1.2.4,* it stays shown and live instead, since a shown predicate taints the panel (SET-R6, #598); `AddSetting` raises a Lua error for an unknown `topic` or `kind`.
 
 ### `M:RegisterTourStop(id, label, show, hide)`
 

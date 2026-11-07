@@ -30,6 +30,36 @@ local store = {
 	resetButton = ns.ResetNextActionButton,
 }
 
+-- QoL's Module handle as its Settings rows are added: each dropdown option's label is shown readable
+-- (ns.ReadableText, #597), and its value, what is saved and matched, is left as it is. The client names the output
+-- devices in the Windows code page (QOL-R68); every other label is UTF-8 already and stays byte for byte.
+---@param M PagleModuleHandle
+---@return PagleModuleHandle
+local function withReadableOptions(M)
+	return {
+		AddSetting = function(_, topic, setting)
+			local options = setting.kind == "dropdown" and setting.options
+			if options then
+				setting.options = function()
+					local shown = {}
+					for i, option in ipairs(options()) do
+						local copy = {}
+						for key, field in pairs(option) do
+							copy[key] = field
+						end
+						if type(option.label) == "string" then
+							copy.label = ns.ReadableText(option.label)
+						end
+						shown[i] = copy
+					end
+					return shown
+				end
+			end
+			return M:AddSetting(topic, setting)
+		end,
+	} --[[@as PagleModuleHandle]]
+end
+
 --- AceAddon calls it once, at QoL's ADDON_LOADED, after Core's (CORE-R10).
 function ns.QoL.OnInitialize()
 	-- The Key Bindings panel's names (QOL-R1), which the client reads when the panel opens.
@@ -43,7 +73,7 @@ function ns.QoL.OnInitialize()
 		return
 	end
 	-- QoL's rows on the Fishing page, before ModulesChanged (CORE-R42, SET-R20).
-	ns.AddSettings(ns.Module, store)
+	ns.AddSettings(withReadableOptions(ns.Module), store)
 	-- QoL's stop for `/pagle dev tour` (CORE-R65), on a Core that has the call.
 	if ns.Module.RegisterTourStop then
 		ns.RegisterTourStops(ns.Module)

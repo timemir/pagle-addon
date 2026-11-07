@@ -56,6 +56,107 @@ function ns.OutputDevices()
 	return devices
 end
 
+-- Windows-1252's 0x80–0x9F as Unicode code points, nil where the code page leaves the byte undefined; 0xA0–0xFF are
+-- Latin-1's, the byte's own code point.
+local CP1252 = {
+	[0x80] = 0x20AC,
+	[0x82] = 0x201A,
+	[0x83] = 0x0192,
+	[0x84] = 0x201E,
+	[0x85] = 0x2026,
+	[0x86] = 0x2020,
+	[0x87] = 0x2021,
+	[0x88] = 0x02C6,
+	[0x89] = 0x2030,
+	[0x8A] = 0x0160,
+	[0x8B] = 0x2039,
+	[0x8C] = 0x0152,
+	[0x8E] = 0x017D,
+	[0x91] = 0x2018,
+	[0x92] = 0x2019,
+	[0x93] = 0x201C,
+	[0x94] = 0x201D,
+	[0x95] = 0x2022,
+	[0x96] = 0x2013,
+	[0x97] = 0x2014,
+	[0x98] = 0x02DC,
+	[0x99] = 0x2122,
+	[0x9A] = 0x0161,
+	[0x9B] = 0x203A,
+	[0x9C] = 0x0153,
+	[0x9E] = 0x017E,
+	[0x9F] = 0x0178,
+}
+
+-- A high byte read as Windows-1252, in UTF-8; "?" for one the code page leaves undefined.
+---@param byte integer 0x80–0xFF
+---@return string
+local function fromCP1252(byte)
+	local code = byte >= 0xA0 and byte or CP1252[byte]
+	if not code then
+		return "?"
+	elseif code < 0x800 then
+		return string.char(0xC0 + math.floor(code / 0x40), 0x80 + code % 0x40)
+	end
+	return string.char(0xE0 + math.floor(code / 0x1000), 0x80 + math.floor(code / 0x40) % 0x40, 0x80 + code % 0x40)
+end
+
+-- Whether `byte` is a UTF-8 continuation byte, within `low`–`high` when given (the second byte's narrower range).
+---@param byte integer?
+---@param low integer?
+---@param high integer?
+---@return boolean
+local function continues(byte, low, high)
+	return byte ~= nil and byte >= (low or 0x80) and byte <= (high or 0xBF)
+end
+
+-- The length of the valid UTF-8 sequence at `i` in `text` (RFC 3629: no overlong form, no surrogate, nothing past
+-- U+10FFFF), or nil when the byte there starts none.
+---@param text string
+---@param i integer
+---@return integer?
+local function utf8Length(text, i)
+	local b1, b2, b3, b4 = text:byte(i, i + 3)
+	if b1 < 0x80 then
+		return 1
+	elseif b1 >= 0xC2 and b1 <= 0xDF then
+		return continues(b2) and 2 or nil
+	elseif b1 >= 0xE0 and b1 <= 0xEF then
+		local low, high = b1 == 0xE0 and 0xA0 or 0x80, b1 == 0xED and 0x9F or 0xBF
+		return continues(b2, low, high) and continues(b3) and 3 or nil
+	elseif b1 >= 0xF0 and b1 <= 0xF4 then
+		local low, high = b1 == 0xF0 and 0x90 or 0x80, b1 == 0xF4 and 0x8F or 0xBF
+		return continues(b2, low, high) and continues(b3) and continues(b4) and 4 or nil
+	end
+	return nil
+end
+
+--- `text` as the font can draw it (QOL-R68, #597). The client names a sound output device in the Windows code page,
+--- not UTF-8: "Kopfh\246rer", whose lone 0xF6 the font draws as a box. So each byte outside a valid UTF-8 sequence is
+--- read as Windows-1252 ("ö"), and valid UTF-8 is kept byte for byte: text that is all valid UTF-8 comes back as it
+--- was. For what is shown only: a device's name is still matched and saved as the client gives it.
+---@param text string
+---@return string
+function ns.ReadableText(text)
+	local parts, from, i = {}, 1, 1
+	while i <= #text do
+		local length = utf8Length(text, i)
+		if length then
+			i = i + length
+		else
+			parts[#parts + 1] = text:sub(from, i - 1)
+			parts[#parts + 1] = fromCP1252(text:byte(i))
+			i = i + 1
+			from = i
+		end
+	end
+	if #parts == 0 then
+		return text
+	end
+	parts[#parts + 1] = text:sub(from)
+	return table.concat(parts)
+end
+
 -- Whether PLAYER_LOGOUT has come: the client reloads its sound from the CVars after a logout or /reload anyway.
 local loggingOut = false
 

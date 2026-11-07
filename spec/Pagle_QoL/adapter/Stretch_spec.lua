@@ -1053,3 +1053,83 @@ describe("The Fishing stretch with Core", function()
 		assert.are.same({}, client.cvarCalls)
 	end)
 end)
+
+-- The client names output devices in the Windows code page, not UTF-8: "Kopfhörer" comes as "Kopfh\246rer", a lone
+-- 0xF6 the font draws as a box (#597). The dropdown shows each name readable; its value stays the client's bytes, so
+-- the saved choice and the match by name (ns.OutputDeviceIndex) don't change (QOL-R68).
+describe("A device name as the dropdown shows it (QOL-R68, #597)", function()
+	local function readable(text)
+		return newFakePagle().load("Pagle_QoL").ns.ReadableText(text)
+	end
+
+	it("leaves valid UTF-8 byte for byte: ASCII, Latin, Cyrillic, CJK and four-byte characters", function()
+		for _, text in ipairs({
+			"Speakers (Realtek(R) Audio)",
+			"Kopfh\195\182rer (2- ATH-M50xSTS-USB)",
+			"\208\157\208\176\209\131\209\136\208\189\208\184\208\186\208\184",
+			"\232\128\179\230\156\186",
+			"Headset \240\159\142\167",
+		}) do
+			assert.are.equal(text, readable(text))
+		end
+	end)
+
+	it("reads a name that isn't UTF-8 as Windows-1252", function()
+		assert.are.equal("Kopfh\195\182rer (2- ATH-M50xSTS-USB)", readable("Kopfh\246rer (2- ATH-M50xSTS-USB)"))
+		assert.are.equal("Haut-parleurs \195\169t\195\169", readable("Haut-parleurs \233t\233"))
+		-- 0x80–0x9F are Windows-1252's own: € – ™
+		assert.are.equal("\226\130\172 \226\128\147 \226\132\162", readable("\128 \150 \153"))
+	end)
+
+	it("keeps the valid UTF-8 of a mixed name and reads only the bytes outside it as Windows-1252", function()
+		-- ruRU's "(not found)" around a Windows-1252 name, as the missing device's label is
+		local missing = "Kopfh\246rer (\208\189\208\181\209\130)"
+		assert.are.equal("Kopfh\195\182rer (\208\189\208\181\209\130)", readable(missing))
+		-- a cut-off, an overlong and a surrogate sequence aren't UTF-8 either: Ã, À€, í €
+		assert.are.equal("a\195\131", readable("a\195"))
+		assert.are.equal("\195\128\226\130\172", readable("\192\128"))
+		assert.are.equal("\195\173\194\160\226\130\172", readable("\237\160\128"))
+	end)
+
+	it("shows a byte Windows-1252 leaves undefined as ?", function()
+		assert.are.equal("a?b?", readable("a\129b\157"))
+	end)
+
+	it("leaves an empty name empty", function()
+		assert.are.equal("", readable(""))
+	end)
+
+	it("labels each device readable in QoL's Output device row, keeping the client's bytes as its value", function()
+		local loaded = loadAddon("Pagle_QoL", FOREVER_GLOBALS)
+		local raw = "Kopfh\246rer (2- ATH-M50xSTS-USB)"
+		loaded.client.outputDevices = { "System Default", raw }
+		loaded.client.fire("PLAYER_LOGIN")
+		local settings = loaded.client.settings
+		local function deviceRow()
+			return settings.rowNamed(settings.show(assert(settings.category("Fishing"))), "Output device")
+		end
+
+		local row = deviceRow()
+		row.initializer:GetSetting():SetValue(raw)
+
+		local shown = {}
+		for i, option in ipairs(row.initializer:GetOptions()()) do
+			shown[i] = { option.value, option.label }
+		end
+		assert.are.same({
+			{ "", "Don't change" },
+			{ "System Default", "System Default" },
+			{ raw, "Kopfh\195\182rer (2- ATH-M50xSTS-USB)" },
+		}, shown)
+		assert.are.equal(raw, loaded.ns.db.profile.audio.device)
+
+		-- unplugged, it stays chosen and is listed as not found, readable too
+		loaded.client.outputDevices = { "System Default" }
+		local options = deviceRow().initializer:GetOptions()()
+		assert.are.same(
+			{ raw, "Kopfh\195\182rer (2- ATH-M50xSTS-USB) (not found)" },
+			{ options[#options].value, options[#options].label }
+		)
+		assert.are.equal(raw, loaded.ns.db.profile.audio.device)
+	end)
+end)

@@ -643,30 +643,45 @@ describe("Greying in the Settings tree", function()
 		assert.are.same({ "Swap gear", "Lure" }, greyedOn(loaded, "Fishing"))
 	end)
 
-	it("greys the audio mix's rows while it is off, hiding its channels' rows (SET-R20, SET-R31)", function()
-		local loaded = ready()
-		local CHANNELS = { "Master volume", "Effects", "Music", "Ambience", "Dialog" }
-		local function shown()
-			local labels = {}
-			for _, row in ipairs(loaded.client.settings.show(loaded.client.settings.page("Fishing"))) do
-				labels[row.initializer:GetName() or ""] = true
+	it(
+		"greys the audio mix's rows while it is off, its channels' rows staying shown and live (SET-R20, SET-R31, #598)",
+		function()
+			local loaded = ready()
+			local CHANNELS = { "Master volume", "Effects", "Music", "Ambience", "Dialog" }
+			local function shown()
+				local labels = {}
+				for _, row in ipairs(loaded.client.settings.show(loaded.client.settings.page("Fishing"))) do
+					labels[row.initializer:GetName() or ""] = true
+				end
+				return labels
 			end
-			return labels
-		end
 
-		setRow(loaded, "Fishing", "Fishing audio mix", false)
-		assert.are.same(
-			{ "Swap gear", "Lure", "Output device", "Keep sound in the background" },
-			greyedOn(loaded, "Fishing")
-		)
-		for _, label in ipairs(CHANNELS) do
-			assert(shown()[label] == nil, label)
-		end
+			setRow(loaded, "Fishing", "Fishing audio mix", false)
+			assert.are.same(
+				{ "Swap gear", "Lure", "Output device", "Keep sound in the background" },
+				greyedOn(loaded, "Fishing")
+			)
+			for _, label in ipairs(CHANNELS) do
+				assert(shown()[label] == true, label)
+			end
 
-		setRow(loaded, "Fishing", "Fishing audio mix", true)
-		assert.are.same({ "Swap gear", "Lure" }, greyedOn(loaded, "Fishing"))
-		for _, label in ipairs(CHANNELS) do
-			assert(shown()[label] == true, label)
+			setRow(loaded, "Fishing", "Fishing audio mix", true)
+			assert.are.same({ "Swap gear", "Lure" }, greyedOn(loaded, "Fishing"))
+			for _, label in ipairs(CHANNELS) do
+				assert(shown()[label] == true, label)
+			end
+		end
+	)
+
+	-- Blizzard's SettingsListMixin:Display calls shown predicates outside securecallfunction, so one Pagle added would
+	-- taint Settings.OpenToCategory's open of its page and print "Interface action failed because of an AddOn" (#598).
+	it("adds a shown predicate to no row on any page (SET-R6, #598)", function()
+		local loaded = ready()
+
+		for _, category in ipairs(loaded.client.settings.categories) do
+			for _, initializer in ipairs(category.layout.initializers) do
+				assert(#initializer.shownPredicates == 0, category.name .. " › " .. tostring(initializer:GetName()))
+			end
 		end
 	end)
 
@@ -971,7 +986,7 @@ describe("Each page's Defaults button", function()
 			}) do
 				setRow(loaded, "Fishing", label, value)
 			end
-			-- Last: with the mix off, its channels' rows are hidden (SET-R31).
+			-- The mix off too, which Defaults turns back on.
 			setRow(loaded, "Fishing", "Fishing audio mix", false)
 
 			loaded.client.settings.defaults(loaded.client.settings.page("Fishing"))
