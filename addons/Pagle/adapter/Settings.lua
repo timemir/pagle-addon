@@ -723,12 +723,12 @@ local function buildPage(topic, page, layout, entries)
 				end
 				-- A row Core draws reads its isEnabled as it draws (adapter/KeyBindingRow.lua, labelButtonRow). A
 				-- checkboxSlider's native control never reads modify predicates (SettingsCheckboxSliderControlMixin is a
-				-- SettingsListElementMixin, whose IsEnabled reads only Kiosk), so it is hidden while its isEnabled is
-				-- false instead: the panel lays its rows out again after each value change (SettingsPanelMixin:
-				-- OnSettingValueChanged, RepairDisplay), as Game › Subtitles' rows show and hide (SET-R31).
-				if setting.isEnabled and setting.kind == "checkboxSlider" then
-					initializer:AddShownPredicate(setting.isEnabled)
-				elseif setting.isEnabled and not drawnByCore(setting) then
+				-- SettingsListElementMixin, whose IsEnabled reads only Kiosk), so it stays shown and live, as Game ›
+				-- Sound's volume rows do with Enable Sound off (SET-R31). It isn't hidden with a shown predicate:
+				-- SettingsListMixin:Display calls those outside securecallfunction, so Pagle's would taint the panel's
+				-- open, and Settings.OpenToCategory's FocusContainer then has SmartNavigation:EnterFocusGroup print
+				-- "Interface action failed because of an AddOn" (#598, SET-R6).
+				if setting.isEnabled and setting.kind ~= "checkboxSlider" and not drawnByCore(setting) then
 					initializer:AddModifyPredicate(setting.isEnabled)
 				end
 			end

@@ -894,23 +894,18 @@ describe("A Module's value rows", function()
 			assert.are.same({ true, 0 }, { state.on, state.volume })
 		end)
 
-		it("is hidden while its isEnabled is false, its control never greying (SET-R31)", function()
+		-- Blizzard's SettingsListMixin:Display calls each shown predicate outside securecallfunction, so one Pagle added
+		-- tainted the panel's open, and OpenToCategory's FocusContainer then printed "Interface action failed because of
+		-- an AddOn" (#598). So the row stays shown and live, as Game › Sound's volume rows do with Enable Sound off.
+		it("stays shown and live while its isEnabled is false, adding no predicate (SET-R31, #598)", function()
 			local state = { on = true, volume = 40, live = false }
 			local loaded, page = trackersWith({ music(state) })
 			local settings = loaded.client.settings
-			local function shown()
-				for _, row in ipairs(settings.show(page)) do
-					if row.initializer:GetName() == "Music" then
-						return row
-					end
-				end
-				return nil
-			end
 
-			assert.is_nil(shown())
-			state.live = true
-			local row = assert(shown())
+			local row = settings.rowNamed(settings.show(page), "Music")
+
 			assert.is_nil(row.frame.enabled)
+			assert.are.same({}, row.initializer.shownPredicates)
 			assert.are.same({}, row.initializer.modifyPredicates)
 		end)
 	end)

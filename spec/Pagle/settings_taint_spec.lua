@@ -37,6 +37,11 @@ local FORBIDDEN = {
 	-- (Blizzard_Keybindings.lua, Blizzard_SettingsPanel.lua); started from Pagle's code, it would hold Pagle's taint. A
 	-- Module's keybinding row binds through the client's SetBinding instead (adapter/KeyBindingRow.lua, SET-R20).
 	{ "%f[%w_]KeybindListener%f[^%w_]", "SET-R6: Pagle never drives Blizzard's key-binding listener" },
+	-- SettingsListMixin:Display reads an initializer's shown predicates and calls them outside securecallfunction
+	-- (Blizzard_SettingsList.lua, SettingsSearchableElementMixin:ShouldShow), so one Pagle added taints the panel's
+	-- open: OpenToCategory then calls SmartNavigation:EnterFocusGroup, which prints "Interface action failed because
+	-- of an AddOn" when insecure (#598).
+	{ "[%.:]AddShownPredicate%f[^%w_]", "SET-R6: Pagle adds no shown predicate" },
 }
 
 -- Each forbidden thing the code says, as "<why>: <match>".
@@ -78,6 +83,7 @@ describe("Pagle and Blizzard's Settings list (SET-R6, #246)", function()
 			{ 'hooksecurefunc(SettingsPanel, "Open", f)', "SET-R6: Pagle hooks nothing of Settings" },
 			{ 'hooksecurefunc("SettingsPanel_EscapePressed", f)', "SET-R6: Pagle hooks nothing of Settings" },
 			{ "KeybindListener:StartListening(action, 1)", "SET-R6: Pagle never drives Blizzard's key-binding" },
+			{ "initializer:AddShownPredicate(setting.isEnabled)", "SET-R6: Pagle adds no shown predicate" },
 		}
 		for _, case in ipairs(planted) do
 			it(case[1], function()
