@@ -586,6 +586,75 @@ describe("the Journal's search box (LED-R148)", function()
 		typeInto(loaded, "")
 		assert.are.same({}, dropdown(loaded))
 	end)
+
+	describe("its no-match line, in its real face", function()
+		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+		local RealFont = dofile("scripts/measure-layout/realfont.lua")
+
+		-- The no-match line drawn in `language` (its Locale applied), measured in its real face (a ruRU client's,
+		-- which isn't bundled, in RealFont's stand-in), `wider` times as wide when given. Returns its row and the
+		-- drop-down.
+		local function noMatch(language, wider)
+			local _, loaded = openJournal({
+				catalogue = fixture(),
+				log = log(),
+				itemNames = NAMES,
+				areaNames = ZONES,
+				modules = function(fake)
+					fake.language = language
+				end,
+				id = false,
+			})
+			loaded.ns.journal:Toggle()
+			typeInto(loaded, "zzzz")
+			local drop = loaded.ns.journal.searchDrop
+			local label = drop.rows[1].label
+			RealFont.patch(label)
+			if wider then
+				function label:GetStringWidth()
+					local width, box = RealFont.layout(self).natural * wider, self:GetWidth()
+					return box > 0 and math.min(width, box) or width
+				end
+			end
+			typeInto(loaded, "zzzzz")
+			assert.are.same({}, loaded.client.errors)
+			assert.are.same({ loaded.ns.L.SEARCH_NONE }, dropdown(loaded))
+			return drop.rows[1], drop
+		end
+
+		-- "В Реестре пока нет ничего с таким названием." was cut at 238 of its 329 in the layout harness: the line
+		-- was held to one line.
+		it(
+			"led_r148 wraps ruRU's no-match line onto a second line, whole, the drop-down as tall, even in a face 10%"
+				.. " wider than the stand-in",
+			function()
+				for _, wider in ipairs({ false, 1.1 }) do
+					local row, drop = noMatch("ruRU", wider or nil)
+					local layout = RealFont.layout(row.label)
+
+					assert.are.equal(2, #layout.lines)
+					assert(layout.cut == nil, wider and "cut, 1.1 times" or "cut")
+					-- the wider face's two lines fit too: its whole width is under two lines' room
+					assert(layout.natural * (wider or 1) < 2 * row.label:GetWidth() - 20, "room for both lines")
+					assert(row.label:GetWidth() <= drop:GetWidth() - 30 + 1e-6, "inside the drop-down")
+					assert(row:GetHeight() >= layout.height + 8, "its row as tall as its lines")
+					assert(drop:GetHeight() >= row:GetHeight() + 19, "the drop-down as tall as its row")
+				end
+			end
+		)
+
+		it("led_r148 leaves English, German and Spanish on one line in a row of 30", function()
+			for _, language in ipairs({ "enUS", "deDE", "esES" }) do
+				local row = noMatch(language)
+				local layout = RealFont.layout(row.label)
+
+				assert.are.equal(1, #layout.lines, language)
+				assert(layout.cut == nil, language)
+				assert.are.equal(30, row:GetHeight(), language)
+				assert.are.equal(14, select(2, RealFont.face(row.label)), language)
+			end
+		end)
+	end)
 end)
 
 -- Every spread registered stays under this spec: a spread that lands later is swept with the others.

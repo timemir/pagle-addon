@@ -16,6 +16,8 @@ local INK = ns.JOURNAL_INK
 local DROP_W, DROP_X, DROP_Y = 268, 626, 33
 local HEAD_H, ZONE_H, FISH_H, NONE_H = 21, 27, 34, 30
 local INSET = 15
+-- The smallest the no-match line is set at, three quarters of its 14, before it's cut.
+local NONE_SIZE_FLOOR = 10.5
 
 ---@class LedgerSearchRowView: LedgerJournalClickable
 ---@field label FontString
@@ -153,6 +155,9 @@ function ns.AttachJournalSearch(journal, box, frame)
 				row:SetSize(DROP_W - 14, height)
 				ns.JournalAt(row, drop, 7, y)
 				ns.JournalRestyle(row.label, "print", 15, INK.body)
+				-- one line, as a result row is (the no-match line may have wrapped in this row)
+				row.label:SetWordWrap(false)
+				row.label:SetMaxLines(0)
 				row.label:SetText(result.label)
 				row.label:ClearAllPoints()
 				row.label:SetPoint("LEFT", isZone and INSET - 7 or 42, 0)
@@ -189,18 +194,35 @@ function ns.AttachJournalSearch(journal, box, frame)
 			-- the no-match line, opening nothing
 			used = 1
 			local row = rowAt(1)
-			row:SetSize(DROP_W - 14, NONE_H)
 			ns.JournalAt(row, drop, 7, y)
 			ns.JournalRestyle(row.label, "italic", 14, INK.noteLight)
 			row.label:SetText(ns.L.SEARCH_NONE)
 			row.label:ClearAllPoints()
 			row.label:SetPoint("LEFT", INSET - 7, 0)
-			ns.JournalBound(row.label, DROP_W - 30)
+			-- a line wider than the drop-down (a longer language's) wraps onto a second line, its row as much taller; one
+			-- too long for two is set smaller, in half steps to NONE_SIZE_FLOOR, then cut with "…"
+			local room, rowH = DROP_W - 30, NONE_H
+			row.label:SetWidth(0)
+			if row.label:GetStringWidth() + 1 > room then
+				local oneLine = row.label:GetStringHeight()
+				row.label:SetWordWrap(true)
+				row.label:SetMaxLines(2)
+				row.label:SetWidth(room)
+				local size = 14
+				while row.label:IsTruncated() and size > NONE_SIZE_FLOOR do
+					size = size - 0.5
+					ns.JournalRestyle(row.label, "italic", size, INK.noteLight)
+				end
+				rowH = NONE_H + math.max(0, row.label:GetStringHeight() - oneLine)
+			else
+				ns.JournalBound(row.label, room)
+			end
+			row:SetSize(DROP_W - 14, rowH)
 			row.medal:Hide()
 			row.note:Hide()
 			row.place = nil
 			row:Show()
-			y = y + NONE_H
+			y = y + rowH
 		end
 		for i = used + 1, #drop.rows do
 			drop.rows[i]:Hide()

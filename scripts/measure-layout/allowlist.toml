@@ -24,6 +24,72 @@ reason = """At the tracker frames' floor sizes the German name is cut with the c
 it whole. Accepted for 1.1.1."""
 
 [[allow]]
+kind = "overlap"
+text = "*"
+other = "В Реестре пока нет ничего с таким названием."
+stop = "ledger.journal.search"
+languages = ["ruRU"]
+reason = """The Journal's search drop-down falls open over the right page on its own paper, 12 frame levels above \
+it, so the page's words under it are hidden; the harness doesn't know one frame is drawn over another. Since 1.3.5 \
+the no-match line takes a second line where it's too wide for one (LED-R148), and the drop-down reaches lower."""
+
+[[allow]]
+kind = "overlap"
+text = "*"
+other = "[[]Ñöţħïñğ bу ţħåţ ñåmé ïñ ţħé Ĺéďğéŕ уéţ.*"
+stop = "ledger.journal.search"
+languages = ["pseudo"]
+reason = "As ruRU's no-match line: the search drop-down's paper covers the page's words under it (LED-R148)."
+
+[[allow]]
+kind = "cut"
+text = "[[]üñfïšħéď · šķïĺĺ ~*"
+stop = "*ledger.journal*"
+detail = "more than 2 lines*"
+languages = ["pseudo"]
+reason = """A zone tile's rank line takes a second line over the name's room and is then cut with the client's "…" \
+(LED-R131, #560); the zone's page has it whole. The pseudo-locale's is three lines long; ruRU's fits on two."""
+
+[[allow]]
+kind = "cut"
+text = "[[] Fŕéšħ Ŵåţéŕ föŕ * möŕé Čåţсħéš.*"
+languages = ["pseudo"]
+reason = """The XP line's Fresh Water words are held to the page after the XP figures and cut with the client's \
+"…" there (LED-R145); the bar's tooltip has the figures. Every real language's fits."""
+
+[[allow]]
+kind = "cut"
+text = "[[]0% öf ţħé Ĺéďğéŕ сömрĺéţé (* öf *)*"
+stop = "ledger.journal.angler"
+languages = ["pseudo"]
+reason = """A group heading's note has at least 0.6 of its line and is cut with the client's "…" past it (LED-R146, \
+1.1.1's German fix); every real language's fits."""
+
+[[allow]]
+kind = "cut"
+text = "[[]* öf * őĩĝĕŭ ĩĝĕŭő ĝĕŭőĩĝ]"
+stop = "ledger.journal.angler"
+languages = ["pseudo"]
+reason = """A count on the Angler page has half its line and is cut with the client's "…" past it (LED-R146); the \
+pseudo-locale pads "0 of 35" to 27 letters, and every real language's fits."""
+
+[[allow]]
+kind = "cut"
+text = "[[]Čåţсħéš åñď ďïšсövéŕïéš*"
+stop = "ledger.journal.angler"
+languages = ["pseudo"]
+reason = """An XP source's name keeps to what its two figures' columns leave and is cut with the client's "…" there \
+(LED-R146); every real language's fits."""
+
+[[allow]]
+kind = "cut"
+text = "[[]åĺšö öñ ţħé ĺïvé ţŕåсķéŕ*"
+stop = "core.onboarding.look.stats.book"
+languages = ["pseudo"]
+reason = """The Stats book's heading note keeps to what the heading leaves and is cut with the client's "…" there; \
+every real language's fits."""
+
+[[allow]]
 kind = "cut"
 text = "* (* /pagle dev*)"
 stop = "core.announce.*"

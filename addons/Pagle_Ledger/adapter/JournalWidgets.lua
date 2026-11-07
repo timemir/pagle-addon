@@ -1292,8 +1292,39 @@ end
 ---@field tabs LedgerTabView[]
 ---@field rule Texture
 
+-- The tabs' small capitals, the smallest they are set at, and the room between two tabs.
+local TAB_SIZE, TAB_SIZE_FLOOR, TAB_GAP = 15, 11, 22
+
+-- The room each tab's words get when the tabs' words, `naturals`, are wider together than `budget`: the widest are cut
+-- first, to one room alike, so a short tab keeps its words and no tab is cut to nothing for being last. Nil when they
+-- fit.
+---@param naturals number[]
+---@param budget number
+---@return number?
+local function tabRoom(naturals, budget)
+	local total = 0
+	for _, natural in ipairs(naturals) do
+		total = total + natural
+	end
+	if total <= budget then
+		return nil
+	end
+	local sorted = { unpack(naturals) }
+	table.sort(sorted)
+	local left = budget
+	for i, natural in ipairs(sorted) do
+		local share = left / (#sorted - i + 1)
+		if natural > share then
+			return math.max(1, share)
+		end
+		left = left - natural
+	end
+	return math.max(1, left)
+end
+
 -- The continent tabs (LED-R130): small capitals side by side over a rule, the chosen one in the title's ink and
--- underlined in red, the others faded; each opens its place.
+-- underlined in red, the others faded; each opens its place. Tabs wider together than the page (a longer language's
+-- names) are set smaller together, in half steps down to TAB_SIZE_FLOOR, and only then cut with "…", the widest first.
 makers.tabs = function(parent)
 	local widget = newWidget(parent) --[[@as LedgerTabsWidget]]
 	widget.tabs = {}
@@ -1302,12 +1333,12 @@ makers.tabs = function(parent)
 	widget.rule:SetPoint("TOPLEFT", 0, -24)
 	widget.rule:SetPoint("TOPRIGHT", 0, -24)
 	function widget.Fill(self, block, width, open)
-		local x = 0
-		for i, data in ipairs(block.tabs or {}) do
+		local list = block.tabs or {}
+		for i, data in ipairs(list) do
 			local tab = self.tabs[i]
 			if not tab then
 				tab = CreateFrame("Button", nil, self) --[[@as LedgerTabView]]
-				tab.label = ns.JournalLabel(tab, "sc", 15, INK.noteLight)
+				tab.label = ns.JournalLabel(tab, "sc", TAB_SIZE, INK.noteLight)
 				tab.label:SetPoint("TOPLEFT", 0, -2)
 				tab.underline = ns.JournalTint(tab, INK.red, 1, "ARTWORK", 1)
 				tab.underline:SetHeight(2)
@@ -1316,15 +1347,42 @@ makers.tabs = function(parent)
 				ns.JournalClickable(tab)
 				self.tabs[i] = tab
 			end
-			tab.label:SetTextColor(rgb(data.on and INK.title or INK.noteLight))
 			tab.label:SetText(data.text)
-			bound(tab.label, math.max(1, width - x))
-			tab.underline:SetShown(data.on)
-			tab.place, tab.open = data.place, open
 			-- its count in small italic after its words (LED-R169)
 			tab.count = tab.count or ns.JournalLabel(tab, "italic", 12, INK.noteLight, "", { layer = "ARTWORK" })
 			tab.count:SetShown(data.count ~= nil)
 			tab.count:SetText(data.count or "")
+		end
+		-- the tabs' words at `size`, each as wide as it measures, and the room they get when that's too wide together
+		local function setIn(size)
+			local naturals, budget = {}, width
+			for i, data in ipairs(list) do
+				local tab = self.tabs[i]
+				ns.JournalRestyle(tab.label, "sc", size, data.on and INK.title or INK.noteLight)
+				tab.label:SetWidth(0)
+				naturals[i] = tab.label:GetStringWidth() + 1
+				if data.count then
+					tab.count:SetWidth(0)
+					budget = budget - (tab.count:GetStringWidth() + 1) - 4
+				end
+				if i > 1 then
+					budget = budget - TAB_GAP
+				end
+			end
+			return tabRoom(naturals, budget)
+		end
+		local size = TAB_SIZE
+		local room = setIn(size)
+		while room and size > TAB_SIZE_FLOOR do
+			size = size - 0.5
+			room = setIn(size)
+		end
+		local x = 0
+		for i, data in ipairs(list) do
+			local tab = self.tabs[i]
+			bound(tab.label, math.max(1, math.min(room or math.huge, width - x)))
+			tab.underline:SetShown(data.on)
+			tab.place, tab.open = data.place, open
 			tab.count:ClearAllPoints()
 			tab.count:SetPoint("TOPLEFT", tab.label:GetWidth() + 4, -5)
 			ns.JournalBound(tab.count, math.max(1, width - x - tab.label:GetWidth() - 4))
@@ -1332,9 +1390,9 @@ makers.tabs = function(parent)
 			tab:SetSize(tabW, 25)
 			ns.JournalAt(tab, self, x, 0)
 			tab:Show()
-			x = x + tabW + 22
+			x = x + tabW + TAB_GAP
 		end
-		for i = #(block.tabs or {}) + 1, #self.tabs do
+		for i = #list + 1, #self.tabs do
 			self.tabs[i]:Hide()
 		end
 		return 26
