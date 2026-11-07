@@ -537,6 +537,41 @@ describe("the Fish Journal's widgets (ledger.md › UI)", function()
 		assert.are.equal(#"Legends" * 7.1 + 1, legends.label:GetWidth())
 	end)
 
+	-- The pseudo-locale's numerals ("[iii. ő]", 1.2.2) ran under their titles, which started at a fixed 28 (#594). The
+	-- titles start after the widest of the language's numerals, so they stay in one column.
+	it("led_r132 starts every contents line's words after the widest numeral, in one column", function()
+		local numerals = { "[i. pad]", "[ii. pad]", "[iii. pad]" }
+		local loaded = drawn({
+			{ kind = "leader", numeral = numerals[1], text = "The Trophy Room", value = "3 / 40" },
+			{ kind = "leader", numeral = numerals[3], text = "Legends", value = "0 / 3" },
+			{ kind = "leader", text = "No numeral", value = "1" },
+		})
+		loaded.ns.L.HOME_NUMERALS = numerals
+
+		loaded.ns.journal:Draw()
+
+		local trophy, legends, plain = unpack(loaded.ns.journal.shown.left.drawn.leader)
+		local widest = #"[iii. pad]" * 6
+		assert(widest > 28, "the numerals are wider than the old column, so this checks something")
+		local column = trophy.label.points[1][2]
+		assert(column >= widest + 4, "the words start after the widest numeral")
+		assert.are.equal(column, legends.label.points[1][2])
+		assert.are.equal(0, plain.label.points[1][2])
+		-- the room the words wrap in follows the column
+		local width = loaded.ns.journal.shown.left.width
+		assert.is_true(trophy.label:GetWidth() <= width - column - trophy.value:GetWidth() - 12)
+	end)
+
+	it("led_r132 keeps English contents lines' words at 28, its numerals narrower than the column", function()
+		local loaded = drawn({
+			{ kind = "leader", numeral = "iii.", text = "Legends", value = "0 / 3" },
+		})
+
+		loaded.ns.journal:Draw()
+
+		assert.are.equal(28, loaded.ns.journal.shown.left.drawn.leader[1].label.points[1][2])
+	end)
+
 	-- No contents line needs three lines today, but one that did took its leader's start from its third line's words,
 	-- which the client never draws: SetMaxLines(2) cuts the second with its ellipsis at the room, so that is the last
 	-- line shown, and it is full.
