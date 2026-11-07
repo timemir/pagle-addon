@@ -4,9 +4,10 @@ addons/Pagle/adapter/Art.lua (#582, VAR-R28; pagle_data/name_pages.py has the de
     .tools/bin/python scripts/measure-name-pages.py            # write the block
     .tools/bin/python scripts/measure-name-pages.py --check    # fail if the block isn't what the art gives
 
-Runs scripts/measure-name-pages/probe.lua under the pinned busted (.tools/bin/busted, or --busted), then composites the
-textures it reports. scripts/check.sh's generator stage runs it with --check, so a change to a style's art or layout
-that moves the page behind the name fails the gate until the block is written again.
+Runs scripts/measure-name-pages/probe.lua under the pinned busted (.tools/bin/busted, or --busted) with the layout
+harness's helper (scripts/measure-layout/helper.lua), then composites the textures it reports. scripts/check.sh's
+generator stage runs it with --check, so a change to a style's art or layout that moves the page behind the name fails
+the gate until the block is written again.
 """
 
 import argparse
@@ -37,8 +38,8 @@ def main(argv: list[str] | None = None) -> int:
 
     with tempfile.TemporaryDirectory() as scratch:
         out = Path(scratch) / "name-pages.jsonl"
-        run = subprocess.run([str(args.busted), str(name_pages.PROBE)], cwd=root, capture_output=True, text=True,
-                             env={**os.environ, "NAME_PAGES_OUT": str(out)})
+        run = subprocess.run([str(args.busted), f"--helper={name_pages.HELPER}", str(name_pages.PROBE)], cwd=root,
+                             capture_output=True, text=True, env={**os.environ, "NAME_PAGES_OUT": str(out)})
         if run.returncode != 0 or not out.exists():
             print(run.stdout[-4000:] + run.stderr[-4000:], file=sys.stderr)
             print("measure-name-pages: the probe failed", file=sys.stderr)

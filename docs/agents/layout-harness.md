@@ -77,7 +77,7 @@ local RealFont = dofile("scripts/measure-layout/realfont.lua")
 RealFont.patch(label) -- GetStringWidth, GetUnboundedStringWidth, GetStringHeight and IsTruncated in its real face
 ```
 
-`RealFont.install()`, which the harness's helper calls, does the same for every font string the fake client makes, by wrapping `dofile` for `spec/support/widgets.lua`, and keeps every font object the fake client's `CreateFont` makes by its name (`spec/support/client.lua`). A spec shouldn't call it: every other spec keeps 6 units a byte. The helper hands the RealFont it installed to `tour.lua` as `MEASURE_REALFONT`, since each `dofile` of `realfont.lua` keeps its own names.
+`RealFont.install()`, which the harness's helper calls, does the same for every font string the fake client makes, by wrapping `dofile` for `spec/support/widgets.lua`, and keeps every font object the fake client's `CreateFont` makes by its name (`spec/support/client.lua`). A spec shouldn't call it: every other spec keeps 6 units a byte. The helper hands the RealFont it installed to `tour.lua` as `MEASURE_REALFONT`, since each `dofile` of `realfont.lua` keeps its own names. The name pages' probe (`scripts/measure-name-pages/probe.lua`, which `scripts/measure-name-pages.py` runs to generate and check `NAME_PAGES` in `adapter/Art.lua`) runs under the same helper and measures with the same `MEASURE_REALFONT` (#625), so the band behind a variety's name stands where the line is drawn in its real face: the toasts' kicker and name lines stack at their real heights, and a Nod's line, set by its art font's name, is that font's 28 units tall, not the stand-in's 15. Run by hand, the probe needs the helper: `NAME_PAGES_OUT=<file> .tools/bin/busted --helper=scripts/measure-layout/helper.lua scripts/measure-name-pages/probe.lua`.
 
 A spec whose font strings are set by a font object's name, as the toasts' are, passes `RealFont.keepNamed` its client's `CreateFont`, so `RealFont.face` resolves the name. `spec/scripts/measure-layout_spec.lua` does so for a toast's name:
 
@@ -85,3 +85,5 @@ A spec whose font strings are set by a font object's name, as the toasts' are, p
 local _, stubs = dofile("spec/support/client.lua")()
 local loaded = loadAddon("Pagle", foreverWith({ CreateFont = RealFont.keepNamed(stubs.CreateFont) }))
 ```
+
+`spec/scripts/measure-name-pages_spec.lua` does the same for the Nod the name pages' probe measures: its line, set by `PagleArtNodName`, is as tall as that font's line.

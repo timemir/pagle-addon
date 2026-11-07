@@ -467,7 +467,9 @@ files["scripts/measure-layout/**"] = { std = "lua51+busted", read_globals = help
 files["scripts/measure-layout/helper.lua"] = { std = "lua51+busted", globals = { "MEASURE_REALFONT" } }
 files["scripts/measure-layout/tour.lua"] =
 	{ std = "lua51+busted", read_globals = { "MEASURE_REALFONT", unpack(helperGlobals) } }
--- The name pages' probe (scripts/measure-name-pages.py, #582) draws every toast style under busted the same way.
-files["scripts/measure-name-pages/**"] = { std = "lua51+busted", read_globals = helperGlobals }
+-- The name pages' probe (scripts/measure-name-pages.py, #582) draws every toast style under busted the same way, under
+-- the harness's helper, and measures with the RealFont it installed (#625).
+files["scripts/measure-name-pages/**"] =
+	{ std = "lua51+busted", read_globals = { "MEASURE_REALFONT", unpack(helperGlobals) } }
 -- Backend-generated Recovery data fixture sets exactly the data addon's one global.
 files["spec/Pagle/fixtures/Recovery.lua"] = { globals = { "PagleRecoveryData" } }
