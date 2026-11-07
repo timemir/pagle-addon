@@ -76,6 +76,8 @@ local TIPS = {
 	marginNotes = "Explain things the first time they happen.",
 	minimapIcon = "A round Pagle button on the minimap's edge that opens the Pagle menu. The menu is also in the AddOns "
 		.. "button by the minimap.",
+	minimapDetach = "Lets you drag the Pagle button anywhere on the screen, away from the minimap's edge. Untick it to "
+		.. "put the button back on the edge.",
 	anglerTooltips = "Adds a Pagle block to the tooltip of players whose Angler is on the Pagle website. Needs the Pagle "
 		.. "Companion.",
 	pasteExport = "Copy your Catch log as a Paste string, to paste on the Pagle website without the Companion.",
@@ -134,6 +136,7 @@ local EXPECTED = {
 			{ "dropdown", "Language", tip = TIPS.language },
 			{ "header", "Pagle menu" },
 			{ "checkbox", "Show the minimap icon", tip = TIPS.minimapIcon },
+			{ "checkbox", "Detach from the minimap", tip = TIPS.minimapDetach },
 			{ "header", "Pagle website" },
 			{ "checkbox", "Show other Anglers on player tooltips", tip = TIPS.anglerTooltips },
 			{ "button", "Catch log", caption = "Copy for the website", tip = TIPS.pasteExport },
@@ -934,8 +937,8 @@ describe("Each page's Defaults button", function()
 
 	it(
 		"on the root restores the reminder to off, the length unit to the region's and the Clock to the game's,"
-			.. " leaving the Language, Show the minimap icon and Show other Anglers on player tooltips (SET-R13,"
-			.. " LOG-R69, CORE-R87, CORE-R56, VIEW-R30)",
+			.. " leaving the Language, Show the minimap icon, Detach from the minimap and Show other Anglers on player"
+			.. " tooltips (SET-R13, LOG-R69, CORE-R87, CORE-R56, CORE-R53, VIEW-R30)",
 		function()
 			local loaded = ready()
 			setRow(loaded, "Pagle", "Remind me to /reload when Casts are unsaved", true)
@@ -943,6 +946,7 @@ describe("Each page's Defaults button", function()
 			setRow(loaded, "Pagle", "Clock", "12h")
 			setRow(loaded, "Pagle", "Language", "enUS")
 			setRow(loaded, "Pagle", "Show the minimap icon", false)
+			setRow(loaded, "Pagle", "Detach from the minimap", true)
 			setRow(loaded, "Pagle", "Show other Anglers on player tooltips", false)
 
 			loaded.client.settings.defaults(loaded.client.settings.page("Pagle"))
@@ -953,6 +957,7 @@ describe("Each page's Defaults button", function()
 				["Clock"] = "game",
 				["Language"] = "enUS", -- no default: a Defaults click never asks for a reload (SET-R13)
 				["Show the minimap icon"] = false,
+				["Detach from the minimap"] = true,
 				["Show other Anglers on player tooltips"] = false,
 			}, valuesOn(loaded, "Pagle"))
 			assert.is_nil(loaded.namespaces.Pagle.db.profile.lengthUnit) -- following the region (SET-R13)
