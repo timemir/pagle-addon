@@ -80,8 +80,8 @@ local TIPS = {
 		.. "Companion.",
 	pasteExport = "Copy your Catch log as a Paste string, to paste on the Pagle website without the Companion.",
 	trackerPosition = "Shift-drag any Pagle tracker to move them all. This puts them back under the minimap.",
-	whileFishing = "Hides every Pagle tracker until a fishing pole is in hand or you cast. They stay up for a minute "
-		.. "after your last Cast, so a quick weapon swap doesn't hide them.",
+	whileFishing = "Shows the trackers while a fishing pole is in hand. Once you put it away, they stay up for a minute "
+		.. "after your last Cast, then hide.",
 	toastPosition = "Shift-drag a toast to move the toasts and Nods, or the Session summary to move it. This puts them all"
 		.. " back where they started.",
 	huntsTracker = "A small tracker under the minimap with the Hunts you've pinned on the board.",
