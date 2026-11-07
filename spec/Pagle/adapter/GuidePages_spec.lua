@@ -41,13 +41,25 @@ local MODULES = {
 ---@param linesOf fun(ns: table): table<string, integer> the lines each text wraps to, from the load's words
 local function measure(loaded, linesOf)
 	local lines = linesOf(loaded.ns)
-	local GuideText = loaded.ns.GuideText
-	loaded.ns.GuideText = function(parent, face, size, ink, words, options)
+	local ns = loaded.ns
+	-- each font object's size, so a text set smaller later measures at its new size and spacing
+	local sizes = {}
+	local ArtFaceFont = ns.ArtFaceFont
+	ns.ArtFaceFont = function(face, size, shadow)
+		local font = ArtFaceFont(face, size, shadow)
+		sizes[font] = size
+		return font
+	end
+	local GuideText = ns.GuideText
+	ns.GuideText = function(parent, face, size, ink, words, options)
 		local fontString = GuideText(parent, face, size, ink, words, options)
-		local spacing = options and options.spacing or 0
+		fontString.spacing = options and options.spacing or 0
+		fontString.SetSpacing = function(self, spacing)
+			self.spacing = spacing
+		end
 		fontString.GetStringHeight = function(self)
 			local n = self.wordWrap and lines[self.text] or 1
-			return n * size + (n - 1) * spacing
+			return n * (sizes[self.fontObject] or size) + (n - 1) * self.spacing
 		end
 		return fontString
 	end
@@ -378,10 +390,16 @@ describe("the What's in the box step (ONB-R31, ONB-R91)", function()
 		return top(row.icon) + row.icon.box[2]
 	end
 
-	-- Where a row ends: under the lower of its icon and its words' line box (the blurb's 18.225 at 13.5, or the
-	-- title's 19.55 at 17 when it has none).
+	-- A blurb's size now: 13.5, or smaller when the rows were set smaller to fit (#592).
+	local function blurbSize(row)
+		return tonumber((row.blurb.fontObject.name or ""):match("_print_(%d+_?%d*)$"):gsub("_", "."), 10)
+	end
+
+	-- Where a row ends: under the lower of its icon and its words' line box (the blurb's 18.225 at 13.5, as far
+	-- apart for a smaller size, or the title's 19.55 at 17 when it has none).
 	local function rowEnd(row)
-		local words = row.blurb and bottom(row.blurb) + (18.225 - 13.5) / 2 or bottom(row.title) + (19.55 - 17) / 2
+		local words = row.blurb and bottom(row.blurb) + blurbSize(row) * (18.225 / 13.5 - 1) / 2
+			or bottom(row.title) + (19.55 - 17) / 2
 		return math.max(iconTop(row) + 36, words)
 	end
 
@@ -440,10 +458,29 @@ describe("the What's in the box step (ONB-R31, ONB-R91)", function()
 		assert.is_true(rowEnd(rows[#rows]) <= 483.01)
 	end)
 
-	it("keeps the rows at least 8 apart, the rule between, however long their blurbs", function()
-		local loaded = guideAt("box", nil, boxLines({ 4, 4, 4, 2, 2, 2 }), SIX)
+	-- Rows that would pass the foot at gaps of 8 set every blurb a half size smaller at a time (the pseudo-locale's
+	-- Curio Shop row ran under Next and the skip link, #592).
+	it("onb_r31 sets the blurbs smaller until the rows end by 483, the gaps still at least 8", function()
+		local loaded = guideAt("box", nil, boxLines({ 3, 3, 3, 3, 2, 2 }), SIX)
 		local rows = loaded.ns.guidePages.rows
 
+		local gap = iconTop(rows[2]) - rowEnd(rows[1])
+		assert.is_true(gap >= 8 - 0.01)
+		for i = 1, #rows - 1 do
+			assert.is.near(gap, iconTop(rows[i + 1]) - rowEnd(rows[i]), 0.01)
+			assert.is_true(top(rows[i].rule) > rowEnd(rows[i]))
+			assert.is_true(iconTop(rows[i + 1]) > top(rows[i].rule))
+		end
+		assert.is_true(rowEnd(rows[#rows]) <= 483.01)
+		assert.is_true(blurbSize(rows[1]) < 13.5)
+		assert.are.equal(blurbSize(rows[1]), blurbSize(rows[6]))
+	end)
+
+	it("keeps the rows 8 apart at the smallest blurbs, the rule between, however long they are", function()
+		local loaded = guideAt("box", nil, boxLines({ 8, 8, 8, 8, 8, 8 }), SIX)
+		local rows = loaded.ns.guidePages.rows
+
+		assert.are.equal(11.5, blurbSize(rows[1]))
 		for i = 1, #rows - 1 do
 			assert.is.near(8, iconTop(rows[i + 1]) - rowEnd(rows[i]), 0.01)
 			assert.is_true(top(rows[i].rule) > rowEnd(rows[i]))
