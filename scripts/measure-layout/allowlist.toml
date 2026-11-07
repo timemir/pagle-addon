@@ -70,16 +70,6 @@ share of the row, set smaller to three quarters of its 18, then cut with "…". 
 wide in 69, an estimate (FRIZQT___CYR measured in Marcellus) and silent under the pseudo-locale. 1.3.5."""
 
 [[allow]]
-kind = "cut"
-text = "по умолчанию: ничего не назначено"
-stop = "core.onboarding.step.*"
-detail = "more than 2 lines*"
-languages = ["ruRU"]
-reason = """A binding field's note right of its dashed cap (ONB-R40): two lines at most, set smaller down to 10.5, \
-then ended by the client with "…" inside the field. ruRU's needs three lines at 10.5 in the room left of a \
-128-wide cap (Casting and Fishing clothes). 1.3.5."""
-
-[[allow]]
 kind = "overlap"
 text = "*"
 other = "(rule)"

@@ -29,6 +29,9 @@ local WIDTH, HEIGHT = 382, 62
 -- set smaller when its words need more (ns.FitGuideText for the label).
 local EDGE, CAP_GAP, CAP_W, CAP_PAD, NOTE_GAP, NOTE_MIN = 13, 12, 128, 8, 12, 90
 local NOTE_SIZE, NOTE_SPACING, NOTE_LINES, NOTE_FLOOR = 13, 4.55, 2, 10.5
+-- The note's top under the field's, on the label's line; a note that takes a third line at NOTE_FLOOR is stood on
+-- the field's middle (the cap's), 8 inside its edges at most, and held to NOTE_MOST lines (1.3.5).
+local NOTE_TOP, NOTE_MOST, FIELD_EDGE = 22.3 + 2.275, 3, 8
 local WAIT_SIZE, WAIT_FLOOR = 14, 10.5
 -- The conflict box over the field: the kit's 76, and a line more for ONB-R43's note under its buttons.
 local CONFLICT_HEIGHT = 92
@@ -151,9 +154,10 @@ local function fitWait(field)
 end
 
 -- Fits the note right of the cap (ONB-R40): as wide as the room left there, on at most NOTE_LINES lines, set smaller
--- in half-unit steps down to NOTE_FLOOR when its words need more. Still longer at the floor, it is held to NOTE_LINES
--- and the client cuts its last line short with an ellipsis, inside the field. Measured with no line cap, as the
--- client's string height counts only the lines it would draw.
+-- in half-unit steps down to NOTE_FLOOR when its words need more. Measured with no line cap, as the client's string
+-- height counts only the lines it would draw. Still more than NOTE_LINES lines at the floor, as the client wraps them
+-- (1.3.5), it takes a third, the three stood on the field's middle; past NOTE_MOST the client cuts its last line short
+-- with an ellipsis, inside the field.
 ---@param field PagleGuideBindingField
 local function fitNote(field)
 	local note = field.note
@@ -172,7 +176,20 @@ local function fitNote(field)
 		size = size - 0.5
 		set()
 	end
-	note:SetMaxLines(NOTE_LINES)
+	-- more than two lines as the client wraps them: taller than two of its one-line height and their spacing
+	note:SetWordWrap(false)
+	local line = note:GetStringHeight()
+	note:SetWordWrap(true)
+	local height = note:GetStringHeight()
+	local lines, top = NOTE_LINES, NOTE_TOP
+	if height > NOTE_LINES * line + (NOTE_LINES - 1) * NOTE_SPACING + 0.5 then
+		lines = NOTE_MOST
+		local most = NOTE_MOST * line + (NOTE_MOST - 1) * NOTE_SPACING
+		top = math.max(FIELD_EDGE, (HEIGHT - math.min(height, most)) / 2)
+	end
+	note:ClearAllPoints()
+	note:SetPoint("TOPRIGHT", field, "TOPLEFT", WIDTH - EDGE, -top)
+	note:SetMaxLines(lines)
 	local ink = ns.GUIDE_INKS.note
 	note:SetTextColor(ink[1], ink[2], ink[3])
 end
@@ -369,7 +386,7 @@ function ns.NewGuideBindingField(parent, action, label)
 		spacing = NOTE_SPACING,
 		justify = "RIGHT",
 	})
-	field.note:SetPoint("TOPRIGHT", field, "TOPLEFT", WIDTH - EDGE, -(22.3 + 2.275))
+	field.note:SetPoint("TOPRIGHT", field, "TOPLEFT", WIDTH - EDGE, -NOTE_TOP)
 	-- the cap sits 12 right of the label
 	local capX = EDGE + heldTo(field.label, labelRoom) + CAP_GAP
 	field.capX = capX
