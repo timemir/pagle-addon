@@ -73,6 +73,21 @@ local BUTTON_RIGHT, BUTTON_W, BUTTON_PAD = 540, 160, 24
 -- Where a native row's control starts, from the row's top centre, and a native button's width: a Module's button row
 -- with no caption, drawn by Core, starts there and is never narrower.
 local CONTROL_X, NATIVE_BUTTON_W = -40, 200
+-- The room a button has from there (#593): to 10 short of the row's right edge, as Blizzard's right-aligned buttons
+-- end, since the list clips what passes it. A row is 635 wide: the panel's 920, less its category list (199 at 18)
+-- and the container's 16 and 22 beside it, the scroll box 15 wider on the left and 20 short on the right, and the
+-- rows padded 25 on the left (Blizzard_SettingsPanel.xml, Blizzard_SettingsList.xml and .lua at the forever 1.60.1
+-- commit). The panel isn't resizable; a frame's own width can't be read instead, as the list may draw a row before it
+-- lays the frame out at the row's width.
+local ROW_W = 635
+local CONTROL_ROOM = ROW_W / 2 - CONTROL_X - 10
+-- A button's faces, its state's each: the template's, and the small ones a caption too wide for its room is set in.
+local BUTTON_FACES = { normal = "GameFontNormal", highlight = "GameFontHighlight", disabled = "GameFontDisable" }
+local SMALL_FACES = {
+	normal = "GameFontNormalSmall",
+	highlight = "GameFontHighlightSmall",
+	disabled = "GameFontDisableSmall",
+}
 
 -- The status list's version and state columns (SET-R11).
 local VERSION_X, STATE_X = 180, 250
@@ -95,6 +110,7 @@ local function widgets(frame)
 		own.state = fontString(frame, STATE_X)
 		own.button = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate") --[[@as Button]]
 		own.button:SetSize(BUTTON_W, 22)
+		own.button:GetFontString():SetWordWrap(false)
 		-- Getting started's checkbox and line (SET-R10 rows 4–6)
 		own.check = CreateFrame("CheckButton", nil, frame, "UICheckButtonTemplate") --[[@as CheckButton]]
 		own.check:SetSize(CHECK_W, CHECK_W)
@@ -105,10 +121,18 @@ local function widgets(frame)
 	own.text:Hide()
 	own.name:Hide()
 	own.name:SetWidth(0) -- a Getting started row may have cut its label short (rowLabel)
+	own.name:SetFontObject("GameFontHighlight") -- the Field report row's is a native row's
 	own.version:Hide()
 	own.state:Hide()
 	own.button:Hide()
 	own.button:SetScript("OnClick", nil)
+	own.button:SetScript("OnEnter", nil)
+	own.button:SetScript("OnLeave", nil)
+	-- a button row may have set its caption small or cut it (controlButton)
+	own.button:SetNormalFontObject(BUTTON_FACES.normal)
+	own.button:SetHighlightFontObject(BUTTON_FACES.highlight)
+	own.button:SetDisabledFontObject(BUTTON_FACES.disabled)
+	own.button:GetFontString():SetWidth(0)
 	own.check:Hide()
 	own.check:SetScript("OnClick", nil)
 	own.line:Hide()
@@ -212,6 +236,35 @@ local function rowButton(own, caption, onClick)
 	return BUTTON_RIGHT - width
 end
 
+-- A row's button where a native row's control starts, as a native button row draws it (SET-R5, #593): as wide as its
+-- caption needs and never narrower than a native button, within CONTROL_ROOM. A caption too wide for that is set in
+-- the small faces, and one too wide even so is cut by the client with "...", so nothing passes the row's right edge,
+-- where the list clips it.
+---@param own table
+---@param frame Frame
+---@param caption string
+---@param onClick fun()
+local function controlButton(own, frame, caption, onClick)
+	local button = own.button
+	button:SetText(caption)
+	local width = math.ceil(button:GetTextWidth()) + BUTTON_PAD
+	if width > CONTROL_ROOM then
+		button:SetNormalFontObject(SMALL_FACES.normal)
+		button:SetHighlightFontObject(SMALL_FACES.highlight)
+		button:SetDisabledFontObject(SMALL_FACES.disabled)
+		width = math.ceil(button:GetTextWidth()) + BUTTON_PAD
+		if width > CONTROL_ROOM then
+			width = CONTROL_ROOM
+			button:GetFontString():SetWidth(width - BUTTON_PAD)
+		end
+	end
+	button:ClearAllPoints()
+	button:SetPoint("TOPLEFT", frame, "TOP", CONTROL_X, 3)
+	button:SetWidth(math.max(NATIVE_BUTTON_W, width))
+	button:SetScript("OnClick", onClick)
+	button:Show()
+end
+
 -- Where Getting started's checkboxes sit: CHECK_X, or `GAP` past the longer of the checkbox rows' labels, measured
 -- on `own`'s label, so a long label pushes both and they stay in one column (SET-R10 rows 5 and 6). The First evening
 -- list's label counts only while its row is offered (`evening`), so it never pushes Margin notes' alone.
@@ -303,18 +356,42 @@ local function statusList()
 end
 
 -- The Field report row (CORE-R40, SET-R10 row 4): "Field report" with the button "Open Field report", "Open Field
--- report (3)" while the count is above 0. The native button control calls a function caption each time the row is
--- shown, so the count is read then (SET-R12). Its search tags are added here, as the native ones take strings only.
--- Pressing it closes the panel first, since the box would open behind it; while restricted Pagle.OpenFieldReport then
--- prints REP-R44's line (SET-R12).
+-- report (3)" while the count is above 0, read each time the row is drawn (SET-R12). Core draws it as a native button
+-- row looks, since a native button is a fixed 200 wide and a longer caption ran past both its sides (#593): the label
+-- in the native face, cut short before the button, and the button as controlButton draws it. Its tooltip is SET-R10's,
+-- and the search finds it by its label and its caption. Pressing it closes the panel first, since the box would open
+-- behind it; while restricted Pagle.OpenFieldReport then prints REP-R44's line (SET-R12).
 ---@return SettingsInitializer
 local function fieldReportRow()
-	local initializer = CreateSettingsButtonInitializer(L.SETTINGS_FIELD_REPORT_ROW, function()
-		return ns.FieldReportButtonText(Pagle.GetFieldReportCount())
-	end, function()
-		HideUIPanel(SettingsPanel)
-		Pagle.OpenFieldReport()
-	end, L.SETTINGS_FIELD_REPORT_TOOLTIP, false)
+	local function draw(frame)
+		local own = widgets(frame)
+		own.name:SetFontObject("GameFontNormal")
+		rowLabel(own, L.SETTINGS_FIELD_REPORT_ROW, ROW_W / 2 + CONTROL_X - GAP - NAME_X)
+		controlButton(own, frame, ns.FieldReportButtonText(Pagle.GetFieldReportCount()), function()
+			HideUIPanel(SettingsPanel)
+			Pagle.OpenFieldReport()
+		end)
+		own.button:SetEnabled(true)
+		-- the tooltip over the row and over its button, as a native button row shows it
+		local function showTooltip(owner)
+			GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
+			GameTooltip:SetText(L.SETTINGS_FIELD_REPORT_ROW)
+			GameTooltip:AddLine(L.SETTINGS_FIELD_REPORT_TOOLTIP, 1, 1, 1, true)
+			GameTooltip:Show()
+		end
+		local function hideTooltip()
+			GameTooltip:Hide()
+		end
+		for _, region in ipairs({ frame, own.button }) do
+			region:SetScript("OnEnter", showTooltip)
+			region:SetScript("OnLeave", hideTooltip)
+		end
+	end
+	-- Named by its label, with its tooltip, as a native row is, for the tree's readers.
+	local initializer = Settings.CreateElementInitializer(
+		ROW_TEMPLATE,
+		{ draw = draw, name = L.SETTINGS_FIELD_REPORT_ROW, tooltip = L.SETTINGS_FIELD_REPORT_TOOLTIP }
+	)
 	initializer:AddSearchTags(L.SETTINGS_FIELD_REPORT_ROW, L.SETTINGS_FIELD_REPORT_BUTTON)
 	return initializer
 end
@@ -572,23 +649,18 @@ local function sliderOptions(slider)
 end
 
 -- A Module's button row with no caption (SET-R2): its label on the button and no label beside it, on Core's own row,
--- the button as wide as its words, measured, from where a native row's control starts. A native button is a fixed 200
--- wide, and a long label ran past both its sides ("Guardar lo que llevo como conjunto de pesca"). It reads `isEnabled`
--- each time it is drawn, as a keybinding row does, and is found by its label.
+-- the button as wide as its words, measured, from where a native row's control starts (controlButton). A native
+-- button is a fixed 200 wide, and a long label ran past both its sides ("Guardar lo que llevo como conjunto de
+-- pesca"); with no bound, a longer one ran past the row's edge (#593). It reads `isEnabled` each time it is drawn, as
+-- a keybinding row does, and is found by its label.
 ---@param setting PagleSetting
 ---@param onClick fun()
 ---@return SettingsInitializer
 local function labelButtonRow(setting, onClick)
 	local function draw(frame)
 		local own = widgets(frame)
-		local button = own.button
-		button:SetText(setting.label)
-		button:ClearAllPoints()
-		button:SetPoint("TOPLEFT", frame, "TOP", CONTROL_X, 3)
-		button:SetWidth(math.max(NATIVE_BUTTON_W, math.ceil(button:GetTextWidth()) + BUTTON_PAD))
-		button:SetEnabled(setting.isEnabled == nil or setting.isEnabled() ~= false)
-		button:SetScript("OnClick", onClick)
-		button:Show()
+		controlButton(own, frame, setting.label, onClick)
+		own.button:SetEnabled(setting.isEnabled == nil or setting.isEnabled() ~= false)
 		if setting.tooltip then
 			frame:SetScript("OnEnter", function(row)
 				GameTooltip:SetOwner(row, "ANCHOR_RIGHT")

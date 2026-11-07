@@ -642,6 +642,38 @@ describe("The Settings root's Help chart the waters section (SET-R10)", function
 		assert.are.same({ "Field report", "Open Field report" }, loaded.client.settings.textsOf(button.frame))
 	end)
 
+	it(
+		"draws the row itself, the button from where a native row's control starts and as wide as its caption "
+			.. "(SET-R5, SET-R10, #593)",
+		function()
+			local loaded = enterWorld(loadCore(unchartedHistory(2, FIRST)), 2)
+			-- 36 characters with the count: 216 wide in the fake, past a native button's 200 with its padding
+			loaded.ns.L.SETTINGS_FIELD_REPORT_BUTTON_COUNT = "Open the Field report, all of it ({count})"
+
+			local _, row = reportRows(loaded)
+
+			local button = loaded.client.settings.buttonsOf(row.frame)[1]
+			assert.are.equal("PagleSettingsRowTemplate", row.initializer.template)
+			assert.are.equal("Open the Field report, all of it (3)", button.text)
+			assert.are.equal(36 * 6 + 24, button:GetWidth())
+			assert.are.same({ "TOPLEFT", row.frame, "TOP", -40, 3 }, { button:GetPoint() })
+			-- its label in a native row's face
+			local label
+			for _, child in ipairs(row.frame.children) do
+				if child.kind == "FontString" and child.shown and child.text == "Field report" then
+					label = child
+				end
+			end
+			assert.are.equal("GameFontNormal", assert(label).fontObject)
+			-- SET-R10's tooltip over the button too, as a native button row shows it
+			button:GetScript("OnEnter")(button)
+			assert.are.equal(
+				"Copy what you've caught that Pagle's data doesn't know yet, and paste it into the issue form.",
+				loaded.client.tooltipLines()[2]
+			)
+		end
+	)
+
 	it("closes the Settings panel first, then opens the box (SET-R12, REP-R43)", function()
 		local loaded = enterWorld(loadCore(unchartedHistory(2, FIRST)), 2)
 		local Pagle = loaded.env.Pagle

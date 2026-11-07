@@ -402,6 +402,26 @@ function widgets.newWidget(kind, parent)
 	function widget:GetTextWidth()
 		return #(self.text or "") * 6
 	end
+	-- A button's font objects for its states (`normalFontObject`, `highlightFontObject`, `disabledFontObject`), as
+	-- SetNormalFontObject and its kin set them; nil until set, when its template's apply.
+	function widget:SetNormalFontObject(fontObject)
+		self.normalFontObject = fontObject
+	end
+	function widget:SetHighlightFontObject(fontObject)
+		self.highlightFontObject = fontObject
+	end
+	function widget:SetDisabledFontObject(fontObject)
+		self.disabledFontObject = fontObject
+	end
+	-- A button's own font string, which draws its text: one per button, made at the first call. It isn't among the
+	-- button's children, so a row's texts read the caption once, from the button.
+	function widget:GetFontString()
+		if not self.fontString then
+			self.fontString = widgets.newWidget("FontString")
+			self.fontString.fontObject = "GameFontNormal"
+		end
+		return self.fontString
+	end
 	function widget:LockHighlight()
 		self.highlightLocked = true
 	end
