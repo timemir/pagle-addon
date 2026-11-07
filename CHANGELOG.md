@@ -1,5 +1,18 @@
 # Pagle
 
+## 1.2.3 (2026-11-07)
+
+Variety names and crowded stamps read on every toast.
+
+### Fixed
+
+- A variety's name on the fish line is readable on every toast style. On dark pages such as Moonlit Vellum, Oxblood Vellum and the Deep Lure it was printed in the rarity's dark ink, so a Rare name was dark blue on night blue. Each style now writes the name in the shade of its rarity colour that reads best on its own page: lighter on dark pages, a touch darker where a light page needed it. (#588)
+- A toast with four or more stamps no longer squeezes them until they're hard to read and the fish's name is cut to a few letters. It shows the two most important stamps and a "+N" for the rest, so the stamps stay readable and the name keeps its room. Toasts with up to three stamps are unchanged. (#589)
+
+### TRANSLATORS
+
+- Español: fmartingr
+
 ## 1.2.2 (2026-11-06)
 
 Every variety stamp is readable.
