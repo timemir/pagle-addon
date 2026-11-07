@@ -1,5 +1,20 @@
 # Pagle
 
+## 1.2.4 (2026-11-07)
+
+The Session summary moves like a window, and longer languages fit.
+
+### Changed
+
+- The Session summary, and the Write-up, now moves like any window: drag it by its leather heading. Shift-drag anywhere on it still works, and the "Shift-drag to move" note is gone. (#599)
+- QoL's five fishing volume rows stay visible and adjustable while the Fishing audio mix is off, as Game › Sound's do. Changes apply when the mix is on. (#601)
+
+### Fixed
+
+- Opening QoL's Fishing settings from the tour, `/pagle qol` or the "Fishing settings »" button no longer prints "Interface action failed because of an AddOn". (#598)
+- An output device whose name has an accented letter, such as "Kopfhörer", shows its name instead of a box. (#597)
+- Longer translations fit: Settings buttons stay within their row, and the Field report button grows with its caption (#593); the Pagle Wagers rows and ladder line no longer print over each other (#595); Field guide pages (#592), the Journal's contents and rank ladder (#594) and Tackle Board card footers (#596) keep their words apart. English, German and Spanish look as before.
+
 ## 1.2.3 (2026-11-07)
 
 Variety names and crowded stamps read on every toast.
