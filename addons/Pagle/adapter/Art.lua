@@ -723,3 +723,68 @@ function ns.TintStamp(stamp, color, style)
 	end
 	stamp.label:SetTextColor(word[1], word[2], word[3])
 end
+
+-- On a page a style writes light on, a variety's name is its rarity's colour lifted toward white until its WCAG
+-- relative luminance is at least this (#582, 1.2.3): 4.5:1 on a page up to 0.083, the lightest of the dark pages
+-- behind the name line but four mid-tone ones (VAR-R28), and still the rarity's hue.
+local NAME_ON_DARK = 0.55
+
+-- An ink's WCAG relative luminance, 0 to 1: Rec. 709 weights over its values made linear.
+---@param color number[]
+---@return number
+local function relativeLuminance(color)
+	local linear = {}
+	for i = 1, 3 do
+		local c = color[i]
+		linear[i] = c <= 0.03928 and c / 12.92 or ((c + 0.055) / 1.055) ^ 2.4
+	end
+	return luminance(linear)
+end
+
+-- `color` with every channel moved `share` of the way to white.
+---@param color number[]
+---@param share number
+---@return number[]
+local function toward(color, share)
+	return {
+		color[1] + (1 - color[1]) * share,
+		color[2] + (1 - color[2]) * share,
+		color[3] + (1 - color[3]) * share,
+	}
+end
+
+-- Each rarity colour lifted for a dark page, made once.
+---@type table<number[], number[]>
+local lifted = {}
+
+--- The ink a variety's name is written in beside a name in the style's ink `ink` (a role in ns.ANNOUNCE_COLORS), on a
+--- toast's name line or a Nod's (VAR-R26, VAR-R28): the rarity's ink where the style writes dark, as on parchment;
+--- where it writes light, on a dark page (#582, 1.2.3: the night-blue vellum, the Deep Lure and the rest), the
+--- rarity's colour lifted toward white as far as NAME_ON_DARK, so the name reads there and its hue still says the
+--- rarity. The gem's rim and fill are left as they are.
+---@param look PagleVarietyLook
+---@param ink string
+---@return number[]
+function ns.VarietyNameInk(look, ink)
+	if luminance(ns.ANNOUNCE_COLORS[ink]) <= DARK_INK then
+		return look.ink
+	end
+	local color = look.color
+	if not lifted[color] then
+		local light = color
+		if relativeLuminance(color) < NAME_ON_DARK then
+			local low, high = 0, 1
+			for _ = 1, 24 do
+				local share = (low + high) / 2
+				if relativeLuminance(toward(color, share)) >= NAME_ON_DARK then
+					high = share
+				else
+					low = share
+				end
+			end
+			light = toward(color, high)
+		end
+		lifted[color] = light
+	end
+	return lifted[color]
+end
