@@ -429,6 +429,8 @@ ns.Locale("ruRU", function(L)
 	L.SETTINGS_LOOK_PARAGRAPH = "Облики, которые у вас есть. Выберите один здесь, в Коллекции Рыбацкого журнала или кнопкой «Использовать» в Лавке диковин — всё это меняет одно и то же."
 	L.SETTINGS_MARGIN_NOTES = "Заметки на полях"
 	L.SETTINGS_MARGIN_NOTES_TOOLTIP = "Объяснять то, что происходит впервые."
+	L.SETTINGS_MINIMAP_DETACH = "Отделить от миникарты"
+	L.SETTINGS_MINIMAP_DETACH_TOOLTIP = "Кнопку Pagle можно перетащить в любое место экрана, подальше от края миникарты. Снимите флажок, чтобы вернуть её на край."
 	L.SETTINGS_MINIMAP_ICON = "Показывать значок у миникарты"
 	L.SETTINGS_MINIMAP_ICON_TOOLTIP = "Круглая кнопка Pagle на краю миникарты, открывающая меню Pagle. Меню есть и в отсеке модификаций у миникарты."
 	L.SETTINGS_MODULES = "Модули"

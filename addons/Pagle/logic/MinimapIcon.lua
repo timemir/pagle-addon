@@ -34,3 +34,68 @@ function ns.MinimapIconOffset(angle, radius)
 	local radians = math.rad(angle)
 	return math.cos(radians) * radius, math.sin(radians) * radius
 end
+
+-- From 1.5, "Detach from the minimap" (CORE-R53): the detached icon sits anywhere on the screen, its centre kept as
+-- fractions of the screen's width and height, so it means the same spot at any UI scale and window size, and kept
+-- far enough from each edge that the whole button shows. The screen is UIParent, in its own units.
+
+--- `value` kept between `low` and `high`, or midway when the range is empty.
+---@param value number
+---@param low number
+---@param high number
+---@return number
+local function within(value, low, high)
+	if high < low then
+		return (low + high) / 2
+	end
+	return math.min(math.max(value, low), high)
+end
+
+--- The detached icon's centre kept on a `width` x `height` screen: at least half the `size` button from each edge,
+--- or the screen's middle on a screen smaller than the button (CORE-R53).
+---@param x number the centre, from the screen's bottom left
+---@param y number
+---@param width number
+---@param height number
+---@param size number the button's side
+---@return number x
+---@return number y
+function ns.ClampMinimapIcon(x, y, width, height, size)
+	local half = size / 2
+	return within(x, half, width - half), within(y, half, height - half)
+end
+
+--- The spot a detached icon whose centre is at `x`, `y` keeps (PagleDB.global.minimap.point): the clamped centre as
+--- fractions of the screen (CORE-R53).
+---@param x number
+---@param y number
+---@param width number
+---@param height number
+---@param size number
+---@return { x: number, y: number }
+function ns.DetachedIconPoint(x, y, width, height, size)
+	local clampedX, clampedY = ns.ClampMinimapIcon(x, y, width, height, size)
+	return { x = clampedX / width, y = clampedY / height }
+end
+
+--- Whether `value` is a number that isn't NaN or infinite.
+---@param value any
+---@return boolean
+local function finite(value)
+	return type(value) == "number" and value == value and value ~= math.huge and value ~= -math.huge
+end
+
+--- Where a saved spot puts the detached icon's centre on a `width` x `height` screen now, clamped to it; nil for a
+--- spot that isn't one (CORE-R53).
+---@param point any PagleDB.global.minimap.point
+---@param width number
+---@param height number
+---@param size number
+---@return number? x
+---@return number? y
+function ns.DetachedIconCenter(point, width, height, size)
+	if type(point) ~= "table" or not (finite(point.x) and finite(point.y)) then
+		return nil
+	end
+	return ns.ClampMinimapIcon(point.x * width, point.y * height, width, height, size)
+end

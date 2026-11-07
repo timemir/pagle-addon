@@ -26,8 +26,10 @@ ns.PAGLEDB_DEFAULTS = {
 		-- REP-R25; wallet-and-shop.md › Data; varieties.md › Data (VAR-R10).
 		projections = { fieldReport = {}, wallet = {}, varieties = {} },
 		diagnostics = {},
-		-- catch-log.md › Data: the minimap icon's angle round the minimap and its shown state (CORE-R53, CORE-R56).
-		minimap = { angle = ns.MINIMAP_ICON_ANGLE, hide = false },
+		-- catch-log.md › Data: the minimap icon's angle round the minimap and its shown state (CORE-R53, CORE-R56);
+		-- from 1.5, whether it is detached from the minimap, and `point`, its spot on the screen while detached, nil (no
+		-- key) until it is first detached.
+		minimap = { angle = ns.MINIMAP_ICON_ANGLE, hide = false, detached = false, point = nil },
 		-- paste-string.md › Data: each log's last exported seq, by logId (PST-R40), and the content checkpoints kept
 		-- for the next export (PST-R42).
 		pasteExports = {},

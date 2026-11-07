@@ -1997,6 +1997,14 @@ en = "How Pagle writes a time of day, such as the realm time at the top of the H
 value = "Un botón redondo de Pagle en el borde del minimapa que abre el menú de Pagle. El menú también está en el botón de accesorios junto al minimapa."
 en = "A round Pagle button on the minimap's edge that opens the Pagle menu. The menu is also in the AddOns button by the minimap."
 
+[SETTINGS_MINIMAP_DETACH]
+value = "Separar del minimapa"
+en = "Detach from the minimap"
+
+[SETTINGS_MINIMAP_DETACH_TOOLTIP]
+value = "Te deja arrastrar el botón de Pagle a cualquier parte de la pantalla, lejos del borde del minimapa. Desmárcalo para devolver el botón al borde."
+en = "Lets you drag the Pagle button anywhere on the screen, away from the minimap's edge. Untick it to put the button back on the edge."
+
 [SETTINGS_ANGLER_TOOLTIPS_TOOLTIP]
 value = "Añade un bloque de Pagle al tooltip de los jugadores cuyo Pescador está en la web de Pagle. Necesita Pagle Companion."
 en = "Adds a Pagle block to the tooltip of players whose Angler is on the Pagle website. Needs the Pagle Companion."

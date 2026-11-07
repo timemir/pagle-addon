@@ -487,6 +487,14 @@ en = "Show the minimap icon"
 value = "Ein runder Pagle-Knopf am Rand der Minikarte, der das Pagle-Menü öffnet. Das Menü steckt auch im AddOns-Knopf an der Minikarte."
 en = "A round Pagle button on the minimap's edge that opens the Pagle menu. The menu is also in the AddOns button by the minimap."
 
+[SETTINGS_MINIMAP_DETACH]
+value = "Von der Minikarte lösen"
+en = "Detach from the minimap"
+
+[SETTINGS_MINIMAP_DETACH_TOOLTIP]
+value = "Damit kannst du den Pagle-Knopf überallhin auf dem Bildschirm ziehen, weg vom Rand der Minikarte. Nicht angehakt, sitzt er wieder am Rand."
+en = "Lets you drag the Pagle button anywhere on the screen, away from the minimap's edge. Untick it to put the button back on the edge."
+
 [SETTINGS_PAGLE_WEBSITE]
 value = "Pagle-Website"
 en = "Pagle website"

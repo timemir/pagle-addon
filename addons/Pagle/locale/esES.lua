@@ -430,6 +430,8 @@ ns.Locale("esES", function(L)
 	L.SETTINGS_LOOK_PARAGRAPH = "Aspectos que tienes. Elige uno aquí, en la Colección del Diario de peces o con Usar en la Tienda de Curiosidades; todos cambian lo mismo."
 	L.SETTINGS_MARGIN_NOTES = "Notas al margen"
 	L.SETTINGS_MARGIN_NOTES_TOOLTIP = "Explica las cosas la primera vez que pasan."
+	L.SETTINGS_MINIMAP_DETACH = "Separar del minimapa"
+	L.SETTINGS_MINIMAP_DETACH_TOOLTIP = "Te deja arrastrar el botón de Pagle a cualquier parte de la pantalla, lejos del borde del minimapa. Desmárcalo para devolver el botón al borde."
 	L.SETTINGS_MINIMAP_ICON = "Mostrar el icono del minimapa"
 	L.SETTINGS_MINIMAP_ICON_TOOLTIP = "Un botón redondo de Pagle en el borde del minimapa que abre el menú de Pagle. El menú también está en el botón de accesorios junto al minimapa."
 	L.SETTINGS_MODULES = "Módulos"

@@ -38,13 +38,13 @@ local function loggedIn(saved)
 	return loaded, loaded.env.PagleMinimapButton
 end
 
--- The Pagle menu section's header and its checkbox, found by the header's label, then the row after them: the Pagle
--- website section's header (spec/Pagle/adapter/AnglersInGame_spec.lua).
+-- The Pagle menu section's header and its two checkboxes, found by the header's label, then the row after them: the
+-- Pagle website section's header (spec/Pagle/adapter/AnglersInGame_spec.lua).
 local function menuRows(loaded)
 	local initializers = loaded.client.settings.category("Pagle").layout.initializers
 	for n, initializer in ipairs(initializers) do
 		if initializer:GetName() == "Pagle menu" then
-			return initializer, initializers[n + 1], initializers[n + 2]
+			return initializer, initializers[n + 1], initializers[n + 2], initializers[n + 3]
 		end
 	end
 	error("no Pagle menu header on the root")
@@ -383,7 +383,7 @@ describe("Show the minimap icon", function()
 		function()
 			local loaded = loggedIn()
 
-			local header, row, website = menuRows(loaded)
+			local header, row, _, website = menuRows(loaded)
 
 			assert.are.equal("Pagle website", website:GetName())
 			assert.are.same(
@@ -467,5 +467,373 @@ describe("Pagle's menu button", function()
 		loaded.client.fire("PLAYER_LOGIN")
 
 		assert.are.equal(loaded.env.AddonCompartmentFrame, loaded.ns.MenuButton())
+	end)
+end)
+
+-- From 1.5, "Detach from the minimap" (CORE-R53, CORE-R54, CORE-R56; SET-R10 row 10a): the icon leaves the minimap's
+-- edge for UIParent, where a plain left-drag moves it anywhere on the screen.
+
+-- The detach row's setting.
+local function detachSetting(loaded)
+	return select(3, menuRows(loaded)):GetSetting()
+end
+
+-- Show the minimap icon's setting.
+local function shownSetting(loaded)
+	return select(2, menuRows(loaded)):GetSetting()
+end
+
+-- Where the icon sits now on the screen, as { x, y } of its centre in UIParent's units from its bottom left, rounded;
+-- nil unless it is anchored by its centre to UIParent's bottom left alone.
+local function screenPlaceOf(loaded, button)
+	local point, relativeTo, relativePoint, x, y = button:GetPoint()
+	local placed = point == "CENTER" and relativePoint == "BOTTOMLEFT" and relativeTo == loaded.env.UIParent
+	if button:GetNumPoints() ~= 1 or not placed then
+		return nil
+	end
+	return { round(x), round(y) }
+end
+
+-- The icon's spot on the screen at `angle` round the minimap, the minimap's centre at 1700, 900, at UI scale 1.
+local function onScreenAt(angle)
+	local offset = at(angle)
+	return { round(1700 + offset[1]), round(900 + offset[2]) }
+end
+
+-- Core logged in with the minimap's centre at 1700, 900 on the screen; returns it and the icon.
+local function loggedInOnScreen(saved)
+	local loaded = loadCore(saved)
+	loaded.env.Minimap.screenCenter = { 1700, 900 }
+	loaded.client.fire("PLAYER_LOGIN")
+	return loaded, loaded.env.PagleMinimapButton
+end
+
+-- Core logged in and the icon detached by its row, at the default 225 degrees; returns it and the icon.
+local function detached(saved)
+	local loaded, button = loggedInOnScreen(saved)
+	detachSetting(loaded):SetValue(true)
+	return loaded, button
+end
+
+-- A plain left-drag with the mouse, as the client plays one: the press on the icon at `from` (screen pixels), the
+-- drag starting, the cursor at `to` over one frame, and the release. The client then calls no OnClick.
+local function dragFrom(loaded, button, from, to)
+	loaded.client.cursor = from
+	button:GetScript("OnMouseDown")(button, "LeftButton")
+	button:GetScript("OnDragStart")(button, "LeftButton")
+	loaded.client.cursor = to
+	loaded.client.update(0.016)
+	button:GetScript("OnDragStop")(button)
+end
+
+-- What PagleDB.global.minimap holds now, as { detached, point }.
+local function savedMode(loaded)
+	local minimap = loaded.ns.db.global.minimap
+	return { minimap.detached, minimap.point }
+end
+
+describe("Detach from the minimap", function()
+	it(
+		"is a checkbox right under Show the minimap icon, its child, with its tooltip and no shown predicate (SET-R10"
+			.. " row 10a, SET-R6)",
+		function()
+			local loaded = loggedIn()
+
+			local _, shown, row, website = menuRows(loaded)
+
+			assert.are.same(
+				{ "Detach from the minimap", "SettingsCheckboxControlTemplate" },
+				{ row:GetName(), row.template }
+			)
+			assert.are.equal(
+				"Lets you drag the Pagle button anywhere on the screen, away from the minimap's edge. Untick it to put"
+					.. " the button back on the edge.",
+				row.data.tooltip
+			)
+			assert.are.equal(shown, row:GetParentInitializer())
+			assert.are.same({}, row.shownPredicates)
+			assert.are.equal("Pagle website", website:GetName())
+		end
+	)
+
+	it("reads off by default, and has no default for the root's Defaults button to restore (SET-R13)", function()
+		local loaded = loggedIn()
+		local setting = detachSetting(loaded)
+
+		assert.is_false(setting:GetValue())
+		assert.is_nil(setting:GetDefaultValue())
+		assert.are.same({ false }, savedMode(loaded))
+	end)
+
+	it(
+		"greys while the icon is hidden, keeping its value, as the Announcements page's rows do (SET-R10, SET-R31)",
+		function()
+			local loaded = loggedIn()
+			local row = select(3, menuRows(loaded))
+			detachSetting(loaded):SetValue(true)
+			local shown = loaded.client.settings.show(assert(loaded.client.settings.category("Pagle")))
+			local function live()
+				for _, drawn in ipairs(shown) do
+					if drawn.initializer == row then
+						return drawn.frame.enabled
+					end
+				end
+				error("the detach row isn't shown")
+			end
+			assert.is_true(live())
+
+			shownSetting(loaded):SetValue(false)
+			assert.are.same({ false, true }, { live(), detachSetting(loaded):GetValue() })
+
+			shownSetting(loaded):SetValue(true)
+			assert.is_true(live())
+			assert.are.same({ "Pagle_Core_minimapIcon" }, row.evaluateStateVariables)
+		end
+	)
+end)
+
+describe("The detached minimap icon", function()
+	it("leaves the minimap for UIParent, exactly where it was on the screen (CORE-R53)", function()
+		local loaded, button = detached()
+
+		assert.are.equal(loaded.env.UIParent, button:GetParent())
+		assert.are.same(onScreenAt(225), screenPlaceOf(loaded, button))
+		assert.are.same({ "MEDIUM", true }, { button:GetFrameStrata(), button:IsShown() })
+		local spot = onScreenAt(225)
+		local point = loaded.ns.db.global.minimap.point
+		assert.are.same(
+			{ true, round(spot[1] / 1920), round(spot[2] / 1080) },
+			{ loaded.ns.db.global.minimap.detached, round(point.x * 1920) / 1920 * 0 + round(point.x), round(point.y) }
+		)
+		assert.are.equal(225, loaded.ns.db.global.minimap.angle)
+	end)
+
+	it(
+		"reads the spot in UIParent's units however the minimap is scaled, and from the icon itself (CORE-R53)",
+		function()
+			local loaded, button = loggedInOnScreen()
+			loaded.env.MinimapCluster:SetScale(2)
+			-- Another addon put the icon somewhere: its centre is at 800, 400 in its own units, 1600, 800 on the screen.
+			button.screenCenter = { 800, 400 }
+
+			detachSetting(loaded):SetValue(true)
+
+			assert.are.same({ 1600, 800 }, screenPlaceOf(loaded, button))
+		end
+	)
+
+	it(
+		"moves anywhere on the screen with a plain left-drag, keeping its grip, and saves the spot (CORE-R53)",
+		function()
+			local loaded, button = detached()
+			local spot = onScreenAt(225)
+
+			dragFrom(loaded, button, { spot[1] + 4, spot[2] + 4 }, { 604, 304 })
+
+			assert.are.same({ 600, 300 }, screenPlaceOf(loaded, button))
+			local minimap = loaded.ns.db.global.minimap
+			assert.are.same(
+				{ true, 600, 300 },
+				{ minimap.detached, round(minimap.point.x * 1920), round(minimap.point.y * 1080) }
+			)
+			assert.are.same({ 225, loaded.env.UIParent }, { loaded.ns.db.global.minimap.angle, button:GetParent() })
+			assert.is_nil(button:GetScript("OnUpdate"))
+			assert.is_false(button.highlightLocked)
+		end
+	)
+
+	it("stays whole on the screen, however far past its edge it is dragged (CORE-R53)", function()
+		local loaded, button = detached()
+		local spot = onScreenAt(225)
+
+		dragFrom(loaded, button, spot, { -500, 5000 })
+
+		assert.are.same({ 15.5, 1064.5 }, screenPlaceOf(loaded, button))
+	end)
+
+	it("reads the cursor in UIParent's units at any UI scale (CORE-R53)", function()
+		local loaded, button = detached()
+		-- UI scale 2: the 1920 x 1080 pixel screen is 960 x 540 units.
+		loaded.env.UIParent:SetScale(2)
+		loaded.env.UIParent:SetSize(960, 540)
+		loaded.client.fire("UI_SCALE_CHANGED")
+
+		-- The icon is at the same pixels as before; the drag moves it to 1200, 400 pixels, 600, 200 units.
+		dragFrom(loaded, button, onScreenAt(225), { 1200, 400 })
+
+		local point = loaded.ns.db.global.minimap.point
+		assert.are.same({ 600, 200 }, { round(point.x * 960), round(point.y * 540) })
+		assert.are.same({ 600, 200 }, screenPlaceOf(loaded, button))
+	end)
+
+	it("opens Pagle's menu on a click without a drag, owned by the icon, and doesn't move (CORE-R54)", function()
+		local loaded, button = detached()
+		local spot = onScreenAt(225)
+		loaded.client.cursor = { 100, 100 }
+
+		button:GetScript("OnMouseDown")(button, "LeftButton")
+		button:Click("LeftButton")
+
+		assert.are.same({ 1, button }, { #loaded.client.menus, loaded.client.menus[1].owner })
+		assert.are.same(spot, screenPlaceOf(loaded, button))
+	end)
+
+	it("opens no menu when a drag ends, even if the client counts the release as a click (CORE-R54)", function()
+		local loaded, button = detached()
+		local spot = onScreenAt(225)
+
+		dragFrom(loaded, button, spot, { 600, 300 })
+		button:Click("LeftButton")
+		assert.are.same({}, loaded.client.menus)
+
+		button:GetScript("OnMouseDown")(button, "LeftButton")
+		button:Click("LeftButton")
+		assert.are.equal(1, #loaded.client.menus)
+	end)
+
+	it("never moves while restricted, nor once restriction starts mid-drag (CORE-R53, CORE-R30)", function()
+		local loaded, button = detached()
+		local spot = onScreenAt(225)
+		local saved = loaded.ns.db.global.minimap.point
+		setCombat(loaded, true)
+
+		dragFrom(loaded, button, spot, { 600, 300 })
+		assert.are.same({ spot, saved }, { screenPlaceOf(loaded, button), loaded.ns.db.global.minimap.point })
+
+		setCombat(loaded, false)
+		loaded.client.cursor = spot
+		button:GetScript("OnDragStart")(button, "LeftButton")
+		setCombat(loaded, true)
+		loaded.client.cursor = { 600, 300 }
+		loaded.client.update(0.016)
+		button:GetScript("OnDragStop")(button)
+		assert.are.same({ spot, saved }, { screenPlaceOf(loaded, button), loaded.ns.db.global.minimap.point })
+		assert.is_nil(button:GetScript("OnUpdate"))
+	end)
+
+	it("snaps back to the minimap's edge at its saved angle when unticked (CORE-R53)", function()
+		local loaded, button = loggedInOnScreen({ global = { minimap = { angle = 90 } } })
+		detachSetting(loaded):SetValue(true)
+		dragFrom(loaded, button, onScreenAt(90), { 600, 300 })
+
+		detachSetting(loaded):SetValue(false)
+
+		assert.are.same({ loaded.env.Minimap, at(90) }, { button:GetParent(), placeOf(loaded, button) })
+		assert.are.same({ false }, savedMode(loaded))
+		assert.are.same({ "MEDIUM", 8 }, { button:GetFrameStrata(), button:GetFrameLevel() })
+	end)
+
+	it("follows the minimap's edge again once reattached (CORE-R53)", function()
+		local loaded, button = detached()
+		detachSetting(loaded):SetValue(false)
+
+		drag(loaded, button, { 1700, 1000 })
+
+		assert.are.same({ at(90), 90 }, { placeOf(loaded, button), loaded.ns.db.global.minimap.angle })
+	end)
+
+	it("is detached or attached only once restriction ends, if ticked while restricted (CORE-R53, CORE-R32)", function()
+		local loaded, button = loggedInOnScreen()
+		setCombat(loaded, true)
+
+		detachSetting(loaded):SetValue(true)
+		assert.are.same({ true, loaded.env.Minimap }, { detachSetting(loaded):GetValue(), button:GetParent() })
+		assert.are.same(at(225), placeOf(loaded, button))
+
+		setCombat(loaded, false)
+		assert.are.same({ loaded.env.UIParent, onScreenAt(225) }, { button:GetParent(), screenPlaceOf(loaded, button) })
+
+		setCombat(loaded, true)
+		detachSetting(loaded):SetValue(false)
+		assert.are.equal(loaded.env.UIParent, button:GetParent())
+		setCombat(loaded, false)
+		assert.are.same({ loaded.env.Minimap, at(225) }, { button:GetParent(), placeOf(loaded, button) })
+	end)
+
+	it("comes back after a /reload at its saved spot, at any UI scale (CORE-R53)", function()
+		local saved = { global = { minimap = { angle = 90, detached = true, point = { x = 0.25, y = 0.75 } } } }
+		local loaded, button = loggedInOnScreen(saved)
+		assert.are.same({ loaded.env.UIParent, { 480, 810 } }, { button:GetParent(), screenPlaceOf(loaded, button) })
+		assert.is_true(detachSetting(loaded):GetValue())
+
+		local scaled = loadCore(saved)
+		scaled.env.UIParent:SetSize(1366, 768)
+		scaled.client.fire("PLAYER_LOGIN")
+		assert.are.same({ 341.5, 576 }, screenPlaceOf(scaled, scaled.env.PagleMinimapButton))
+	end)
+
+	it("comes back on the screen from a saved spot off it (CORE-R53)", function()
+		local loaded, button =
+			loggedInOnScreen({ global = { minimap = { detached = true, point = { x = 3, y = -1 } } } })
+
+		assert.are.same({ 1904.5, 15.5 }, screenPlaceOf(loaded, button))
+	end)
+
+	it("comes back where the minimap's edge puts it, detached, with no saved spot (CORE-R53)", function()
+		local loaded, button = loggedInOnScreen({ global = { minimap = { angle = 0, detached = true } } })
+
+		assert.are.same({ loaded.env.UIParent, onScreenAt(0) }, { button:GetParent(), screenPlaceOf(loaded, button) })
+	end)
+
+	it("keeps its spot on the screen as the UI scale or the window changes (CORE-R53)", function()
+		local loaded, button =
+			loggedInOnScreen({ global = { minimap = { detached = true, point = { x = 0.25, y = 0.75 } } } })
+
+		loaded.env.UIParent:SetSize(1366, 768)
+		loaded.client.fire("UI_SCALE_CHANGED")
+		assert.are.same({ 341.5, 576 }, screenPlaceOf(loaded, button))
+
+		loaded.env.UIParent:SetSize(1000, 1000)
+		loaded.client.fire("DISPLAY_SIZE_CHANGED")
+		assert.are.same({ 250, 750 }, screenPlaceOf(loaded, button))
+	end)
+
+	it("listens for the UI scale and the window only while detached (CORE-R53, CORE-R23)", function()
+		local loaded = loggedInOnScreen()
+		local function listening()
+			local n = 0
+			for _, frame in ipairs(loaded.client.frames) do
+				if frame.events.UI_SCALE_CHANGED or frame.events.DISPLAY_SIZE_CHANGED then
+					n = n + 1
+				end
+			end
+			return n
+		end
+		assert.are.equal(0, listening())
+
+		detachSetting(loaded):SetValue(true)
+		assert.are.equal(1, listening())
+
+		detachSetting(loaded):SetValue(false)
+		assert.are.equal(0, listening())
+	end)
+
+	it("hides and shows with Show the minimap icon, keeping its spot (CORE-R56)", function()
+		local loaded, button = detached()
+
+		shownSetting(loaded):SetValue(false)
+		assert.is_false(button:IsShown())
+
+		shownSetting(loaded):SetValue(true)
+		assert.are.same({ true, onScreenAt(225) }, { button:IsShown(), screenPlaceOf(loaded, button) })
+		assert.are.equal(1, #loaded.client.compartment)
+	end)
+
+	it("comes back hidden after a /reload if it was, still detached (CORE-R53, CORE-R56)", function()
+		local loaded, button = loggedInOnScreen({
+			global = { minimap = { hide = true, detached = true, point = { x = 0.5, y = 0.5 } } },
+		})
+
+		assert.are.same({ false, { 960, 540 } }, { button:IsShown(), screenPlaceOf(loaded, button) })
+	end)
+
+	it("detaches even while the icon is hidden, which then shows detached (CORE-R56)", function()
+		local loaded, button = loggedInOnScreen({ global = { minimap = { hide = true } } })
+
+		detachSetting(loaded):SetValue(true)
+		assert.is_false(button:IsShown())
+
+		shownSetting(loaded):SetValue(true)
+		assert.are.same({ true, onScreenAt(225) }, { button:IsShown(), screenPlaceOf(loaded, button) })
 	end)
 end)
