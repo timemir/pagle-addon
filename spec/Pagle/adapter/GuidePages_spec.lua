@@ -645,6 +645,108 @@ describe("the Moments step (ONB-R34, ONB-R35)", function()
 		assert.are.same({}, bounds.overflows(page(loaded, "moments", "left")))
 	end)
 
+	describe("the toast sample's name, in its real face (#621)", function()
+		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+		local RealFont = dofile("scripts/measure-layout/realfont.lua")
+
+		-- Patches every font string under `widget` to measure in its real face (RealFont.patch), each line `wider`
+		-- times as wide when given, up to its box.
+		local function measureReal(widget, wider)
+			for _, child in ipairs(widget.children or {}) do
+				if child.kind == "FontString" then
+					RealFont.patch(child)
+					if wider then
+						function child:GetStringWidth()
+							local width, box = RealFont.layout(self).natural * wider, self:GetWidth()
+							return box > 0 and math.min(width, box) or width
+						end
+					end
+				end
+				measureReal(child, wider)
+			end
+		end
+
+		-- The Moments page in `language` on a client of that language, the sample toast's words measured in their
+		-- real faces (a ruRU client's FRIZQT___CYR, which isn't bundled, in RealFont's stand-in), `wider` times as
+		-- wide when given, as a face that much wider would draw them. Returns the sample toast's name line.
+		local function sampleName(language, wider)
+			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+			local _, stubs = dofile("spec/support/client.lua")()
+			local loaded = loadCore({ BUILD_ENTRY }, { global = { language = language } }, {
+				GetLocale = function()
+					return language
+				end,
+				CreateFont = RealFont.keepNamed(stubs.CreateFont),
+			})
+			enterWorld(loaded, 3)
+			local ns = loaded.ns
+			ns.db.profile.announcements.motion = false
+			local newStill = ns.NewStillAnnouncementFrame
+			ns.NewStillAnnouncementFrame = function(...)
+				local frame = newStill(...)
+				measureReal(frame, wider)
+				return frame
+			end
+			ns.guide:Open("moments")
+			assert.are.same({}, loaded.client.errors)
+			local name = ns.guidePages.samples.toast.text
+			assert.are.equal(ns.L.GUIDE_MOMENTS_SAMPLE_TEXT, name:GetText())
+			return name
+		end
+
+		-- Whether `name` shows whole: its box holds it at the width it measures (`wider` times its face's).
+		local function whole(name, wider)
+			return RealFont.layout(name).natural * (wider or 1) <= name:GetWidth() + 1e-6
+		end
+
+		it(
+			"sets ruRU's long name smaller than a live toast's floor so it shows whole, even in a face 10% wider than"
+				.. " the stand-in, as the client's own may be (ONB-R34)",
+			function()
+				for _, wider in ipairs({ false, 1.1 }) do
+					local name = sampleName("ruRU", wider or nil)
+					local size = select(2, RealFont.face(name))
+
+					assert(whole(name, wider), ("cut at %s, %s times the stand-in"):format(size, wider or 1))
+					-- below the 22 (0.7 of 31) a live toast's name stops at, but no smaller than it needs (#621)
+					assert.is_true(size < 22)
+					assert.is_true(size >= 18)
+				end
+			end
+		)
+
+		it("leaves a live toast's name at its floor of 22 in ruRU, to scroll (ANN-R101)", function()
+			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+			local _, stubs = dofile("spec/support/client.lua")()
+			local loaded = loadCore({ BUILD_ENTRY }, { global = { language = "ruRU" } }, {
+				GetLocale = function()
+					return "ruRU"
+				end,
+				CreateFont = RealFont.keepNamed(stubs.CreateFont),
+			})
+			enterWorld(loaded, 3)
+			local ns = loaded.ns
+			ns.lanes:Push(assert(ns.DevPreviewAnnouncement("toast", ns.L.GUIDE_MOMENTS_SAMPLE_TEXT)))
+			loaded.client.advance(0)
+			local toast = ns.announcementFrames.toast
+			measureReal(toast)
+			ns.DrawAnnouncement(toast, toast.display)
+
+			assert.are.equal(22, select(2, RealFont.face(toast.text)))
+			assert.is_true(toast.nameScroll > 0)
+			assert.are.same({}, loaded.client.errors)
+		end)
+
+		it("leaves the name at the Name font's 31 in enUS, deDE and esES, whole (ONB-R34)", function()
+			for _, language in ipairs({ "enUS", "deDE", "esES" }) do
+				local name = sampleName(language)
+
+				assert.are.equal(31, select(2, RealFont.face(name)))
+				assert(whole(name), language .. ": cut")
+			end
+		end)
+	end)
+
 	it("shows Lively chosen for a new Angler's settings, the three cards in order with their lines", function()
 		local loaded = guideAt("moments")
 		local right = page(loaded, "moments", "right")
