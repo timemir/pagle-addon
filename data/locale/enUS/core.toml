@@ -124,6 +124,9 @@ SETTINGS_PAGES.trackers = "Trackers"
 SETTINGS_TRACKER_POSITION = "Tracker position"
 SETTINGS_TRACKER_RESET = "Reset"
 SETTINGS_TRACKER_RESET_TOOLTIP = "Shift-drag any Pagle tracker to move them all. This puts them back under the minimap."
+# The Trackers page's "only while fishing" row (SET-R46, CORE-R88, from 1.3): its label and the tooltip.
+SETTINGS_TRACKERS_WHILE_FISHING = "Show trackers only while fishing"
+SETTINGS_TRACKERS_WHILE_FISHING_TOOLTIP = "Hides every Pagle tracker until a fishing pole is in hand or you cast. They stay up for a minute after your last Cast, so a quick weapon swap doesn't hide them."
 # The Announcements page's Toast position row (SET-R30, ANN-R98): its label, its button and the tooltip.
 SETTINGS_TOAST_POSITION = "Toast position"
 SETTINGS_TOAST_RESET = "Reset"

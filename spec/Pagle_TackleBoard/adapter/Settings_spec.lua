@@ -163,7 +163,10 @@ describe("The Tackle Board's section on the Trackers page, in the panel", functi
 
 			local rows = showTrackers(loaded)
 
-			assert.are.same({ "Tracker position", "Tackle Board", CHECKBOX, FRAME }, names(rows))
+			assert.are.same(
+				{ "Tracker position", "Show trackers only while fishing", "Tackle Board", CHECKBOX, FRAME },
+				names(rows)
+			)
 			local frame = rowNamed(rows, FRAME)
 			local dropdown = loaded.client.settings.dropdownOf(frame) -- Core's slot row (SET-R6, SET-R44)
 			assert.is_true(dropdown:IsEnabled())

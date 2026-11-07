@@ -333,6 +333,14 @@ en = "Reset"
 value = "Ziehe einen Pagle-Tracker mit gedrückter Umschalttaste, um alle zu verschieben. Dies setzt sie wieder unter die Minikarte."
 en = "Shift-drag any Pagle tracker to move them all. This puts them back under the minimap."
 
+[SETTINGS_TRACKERS_WHILE_FISHING]
+value = "Tracker nur beim Angeln"
+en = "Show trackers only while fishing"
+
+[SETTINGS_TRACKERS_WHILE_FISHING_TOOLTIP]
+value = "Blendet alle Pagle-Tracker aus, bis du eine Angelrute in der Hand hast oder auswirfst. Nach deinem letzten Wurf bleiben sie noch eine Minute sichtbar, damit ein kurzer Waffenwechsel sie nicht ausblendet."
+en = "Hides every Pagle tracker until a fishing pole is in hand or you cast. They stay up for a minute after your last Cast, so a quick weapon swap doesn't hide them."
+
 [SETTINGS_TOAST_POSITION]
 value = "Position der Einblendungen"
 en = "Toast position"

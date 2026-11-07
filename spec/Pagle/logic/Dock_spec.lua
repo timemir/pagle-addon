@@ -200,9 +200,12 @@ describe("Only while fishing (CORE-R88)", function()
 			assert.is_false(ns.DockShown(input()))
 		end)
 
-		it("with the setting on, is true while a dev tour or the trailer runs, whatever else holds (CORE-R88)", function()
-			assert.is_true(ns.DockShown(input({ touring = true })))
-		end)
+		it(
+			"with the setting on, is true while a dev tour or the trailer runs, whatever else holds (CORE-R88)",
+			function()
+				assert.is_true(ns.DockShown(input({ touring = true })))
+			end
+		)
 	end)
 
 	describe("ns.NewDockStretch", function()
@@ -252,8 +255,11 @@ describe("Only while fishing (CORE-R88)", function()
 			assert.is_nil(ns.NewDockStretch():CastEnded())
 		end)
 
-		it("counts DOCK_STRETCH_SECONDS, the 60 s QoL's Fishing stretch also waits (core/README.md › Tunables)", function()
-			assert.are.equal(60, ns.DOCK_STRETCH_SECONDS)
-		end)
+		it(
+			"counts DOCK_STRETCH_SECONDS, the 60 s QoL's Fishing stretch also waits (core/README.md › Tunables)",
+			function()
+				assert.are.equal(60, ns.DOCK_STRETCH_SECONDS)
+			end
+		)
 	end)
 end)

@@ -138,7 +138,14 @@ describe("Stats' section on the Trackers page, in the panel", function()
 			end
 			-- Core ends the section with Stats' frame dropdown, unindented (SET-R44).
 			assert.are.same(
-				{ "Tracker position", "Stats", "Show the live tracker", "  Watched Dry spells", "Stats tracker frame" },
+				{
+					"Tracker position",
+					"Show trackers only while fishing",
+					"Stats",
+					"Show the live tracker",
+					"  Watched Dry spells",
+					"Stats tracker frame",
+				},
 				names
 			)
 			assert.is_false(loaded.client.settings.rowNamed(rows, "Show the live tracker").frame.value)

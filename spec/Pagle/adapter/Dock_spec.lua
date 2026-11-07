@@ -324,7 +324,7 @@ describe("The Trackers page", function()
 		end
 	)
 
-	it("starts with Core's Tracker position row, then the Module's section (CORE-R42, SET-R1, SET-R40)", function()
+	it("starts with Core's two rows, then the Module's section (CORE-R42, SET-R1, SET-R40, SET-R46)", function()
 		local loaded = coreWithTrackers(nil, ROSTER)
 		local hunts = dockFixture(loaded, "Hunts", 10, 40)
 		hunts:AddSetting("trackers", {
@@ -342,6 +342,7 @@ describe("The Trackers page", function()
 		local trackers = assert(loaded.client.settings.category("Trackers"))
 		assert.are.same({
 			{ "Tracker position", "Reset" },
+			{ "Show trackers only while fishing" }, -- from 1.3 (SET-R46)
 			{ "Hunts" },
 			{ "Show the Hunts tracker" },
 		}, rowsOf(loaded, trackers))
@@ -402,12 +403,14 @@ local function wield(loaded, itemID)
 	loaded.client.fire("PLAYER_EQUIPMENT_CHANGED", 16, itemID == nil)
 end
 
--- Core with Hunts and Stats docked, logged in and in the world, with "Show trackers only while fishing" on, no pole
--- in hand and no Cast yet. Returns Hunts' handle last.
+-- Core with Hunts and Stats docked, Hunts with a Trackers row, logged in and in the world, with "Show trackers only
+-- while fishing" on, no pole in hand and no Cast yet. Returns Hunts' handle last.
 local function whileFishing()
 	local loaded = coreWithTrackers(nil, ROSTER)
 	local handle, hunts = dockFixture(loaded, "Hunts", 10, 40)
 	local _, stats = dockFixture(loaded, "Stats", 20, 60)
+	-- A tracker Module's row, so the Trackers page and Core's rows on it register (SET-R1).
+	handle:AddSetting("trackers", { kind = "header", label = "Hunts" })
 	enterWorld(loaded)
 	loaded.client.settings.variables[WHILE_FISHING]:SetValue(true)
 	return loaded, hunts, stats, handle
@@ -433,25 +436,31 @@ describe("Only while fishing (CORE-R88, SET-R46)", function()
 		assert.is_true(stats:IsShown())
 	end)
 
-	it("shows the dock at once when turned off again, and saves the setting (CORE-R88, core/README.md › Data)", function()
-		local loaded, hunts = whileFishing()
-		assert.is_true(loaded.ns.db.profile.dock.onlyWhileFishing)
+	it(
+		"shows the dock at once when turned off again, and saves the setting (CORE-R88, core/README.md › Data)",
+		function()
+			local loaded, hunts = whileFishing()
+			assert.is_true(loaded.ns.db.profile.dock.onlyWhileFishing)
 
-		loaded.client.settings.variables[WHILE_FISHING]:SetValue(false)
+			loaded.client.settings.variables[WHILE_FISHING]:SetValue(false)
 
-		assert.is_false(loaded.ns.db.profile.dock.onlyWhileFishing)
-		assert.is_true(hunts:IsVisible())
-	end)
+			assert.is_false(loaded.ns.db.profile.dock.onlyWhileFishing)
+			assert.is_true(hunts:IsVisible())
+		end
+	)
 
-	it("shows the dock at once when a fishing pole goes in hand, and hides it at once when it comes off (CORE-R88)", function()
-		local loaded, hunts = whileFishing()
+	it(
+		"shows the dock at once when a fishing pole goes in hand, and hides it at once when it comes off (CORE-R88)",
+		function()
+			local loaded, hunts = whileFishing()
 
-		wield(loaded, 6256)
-		assert.is_true(hunts:IsVisible())
+			wield(loaded, 6256)
+			assert.is_true(hunts:IsVisible())
 
-		wield(loaded, 25)
-		assert.is_false(hunts:IsVisible())
-	end)
+			wield(loaded, 25)
+			assert.is_false(hunts:IsVisible())
+		end
+	)
 
 	it("shows the dock at login with a pole already in hand (CORE-R88)", function()
 		local first = whileFishing()

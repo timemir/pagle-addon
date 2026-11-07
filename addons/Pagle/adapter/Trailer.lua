@@ -196,6 +196,10 @@ trailer = ns.NewTrailer({
 	after = function(seconds, fn)
 		C_Timer.After(seconds, fn)
 	end,
+	-- The dock shows while the trailer runs (CORE-R88).
+	changed = function()
+		ns.dock:Refresh()
+	end,
 	caption = caption,
 	print = print,
 	report = function(problem)

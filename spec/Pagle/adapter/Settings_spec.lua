@@ -231,9 +231,9 @@ describe("A topic page", function()
 		stats:AddSetting("trackers", checkbox("Stats'"))
 		loaded.client.fire("PLAYER_LOGIN")
 
-		-- After Core's own Tracker position row (SET-R40).
+		-- After Core's own rows, Tracker position and, from 1.3, Show trackers only while fishing (SET-R40, SET-R46).
 		assert.are.same(
-			{ "Tracker position", "Stats", "Stats'", "QoL", "QoL's" },
+			{ "Tracker position", "Show trackers only while fishing", "Stats", "Stats'", "QoL", "QoL's" },
 			rowNames(loaded.client.settings.category("Trackers"))
 		)
 	end)
@@ -251,9 +251,9 @@ describe("A topic page", function()
 		loaded.client.fire("PLAYER_LOGIN")
 
 		local initializers = loaded.client.settings.category("Trackers").layout.initializers
-		-- Core's Tracker position row (SET-R40), Stats header, Stats' tracker, QoL header, QoL's tracker, QoL's child.
-		assert.are.equal(initializers[5], initializers[6]:GetParentInitializer())
-		assert.is_nil(initializers[5]:GetParentInitializer())
+		-- Core's two rows (SET-R40, SET-R46), Stats header, Stats' tracker, QoL header, QoL's tracker, QoL's child.
+		assert.are.equal(initializers[6], initializers[7]:GetParentInitializer())
+		assert.is_nil(initializers[6]:GetParentInitializer())
 	end)
 end)
 
@@ -697,8 +697,8 @@ describe("The status list with a Module On", function()
 end)
 
 describe("A Module's value rows", function()
-	-- Loads Core with QoL On and `settings` added to Trackers, and returns the page once registered: Core's Tracker
-	-- position row (SET-R40), the QoL header, then the rows.
+	-- Loads Core with QoL On and `settings` added to Trackers, and returns the page once registered: Core's two rows
+	-- (SET-R40, SET-R46), the QoL header, then the rows.
 	local function trackersWith(settings)
 		local loaded = loadWithQoL()
 		local M = registerQoL(loaded)
@@ -735,7 +735,7 @@ describe("A Module's value rows", function()
 		})
 
 		local defaults = {}
-		for i = 3, 5 do -- after Core's Tracker position row (SET-R40) and the QoL header
+		for i = 4, 6 do -- after Core's two rows (SET-R40, SET-R46) and the QoL header
 			defaults[#defaults + 1] = page.layout.initializers[i]:GetSetting():GetDefaultValue()
 		end
 		assert.are.same({ true, 5, "best" }, defaults)
@@ -781,7 +781,7 @@ describe("A Module's value rows", function()
 
 		-- A button with no caption is Core's own row, its button greyed as it draws.
 		local function enabled()
-			local frame = loaded.client.settings.show(page)[3].frame
+			local frame = loaded.client.settings.show(page)[4].frame
 			return loaded.client.settings.buttonsOf(frame)[1]:IsEnabled()
 		end
 		assert.is_false(enabled())
@@ -961,9 +961,9 @@ describe("A Module's button row", function()
 		local loaded = loadWithQoL()
 		registerQoL(loaded):AddSetting("trackers", button)
 		loaded.client.fire("PLAYER_LOGIN")
-		-- After Core's "Tracker position" row (SET-R40) and the QoL header; a button with no caption has no row label.
+		-- After Core's two rows (SET-R40, SET-R46) and the QoL header; a button with no caption has no row label.
 		local rows = loaded.client.settings.show(loaded.client.settings.page("Trackers"))
-		local row = rows[3]
+		local row = rows[4]
 		return row.initializer, row.frame, loaded.client.settings
 	end
 

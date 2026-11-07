@@ -455,6 +455,8 @@ ns.Locale("esES", function(L)
 	L.SETTINGS_TOAST_POSITION = "Posición de los avisos emergentes"
 	L.SETTINGS_TOAST_RESET = "Restablecer"
 	L.SETTINGS_TOAST_RESET_TOOLTIP = "Arrastra con Mayús un aviso emergente para mover los avisos emergentes y los Gestos, o el Resumen de sesión para moverlo. Esto los devuelve a todos a su sitio."
+	L.SETTINGS_TRACKERS_WHILE_FISHING = "Rastreadores solo al pescar"
+	L.SETTINGS_TRACKERS_WHILE_FISHING_TOOLTIP = "Oculta todos los rastreadores de Pagle hasta que tengas una caña en la mano o lances. Siguen visibles un minuto después de tu último Lance, así que un cambio rápido de arma no los oculta."
 	L.SETTINGS_TRACKER_POSITION = "Posición de los rastreadores"
 	L.SETTINGS_TRACKER_RESET = "Restablecer"
 	L.SETTINGS_TRACKER_RESET_TOOLTIP = "Arrastra con Mayús cualquier rastreador de Pagle para moverlos todos. Esto los devuelve bajo el minimapa."

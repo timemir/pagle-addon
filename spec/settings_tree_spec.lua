@@ -80,6 +80,8 @@ local TIPS = {
 		.. "Companion.",
 	pasteExport = "Copy your Catch log as a Paste string, to paste on the Pagle website without the Companion.",
 	trackerPosition = "Shift-drag any Pagle tracker to move them all. This puts them back under the minimap.",
+	whileFishing = "Hides every Pagle tracker until a fishing pole is in hand or you cast. They stay up for a minute "
+		.. "after your last Cast, so a quick weapon swap doesn't hide them.",
 	toastPosition = "Shift-drag a toast to move the toasts and Nods, or the Session summary to move it. This puts them all"
 		.. " back where they started.",
 	huntsTracker = "A small tracker under the minimap with the Hunts you've pinned on the board.",
@@ -89,7 +91,7 @@ local TIPS = {
 		.. "on the Pagle page.",
 }
 
--- The tracker Modules: the Trackers page and its Core row stand only while one of them is On (SET-R1, SET-R40), and
+-- The tracker Modules: the Trackers page and its Core rows stand only while one of them is On (SET-R1, SET-R40), and
 -- Look and Feel's Trackers header only while one of their frames is shown (SET-R50).
 local TRACKER_MODULES = { "Hunts", "Stats", "TackleBoard" }
 
@@ -188,6 +190,7 @@ local EXPECTED = {
 		name = "Trackers",
 		rows = {
 			{ "button", "Tracker position", caption = "Reset", tip = TIPS.trackerPosition, of = TRACKER_MODULES },
+			{ "checkbox", "Show trackers only while fishing", tip = TIPS.whileFishing, of = TRACKER_MODULES }, -- 1.3
 			{ "header", "Hunts", of = "Hunts" },
 			{ "checkbox", "Show the Hunts tracker", tip = TIPS.huntsTracker, of = "Hunts" },
 			{ "slot", "Hunts tracker frame", of = "Hunts" },
@@ -913,6 +916,7 @@ describe("Each page's Defaults button", function()
 				"Show goals workable here",
 				"Show the Hunts tracker",
 				"Show the live tracker",
+				"Show trackers only while fishing", -- from 1.3 (SET-R46)
 				"Stats tracker frame",
 				"Tackle Board tracker frame",
 			}, restoredOn(loaded, "Trackers"))
@@ -1070,13 +1074,14 @@ describe("Each page's Defaults button", function()
 		assert.is_true(loaded.env.Pagle.IsOwned("core.toaststyle.ripple")) -- no longer used, still owned (SET-R60)
 	end)
 
-	it("on Trackers restores the three checkboxes and the three frames, leaving the dock's place (SET-R45)", function()
+	it("on Trackers restores the four checkboxes and the three frames, leaving the dock's place (SET-R45)", function()
 		local loaded = readyWithLooks()
 		local core = loaded.namespaces.Pagle
 		for label, value in pairs({
 			["Show the Hunts tracker"] = false,
 			["Show the live tracker"] = true,
 			["Show goals workable here"] = false, -- greyed out, the board unstarted: restored too (SET-R60)
+			["Show trackers only while fishing"] = true, -- from 1.3 (SET-R46)
 		}) do
 			setRow(loaded, "Trackers", label, value)
 		end
@@ -1090,6 +1095,7 @@ describe("Each page's Defaults button", function()
 			["Show the Hunts tracker"] = true,
 			["Show the live tracker"] = false,
 			["Show goals workable here"] = true,
+			["Show trackers only while fishing"] = false,
 		}, valuesOn(loaded, "Trackers"))
 		assert.are.same({
 			["core.toaststyle"] = "core.toaststyle.ripple",

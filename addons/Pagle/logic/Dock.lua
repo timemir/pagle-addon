@@ -154,3 +154,80 @@ function ns.DockAnchor(saved)
 	end
 	return { point = "TOPRIGHT", relativeTo = "MinimapCluster", relativePoint = "BOTTOMRIGHT", x = 0, y = -10 }
 end
+
+--- Seconds after a Cast's end, with no Cast started since, that the dock's fishing stretch ends (CORE-R88,
+--- core/README.md › Tunables): the same 60 s QoL's Fishing stretch waits (QOL-R61).
+ns.DOCK_STRETCH_SECONDS = 60
+
+--- Whether an item of `classID` and `subclassID` (C_Item.GetItemInfoInstant's) is a fishing pole: a weapon of the
+--- fishing pole subclass (CORE-R88), as QoL's pole test reads it (QOL-R21).
+---@param classID integer?
+---@param subclassID integer?
+---@return boolean
+function ns.IsFishingPole(classID, subclassID)
+	return classID == 2 and subclassID == 20
+end
+
+--- What decides whether the dock shows (CORE-R88).
+---@class PagleDockShownInput
+---@field onlyWhileFishing boolean PagleDB.profile.dock.onlyWhileFishing, "Show trackers only while fishing"
+---@field poleInHand boolean a fishing pole is in the main hand
+---@field stretch boolean the dock's fishing stretch runs (PagleDockStretch)
+---@field touring boolean `/pagle dev tour` or `/pagle trailer` runs: their stops show the trackers (CORE-R66)
+
+--- Whether the dock shows its trackers now (CORE-R88): always with the setting off; with it on, while a fishing pole
+--- is in hand, the dock's fishing stretch runs or a tour runs. Each tracker in it still shows only while its Module
+--- shows it (CORE-R72).
+---@param input PagleDockShownInput
+---@return boolean
+function ns.DockShown(input)
+	return not input.onlyWhileFishing or input.poleInHand or input.stretch or input.touring
+end
+
+--- The dock's fishing stretch (CORE-R88): from a Cast's start until DOCK_STRETCH_SECONDS after the last Cast's end
+--- with no Cast started since. Unlike QoL's Fishing stretch (QOL-R61), a pole coming off doesn't end it, so a weapon
+--- swap mid-stretch leaves the dock up. The wiring counts the seconds: CastEnded hands back the count it starts, and
+--- Elapsed(count) ends the stretch if that count is still the last one.
+---@class PagleDockStretch
+---@field private running boolean
+---@field private count integer the last count CastEnded started, 0 before any; a CastStarted moves it on
+local Stretch = {}
+Stretch.__index = Stretch
+
+---@return PagleDockStretch
+function ns.NewDockStretch()
+	return setmetatable({ running = false, count = 0 }, Stretch)
+end
+
+---@return boolean
+function Stretch:IsRunning()
+	return self.running
+end
+
+--- Core's CastStarted: the stretch starts, or goes on, and any count running stops.
+function Stretch:CastStarted()
+	self.running = true
+	self.count = self.count + 1
+end
+
+--- Core's CastEnded, any outcome: starts the count to the stretch's end, returning it; nil with no stretch running.
+---@return integer?
+function Stretch:CastEnded()
+	if not self.running then
+		return nil
+	end
+	self.count = self.count + 1
+	return self.count
+end
+
+--- DOCK_STRETCH_SECONDS have passed since CastEnded started `count`: the stretch ends if no Cast started, nor another
+--- count, since. Returns whether this ended it.
+---@param count integer
+---@return boolean
+function Stretch:Elapsed(count)
+	if not self.running or count ~= self.count then
+		return false
+	end
+	self.running = false
+	return true
+end
