@@ -161,3 +161,99 @@ describe("ns.DockAnchor", function()
 		assert.are.same(default, ns.DockAnchor("TOPLEFT"))
 	end)
 end)
+
+describe("Only while fishing (CORE-R88)", function()
+	local ns = loadAddon("Pagle", FOREVER_GLOBALS).ns
+
+	-- The rule's input with the setting on and nothing holding the dock up; `fields` overrides.
+	local function input(fields)
+		local base = { onlyWhileFishing = true, poleInHand = false, stretch = false, touring = false }
+		for key, value in pairs(fields or {}) do
+			base[key] = value
+		end
+		return base
+	end
+
+	describe("ns.IsFishingPole", function()
+		it("is a weapon (class 2) of the fishing pole subclass (20), as QoL's pole test reads it (CORE-R88)", function()
+			assert.is_true(ns.IsFishingPole(2, 20))
+			assert.is_false(ns.IsFishingPole(2, 7)) -- a one-handed sword
+			assert.is_false(ns.IsFishingPole(4, 20))
+			assert.is_false(ns.IsFishingPole(nil, nil)) -- an empty main hand, or an item the client doesn't know
+		end)
+	end)
+
+	describe("ns.DockShown", function()
+		it("is always true with the setting off, as before 1.3 (CORE-R88)", function()
+			assert.is_true(ns.DockShown(input({ onlyWhileFishing = false })))
+		end)
+
+		it("with the setting on, is true while a fishing pole is in hand (CORE-R88)", function()
+			assert.is_true(ns.DockShown(input({ poleInHand = true })))
+		end)
+
+		it("with the setting on, is true while the dock's fishing stretch runs (CORE-R88)", function()
+			assert.is_true(ns.DockShown(input({ stretch = true })))
+		end)
+
+		it("with the setting on, is false with neither a pole in hand nor a stretch (CORE-R88)", function()
+			assert.is_false(ns.DockShown(input()))
+		end)
+
+		it("with the setting on, is true while a dev tour or the trailer runs, whatever else holds (CORE-R88)", function()
+			assert.is_true(ns.DockShown(input({ touring = true })))
+		end)
+	end)
+
+	describe("ns.NewDockStretch", function()
+		it("isn't running until a Cast starts (CORE-R88)", function()
+			assert.is_false(ns.NewDockStretch():IsRunning())
+		end)
+
+		it("runs from CastStarted, through the Cast and its CastEnded (CORE-R88)", function()
+			local stretch = ns.NewDockStretch()
+
+			stretch:CastStarted()
+			assert.is_true(stretch:IsRunning())
+			stretch:CastEnded()
+			assert.is_true(stretch:IsRunning())
+		end)
+
+		it("ends when the idle count that CastEnded starts runs out with no Cast since (CORE-R88)", function()
+			local stretch = ns.NewDockStretch()
+			stretch:CastStarted()
+
+			local count = stretch:CastEnded()
+
+			assert.is_number(count)
+			assert.is_true(stretch:Elapsed(count))
+			assert.is_false(stretch:IsRunning())
+			-- Ending twice ends nothing.
+			assert.is_false(stretch:Elapsed(count))
+		end)
+
+		it("keeps running when an old count runs out after a new Cast started (CORE-R88)", function()
+			local stretch = ns.NewDockStretch()
+			stretch:CastStarted()
+			local first = stretch:CastEnded()
+
+			stretch:CastStarted()
+
+			assert.is_false(stretch:Elapsed(first))
+			assert.is_true(stretch:IsRunning())
+			-- The new Cast's own CastEnded starts the count again, and that count ends it.
+			local second = stretch:CastEnded()
+			assert.is_false(stretch:Elapsed(first))
+			assert.is_true(stretch:Elapsed(second))
+			assert.is_false(stretch:IsRunning())
+		end)
+
+		it("starts no count at a CastEnded with no stretch running (CORE-R88)", function()
+			assert.is_nil(ns.NewDockStretch():CastEnded())
+		end)
+
+		it("counts DOCK_STRETCH_SECONDS, the 60 s QoL's Fishing stretch also waits (core/README.md › Tunables)", function()
+			assert.are.equal(60, ns.DOCK_STRETCH_SECONDS)
+		end)
+	end)
+end)

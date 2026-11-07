@@ -391,3 +391,207 @@ describe("The Trackers page", function()
 		assert.are.same({ "TOPRIGHT", loaded.env.UIParent, "BOTTOMLEFT", 812, 640 }, anchorOf(loaded.ns.dockFrame))
 	end)
 end)
+
+-- The Trackers page's "Show trackers only while fishing" setting (SET-R46), by its variable.
+local WHILE_FISHING = "Pagle_Core_trackers_onlyWhileFishing"
+
+-- Puts `itemID` in the main hand (nil empties it) and fires PLAYER_EQUIPMENT_CHANGED for it, as the client does.
+-- 6256 is a Fishing Pole and 25 a Worn Shortsword in the fake client's items.
+local function wield(loaded, itemID)
+	loaded.client.mainHand = itemID
+	loaded.client.fire("PLAYER_EQUIPMENT_CHANGED", 16, itemID == nil)
+end
+
+-- Core with Hunts and Stats docked, logged in and in the world, with "Show trackers only while fishing" on, no pole
+-- in hand and no Cast yet. Returns Hunts' handle last.
+local function whileFishing()
+	local loaded = coreWithTrackers(nil, ROSTER)
+	local handle, hunts = dockFixture(loaded, "Hunts", 10, 40)
+	local _, stats = dockFixture(loaded, "Stats", 20, 60)
+	enterWorld(loaded)
+	loaded.client.settings.variables[WHILE_FISHING]:SetValue(true)
+	return loaded, hunts, stats, handle
+end
+
+describe("Only while fishing (CORE-R88, SET-R46)", function()
+	it("is off by default: the dock shows with no pole in hand and no Cast, as before 1.3 (CORE-R88)", function()
+		local loaded = coreWithTrackers(nil, ROSTER)
+		local _, hunts = dockFixture(loaded, "Hunts", 10, 40)
+		enterWorld(loaded)
+
+		assert.is_false(loaded.ns.db.profile.dock.onlyWhileFishing)
+		assert.is_true(hunts:IsVisible())
+	end)
+
+	it("hides the whole dock at once when turned on with no pole in hand and no Cast (CORE-R88)", function()
+		local _, hunts, stats = whileFishing()
+
+		assert.is_false(hunts:IsVisible())
+		assert.is_false(stats:IsVisible())
+		-- The trackers' own shown state is the Modules' and stays as they set it (CORE-R72).
+		assert.is_true(hunts:IsShown())
+		assert.is_true(stats:IsShown())
+	end)
+
+	it("shows the dock at once when turned off again, and saves the setting (CORE-R88, core/README.md › Data)", function()
+		local loaded, hunts = whileFishing()
+		assert.is_true(loaded.ns.db.profile.dock.onlyWhileFishing)
+
+		loaded.client.settings.variables[WHILE_FISHING]:SetValue(false)
+
+		assert.is_false(loaded.ns.db.profile.dock.onlyWhileFishing)
+		assert.is_true(hunts:IsVisible())
+	end)
+
+	it("shows the dock at once when a fishing pole goes in hand, and hides it at once when it comes off (CORE-R88)", function()
+		local loaded, hunts = whileFishing()
+
+		wield(loaded, 6256)
+		assert.is_true(hunts:IsVisible())
+
+		wield(loaded, 25)
+		assert.is_false(hunts:IsVisible())
+	end)
+
+	it("shows the dock at login with a pole already in hand (CORE-R88)", function()
+		local first = whileFishing()
+		local loaded = coreWithTrackers(first.env.PagleDB, ROSTER)
+		local _, hunts = dockFixture(loaded, "Hunts", 10, 40)
+		loaded.client.mainHand = 6256
+
+		enterWorld(loaded)
+
+		assert.is_true(hunts:IsVisible())
+	end)
+
+	it("hides the dock at login with the setting on and no pole in hand (CORE-R88)", function()
+		local first = whileFishing()
+		local loaded = coreWithTrackers(first.env.PagleDB, ROSTER)
+		local _, hunts = dockFixture(loaded, "Hunts", 10, 40)
+
+		enterWorld(loaded)
+
+		assert.is_false(hunts:IsVisible())
+		assert.is_true(hunts:IsShown())
+	end)
+
+	it("shows the dock from a Cast with no pole in hand, until 60 s after its end (CORE-R88, Tunables)", function()
+		local loaded, hunts = whileFishing()
+
+		loaded.client.fire("UNIT_SPELLCAST_CHANNEL_START", "player", "Cast-1", FISHING)
+		assert.is_true(hunts:IsVisible())
+		catchOne(loaded)
+		loaded.client.advance(59)
+		assert.is_true(hunts:IsVisible())
+
+		loaded.client.advance(1)
+		assert.is_false(hunts:IsVisible())
+	end)
+
+	it("keeps the dock up through a weapon swap mid-stretch, hiding it at the stretch's end (CORE-R88)", function()
+		local loaded, hunts = whileFishing()
+		wield(loaded, 6256)
+		catchOne(loaded)
+
+		wield(loaded, 25)
+		assert.is_true(hunts:IsVisible())
+		loaded.client.advance(30)
+		wield(loaded, 6256)
+		wield(loaded, 25)
+		assert.is_true(hunts:IsVisible())
+
+		loaded.client.advance(30)
+		assert.is_false(hunts:IsVisible())
+	end)
+
+	it("counts the 60 s again from each Cast's end (CORE-R88)", function()
+		local loaded, hunts = whileFishing()
+		catchOne(loaded)
+		loaded.client.advance(50)
+
+		catchOne(loaded)
+		loaded.client.advance(50)
+		assert.is_true(hunts:IsVisible())
+
+		loaded.client.advance(10)
+		assert.is_false(hunts:IsVisible())
+	end)
+
+	it("keeps the dock up at the stretch's end while a pole is in hand (CORE-R88)", function()
+		local loaded, hunts = whileFishing()
+		catchOne(loaded)
+		wield(loaded, 6256)
+
+		loaded.client.advance(60)
+
+		assert.is_true(hunts:IsVisible())
+	end)
+
+	it("shows and hides the dock in combat too: no docked tracker is a secure frame (CORE-R88)", function()
+		local loaded, hunts = whileFishing()
+		setCombat(loaded, true)
+
+		wield(loaded, 6256)
+		assert.is_true(hunts:IsVisible())
+		wield(loaded, nil)
+		assert.is_false(hunts:IsVisible())
+	end)
+
+	it("leaves a tracker its Module hid hidden when the dock shows (CORE-R72, CORE-R88)", function()
+		local loaded, hunts, stats = whileFishing()
+		hunts:SetShown(false)
+
+		wield(loaded, 6256)
+
+		assert.is_false(hunts:IsVisible())
+		assert.is_true(stats:IsVisible())
+		-- The stack is laid out as before: Stats moves up into Hunts' place.
+		assert.are.same({ "TOPRIGHT", loaded.ns.dockFrame, "TOPRIGHT", 0, 0 }, anchorOf(stats))
+	end)
+
+	it("shows the dock while a dev tour runs, and hides it again once the tour is done (CORE-R88, CORE-R66)", function()
+		local loaded, hunts, _, handle = whileFishing()
+		local seen
+		handle:RegisterTourStop("tracker", "the tracker", function()
+			seen = hunts:IsVisible()
+		end, function() end)
+		loaded.env.SlashCmdList.PAGLE("dev on")
+
+		loaded.env.SlashCmdList.PAGLE("dev tour hunts")
+		assert.is_true(seen)
+		assert.is_true(hunts:IsVisible())
+
+		loaded.client.advance(60)
+		assert.is_false(hunts:IsVisible())
+	end)
+
+	it(
+		"is the Trackers page's second row, a native checkbox, off, with its tooltip, restored by Defaults (SET-R46)",
+		function()
+			local loaded = coreWithTrackers(nil, ROSTER)
+			local hunts = dockFixture(loaded, "Hunts", 10, 40)
+			hunts:AddSetting("trackers", { kind = "header", label = "Hunts" })
+			enterWorld(loaded)
+			local trackers = loaded.client.settings.page("Trackers")
+
+			assert.are.same({
+				{ "Tracker position", "Reset" },
+				{ "Show trackers only while fishing" },
+				{ "Hunts" },
+			}, rowsOf(loaded, trackers))
+			local row = trackers.layout.initializers[2]
+			assert.are.equal(
+				"Hides every Pagle tracker until a fishing pole is in hand or you cast. They stay up for a minute"
+					.. " after your last Cast, so a quick weapon swap doesn't hide them.",
+				row:GetTooltip()
+			)
+			local setting = loaded.client.settings.variables[WHILE_FISHING]
+			assert.is_false(setting:GetValue())
+			setting:SetValue(true)
+
+			loaded.client.settings.defaults(trackers)
+
+			assert.is_false(loaded.ns.db.profile.dock.onlyWhileFishing)
+		end
+	)
+end)
