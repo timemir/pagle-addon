@@ -12,7 +12,8 @@
 -- What it can't know: kerning (advances are summed), the client's exact line height (the face's ascent plus descent,
 -- or MEASURE_LINE times the size), faces the add-on doesn't bundle (the client's own, such as FRIZQT__ and the ruRU
 -- faces, measure in Marcellus as a stand-in) and glyphs a face lacks (Cyrillic in the Latin faces is estimated from a
--- Latin look-alike). A finding that rests on any of those is marked estimated.
+-- Latin look-alike). A finding that rests on any of those is marked estimated. Under the pseudo-locale
+-- (MEASURE_LANG=pseudo), a glyph a face lacks measures as the face's notdef box, which is what the client draws for it.
 
 local RealFont = {}
 
@@ -24,6 +25,10 @@ local STAND_IN = "Marcellus-Regular.ttf"
 -- Lines are the face's ascent plus descent tall, unless MEASURE_LINE gives one factor of the size for every face.
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no os
 local LINE = tonumber(os.getenv("MEASURE_LINE") or "")
+-- Whether a glyph a face lacks measures as its notdef box: the pseudo-locale's run (#592), whose Cyrillic look-alikes
+-- and padding letters the Latin faces draw as boxes, about two thirds of an em in IM Fell.
+---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no os
+local BOXES = os.getenv("MEASURE_LANG") == "pseudo"
 -- The size a font object the fakes don't size draws at, as the client's GameFontNormal.
 local DEFAULT_SIZE = 12
 
@@ -104,6 +109,8 @@ function RealFont.width(text, file, size)
 		local advance = widths[cp]
 		if cp == ICON then
 			advance = 1000
+		elseif BOXES and (not advance or estimated[cp]) and cp > 32 then
+			advance = face.notdef
 		elseif not advance then
 			advance, guessed = 500, true
 		elseif estimated[cp] then
