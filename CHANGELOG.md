@@ -1,5 +1,14 @@
 # Pagle
 
+## 1.3.4 (2026-11-07)
+
+Sharper variety names, and a Russian name that fits.
+
+### Fixed
+
+- A variety's name on a toast picks its ink from each style's page measured as the game draws it, so it reads better in several styles: Robot and Trophy now use a dark ink, Ooze and Gala a near-white one, and Magma the lighter rarity colour. Every style still reads clearly in every rarity. (#626)
+- On the Field guide's Moments page, a long Russian fish name in the toast preview now shows whole instead of being cut. (#621)
+
 ## 1.3.3 (2026-11-07)
 
 Longer names and captions fit.
