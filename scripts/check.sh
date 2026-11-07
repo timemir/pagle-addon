@@ -356,12 +356,14 @@ busted_shards() {
 	return "$failed"
 }
 
-# --- 6. generator (#55, DATA-R61): every generated file is what data/ gives (generate-data.py --check), the
-# generator's pytest suite passes, and mypy --strict passes over the typed package (DATA-R60). scripts/pyproject.toml
-# holds the pytest and mypy setup. No bytecode or caches in the tree: mypy's cache goes in .tools/cache/.
+# --- 6. generator (#55, DATA-R61): every generated file is what data/ gives (generate-data.py --check), adapter/Art.lua's
+# NAME_PAGES is what the toast styles' art gives (measure-name-pages.py --check, #582), the generator's pytest suite
+# passes, and mypy --strict passes over the typed package (DATA-R60). scripts/pyproject.toml holds the pytest and mypy
+# setup. No bytecode or caches in the tree: mypy's cache goes in .tools/cache/.
 stage_generator() {
 	export PYTHONDONTWRITEBYTECODE=1
 	"$bin/python" scripts/generate-data.py --check || return 1
+	"$bin/python" scripts/measure-name-pages.py --check --busted "$bin/busted" || return 1
 	"$bin/pytest" --quiet scripts/tests || return 1
 	"$bin/mypy" --config-file scripts/pyproject.toml || return 1
 }

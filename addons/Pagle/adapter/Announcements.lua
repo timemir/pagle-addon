@@ -95,6 +95,10 @@ local TICKS = 20
 ---@field rim Texture
 ---@field fill Texture
 
+-- A variety's look as a toast or Nod draws it: the ink its name takes on this page (ns.VarietyNameInk, #582).
+---@class PagleVarietyLook
+---@field nameInk number[]?
+
 ---@class PagleDigestRow: Frame
 ---@field bezel PagleBezel
 ---@field what FontString
@@ -822,7 +826,7 @@ local function writeToastVariety(frame, look, font, ink, width)
 	over = over - (variety - varietyWidth)
 	local fishWidth = over > 0 and math.max(fish - over, math.min(fish, FISH_FLOOR)) or fish
 	ns.Ink(text, ink)
-	local nameInk = ns.VarietyNameInk(look, ink)
+	local nameInk = look.nameInk or look.ink
 	name:SetTextColor(nameInk[1], nameInk[2], nameInk[3])
 	fit(text, fishWidth)
 	fit(name, varietyWidth)
@@ -1267,6 +1271,9 @@ local function drawComposedToast(frame, display, style)
 		}
 	end
 	local inks = ns.ToastInks(style, page)
+	if look then
+		look.nameInk = ns.VarietyNameInk(look, inks.name, style, page.page)
+	end
 	local fonts = {
 		what = kickerInk(ns.ToastInk(style, page, "what")) or "What",
 		name = ns.ToastInk(style, page, "name") or "Name",
@@ -1438,6 +1445,9 @@ local function drawToast(frame, display, style)
 
 	local width = page.w - page.tx - 34 - (announcement.coins > 0 and 34 or 0)
 	local inks = ns.ToastInks(style, page)
+	if look then
+		look.nameInk = ns.VarietyNameInk(look, inks.name, style, page.page)
+	end
 	local fonts = { what = "What", name = page.high and "NameHigh" or "Name" }
 	-- A ruled toast's name line ends before the ruler's numbers.
 	local lineWidth = page.ruled and math.min(width, rulerNameLimit(width - 6)) or width
@@ -1579,7 +1589,7 @@ local function writeVariety(frame, look, ink, left, font)
 	end
 	ns.Ink(title, ink)
 	ns.Ink(tail, ink)
-	local nameInk = ns.VarietyNameInk(look, ink)
+	local nameInk = look.nameInk or look.ink
 	name:SetTextColor(nameInk[1], nameInk[2], nameInk[3])
 	title:SetText(look.before)
 	name:SetText(look.name)
@@ -1665,7 +1675,9 @@ local function drawNod(frame, display, style)
 	local last
 	frame.text:ClearAllPoints()
 	if look then
-		x, last = writeVariety(frame, look, ns.ToastInks(style).name, left, fonts.name)
+		local ink = ns.ToastInks(style).name
+		look.nameInk = ns.VarietyNameInk(look, ink, style, "nod")
+		x, last = writeVariety(frame, look, ink, left, fonts.name)
 	else
 		for _, part in ipairs({ frame.gem, frame.variety, frame.tail }) do
 			part:Hide()

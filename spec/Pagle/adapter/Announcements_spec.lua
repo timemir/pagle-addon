@@ -2833,10 +2833,12 @@ describe("a new variety's own toast on the client (#422, VAR-R25, VAR-R28, ANN-R
 					toast.text:GetText(),
 					toast.variety:GetText(),
 				})
-				assert.are.same(
-					{ rgb(rarity.ink), rgb(rarity.color), true },
-					{ rgb(toast.variety.textColor), rgb(toast.gem.fill.color), toast.gem.shown }
-				)
+				assert.are.same({ rgb(rarity.color), true }, { rgb(toast.gem.fill.color), toast.gem.shown })
+				-- The name in the rarity's ink, Common's a shade darker to read at 4.5:1 on the Torn Page (#582, 1.2.3).
+				local name = toast.variety.textColor
+				for i = 1, 3 do
+					assert(name[i] <= rarity.ink[i] + 1e-9 and name[i] > rarity.ink[i] - 0.01, key .. ": not its ink")
+				end
 				assert.are.same(
 					{ ART.texture, { loaded.ns.HeadCrop(ART) } },
 					{ toast.icon.texture, toast.icon.texCoord }
