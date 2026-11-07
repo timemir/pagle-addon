@@ -462,6 +462,15 @@ describe("Only while fishing (CORE-R88, SET-R46)", function()
 		end
 	)
 
+	it("reads nothing at an equipment change before PagleDB is open (CORE-R88)", function()
+		local loaded = loadAddon("Pagle", foreverWith({}), { holdAddonLoaded = true })
+		loaded.client.mainHand = 6256
+
+		loaded.client.fire("PLAYER_EQUIPMENT_CHANGED", 16, false)
+
+		assert.are.same({}, loaded.client.errors)
+	end)
+
 	it("shows the dock at login with a pole already in hand (CORE-R88)", function()
 		local first = whileFishing()
 		local loaded = coreWithTrackers(first.env.PagleDB, ROSTER)

@@ -14,7 +14,7 @@ This file is the one place that shows Pagle's whole Settings tree: which rows si
 - the looks themselves, ownership and equipping (SHOP-R20–R35)
 - Key Bindings › AddOns, where QoL's bindings are also listed (QOL-R1)
 
-**Uses from Core:** CORE-R17, CORE-R32, CORE-R33, CORE-R40–R44, CORE-R71, `Pagle.GetEquipped`, `Pagle.SetEquipped`, `Pagle.IsOwned`, `Pagle.OpenShop`, `Pagle.OpenFieldReport`, `Pagle.GetFieldReportCount`, `Pagle.OpenPasteExport`.
+**Uses from Core:** CORE-R17, CORE-R32, CORE-R33, CORE-R40–R44, CORE-R71, CORE-R88, `Pagle.GetEquipped`, `Pagle.SetEquipped`, `Pagle.IsOwned`, `Pagle.OpenShop`, `Pagle.OpenFieldReport`, `Pagle.GetFieldReportCount`, `Pagle.OpenPasteExport`.
 
 ## Rules
 

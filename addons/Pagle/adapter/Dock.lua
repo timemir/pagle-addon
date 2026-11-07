@@ -134,9 +134,11 @@ ns.WireDock(ns.host, {
 })
 
 -- CORE-R88: a pole going in hand shows the dock at once, and one coming off hides it at once unless the dock's fishing
--- stretch runs.
+-- stretch runs. Before login step 1 has opened PagleDB there is no setting to read yet; ModulesChanged decides then.
 Pagle.RegisterEvent("Pagle dock", "PLAYER_EQUIPMENT_CHANGED", function()
-	ns.dock:Refresh()
+	if ns.db then
+		ns.dock:Refresh()
+	end
 end)
 
 -- The Trackers page's Core rows, which never register the page alone (SET-R1, ns.IsPageRegistered). First

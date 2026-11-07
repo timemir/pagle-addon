@@ -291,7 +291,7 @@ The player's own Pagle key binding that does the next sensible fishing action on
 _Avoid_: one key, cast key, interact key, action key
 
 **Fishing stretch**:
-The live span of fishing that QoL's temporary client settings last for. It starts with a Cast and ends when the pole comes off, the player mounts or enters combat, or a minute passes without a new Cast.
+The live span of fishing that QoL's temporary client settings last for. It starts with a Cast and ends when the pole comes off, the player mounts or enters combat, or a minute passes without a new Cast. Core's tracker dock keeps its own window for "Show trackers only while fishing" (CORE-R88): the same minute after the last Cast, but a pole coming off, mounting or combat doesn't end it. That window is the dock's, not a Fishing stretch.
 _Avoid_: Session (which is cut from the Catch log after the fact), fishing mode, awake
 
 **Nudge**:
