@@ -95,8 +95,8 @@ end
 
 describe("Announcement frames", function()
 	it(
-		"draw a toast with its icon, title, text, 4 stamps, a +N stamp and the Coins stamp; it settles, stays 6 s, then"
-			.. " leaves over 0.4 s (ANN-R11, ANN-R20, ANN-R23, ANN-R80)",
+		"draw a toast with its icon, title, text, 2 stamps and a +N stamp for the rest (3 plates), and the Coins stamp;"
+			.. " it settles, stays 6 s, then leaves over 0.4 s (ANN-R11, ANN-R20, ANN-R23, ANN-R80)",
 		function()
 			local loaded, M = loadCore()
 			local moments =
@@ -113,7 +113,8 @@ describe("Announcement frames", function()
 				{ 136245, "NEW SPECIES", "Nightfin Snapper" },
 				{ toast.icon.texture, toast.title:GetText(), toast.text:GetText() }
 			)
-			assert.are.same({ "NEW HERE", "★★", "RANK UP", "SKILL", "+1", "+25" }, stampsOf(toast))
+			-- From 1.2.3 a toast's stamps and +N take 3 plates at most (#582): the third and fourth fold in with the fifth.
+			assert.are.same({ "NEW HERE", "★★", "+3", "+25" }, stampsOf(toast))
 			assert.is_false(toast.more.shown)
 			loaded.client.advance(TOAST - 0.1)
 			assert.is_true(showing(loaded, "toast"))
@@ -125,8 +126,8 @@ describe("Announcement frames", function()
 	)
 
 	it(
-		'stamp the sum of a Cast\'s tickets as "Refresh +N" after the other stamps, outside the 4 and the +N, before'
-			.. " the Coins (ANN-R23, REF-R7)",
+		'stamp the sum of a Cast\'s tickets as "Refresh +N" after the other stamps, outside the 3 plates and the +N, before'
+			.. " the Coins (ANN-R11, ANN-R23, REF-R7)",
 		function()
 			local loaded, M = loadCore()
 			local moments =
@@ -140,9 +141,9 @@ describe("Announcement frames", function()
 			local toast = frameOf(loaded, "toast")
 			local stamps = stampsOf(toast)
 			-- The Refresh stamp leads with the ticket's icon, an inline texture of Core's own atlas (#466).
-			assert.is_truthy(stamps[6]:find("^|T.-Pagle.media.ticket.Ticket:14:20:"))
-			stamps[6] = stamps[6]:gsub("^|T[^|]*|t ", "")
-			assert.are.same({ "NEW HERE", "RANK UP", "SKILL", "TROPHY", "+1", "REFRESH +5" }, stamps)
+			assert.is_truthy(stamps[4]:find("^|T.-Pagle.media.ticket.Ticket:14:20:"))
+			stamps[4] = stamps[4]:gsub("^|T[^|]*|t ", "")
+			assert.are.same({ "NEW HERE", "RANK UP", "+3", "REFRESH +5" }, stamps)
 		end
 	)
 
@@ -2271,6 +2272,69 @@ describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, AN
 		end
 	)
 
+	it(
+		"gives a toast's stamps and their +N 3 plates at most: with four stamps or more, the two ranked highest and +N"
+			.. " for the rest, those past 4 among them; three stamps as they are (#582, 1.2.3, ANN-R11)",
+		function()
+			local loaded, M = loadCore()
+			local own, here = ownAndHere()
+			-- Three riders after its own stamp: four stamps, the last two folded.
+			raise(
+				loaded,
+				M,
+				own,
+				here,
+				moment("nod", "Rank up", { cast = CAST, stamp = "Rank up", order = 131 }),
+				moment("nod", "Skill", { cast = CAST, stamp = "Skill", order = 132 })
+			)
+			assert.are.same({ "NEW VARIETY", "NEW HERE", "+2" }, stampsOf(frameOf(loaded, "toast")))
+			loaded.client.advance(TOAST + LEAVE_TOAST)
+
+			-- Three stamps are shown as they are, with no +N.
+			own, here = ownAndHere()
+			raise(loaded, M, own, here, moment("nod", "Rank up", { cast = CAST, stamp = "Rank up", order = 131 }))
+			assert.are.same({ "NEW VARIETY", "NEW HERE", "RANK UP" }, stampsOf(frameOf(loaded, "toast")))
+		end
+	)
+
+	it(
+		"hangs four stamps as two and a +2 at 0.9 of their size at least, a readable 10, not the last resort's 8, the"
+			.. " kicker keeping its 16 (#582, 1.2.3, ANN-R11, ANN-R80)",
+		function()
+			local loaded, M = loadCore()
+			local own, here = ownAndHere()
+			raise(
+				loaded,
+				M,
+				own,
+				here,
+				moment("nod", "Rank up", { cast = CAST, stamp = "Rank up", order = 131 }),
+				moment("nod", "Skill", { cast = CAST, stamp = "Skill", order = 132 })
+			)
+			local toast = measuredBySize(loaded, frameOf(loaded, "toast") --[[@as table]])
+
+			local stamps = hung(toast)
+			assert.are.same({ "NEW VARIETY", "NEW HERE", "+2" }, { stamps[1].text, stamps[2].text, stamps[3].text })
+			assert.are.equal(16, toast.title.font and toast.title.font[2] or 16)
+			for _, stamp in ipairs(stamps) do
+				assert(stamp.size >= 10, stamp.text .. " is at " .. stamp.size)
+			end
+			clearOfKicker(loaded, toast)
+		end
+	)
+
+	it("keeps the 4 stamps a Nod shows, its stamps in its one line after the words (ANN-R11)", function()
+		local loaded, M = loadCore()
+		local riders = {}
+		for i = 1, 4 do
+			riders[i] = moment("nod", "Rider " .. i, { cast = CAST, stamp = "R" .. i, order = 130 + i })
+		end
+
+		raise(loaded, M, moment("nod", "New here", { cast = CAST, order = 100 }), unpack(riders))
+
+		assert.are.same({ "R1", "R2", "R3", "R4" }, stampsOf(frameOf(loaded, "nod")))
+	end)
+
 	it("keeps a ruled toast's stamps clear of its kicker in every row (#467, #582)", function()
 		local loaded, M = loadCore()
 		local record, variety = recordAndVariety("common")
@@ -2906,7 +2970,7 @@ describe("a new variety's own toast on the client (#422, VAR-R25, VAR-R28, ANN-R
 		end
 	)
 
-	it("counts in the 4 stamps shown, the rest as +N (#422, ANN-R11)", function()
+	it("counts in the 3 plates a toast's stamps and +N take, the rest as +N (#422, #582, ANN-R11)", function()
 		local loaded, M = loadCore()
 		local riding = {}
 		for i = 1, 4 do
@@ -2915,7 +2979,7 @@ describe("a new variety's own toast on the client (#422, VAR-R25, VAR-R28, ANN-R
 
 		raise(loaded, M, variety("common"), unpack(riding))
 
-		assert.are.same({ "NEW VARIETY", "R1", "R2", "R3", "+1" }, stampsOf(frameOf(loaded, "toast")))
+		assert.are.same({ "NEW VARIETY", "R1", "+3" }, stampsOf(frameOf(loaded, "toast")))
 	end)
 
 	it(
