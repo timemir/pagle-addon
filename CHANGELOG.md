@@ -1,5 +1,15 @@
 # Pagle
 
+## 1.3.3 (2026-11-07)
+
+Longer names and captions fit.
+
+### Fixed
+
+- In the Ink and Koi and Town Crier's Proclamation toast styles, a long fish name no longer runs under the koi or the seal: it's set a little smaller, and only a name still too long is cut. (#592)
+- Settings' "Copy for the website", "Open the Curio Shop" and "Open the Collection" buttons grow with a longer caption instead of overflowing. (#606)
+- The Hunts tracker's "Pin a Hunt to keep it here." line stays within the tracker in longer languages. (#618)
+
 ## 1.3.2 (2026-11-07)
 
 Long Notice goals and the Casting page's note fit.
