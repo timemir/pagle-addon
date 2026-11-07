@@ -306,8 +306,18 @@ local function buttonCheck(parent, nav, y)
 	local check = { on = nav.Part(row, "check"), off = nav.Part(row, "check-off") }
 	place(check.on, row, 0, 2)
 	place(check.off, row, 0, 2)
-	write(row, "print", 15.5, "title", ns.L.SETTINGS_SHOW_BUTTON, 25, 0, 18.6)
-	write(row, "italic", 13, "line", ns.L.SETTINGS_SHOW_BUTTON_TOOLTIP, 25, 18.6, 16.9)
+	-- each on one line across the row from its words' start, set smaller when longer, never past the page (#592); a
+	-- line too long even at its smallest wraps at its own size onto a second line instead
+	local room = COLUMN - 25
+	fit(write(row, "print", 15.5, "title", ns.L.SETTINGS_SHOW_BUTTON, 25, 0, 18.6), "print", 15.5, "title", room)
+	local tip = write(row, "italic", 13, "line", ns.L.SETTINGS_SHOW_BUTTON_TOOLTIP, 25, 18.6, 16.9)
+	if not fit(tip, "italic", 13, "line", room) then
+		tip:SetFontObject(ns.FaceFont("italic", 13))
+		tip:SetTextColor(INKS.line[1], INKS.line[2], INKS.line[3])
+		tip:SetWordWrap(true)
+		tip:SetMaxLines(2)
+		tip:SetSpacing(16.9 - 13)
+	end
 	row:SetScript("OnClick", function()
 		ns.db.profile.indicator.shown = not ns.db.profile.indicator.shown
 		PlaySound(ns.db.profile.indicator.shown and SOUND_CHECK or SOUND_UNCHECK, "SFX")

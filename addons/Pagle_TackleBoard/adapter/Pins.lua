@@ -27,6 +27,9 @@ local POSTER = { left = 22, top = 36, right = 338, foot = 131, wrap = 300, barDo
 -- Where a paper's tacks go (each tack's top left): a Notice's at its top centre; a poster's at its left corner and,
 -- on the right, clear of the wax seal and its pay (the kit's right tack, at 337, sat on the seal's "60").
 local NOTICE_TACKS, POSTER_TACKS = { { 110.5, -5 } }, { { 8, 5 }, { 284, 5 } }
+-- The room a paper's foot keeps between its words at the left (where, "I'm here", "no longer catchable") and what is
+-- right of them ("take it down", a poster's pay, the RE-POSTED stamp), and between a poster's pay and "take it down".
+local FOOT_GAP, PAY_GAP = 8, 14
 -- An empty pin's outline inside its slot: a Notice's, and an Expedition's.
 local EMPTY_NOTICE, EMPTY_EXPEDITION = { 232, 108 }, { 352, 146 }
 -- The overflow strip: at most 4 chips along its twine, the last one "+N more" when more wait; a chip's padding, its
@@ -235,6 +238,30 @@ local function buildSlot(slot, poster)
 	slot.highlight:SetFrameLevel(slot:GetFrameLevel())
 end
 
+-- Holds a paper's foot to its width (TKB-R102, #596): the words at its left (where, "I'm here" or "no longer
+-- catchable", whichever shows) end FOOT_GAP before what is right of them, a longer language's set smaller and then cut
+-- with "…" by the client (ns.FitArtText): on a Notice, "take it down", or the paper's right edge while the RE-POSTED
+-- stamp is pressed over the foot instead; on a poster, its pay, which itself ends PAY_GAP before "take it down" and
+-- keeps at least half the room (ns.FitArtPair). English fits whole, as drawn before.
+---@param slip TackleGoalSlipView
+---@param box table NOTICE or POSTER
+local function fitFoot(slip, box)
+	local words, key, x = slip.where, "Where", box.left
+	if slip.here:IsShown() then
+		words, key, x = slip.here, "Here", box.left + 15
+	elseif slip.stranded:IsShown() then
+		words, key = slip.stranded, "Stranded"
+	end
+	local takeDown = slip.takeDown:IsShown()
+	if slip.poster then
+		local right = takeDown and box.right - slip.takeDown.label:GetStringWidth() - PAY_GAP or box.right
+		ns.FitArtPair(words, key, slip.pay, "PosterPays", right - x, FOOT_GAP)
+		return
+	end
+	local right = takeDown and box.right - slip.takeDown:GetWidth() - FOOT_GAP or box.right
+	ns.FitArtText(words, key, right - x)
+end
+
 --- Draws one goal's lines on its paper (TKB-R102), and lays it on its pin at `lean`: the board's pins, and the Field
 --- guide's sample Notices, whose goal has no ID (adapter/GuidePage.lua).
 ---@param slip TackleGoalSlipView
@@ -278,13 +305,14 @@ function ns.DrawGoalSlip(slip, goal, view, lean)
 		if view.takeDown == "hidden" then
 			slip.pay:SetPoint("TOPRIGHT", slip, "TOPLEFT", box.right, -135)
 		else
-			slip.pay:SetPoint("TOPRIGHT", slip.takeDown.label, "TOPLEFT", -14, -3)
+			slip.pay:SetPoint("TOPRIGHT", slip.takeDown.label, "TOPLEFT", -PAY_GAP, -3)
 		end
 	else
 		local coin = slip.coin --[[@as TackleCoinView]]
 		slip.pay:SetText(ns.L.PAYS_WORD)
 		coin.label:SetText(tostring(goal.pay))
 	end
+	fitFoot(slip, box)
 end
 
 -- What a view knows besides each goal (TKB-R104, TKB-R108, TKB-R121), read now.

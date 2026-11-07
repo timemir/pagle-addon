@@ -26,6 +26,8 @@ local WIDTH, TOP, LINE, LINE_HINT, BOTTOM = 274, 30, 21.6, 34.6, 12
 -- Where a line's words start, the room they keep from the paper's right edge, and a line's and a hint's size and line
 -- box: a line or hint longer than the room wraps on within it, its row growing by a line box a line.
 local TEXT_X, TEXT_END = 43, 14
+-- The least room between the title and the count beside it.
+local COUNT_GAP = 8
 local TEXT_SIZE, TEXT_LH, HINT_SIZE, HINT_LH = 13.5, 17.6, 12.5, 16.3
 
 -- The list's inks (the kit's P.Tracker): a done line, the next one, the rest.
@@ -213,6 +215,8 @@ local function draw(list, ticked)
 		mark:SetText(L.EVENING_CLOSE)
 	end
 	frame.count:SetText(ns.RenderText(L.EVENING_COUNT, { done = list.done, total = list.total }))
+	-- the title on one line before the count, set smaller when longer, never under it (#592)
+	ns.FitGuideText(frame.head, "sc", 15, "title", WIDTH - 26 - frame.count:GetStringWidth() - COUNT_GAP - 24)
 	local y = TOP
 	for i, line in ipairs(list.lines) do
 		local row = rowAt(i)

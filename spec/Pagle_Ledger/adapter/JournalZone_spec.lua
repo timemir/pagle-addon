@@ -416,18 +416,65 @@ describe("the Journal's zone spread", function()
 					local anchor = region.points[1]
 					return type(anchor[2]) == "number" and anchor[2] or anchor[4]
 				end
+				-- every dot drawn: the fake's 6 units a byte puts this ladder on two rows (#594), the first of the second
+				-- with no dot before it
+				local dots = 0
 				for i = 2, 5 do
 					local before, rung = ladder.rungs[i - 1].text, ladder.rungs[i]
 					assert.are.equal("•", rung.dot.text)
-					assert(left(rung.dot) >= left(before) + before:GetStringWidth() + 4, "a space before the dot")
-					assert(
-						left(rung.text) >= left(rung.dot) + rung.dot:GetStringWidth() + 4,
-						("a space after the dot before %s"):format(rung.text.text)
-					)
+					if rung.dot:IsShown() then
+						dots = dots + 1
+						assert(left(rung.dot) >= left(before) + before:GetStringWidth() + 4, "a space before the dot")
+						assert(
+							left(rung.text) >= left(rung.dot) + rung.dot:GetStringWidth() + 4,
+							("a space after the dot before %s"):format(rung.text.text)
+						)
+					end
 				end
+				assert.is_true(dots >= 3)
 				assert(ladder.rungs[1].text.fontObject.font[2] < 15, "a ladder wider than its page is set smaller")
 			end
 		)
+
+		-- At the floor size the pseudo-locale's ranks were still wider than the page, and the last ran past its edge
+		-- (#594). Past the floor the ladder takes a second row: no rank ends past the page, and no row starts with a dot.
+		it("led_r135 puts a ladder still too wide at its smallest onto a second row, inside the page", function()
+			local _, loaded = zoneSpread(DARKSHORE)
+
+			loaded.ns.L.ZONE_RANKS = {
+				"[Visitor padding]",
+				"[Regular padding]",
+				"[Local padding]",
+				"[Expert padding]",
+				"[Master padding]",
+			}
+			loaded.ns.journal:Draw()
+
+			local ladder = loaded.ns.journal.shown.left.drawn.ladder[1]
+			local width = loaded.ns.journal.shown.left.width
+			local function at(region)
+				local anchor = region.points[1]
+				if type(anchor[2]) == "number" then
+					return anchor[2], anchor[3]
+				end
+				return anchor[4], anchor[5]
+			end
+			local rows = {}
+			for i, rung in ipairs(ladder.rungs) do
+				local x, y = at(rung.text)
+				assert(x + rung.text:GetStringWidth() <= width, ("%s ends inside the page"):format(rung.text.text))
+				rows[y] = rows[y] or i
+				if rung.dot then
+					assert.are.equal(rows[y] ~= i, rung.dot:IsShown(), "a dot only between two ranks on one row")
+				end
+			end
+			local count = 0
+			for _ in pairs(rows) do
+				count = count + 1
+			end
+			assert.are.equal(2, count)
+			assert.are.equal(11, ladder.rungs[1].text.fontObject.font[2])
+		end)
 
 		-- A seal's words wrap at its width, but a single word wider than the seal ("ЗАВСЕГДАТАЙ") can't, and ran past
 		-- the wax (#560): a seal sets its words smaller until its widest word fits across it.

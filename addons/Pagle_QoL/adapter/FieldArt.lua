@@ -281,8 +281,14 @@ end
 ---@class PagleQoLNoteButton: Button
 ---@field Text FontString
 
+-- A note button's room either side of its words, as wide as they are; and, at a set width, the least room either
+-- side of words that are longer, and how small they may be set, as a share of their size, before the client cuts
+-- them short with "..." (#592).
+local NOTE_PAD, NOTE_INSET, NOTE_FLOOR = 26, 14, 0.75
+
 --- A button on `parent` reading `label`: the kit's leather `button` (`outlined` false) or its outlined `pbtn`, 44
---- high and as wide as its words with 26 either side, or `width` wide.
+--- high and as wide as its words with 26 either side, or `width` wide, its words set smaller to fit within it, NOTE_INSET
+--- in from either end, then cut short.
 ---@param parent Frame
 ---@param label string
 ---@param outlined boolean
@@ -299,7 +305,16 @@ function ns.NewNoteButton(parent, label, outlined, width)
 	button.Text:SetJustifyH("CENTER")
 	button.Text:SetText(label)
 	button.Text:SetPoint("CENTER", button, "CENTER")
-	width = width or math.floor(button.Text:GetStringWidth() + 52 + 0.5)
+	if width then
+		local key = outlined and "NoteButton" or "Button"
+		local def, room, natural = FONTS[key], width - 2 * NOTE_INSET, button.Text:GetStringWidth()
+		if natural > room then
+			local floor = math.ceil(def[2] * NOTE_FLOOR * 2) / 2
+			Pagle.SetFace(button.Text, FACES[def[1]], math.max(floor, math.floor(def[2] * room / natural * 2) / 2))
+			button.Text:SetWidth(room)
+		end
+	end
+	width = width or math.floor(button.Text:GetStringWidth() + 2 * NOTE_PAD + 0.5)
 	ns.SetThreeSlice(face, "Field", outlined and "pbtn" or "button", width, outlined and 10 or 12, "ARTWORK")
 	button:SetSize(width, 44)
 	return button

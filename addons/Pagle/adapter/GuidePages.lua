@@ -236,7 +236,9 @@ local WELCOME = {
 			y = below(text(left, "hand", 23, "hand", words, X, y, 28.06, { wrap = true, width = W }), y, 23, 28.06)
 		end
 		text(left, "handBold", 30, "body", L.GUIDE_WELCOME_SIGNED, X, y + SIGNED_GAP, 30)
-		text(left, "italic", 13, "note", L.GUIDE_WELCOME_FOOT, X, 505.8, 18.2)
+		-- the foot line on one line across the column, set smaller when longer, never into the gutter (#592)
+		local foot = text(left, "italic", 13, "note", L.GUIDE_WELCOME_FOOT, X, 505.8, 18.2)
+		ns.FitGuideText(foot, "italic", 13, "note", W)
 
 		ns.NewGuideKicker(right, L.GUIDE_WELCOME_RIGHT_KICKER)
 		ns.NewGuideTitle(right, L.GUIDE_WELCOME_RIGHT_TITLE, 25)
@@ -267,14 +269,18 @@ local WELCOME = {
 -- The menu's rows: 23 units each from 31 down, a rule 4 under the Modules' entries taking 9. A row's words start 14 in
 -- and end by 14 from the menu's right; the Curio Shop's end that far left of its balance, right-aligned to 183.
 local MENU_TOP, MENU_ROW, MENU_GAP, MENU_WIDTH = 31, 23, 9, 214
+-- The menu's place on the left page and its note's, and the least room between the paragraph over it and its top: a
+-- paragraph that wraps longer than the art's pushes the menu and its note down with it (ONB-R31, #592).
+local MENU_X, MENU_Y, MENU_NOTE_Y, MENU_BODY_GAP = 56, 169.5, 196, 8
 local MENU_TEXT_X, MENU_BALANCE_X, MENU_BALANCE_GAP = 14, 183, 8
 
 ---@param left Frame
+---@param y number its top on the left page
 ---@return PagleGuideMenuDrawing
-local function newMenu(left)
+local function newMenu(left, y)
 	local menu = CreateFrame("Frame", nil, left) --[[@as PagleGuideMenuDrawing]]
 	menu:SetSize(MENU_WIDTH, 230)
-	ns.GuideAt(menu, left, 56, 169.5)
+	ns.GuideAt(menu, left, MENU_X, y)
 	menu:SetFrameLevel(left:GetFrameLevel() + 2)
 	ns.NewNineSlice(menu, "GuideParts", "menu", 8)
 	hue(text(menu, "gilt", 13, "title", L.GUIDE_BOX_MENU, 14, 12, 13), "menuHead")
@@ -358,10 +364,13 @@ end
 -- lower of the icon and its words. Between two rows the board leaves 16.03, the rule 8.05 of it under the row above.
 -- The rows start at 55 and end by 483, 7 above the foot's Next at 490: when they would pass it, every gap tightens by
 -- as much (the rule keeping its share of it), down to 8, so the rows still read apart with a rule between them; past
--- that they run on. Every blurb on two lines, they are the board's: 73.98 apart from 55, the rule 66 under each.
+-- that every blurb is set a half size smaller at a time, to BLURB_FLOOR, its lines as far apart for their size, until
+-- the rows end by 483 (#592); past that they run on. Every blurb on two lines, they are the board's: 73.98 apart from
+-- 55, the rule 66 under each.
 local ROW_TOP, ROWS_END, ICON = 55, 483, 36
 local TITLE_SIZE, TITLE_LH, BLURB_Y, BLURB_SIZE, BLURB_LH = 17, 19.55, 21.5, 13.5, 18.225
 local ROW_GAP, ROW_GAP_MIN, RULE_SHARE = 16.03, 8, 8.05 / 16.03
+local BLURB_FLOOR = 11.5
 
 --- One row as drawn: its icon, which sprite that is, its title and blurb, and the rule under it (none under the last).
 ---@class PagleGuideBoxRowView
@@ -423,33 +432,59 @@ local BOX = {
 	build = function(left, right, nav)
 		ns.NewGuideKicker(left, L.GUIDE_BOX_KICKER)
 		ns.NewGuideTitle(left, L.GUIDE_BOX_TITLE)
-		body(left, L.GUIDE_BOX_TEXT, 85.4)
-		local menu = newMenu(left)
+		local paragraph = body(left, L.GUIDE_BOX_TEXT, 85.4)
+		local down = math.max(0, below(paragraph, 85.4, 15, 20.7) + MENU_BODY_GAP - MENU_Y)
+		local menu = newMenu(left, MENU_Y + down)
 		drawMenu(menu)
 		pages.menu = menu
-		nav.Note(left, L.GUIDE_BOX_MENU_NOTE, 292, 196, 136, menu.highlight)
+		nav.Note(left, L.GUIDE_BOX_MENU_NOTE, 292, MENU_NOTE_Y + down, 136, menu.highlight)
 
 		local modules = ns.Modules:Modules()
 		ns.NewGuideKicker(right, ns.GuideBoxKicker(#modules))
 		-- each row's words first, at its own top, to measure how tall the row is; then the rows go in their places
-		local views, heights = {}, {}
+		local views = {}
 		for i, row in ipairs(ns.GuideBoxRows(modules)) do
 			local view = { sprite = row.sprite, icon = ns.GuidePart(right, row.sprite) }
 			view.title = text(right, "print", TITLE_SIZE, "title", row.title, 79, 0, TITLE_LH)
-			heights[i] = math.max(ICON, TITLE_LH)
 			if row.blurb then
 				local options = { wrap = true, width = 333 }
 				view.blurb = text(right, "print", BLURB_SIZE, "small", row.blurb, 79, BLURB_Y, BLURB_LH, options)
-				heights[i] = math.max(ICON, below(view.blurb, BLURB_Y, BLURB_SIZE, BLURB_LH))
 			end
 			views[i] = view
+		end
+		-- the rows' heights with every blurb at `size`, its lines as far apart for it as BLURB_LH is for BLURB_SIZE
+		local function measure(size)
+			local lh, heights = size * BLURB_LH / BLURB_SIZE, {}
+			for i, view in ipairs(views) do
+				heights[i] = math.max(ICON, TITLE_LH)
+				if view.blurb then
+					view.blurb:SetFontObject(ns.ArtFaceFont("print", size))
+					view.blurb:SetTextColor(unpack(ns.GUIDE_INKS.small, 1, 3))
+					view.blurb:SetSpacing(lh - size)
+					heights[i] = math.max(ICON, below(view.blurb, BLURB_Y, size, lh))
+				end
+			end
+			return heights, lh
+		end
+		local size = BLURB_SIZE
+		local heights, lh = measure(size)
+		while size > BLURB_FLOOR and rowGap(heights) <= ROW_GAP_MIN do
+			local total = (#heights - 1) * ROW_GAP_MIN
+			for _, height in ipairs(heights) do
+				total = total + height
+			end
+			if ROW_TOP + total <= ROWS_END then
+				break
+			end
+			size = size - 0.5
+			heights, lh = measure(size)
 		end
 		local gap, y = rowGap(heights), ROW_TOP
 		for i, view in ipairs(views) do
 			ns.PlaceSprite(view.icon, right, X, y)
 			ns.GuideAt(view.title, right, 79, y + (TITLE_LH - TITLE_SIZE) / 2)
 			if view.blurb then
-				ns.GuideAt(view.blurb, right, 79, y + BLURB_Y + (BLURB_LH - BLURB_SIZE) / 2)
+				ns.GuideAt(view.blurb, right, 79, y + BLURB_Y + (lh - size) / 2)
 			end
 			y = y + heights[i]
 			if i < #views then
@@ -590,9 +625,10 @@ local MOMENTS = {
 -- ---------------------------------------------------------------------------------------------------- Off you go
 
 -- The list's width, its rows' heights with and without a hint, and where its first row starts; where an item's words
--- start and how far from the list's right edge they end, and the room its header leaves its count.
+-- start and how far from the list's right edge they end, and the room its header leaves its count at least: a longer
+-- count ("{done} of {rows}" at its widest, every item done) takes more, COUNT_GAP clear of the title (#592).
 local LIST_WIDTH, ROW_HINTED, ROW_PLAIN, LIST_TOP = 274, 34.6, 21.6, 30
-local ITEM_X, ITEM_END, COUNT_ROOM = 43, 14, 64
+local ITEM_X, ITEM_END, COUNT_ROOM, COUNT_GAP = 43, 14, 64, 8
 
 -- An item's words, or its hint, at their size and wrapped to the list's paper, as the docked list writes them
 -- (adapter/Evening.lua): a longer one takes another line instead of running past the paper or being cut short. Returns
@@ -616,11 +652,14 @@ local function newEvening(right, y)
 	ns.GuideAt(list, right, 84, y)
 	list:SetFrameLevel(right:GetFrameLevel() + 2)
 	local title = text(list, "sc", 15, "title", L.GUIDE_EVENING_TITLE, 24, 8, 20)
-	ns.FitGuideText(title, "sc", 15, "title", LIST_WIDTH - 24 - COUNT_ROOM)
 	list.count = text(list, "italic", 12.5, "kicker", "", LIST_WIDTH - 8, 10, 17, { right = true })
 	list.rows = {}
 	y = LIST_TOP
-	for _, item in ipairs(ns.GuideEveningPreview(ns.Modules:Modules())) do
+	local items = ns.GuideEveningPreview(ns.Modules:Modules())
+	list.count:SetText(ns.RenderText(L.GUIDE_EVENING_COUNT, { done = #items, rows = #items }))
+	local countRoom = math.max(COUNT_ROOM, 8 + math.ceil(list.count:GetStringWidth()) + COUNT_GAP)
+	ns.FitGuideText(title, "sc", 15, "title", LIST_WIDTH - 24 - countRoom)
+	for _, item in ipairs(items) do
 		local words = text(list, "print", 13.5, "body", item.text, ITEM_X, y + 2, 17.6, { wrap = true })
 		local more = onPaper(words, 13.5, 17.6)
 		-- struck through every line it wraps to, each as wide as its words

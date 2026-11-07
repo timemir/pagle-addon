@@ -5,6 +5,7 @@
 #
 #   scripts/measure-layout.sh deDE              # the whole tour in German
 #   scripts/measure-layout.sh all               # enUS, deDE, esES and ruRU, at once
+#   scripts/measure-layout.sh pseudo            # the pseudo-locale (/pagle dev pseudo on, #524) on an enUS client
 #   scripts/measure-layout.sh ruRU hunts        # one Module's stops (`/pagle dev tour hunts`): core, ledger, hunts, …
 #   MEASURE_PNG=all scripts/measure-layout.sh esES     # a PNG of every stop, not only those with a finding
 #   MEASURE_VERBOSE=1 scripts/measure-layout.sh deDE   # list the allowed findings too
@@ -16,12 +17,12 @@
 set -euo pipefail
 
 usage() {
-	echo "usage: scripts/measure-layout.sh <enUS|deDE|esES|ruRU|all> [module]" >&2
+	echo "usage: scripts/measure-layout.sh <enUS|deDE|esES|ruRU|pseudo|all> [module]" >&2
 	exit 2
 }
 (($# >= 1 && $# <= 2)) || usage
 case $1 in
-enUS | deDE | esES | ruRU) languages=("$1") ;;
+enUS | deDE | esES | ruRU | pseudo) languages=("$1") ;;
 all) languages=(enUS deDE esES ruRU) ;;
 *) usage ;;
 esac

@@ -30,6 +30,16 @@ def test_a_face_without_cyrillic_measures_it_by_latin_look_alikes_marked_estimat
     assert 1.0 < line < 1.5
 
 
+def test_a_face_gives_the_width_of_the_box_it_draws_for_a_glyph_it_lacks() -> None:
+    # The client draws a letter a face lacks as the face's notdef box: in IM Fell, about two thirds of an em, wider
+    # than the Latin look-alike that stands in for a Cyrillic letter. The pseudo-locale's run measures it so (#592).
+    notdef = layout.face_notdef(REPO / layout.FONTS_DIR / "IMFeENrm28P.ttf")
+    advances, _, _ = layout.face_advances(REPO / layout.FONTS_DIR / "IMFeENrm28P.ttf")
+    assert 600 < notdef < 700
+    assert notdef > advances[ord("с")] and ord("ĩ") not in advances
+    assert f"notdef = {notdef}," in layout.advances_lua(REPO / layout.FONTS_DIR)
+
+
 def test_the_shipped_allowlist_loads_and_every_entry_has_a_reason() -> None:
     entries = layout.load_allowlist(REPO / "scripts/measure-layout/allowlist.toml")
     assert entries

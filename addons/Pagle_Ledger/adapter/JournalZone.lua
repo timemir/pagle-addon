@@ -87,19 +87,35 @@ ns.RegisterJournalWidget("ladder", function(parent)
 		-- a ladder wider than its page (a longer language's ranks) is set smaller to fit, down to RUNG_SIZE_FLOOR
 		local natural = setIn(RUNG_SIZE)
 		if natural > width then
-			setIn(math.max(RUNG_SIZE_FLOOR, math.floor(RUNG_SIZE * width / natural * 2) / 2))
+			local size = math.max(RUNG_SIZE_FLOOR, math.floor(RUNG_SIZE * width / natural * 2) / 2)
+			natural = setIn(size)
+			-- a circle keeps its size as the words shrink, so a step more may be needed
+			while natural > width and size > RUNG_SIZE_FLOOR do
+				size = size - 0.5
+				natural = setIn(size)
+			end
 		end
-		local x = 0
+		-- and one still too wide at that size (the pseudo-locale's, #594) breaks onto a row under it before the rank
+		-- that would pass the page's edge, the dot before that rank left out
+		local x, y, widest = 0, 0, 0
 		for i, data in ipairs(list) do
 			local rung = rungAt(i)
-			if rung.dot then
-				-- as wide as the language's separator (ruRU's dot is wider than English's), a space either side (#560)
-				rung.dot:ClearAllPoints()
-				rung.dot:SetPoint("TOPLEFT", x + DOT_GAP, -2)
-				rung.dot:Show()
-				x = x + DOT_GAP + rung.dot:GetStringWidth() + DOT_GAP
-			end
 			local ringName = data.circled and ringOf(data.rank)
+			local own = ringName and ns.JOURNAL_ATLASES.Parts.sprites[ringName].box[3] or rung.text:GetStringWidth()
+			if rung.dot then
+				local dotted = DOT_GAP + rung.dot:GetStringWidth() + DOT_GAP
+				if x > 0 and x + dotted + own > width then
+					x, y = 0, y + LADDER_HEIGHT
+					rung.dot:Hide()
+				else
+					-- as wide as the language's separator (ruRU's dot is wider than English's), a space either side
+					-- (#560)
+					rung.dot:ClearAllPoints()
+					rung.dot:SetPoint("TOPLEFT", x + DOT_GAP, -2 - y)
+					rung.dot:Show()
+					x = x + dotted
+				end
+			end
 			if ringName then
 				if not rung.ring then
 					rung.ring = ns.JournalSprite(self, "Parts", ringName, "ARTWORK")
@@ -109,18 +125,18 @@ ns.RegisterJournalWidget("ladder", function(parent)
 				ns.JournalSetSprite(rung.ring, "Parts", ringName)
 				rung.ring:SetSize(sprite.w / atlas.scale, sprite.h / atlas.scale)
 				rung.ring.box = sprite.box
-				ns.JournalBoxAt(rung.ring, self, x, 0)
+				ns.JournalBoxAt(rung.ring, self, x, y)
 				rung.ring:Show()
 				rung.text:SetTextColor(rgb(INK.red))
 				rung.text:SetWidth(sprite.box[3])
 				rung.text:ClearAllPoints()
-				rung.text:SetPoint("TOPLEFT", x, -2)
+				rung.text:SetPoint("TOPLEFT", x, -2 - y)
 				local ring = rung.ring --[[@as LedgerSpriteTexture]]
 				Pagle.StopMotion(ring)
 				if same and before ~= nil and before ~= i and ns.MotionOn() then
 					-- the new circle settles from 130% (0.35 s from 0.2 s)
 					local w0, h0 = ring:GetSize()
-					local cx, cy = x + sprite.box[3] / 2, sprite.box[4] / 2
+					local cx, cy = x + sprite.box[3] / 2, y + sprite.box[4] / 2
 					Pagle.Animate(ring, {
 						{
 							dur = 0.35,
@@ -144,10 +160,11 @@ ns.RegisterJournalWidget("ladder", function(parent)
 				rung.text:SetTextColor(rgb(data.circled and INK.red or data.inked and INK.title or INK.ghost))
 				rung.text:SetWidth(0)
 				rung.text:ClearAllPoints()
-				rung.text:SetPoint("TOPLEFT", x, -2)
+				rung.text:SetPoint("TOPLEFT", x, -2 - y)
 				x = x + rung.text:GetStringWidth()
 			end
 			rung.text:Show()
+			widest = math.max(widest, x)
 		end
 		for i = #list + 1, #self.rungs do
 			self.rungs[i].text:Hide()
@@ -158,8 +175,8 @@ ns.RegisterJournalWidget("ladder", function(parent)
 				self.rungs[i].ring:Hide()
 			end
 		end
-		self:SetWidth(math.max(1, math.min(width, x)))
-		return LADDER_HEIGHT
+		self:SetWidth(math.max(1, math.min(width, widest)))
+		return LADDER_HEIGHT + y
 	end
 	return widget
 end)

@@ -192,6 +192,63 @@ describe("a started board's pins (TKB-R101, TKB-R102)", function()
 	end)
 end)
 
+describe("a pinned goal's foot (TKB-R102, #596)", function()
+	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+	local RealFont = dofile("scripts/measure-layout/realfont.lua")
+
+	-- Where `region` lies on the screen, from its anchors: { left, top, right, bottom }.
+	local function rect(region)
+		return assert(RealFont.rect(region, {}), "placed on the screen")
+	end
+
+	-- The board with the foot's words as a longer language writes them: 40 or more characters each, the fake's 6
+	-- units a byte making each far wider than the room beside "take it down".
+	local LONG = "Wherever this goal can be worked, at length"
+	local function longOpened(records)
+		return opened(records, {
+			prepare = function(l)
+				l.ns.L.IM_HERE = "I'm here, and so is this goal, at length"
+				l.ns.L.ANYWHERE = LONG
+				l.ns.L.NO_LONGER_CATCHABLE = "no longer catchable anywhere, at length"
+			end,
+		})
+	end
+
+	-- That `left`'s words end before `right` starts, on one line the client cuts short with "…".
+	local function endsBefore(left, right)
+		assert.is_true(left:IsShown())
+		assert.is_false(left:CanWordWrap())
+		assert.is_true(left:GetWidth() > 0)
+		assert(rect(left)[3] <= rect(right)[1], "ends before what is right of it")
+	end
+
+	it('ends "I\'m here", where and "no longer catchable" before "take it down" on a Notice', function()
+		local records = startedLog(HAUL_HERE, RARITY, STRANDED)
+		local _, _, frame = longOpened(records)
+
+		endsBefore(notice(frame, 1).goal.here, notice(frame, 1).goal.takeDown)
+		endsBefore(notice(frame, 2).goal.where, notice(frame, 2).goal.takeDown)
+		endsBefore(notice(frame, 3).goal.stranded, notice(frame, 3).goal.takeDown)
+	end)
+
+	it('ends where before the pay on an Expedition, and the pay before "take it down"', function()
+		local _, _, frame = longOpened(startedLog(EXPEDITION))
+
+		local poster = expedition(frame, 1).goal
+		endsBefore(poster.where, poster.pay)
+		assert.is_true(rect(poster.pay)[3] <= rect(poster.takeDown)[1])
+	end)
+
+	it("keeps its words whole where they fit, as in English", function()
+		local _, _, frame = opened(startedLog(EXPEDITION, HAUL_HERE, RARITY))
+
+		assert.are.equal("I'm here", notice(frame, 1).goal.here:GetText())
+		assert.is_false(notice(frame, 1).goal.here:IsTruncated())
+		assert.are.equal("anywhere", notice(frame, 2).goal.where:GetText())
+		assert.are.equal("anywhere", expedition(frame, 1).goal.where:GetText())
+	end)
+end)
+
 describe('"I\'m here" (TKB-R121)', function()
 	it("stops after a zone change, and comes back on returning", function()
 		local _, fake, frame = opened(startedLog(EXPEDITION, HAUL_HERE))

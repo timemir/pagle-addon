@@ -427,6 +427,26 @@ local function fitLeaderWords(label, text, room)
 	return math.min(lastW or 0, room), math.max(0, label:GetStringHeight() - oneLine)
 end
 
+-- Where a contents line's words start when it has a numeral, at least, and the room kept after the widest numeral.
+local NUMERAL_COLUMN, NUMERAL_GAP = 28, 4
+
+-- Where the words of a contents line with a numeral start (LED-R132, #594): NUMERAL_COLUMN, or NUMERAL_GAP after the
+-- widest of the language's numerals (and this line's), measured through `numeral` at its face, so every line's words
+-- start in one column and none runs over its numeral. English's "iii." is far inside the column.
+---@param numeral FontString
+---@param own string
+---@return number
+local function numeralColumn(numeral, own)
+	local widest = 0
+	local all = ns.L.HOME_NUMERALS or {}
+	for i = 0, #all do
+		numeral:SetText(i == 0 and own or all[i])
+		widest = math.max(widest, numeral:GetStringWidth())
+	end
+	numeral:SetText(own)
+	return math.max(NUMERAL_COLUMN, math.ceil(widest) + NUMERAL_GAP)
+end
+
 ---@class LedgerLeaderWidget: LedgerJournalWidget
 ---@field numeral FontString
 ---@field value FontString
@@ -472,7 +492,7 @@ makers.leader = function(parent)
 		self.ink = faded and INK.faded or INK.body
 		self.numeral:SetShown(block.numeral ~= nil)
 		self.numeral:SetText(block.numeral or "")
-		local left = block.numeral and 28 or 0
+		local left = block.numeral and numeralColumn(self.numeral, block.numeral) or 0
 		local size = pair and 14.5 or 16
 		ns.JournalRestyle(self.label, "print", size, self.ink)
 		self.label:ClearAllPoints()

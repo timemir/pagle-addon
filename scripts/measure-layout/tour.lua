@@ -15,6 +15,10 @@ local RealFont = dofile("scripts/measure-layout/realfont.lua")
 local json = require("dkjson")
 
 local LANGUAGE = os.getenv("MEASURE_LANG") or "enUS"
+-- "pseudo" is the development pseudo-locale (#524) on an enUS client: every string padded, accented and bracketed,
+-- as `/pagle dev pseudo on` and a /reload show it.
+local PSEUDO = LANGUAGE == "pseudo"
+local LOCALE = PSEUDO and "enUS" or LANGUAGE
 local MODULE = os.getenv("MEASURE_MODULE") or ""
 local OUT = assert(os.getenv("MEASURE_OUT"), "MEASURE_OUT names the folder to write into")
 
@@ -364,9 +368,9 @@ describe("the layout harness", function()
 			"Pagle",
 			foreverWith({
 				GetLocale = function()
-					return LANGUAGE
+					return LOCALE
 				end,
-				PagleDB = { global = { language = LANGUAGE } },
+				PagleDB = { global = { language = LOCALE, dev = PSEUDO or nil, devPseudo = PSEUDO or nil } },
 			}),
 			{ also = ROSTER }
 		)
