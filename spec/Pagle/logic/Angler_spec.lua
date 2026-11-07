@@ -114,32 +114,32 @@ describe("build entries", function()
 
 		local build = angler:LogBuild(70338, "1.60.1", T)
 
-		assert.are.same({ "B1|1|1791731700|0|70338|1.60.1|pagle-2026h" }, logEntries(catchLog.data))
+		assert.are.same({ "B1|1|1791731700|0|70338|1.60.1|pagle-2026i" }, logEntries(catchLog.data))
 		assert.are.same({ 1, "build", 70338, "1.60.1" }, { build.seq, build.kind, build.build, build.version })
-		assert.are.same({ logId = LOG_ID, build = 70338, rules = "pagle-2026h" }, global.lastBuild)
+		assert.are.same({ logId = LOG_ID, build = 70338, rules = "pagle-2026i" }, global.lastBuild)
 	end)
 
 	it("append nothing while the build is the cached one, and a B1 when it differs (LOG-R36)", function()
-		local global = { lastBuild = { logId = LOG_ID, build = 70338, rules = "pagle-2026h" } }
-		local angler, catchLog = anglerOver({ ada() }, { "B1|1|1791731000|0|70338|1.60.1|pagle-2026h" }, global)
+		local global = { lastBuild = { logId = LOG_ID, build = 70338, rules = "pagle-2026i" } }
+		local angler, catchLog = anglerOver({ ada() }, { "B1|1|1791731000|0|70338|1.60.1|pagle-2026i" }, global)
 		angler:SeeCharacter(ada(), T)
 
 		assert.is_nil(angler:LogBuild(70338, "1.60.1", T))
 		assert.is_table(angler:LogBuild(70412, "1.60.2", T + 1))
 
 		assert.are.same(
-			{ "B1|1|1791731000|0|70338|1.60.1|pagle-2026h", "B1|1|1791731701|0|70412|1.60.2|pagle-2026h" },
+			{ "B1|1|1791731000|0|70338|1.60.1|pagle-2026i", "B1|1|1791731701|0|70412|1.60.2|pagle-2026i" },
 			logEntries(catchLog.data)
 		)
-		assert.are.same({ logId = LOG_ID, build = 70412, rules = "pagle-2026h" }, global.lastBuild)
+		assert.are.same({ logId = LOG_ID, build = 70412, rules = "pagle-2026i" }, global.lastBuild)
 	end)
 
 	for name, cache in pairs({ missing = false, ["of another logId"] = { logId = "0000000000000000", build = 1 } }) do
 		it("rebuild a cache that is " .. name .. " by walking the log back to its last B1 (LOG-R36)", function()
 			local global = { lastBuild = cache or nil }
 			local angler, catchLog = anglerOver({ ada() }, {
-				"B1|1|1791731000|0|70000|1.60.0|pagle-2026h",
-				"B1|1|1791731100|0|70338|1.60.1|pagle-2026h",
+				"B1|1|1791731000|0|70000|1.60.0|pagle-2026i",
+				"B1|1|1791731100|0|70338|1.60.1|pagle-2026i",
 				"S1|1|1791731200|0|86|150|0",
 			}, global)
 			angler:SeeCharacter(ada(), T)
@@ -147,21 +147,21 @@ describe("build entries", function()
 			assert.is_nil(angler:LogBuild(70338, "1.60.1", T))
 
 			assert.are.equal(3, catchLog.data.count)
-			assert.are.same({ logId = LOG_ID, build = 70338, rules = "pagle-2026h" }, global.lastBuild)
+			assert.are.same({ logId = LOG_ID, build = 70338, rules = "pagle-2026i" }, global.lastBuild)
 		end)
 	end
 
 	it("records a shipped rule change even when the game build stays the same", function()
-		local angler, catchLog = anglerOver({ ada() }, { "B1|1|1791731000|0|70338|1.60.1|pagle-2026g" })
+		local angler, catchLog = anglerOver({ ada() }, { "B1|1|1791731000|0|70338|1.60.1|pagle-2026h" })
 		angler:SeeCharacter(ada(), T)
 		local record = angler:LogBuild(70338, "1.60.1", T)
-		assert.are.equal("pagle-2026h", record.rules)
+		assert.are.equal("pagle-2026i", record.rules)
 		assert.are.equal(2, catchLog.data.count)
 	end)
 
 	it("trust a cache of this logId without reading the log (LOG-R36)", function()
-		local global = { lastBuild = { logId = LOG_ID, build = 70412, rules = "pagle-2026h" } }
-		local angler, catchLog = anglerOver({ ada() }, { "B1|1|1791731000|0|70338|1.60.1|pagle-2026h" }, global)
+		local global = { lastBuild = { logId = LOG_ID, build = 70412, rules = "pagle-2026i" } }
+		local angler, catchLog = anglerOver({ ada() }, { "B1|1|1791731000|0|70338|1.60.1|pagle-2026i" }, global)
 		angler:SeeCharacter(ada(), T)
 
 		assert.is_nil(angler:LogBuild(70412, "1.60.2", T))
