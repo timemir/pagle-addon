@@ -907,6 +907,33 @@ describe("the spread in a longer language (CORE-R8)", function()
 		end
 	end)
 
+	it(
+		"hnt_r162 sets Russian's last post title, left only what its neighbour's half leaves, smaller to about 70% of"
+			.. " its size so it shows whole, and cuts it there in a face 10% wider (from 1.3.5)",
+		function()
+			for _, wider in ipairs({ false, 1.1 }) do
+				local r = oneOn({ language = "ruRU" })
+				r.ns.OpenWagers()
+				local ladder = r.ns.board:Page(place(r), "left").spread.ladder
+				hunts.measureReal(ladder, wider or nil)
+				r.ns.board:Draw()
+				local last = ladder.titles[#ladder.titles]
+				local size = hunts.sizeOf(last)
+
+				assert.are.equal("Отставка букмекеров", last.text)
+				if wider then
+					assert.are.equal(8, size) -- at its floor, then cut with "…" in its room
+				else
+					assert(hunts.whole(last), ("cut at %s"):format(size))
+					assert.is_true(size < 10) -- past the floor that cut it (113 in 95 at 10)
+					assert.is_true(size >= 8)
+				end
+				local span = inked(r, last, ladder)
+				assert.is_true(span.right <= ladder.width + 1e-6) -- never past the page's right
+			end
+		end
+	)
+
 	-- The posts stand a third of the rail apart, so their titles never crowd today; with posts closer (a ladder of more
 	-- steps), two titles each kept at least POST_TITLE_MIN (24) overprinted each other where the room between their posts
 	-- held less than both (#568's review). Posts are moved here by the ladder's marks.

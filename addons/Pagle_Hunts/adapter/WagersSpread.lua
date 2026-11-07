@@ -142,8 +142,9 @@ local RAIL_X, RAIL_Y, RAIL_W, POST_CY, POST, POST_TITLE_Y, POST_TITLE_W, TOKEN_C
 local POST_INNER, DIAL_INNER, RING_FLOOR, POST_TITLE_GAP, POST_TITLE_MIN = 15, 28, 7, 8, 24
 -- The least width a run of the ladder's line words is cut to, past the title (#595): a few letters and the ellipsis.
 local LADDER_RUN_MIN = 16
--- The least size a narrowed title is set at before the client cuts it (the kit's is 11.5).
-local POST_TITLE_FLOOR = 10
+-- The least size a narrowed title is set at before the client cuts it (the kit's is 11.5): about 70% of it, as a
+-- longer language's last title ("Отставка букмекеров") has only what its neighbour's half leaves it at the page's right.
+local POST_TITLE_FLOOR = 8
 -- Motion (HNT-R162's motion, data/art/wagers/art.json › motion): the stamp pressed from 1.6 times its size, in 0.22 s,
 -- then the ticket nudged a unit down and back in 0.12 s; the token sliding to its new share in 0.45 s.
 local THUMP_FROM, THUMP_DUR, NUDGE, NUDGE_DUR, SLIDE_DUR = 1.6, 0.22, 1, 0.12, 0.45

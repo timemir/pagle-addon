@@ -496,4 +496,47 @@ function support.bandedEvents()
 	return dofile("spec/Pagle_Hunts/fixtures/BandedEventList.lua")
 end
 
+---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+support.RealFont = dofile("scripts/measure-layout/realfont.lua")
+
+--- Makes every font string under `widget` (and `widget`, if one) measure in its real face (RealFont.patch), each line
+--- `wider` times as wide when given, up to its box, as a face that much wider than RealFont's would draw it (a ruRU
+--- client's own faces aren't bundled, so RealFont measures them in its stand-in, #627). Returns `widget`.
+---@param widget table
+---@param wider number?
+---@return table
+function support.measureReal(widget, wider)
+	local RealFont = support.RealFont
+	if widget.kind == "FontString" then
+		RealFont.patch(widget)
+		if wider then
+			function widget:GetStringWidth()
+				local width, box = RealFont.layout(self).natural * wider, self:GetWidth()
+				return box > 0 and math.min(width, box) or width
+			end
+		end
+	end
+	for _, child in ipairs(widget.children or {}) do
+		support.measureReal(child, wider)
+	end
+	return widget
+end
+
+--- Whether font string `text` shows whole: its box holds its words at the width they measure (`wider` times its
+--- face's, after support.measureReal), or it has no box.
+---@param text table
+---@param wider number?
+---@return boolean
+function support.whole(text, wider)
+	local width = text:GetWidth()
+	return width <= 0 or support.RealFont.layout(text).natural * (wider or 1) <= width + 0.5
+end
+
+--- The size font string `text` draws at, as RealFont reads its font.
+---@param text table
+---@return number
+function support.sizeOf(text)
+	return select(2, support.RealFont.face(text))
+end
+
 return support

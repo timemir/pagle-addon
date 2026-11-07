@@ -29,7 +29,7 @@ A finding names its kind, its text, what it is and the tour stops it's on. A tex
 
 - **cut**: the client would truncate the text with "…". A one-line string is wider than its box, a wrapping one needs more lines than `SetMaxLines` allows or than its box is tall, or one word is wider than the box. The detail gives the text's width on one line, except for a word wider than its box, where it gives that word's (from 1.3.5; before, "689 wide in 108" for a 113-wide word).
 - **out**: the text's ink isn't on its surface. On a surface with a ground (a texture over half of it, such as a book's paper or a card), each corner and the middle of the ink must lie on one of its textures. On a surface with none, such as the plain tracker, the ink must stay inside its edges. Inside a scroll frame only the frame's sides count, since its content scrolls. Inside a frame that clips its children, every edge counts.
-- **overlap**: two texts' em boxes cross (each line one font size tall, not one line height), or a text crosses a rule: a texture or line 3 units thin or less, such as Hunts' now line.
+- **overlap**: two texts' em boxes cross (each line one font size tall, not one line height), or a text crosses a rule: a texture or line 3 units thin or less, such as Hunts' now line. A rule in a scroll frame counts only where it shows in the frame's view, as a text does: a timeline row's mark scrolled under the list's foot isn't drawn there. A thin texture with a piece of its own height touching each long side is a three-slice's middle (a chip behind a short "…"), part of a wider shape, not a rule.
 
 Two units of slack apply at every edge, because line heights are estimates.
 

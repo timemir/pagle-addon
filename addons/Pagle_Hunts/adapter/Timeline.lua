@@ -48,6 +48,9 @@ local NOW_Y, NOW_LIFT = 44, 4
 local NAME_X, NAME_WIDTH, TRACK_X, TRACK_WIDTH, MARGIN_INSET = 31, 140, 178, 190, 3
 -- The least size a long name is set at in its column before the client cuts it short (the kit's is 14).
 local NAME_FLOOR = 11.5
+-- The least size a margin label is set at before the client cuts it short: past the tight size (BoardFonts'
+-- marginTight, 13), in half steps down to about 70% of the margin's 15.5 (HNT-R51).
+local MARGIN_FLOOR = 11
 local ROW_HEIGHT, HEADING_GAP, HEADING_HEIGHT = 26, 10, 24
 -- A row's slide to its new place, and a Hunt just opened's flash under its row: up to 22% by 0.35 s, gone by 1.4 s.
 local SLIDE, FLASH, FLASH_PEAK = 0.4, 1.4, 0.22
@@ -580,13 +583,20 @@ local function drawRow(view, drawn, row, y, slide)
 	drawn.note:SetText(row.note or "")
 	drawn.note:SetShown(row.note ~= nil)
 	-- The kit drew the room for "until Sat 17:00". A run's "until Sat 3:58 PM" on a 12-hour clock is longer and was cut
-	-- short ("until Sat 3:58…"): a label past its room is set a size down, and only past that is it cut (HNT-R60).
+	-- short ("until Sat 3:58…"): a label past its room is set a size down, and only past that is it cut (HNT-R60). A
+	-- longer language's label still past it at that size ("в любое время") is set smaller in half steps to
+	-- MARGIN_FLOOR, and only then cut (HNT-R51).
 	local fonts = ns.BoardFonts()
 	drawn.margin:SetFontObject(fonts.margin)
 	drawn.margin:SetWidth(0)
 	drawn.margin:SetText(row.margin)
 	if drawn.margin:GetStringWidth() > drawn.marginRoom then
 		drawn.margin:SetFontObject(fonts.marginTight)
+		local size = 13
+		while size > MARGIN_FLOOR and drawn.margin:GetStringWidth() > drawn.marginRoom do
+			size = size - 0.5
+			drawn.margin:SetFontObject(ns.ArtFont("hand", size))
+		end
 	end
 	drawn.margin:SetWidth(drawn.marginRoom)
 	local ink = MARGIN_INK[row.tone]
@@ -790,41 +800,72 @@ end
 
 -- The leather's words' sizes in the kit (BoardFonts' clock and check) and the least they are set at to fit; the gap
 -- between the checkbox and its words (ns.NewBoardCheck); the room the book's ? and × seals take over the checkbox
--- anchor's right end (Core's wax seals, 26 across, hang from the frame's top right corner).
-local CLOCK_SIZE, CHECK_SIZE, LEATHER_FLOOR, CHECK_GAP, SEALS_ROOM = 14, 13.5, 11, 7, 32
+-- anchor's right end (Core's wax seals, 26 across, hang from the frame's top right corner); the clock's inset from its
+-- anchor's right, which keeps its words that far before the checkbox.
+local CLOCK_SIZE, CHECK_SIZE, LEATHER_FLOOR, CHECK_GAP, SEALS_ROOM, CLOCK_INSET = 14, 13.5, 11, 7, 32, 8
 
 -- The leather's realm clock (HNT-R61): the grouping's time, so it freezes with it in combat (HNT-R43), its date and
 -- season from the live conditions, and "(paused in combat)" while the grouping is paused, in gilt.
 ---@type FontString?
 local clockText
-
-ns.board:RegisterLeather("clock", function(anchor)
-	if not clockText then
-		clockText = ns.BoardText(anchor, ns.BoardFonts().clock, LOOK.clock)
-		clockText:SetPoint("RIGHT", -8, 0)
-		clockText:SetJustifyH("RIGHT")
-		clockText:SetWordWrap(false)
-	end
-	local snapshot = Pagle.GetConditions()
-	local season = ns.SeasonNow(snapshot, Pagle.GetWindowSpec, Pagle.MatchesConditions)
-	clockText:SetText(ns.TimelineClock(ns.ViewNow(), snapshot, season, ns.groups:IsPaused()))
-	-- on one line: a longer language's date and season a size down at a time, never wrapped under the strip
-	ns.FitText(clockText, "gilt", CLOCK_SIZE, anchor:GetWidth(), LEATHER_FLOOR, true, LOOK.clock)
-end)
+---@type Frame?
+local clockAnchor
 
 -- The leather's "show completed" box (HNT-R61, HNT-R82): the saved filter, which a click saves and redraws.
 ---@type BoardCheckButton?
 local completed
+---@type Frame?
+local completedAnchor
+
+-- Lays the clock and the checkbox's words on the leather (HNT-R61), each time either is drawn, as each depends on the
+-- other: the clock on one line, a size down at a time, never wrapped under the strip; "show completed" short of the
+-- book's ? and × seals, a size down at a time. Words still too long for their room at LEATHER_FLOOR (a longer
+-- language's, "показать завершённые") move the checkbox left into the room the clock's words leave in their anchor,
+-- the clock moving with it, CLOCK_INSET still between them; only past that are they cut short.
+local function layLeather()
+	local borrowed = 0
+	if completed and completedAnchor then
+		local label = completed.Text
+		local room = completedAnchor:GetWidth() - completed:GetWidth() - CHECK_GAP - SEALS_ROOM
+		ns.FitText(label, "italic", CHECK_SIZE, room, LEATHER_FLOOR, true, LOOK.checkLabel)
+		label:SetWidth(0)
+		local over = label:GetStringWidth() - room
+		if over > 0 and clockText and clockAnchor then
+			clockText:SetFontObject(ns.ArtFont("gilt", CLOCK_SIZE, true))
+			clockText:SetWidth(0)
+			local spare = clockAnchor:GetWidth() - CLOCK_INSET - clockText:GetStringWidth()
+			borrowed = math.max(0, math.min(math.ceil(over), math.floor(spare)))
+		end
+		label:SetWidth(room + borrowed)
+		completed:ClearAllPoints()
+		completed:SetPoint("LEFT", -borrowed, 0)
+	end
+	if clockText and clockAnchor then
+		clockText:ClearAllPoints()
+		clockText:SetPoint("RIGHT", -(CLOCK_INSET + borrowed), 0)
+		-- on one line: a longer language's date and season a size down at a time, never wrapped under the strip
+		ns.FitText(clockText, "gilt", CLOCK_SIZE, clockAnchor:GetWidth() - borrowed, LEATHER_FLOOR, true, LOOK.clock)
+	end
+end
+
+ns.board:RegisterLeather("clock", function(anchor)
+	if not clockText then
+		clockText = ns.BoardText(anchor, ns.BoardFonts().clock, LOOK.clock)
+		clockText:SetJustifyH("RIGHT")
+		clockText:SetWordWrap(false)
+	end
+	clockAnchor = anchor
+	local snapshot = Pagle.GetConditions()
+	local season = ns.SeasonNow(snapshot, Pagle.GetWindowSpec, Pagle.MatchesConditions)
+	clockText:SetText(ns.TimelineClock(ns.ViewNow(), snapshot, season, ns.groups:IsPaused()))
+	layLeather()
+end)
 
 ns.board:RegisterLeather("completed", function(anchor)
 	if not completed then
 		completed = ns.NewBoardCheck(anchor)
-		completed:SetPoint("LEFT", 0, 0)
 		completed.Text:SetText(ns.L.SHOW_COMPLETED)
 		completed.Text:SetWordWrap(false)
-		-- short of the book's ? and × seals over the anchor's right end, a size down at a time before it is cut
-		local room = anchor:GetWidth() - completed:GetWidth() - CHECK_GAP - SEALS_ROOM
-		ns.FitText(completed.Text, "italic", CHECK_SIZE, room, LEATHER_FLOOR, true, LOOK.checkLabel)
 		completed:SetScript("OnClick", function(self)
 			self:Sync()
 			local on = self:GetChecked() == true
@@ -832,6 +873,8 @@ ns.board:RegisterLeather("completed", function(anchor)
 			ns.SetShowCompleted(on)
 		end)
 	end
+	completedAnchor = anchor
 	completed:SetChecked(ns.db.profile.showCompleted)
 	completed:Sync()
+	layLeather()
 end)

@@ -19,12 +19,18 @@ end
 
 --- Hunts on a FakePagle after the first PLAYER_ENTERING_WORLD, its server time on the client's clock: loaded with
 --- `options.list` (if given) as the Hunt list, `options.catalogue` (the fixture's by default), Fishing at
---- `options.skill` (150; false for none).
----@param options { list: HuntListData?, catalogue: table?, skill: integer|false|nil, saved: table? }?
+--- `options.skill` (150; false for none), in `options.language` (what Pagle.GetLanguage answers: enUS by default).
+---@param options { list: HuntListData?, catalogue: table?, skill: integer|false|nil, saved: table?, language: string? }?
 ---@return HuntsRun
 local function start(options)
 	options = options or {}
+	local fake
+	if options.language then
+		fake = newFakePagle()
+		fake.language = options.language -- what Pagle.GetLanguage answers: the Module's strings and Core's faces
+	end
 	return hunts.start({
+		fake = fake,
 		list = options.list,
 		catalogue = options.catalogue,
 		skill = options.skill,
@@ -591,6 +597,63 @@ describe("opening the board (HNT-R67)", function()
 		assert.are.equal(140, oddity.width)
 	end)
 
+	describe("a margin label in its real face (HNT-R51, from 1.3.5)", function()
+		-- The board with one always-open Hunt in `language`, its rows measured in their real faces (`wider` times as wide
+		-- when given); the row's margin label and its room.
+		local function anyTime(language, wider, words)
+			local run = start({ list = extraList({ ALWAYS }), language = language })
+			if words then
+				run.ns.L.LABEL_ANY_TIME = words
+			end
+			run.ns.ToggleBoard()
+			hunts.measureReal(run.ns.board:Page({ mode = "board" }, "left"), wider)
+			run.ns.board:Draw()
+			for _, row in ipairs(drawnRows(run)) do
+				if row.huntID == "extra_1" then
+					return row.margin, row.marginRoom, run
+				end
+			end
+			error("no row for the always-open Hunt")
+		end
+
+		it("hnt_r51 keeps English's \"any time\" at the margin's size", function()
+			local margin, room, run = anyTime("enUS")
+
+			assert.are.equal("any time", margin.text)
+			assert.are.equal(run.ns.BoardFonts().margin, margin.fontObject)
+			assert.is_true(hunts.whole(margin))
+			assert.are.equal(room, margin:GetWidth())
+		end)
+
+		it(
+			'hnt_r51 sets Russian\'s "в любое время" smaller in half steps past the tight size so it shows whole,'
+				.. " even in a face 10% wider",
+			function()
+				for _, wider in ipairs({ false, 1.1 }) do
+					local margin, room = anyTime("ruRU", wider or nil)
+					local size = hunts.sizeOf(margin)
+
+					assert.are.equal("в любое время", margin.text)
+					assert(
+						hunts.whole(margin, wider or nil),
+						("cut at %s, %s times the stand-in"):format(size, wider or 1)
+					)
+					assert.is_true(size < 13) -- past the tight size, which cut it (95 in 90)
+					assert.is_true(size >= 11)
+					assert.are.equal(room, margin:GetWidth())
+				end
+			end
+		)
+
+		it("hnt_r51 cuts a label still too long at 11, about 70% of the margin's size, within its room", function()
+			local margin, room = anyTime("enUS", nil, "at any time of the day or the night")
+
+			assert.are.equal(11, hunts.sizeOf(margin))
+			assert.is_false(hunts.whole(margin))
+			assert.are.equal(room, margin:GetWidth())
+		end)
+	end)
+
 	it("reads HNT-R67's line on the right page when every Hunt is hidden, and selects none", function()
 		local run = start({ list = extraList({ ALWAYS }) })
 		useState(run, { extra_1 = reached(1) })
@@ -757,15 +820,81 @@ describe("the leather's clock and checkbox (HNT-R61)", function()
 			local anchors = run.ns.board.book.anchors
 			local clock = anchors.clock.children[1]
 			assert.are.same({ "08:15 · Sun 11 Oct · Autumn", false }, { clock:GetText(), clock:CanWordWrap() })
-			assert.are.equal(anchors.clock:GetWidth(), clock.width)
 			local label = anchors.completed.children[1].Text
 			assert.are.equal("mostrar también las Cazas completadas", label:GetText()) -- never rewritten
-			-- the anchor's 150 less the box (14), its gap (7) and the seals' 32 over the anchor's right end
-			assert.are.equal(150 - 14 - 7 - 32, label.width)
 			assert.are.equal(run.ns.ArtFont("italic", 11, true), label.fontObject)
 			assert.is_false(label:CanWordWrap())
+			-- the anchor's 150 less the box (14), its gap (7) and the seals' 32 over the anchor's right end, and, still
+			-- too long at the floor (222 in the fake), the room the clock's words leave: its anchor's 280 less its 8
+			-- inset and its words (174 in the fake), the checkbox moved left by that much and the clock with it (from
+			-- 1.3.5)
+			local borrowed = 280 - 8 - #clock:GetText() * 6
+			assert.are.equal(150 - 14 - 7 - 32 + borrowed, label.width)
+			assert.are.same({ "LEFT", -borrowed, 0 }, anchors.completed.children[1].points[1])
+			assert.are.same({ "RIGHT", -(8 + borrowed), 0 }, clock.points[1])
+			assert.are.equal(280 - borrowed, clock.width)
 		end
 	)
+
+	describe("in their real faces (from 1.3.5)", function()
+		local RealFont = hunts.RealFont
+
+		-- The board open in `language`, the leather's words measured in their real faces (`wider` times as wide when
+		-- given); the clock's words, the checkbox and its words, and the two anchors.
+		local function leather(language, wider)
+			local run = start({ catalogue = withSeasons(), language = language })
+			run.ns.ToggleBoard()
+			local anchors = run.ns.board.book.anchors
+			hunts.measureReal(anchors.clock, wider)
+			hunts.measureReal(anchors.completed, wider)
+			run.ns.board:Draw()
+			local box = anchors.completed.children[1]
+			return { clock = anchors.clock.children[1], box = box, label = box.Text, anchors = anchors }
+		end
+
+		-- Where `region` is drawn, as the client lays it out: { left, top, right, bottom }.
+		local function rect(region)
+			return RealFont.rect(region, {})
+		end
+
+		-- The leather's words keep their places: the clock's words end CLOCK_INSET (8) before the checkbox and stay in
+		-- the clock's anchor, and "show completed" ends short of the seals' 32 over its anchor's right end.
+		local function apart(parts)
+			local clock, box = RealFont.inked(parts.clock, {}), rect(parts.box)
+			assert(clock[3] + 8 <= box[1] + 1e-6, "the clock's words run into the checkbox")
+			assert(clock[1] >= rect(parts.anchors.clock)[1] - 1e-6, "the clock's words leave its anchor")
+			local words = parts.label:GetWidth()
+			assert(rect(parts.label)[1] + words <= rect(parts.anchors.completed)[3] - 32 + 1e-6, "under the seals")
+		end
+
+		it("hnt_r61 leaves English's checkbox at its anchor's left, its words at the kit's size", function()
+			local parts = leather("enUS")
+
+			assert.are.equal(13.5, hunts.sizeOf(parts.label))
+			assert.is_true(hunts.whole(parts.label))
+			assert.are.equal(rect(parts.anchors.completed)[1], rect(parts.box)[1])
+			assert.are.equal(150 - 14 - 7 - 32, parts.label:GetWidth())
+			apart(parts)
+		end)
+
+		it(
+			'hnt_r61 moves the checkbox into the room the clock leaves when Russian\'s "show completed" is too long at'
+				.. " its floor, so it shows whole, even in a face 10% wider",
+			function()
+				for _, wider in ipairs({ false, 1.1 }) do
+					local parts = leather("ruRU", wider or nil)
+					local size = hunts.sizeOf(parts.label)
+
+					assert.are.equal("показать завершённые", parts.label.text)
+					assert.are.equal(11, size) -- set smaller first, to the leather's floor
+					assert(hunts.whole(parts.label, wider or nil), ("cut, %s times the stand-in"):format(wider or 1))
+					assert.is_true(rect(parts.box)[1] < rect(parts.anchors.completed)[1]) -- moved left
+					assert.are.equal(14, hunts.sizeOf(parts.clock)) -- the clock keeps its size
+					apart(parts)
+				end
+			end
+		)
+	end)
 
 	it('saves "show completed" from its checkbox and redraws (HNT-R82)', function()
 		local run = start({ list = extraList({ ALWAYS, ALWAYS }) })

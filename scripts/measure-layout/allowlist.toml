@@ -144,3 +144,182 @@ detail = "crosses a 2x[0-9][0-9][0-9] rule *"
 reason = """The Hunts timeline's now line (2 units wide, the list's height) passes under its group headings' notes by \
 design: each heading is set over the line's frame so its words stay legible (Pagle_Hunts/adapter/Timeline.lua, \
 newHeading)."""
+
+# The Hunts board's, the Pagle Wagers spread's and the Hunts trackers' designed cuts in ruRU and the pseudo-locale,
+# triaged for 1.3.5: each is set smaller to its floor first and then cut with the client's "…" in its own room.
+
+[[allow]]
+kind = "cut"
+text = "Омары при свете лампы"
+stop = "hunts.b*" # the Board's stops, and its bindings' (hunts.binding.*)
+languages = ["ruRU"]
+reason = """The Board's left list sets this Hunt's Russian name smaller to its floor (11.5) and then cuts it with the \
+client's "…" at its row's width, as German's "Gepanzert nach Einbruch der Nacht" above; the full name is on its \
+page. Estimated: 147 wide in 140 in the stand-in face. Triaged for 1.3.5."""
+
+[[allow]]
+kind = "cut"
+text = "Омары при свете лампы"
+stop = "hunts.trackerframe.*"
+languages = ["ruRU"]
+reason = """At the tracker frames' floor sizes a line's name and its label share its room, each a size or two \
+smaller, then cut with the client's "…" (Goods.lua, drawLines), as German's "Forelle im Morgengrauen" above; a wider \
+tracker shows it whole. Estimated. Triaged for 1.3.5."""
+
+[[allow]]
+kind = "cut"
+text = "Раздутая удача"
+stop = "hunts.trackerframe.*"
+languages = ["ruRU"]
+reason = """At the tracker frames' floor sizes a line's name and its label share its room, each a size or two \
+smaller, then cut with the client's "…" (Goods.lua, drawLines); a wider tracker shows it whole. Estimated: 122 wide \
+in 117 in Ink Wash. Triaged for 1.3.5."""
+
+[[allow]]
+kind = "cut"
+text = "в любое время"
+stop = "hunts.trackerframe.*"
+languages = ["ruRU"]
+reason = """At the tracker frames' floor sizes a line's label shares its room with the name, a size or two smaller, \
+then cut with the client's "…" (Goods.lua, drawLines); a wider tracker shows it whole. Estimated: 110 wide in 107 in \
+Ink Wash. On the Board it shows whole since 1.3.5 (HNT-R51)."""
+
+[[allow]]
+kind = "cut"
+text = "[[]Ñéŵ ŵåğéŕš ŵïţħ ţħé Рåğĺé сömрåñïöñ*"
+detail = "more than 2 lines*"
+languages = ["pseudo"]
+reason = """The Hunts tracker's companion hint (HNT-R176) is set smaller to 11, then wrapped onto two lines at the \
+kit's size, its block a line taller; the pseudo words need three, so the client cuts the second with "…", within the \
+block (#623). Pseudo-only: every language's hint fits two lines."""
+
+[[allow]]
+kind = "cut"
+text = "[[]Аñу üñсömmöñ-öŕ-béţţéŕ Čåţсħ*"
+stop = "hunts.*"
+languages = ["pseudo"]
+reason = """A tracker line's target line is set a little smaller, then cut with "…" before its count, which is drawn \
+whole at the right (Goods.lua, fitSecond, CORE-R8). Pseudo-only."""
+
+[[allow]]
+kind = "cut"
+text = "[[]éñďš ïñ [[]1ď 20ħ*"
+stop = "hunts.*"
+languages = ["pseudo"]
+reason = """A tracker line's name and its label share its room, each a size or two smaller, then cut with "…" \
+(Goods.lua, drawLines). Pseudo-only."""
+
+[[allow]]
+kind = "cut"
+text = "[[]1 öf 4 fïŕšţ måŕķš*"
+detail = "more than 2 lines*"
+stop = "hunts.*"
+languages = ["pseudo"]
+reason = """A run's line in the tracker, too long at its smaller size, wraps onto two lines, its line that much \
+taller (Goods.lua, fitSecond); the pseudo words need three, so the client cuts the second with "…". Pseudo-only."""
+
+[[allow]]
+kind = "cut"
+text = "[[]Ĺöbšţéŕ bу Ĺåmрĺïğħţ*"
+stop = "hunts.*"
+languages = ["pseudo"]
+reason = """The Board's left list sets a long name smaller to 11.5, then cuts it with "…" at its row's width, the \
+full name on its page; the trackers share a line's room between its name and label, each a size or two smaller, then \
+cut. Pseudo-only."""
+
+[[allow]]
+kind = "cut"
+text = "[[]Ďåŵñ Тŕöüţ*"
+stop = "hunts.trackerframe.*"
+languages = ["pseudo"]
+reason = """At the tracker frames' floor sizes a line's name and its label share its room, each a size or two \
+smaller, then cut with "…" (Goods.lua, drawLines). Pseudo-only."""
+
+[[allow]]
+kind = "cut"
+text = "[[]Ŕïğğĺé'š Аñğéĺfïšħ*"
+stop = "hunts.b*"
+languages = ["pseudo"]
+reason = """The Board's left list sets a long name smaller to 11.5, then cuts it with "…" at its row's width; the \
+full name is on its page. Pseudo-only."""
+
+[[allow]]
+kind = "cut"
+text = "[[]Аŕmöüŕéď Аfţéŕ Ďåŕķ*"
+stop = "hunts.b*"
+languages = ["pseudo"]
+reason = """The Board's left list sets a long name smaller to 11.5, then cuts it with "…" at its row's width; the \
+full name is on its page. Pseudo-only."""
+
+[[allow]]
+kind = "cut"
+text = "[[]üñţïĺ [[]*"
+stop = "hunts.b*"
+languages = ["pseudo"]
+reason = """A margin label is set a size down, then smaller in half steps to 11, about 70% of the margin's 15.5, and \
+only then cut with "…" in its room (HNT-R51, from 1.3.5). Pseudo-only: Russian's "в любое время" fits at 12."""
+
+[[allow]]
+kind = "cut"
+text = "[[]Еvéñïñğ béĺĺ ţö ţħé šmåĺĺ ħöüŕš*"
+stop = "hunts.board.later"
+languages = ["pseudo"]
+reason = """An entry still too long for its page once its foot is compact and its body tight cuts a long note on \
+one line rather than wrapping it (Entry.lua, the TIGHTER steps), set smaller to 11 first. Pseudo-only."""
+
+[[allow]]
+kind = "cut"
+text = "[[]FŔÖM ŢĦÉ ŔÖŢÅŢÏÖÑ*"
+stop = "hunts.*wagers"
+languages = ["pseudo"]
+reason = """A run entry's kicker is set smaller to its floor (11), then cut with "…" (WagersEntry.lua, CORE-R8). \
+Pseudo-only."""
+
+[[allow]]
+kind = "cut"
+text = "[[]Вööķmåķéŕ'š Ŕéţïŕéméñţ*"
+stop = "hunts.wagers"
+languages = ["pseudo"]
+reason = """The ladder's last post title, narrowed by its neighbour's half, is set smaller to 8, about 70% of its \
+11.5, then cut with "…" (HNT-R162, from 1.3.5). Pseudo-only: Russian's fits at 8."""
+
+[[allow]]
+kind = "cut"
+text = "* ŵåğéŕš šéţţĺéď*"
+stop = "hunts.wagers"
+languages = ["pseudo"]
+reason = """The ladder's line keeps clear of its label: the title is cut to its first letters, then the line's \
+other words, widest run first, each down to 16; the count is never cut (HNT-R162, #595)."""
+
+[[allow]]
+kind = "cut"
+text = "[[]Вööķmåķéŕ'š Вåñé*"
+stop = "hunts.wagers"
+languages = ["pseudo"]
+reason = """The ladder's line keeps clear of its label: the title is cut to its first letters, 24 wide, before the \
+line's other words (HNT-R162, #595)."""
+
+[[allow]]
+kind = "cut"
+text = "[[][0-9]ď [0-9][0-9]ħ*"
+stop = "hunts.wagers"
+languages = ["pseudo"]
+reason = """A ticket dial's time is set smaller to 7, then cut within its ring (WagersSpread.lua, RING_FLOOR, \
+CORE-R8). Pseudo-only."""
+
+[[allow]]
+kind = "cut"
+text = "… · [[]üñţïĺ*"
+stop = "hunts.wagers"
+languages = ["pseudo"]
+reason = """A ticket's line and its "needs skill" end 8 before its first marks: each set smaller to its floor, then \
+the line cut with "…" (HNT-R162, #595, #603)."""
+
+[[allow]]
+kind = "cut"
+text = "[[]üñţïĺ [[]* · [[]*ïñ åĺĺ*"
+stop = "hunts.*wagers"
+languages = ["pseudo"]
+reason = """A run page's time line under its hand ("until … · … in all", RUN_UNTIL_ALL) is held to the room right \
+of its dial (WagersEntry.lua, ns.FitWagerText) and cut with "…" there; it has no shrink step. Pseudo-only: \
+Russian's takes 140 of the 272. Accepted by the dev for 1.3.5."""

@@ -146,7 +146,7 @@ end
 ---@param findings table[]
 local function measure(root, name, memo, regions, findings)
 	local rootBox = RealFont.rect(root, memo)
-	local texts, rules, papers = {}, {}, {}
+	local texts, rules, papers, pieces = {}, {}, {}, {}
 
 	local function walk(region)
 		if region.shown == false then
@@ -178,8 +178,12 @@ local function measure(root, name, memo, regions, findings)
 				local thin = rule(region, memo)
 				if thin then
 					rules[#rules + 1] = { region = region, box = thin }
-				elseif
-					region.kind == "Texture"
+				elseif region.kind == "Texture" and (region.texture or region.color) then
+					pieces[#pieces + 1] = box
+				end
+				if
+					not thin
+					and region.kind == "Texture"
 					and (region.texture or region.color)
 					and box[3] - box[1] >= PAPER
 					and box[4] - box[2] >= PAPER
@@ -193,6 +197,39 @@ local function measure(root, name, memo, regions, findings)
 		end
 	end
 	walk(root)
+
+	-- What each rule shows of itself, as a text does: inside the scroll frame that holds it, or nothing once scrolled out
+	-- of view (a row's thin mark under the list's foot, where the legend's wrapped row is). And a thin texture with a
+	-- piece of its own height touching each of its long sides is the middle of a three-slice (a chip behind a short word,
+	-- "…"), part of one wider shape, not a rule.
+	local function touching(box, across)
+		local a, b, lo, hi = 1, 3, 2, 4
+		if not across then
+			a, b, lo, hi = 2, 4, 1, 3
+		end
+		local before, after = false, false
+		for _, piece in ipairs(pieces) do
+			if math.abs(piece[lo] - box[lo]) <= 0.5 and math.abs(piece[hi] - box[hi]) <= 0.5 then
+				before = before or math.abs(piece[b] - box[a]) <= 0.5
+				after = after or math.abs(piece[a] - box[b]) <= 0.5
+			end
+		end
+		return before and after
+	end
+	local kept = {}
+	for _, r in ipairs(rules) do
+		local box = r.box
+		local frame, scrolls = clipper(r.region, root)
+		local view = frame and scrolls and RealFont.rect(frame, memo)
+		if view then
+			local top, bottom = math.max(box[2], view[2]), math.min(box[4], view[4])
+			box = bottom > top and { box[1], top, box[3], bottom } or nil
+		end
+		if box and not (r.region.kind == "Texture" and touching(r.box, r.box[3] - r.box[1] <= r.box[4] - r.box[2])) then
+			kept[#kept + 1] = { region = r.region, box = box }
+		end
+	end
+	rules = kept
 
 	local function find(kind, text, detail, estimated, other)
 		findings[#findings + 1] = {
