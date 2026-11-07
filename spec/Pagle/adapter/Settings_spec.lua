@@ -72,7 +72,8 @@ describe("The Settings root with no Module On", function()
 			end
 		end
 
-		-- The paragraph, the five status rows, the note and Getting started's three (SET-R10 rows 4–6): the fake panel draws a row of a template only through
+		-- The paragraph, the five status rows, the note, Getting started's three (SET-R10 rows 4–6) and the Field
+		-- report row (row 7, from 1.2.4): the fake panel draws a row of a template only through
 		-- its XML mixin's Init, and raises an error if Core writes InitFrame, Resetter or GetExtent onto an
 		-- initializer (spec/support/settings.lua).
 		local template = assert(loaded.client.templates.PagleSettingsRowTemplate, "Core's XML defines the template")
@@ -88,6 +89,7 @@ describe("The Settings root with no Module On", function()
 			"Field guide",
 			"Margin notes",
 			"First evening list",
+			"Field report",
 			-- The Translations line (SET-R10): esES is listed with fmartingr's name, and ruRU, listed with no
 			-- translator, is credited by nobody (spec/Pagle/adapter/Translations_spec.lua).
 			"Translations: Español by fmartingr",
@@ -1002,7 +1004,8 @@ describe("A Module's button row", function()
 	it(
 		"without a caption, is Core's own row with the button as wide as its words, so they stay on it (SET-R2, SET-R5)",
 		function()
-			local label = "Guardar lo que llevo como conjunto de pesca, el de siempre"
+			-- 258 wide in the fake: past a native button, within the row's room (a longer one, below)
+			local label = "Guardar lo que llevo como conjunto de pesca"
 			local initializer, frame, settings = shown({ kind = "button", label = label, onClick = function() end })
 
 			local button = settings.buttonsOf(frame)[1]
@@ -1014,6 +1017,93 @@ describe("A Module's button row", function()
 			assert.are.same({ "TOPLEFT", frame, "TOP", -40, 3 }, { button:GetPoint() })
 		end
 	)
+
+	-- The room a button from a native row's control has: Blizzard's list rows are 635 wide (Blizzard_SettingsPanel.xml,
+	-- Blizzard_SettingsList.xml and .lua at the forever 1.60.1 commit), the control starts 40 left of the middle, and
+	-- the button ends 10 short of the row's right edge, where the list clips it.
+	local ROOM = 635 / 2 + 40 - 10
+
+	-- The client's button text in the small face: 5 units a character, 6 in the normal one, as the fake's.
+	local function smallFaceIsNarrower(loaded)
+		local create = loaded.env.CreateFrame
+		loaded.env.CreateFrame = function(kind, name, parent, template, ...)
+			local frame = create(kind, name, parent, template, ...)
+			if template == "UIPanelButtonTemplate" then
+				function frame:GetTextWidth()
+					return #(self.text or "") * (self.normalFontObject == "GameFontNormalSmall" and 5 or 6)
+				end
+			end
+			return frame
+		end
+	end
+
+	it(
+		"without a caption, sets a label too wide for the row's room in the small face, the button within it "
+			.. "(SET-R5, #593)",
+		function()
+			local loaded = loadWithQoL()
+			smallFaceIsNarrower(loaded)
+			-- 330 wide in the normal face, past the room with its padding; 275 in the small one.
+			local label = ("Save what I'm wearing as my fishing set, all of it "):rep(2):sub(1, 55)
+			registerQoL(loaded):AddSetting("trackers", { kind = "button", label = label, onClick = function() end })
+			loaded.client.fire("PLAYER_LOGIN")
+			local frame = loaded.client.settings.show(loaded.client.settings.page("Trackers"))[3].frame
+
+			local button = loaded.client.settings.buttonsOf(frame)[1]
+			assert.are.equal("GameFontNormalSmall", button.normalFontObject)
+			assert.are.equal("GameFontHighlightSmall", button.highlightFontObject)
+			assert.are.equal("GameFontDisableSmall", button.disabledFontObject)
+			assert.are.equal(275 + 24, button:GetWidth())
+			assert.is_true(button:GetWidth() <= ROOM)
+			assert.are.equal(0, button:GetFontString():GetWidth())
+		end
+	)
+
+	it(
+		"without a caption, cuts a label too wide for the row's room in the small face too, the button at the room "
+			.. "(SET-R5, #593)",
+		function()
+			local loaded = loadWithQoL()
+			smallFaceIsNarrower(loaded)
+			-- 400 wide in the small face.
+			local label = ("Save what I'm wearing as my fishing set, all of it "):rep(2):sub(1, 80)
+			registerQoL(loaded):AddSetting("trackers", { kind = "button", label = label, onClick = function() end })
+			loaded.client.fire("PLAYER_LOGIN")
+			local frame = loaded.client.settings.show(loaded.client.settings.page("Trackers"))[3].frame
+
+			local button = loaded.client.settings.buttonsOf(frame)[1]
+			local text = button:GetFontString()
+			assert.are.equal("GameFontNormalSmall", button.normalFontObject)
+			assert.are.equal(ROOM, button:GetWidth())
+			-- the client cuts it with "..." at the button's padding
+			assert.are.equal(ROOM - 24, text:GetWidth())
+			assert.is_false(text:CanWordWrap())
+		end
+	)
+
+	it("puts a reused row's button back in the normal face, uncut (SET-R5, #593)", function()
+		local loaded = loadWithQoL()
+		smallFaceIsNarrower(loaded)
+		local M = registerQoL(loaded)
+		local long = ("Save what I'm wearing as my fishing set, all of it "):rep(2):sub(1, 80)
+		M:AddSetting("trackers", { kind = "button", label = long, onClick = function() end })
+		M:AddSetting("trackers", { kind = "button", label = "Save my set", onClick = function() end })
+		loaded.client.fire("PLAYER_LOGIN")
+		local rows = loaded.client.settings.show(loaded.client.settings.page("Trackers"))
+
+		-- the panel's list hands the long row's frame to the short row
+		local frame = rows[3].frame
+		rows[3].initializer:Resetter(frame)
+		rows[4].initializer:InitFrame(frame)
+
+		local button = loaded.client.settings.buttonsOf(frame)[1]
+		assert.are.equal("Save my set", button.text)
+		assert.are.equal("GameFontNormal", button.normalFontObject)
+		assert.are.equal("GameFontHighlight", button.highlightFontObject)
+		assert.are.equal("GameFontDisable", button.disabledFontObject)
+		assert.are.equal(0, button:GetFontString():GetWidth())
+		assert.are.equal(200, button:GetWidth())
+	end)
 
 	it("raises an error at the caller for a caption that isn't a string (CORE-R42)", function()
 		local loaded = loadWithQoL()

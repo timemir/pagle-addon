@@ -970,6 +970,89 @@ describe("the spread in a longer language (CORE-R8)", function()
 			assert.is_true(ladder.posts[1].shown and ladder.numbers[1].shown)
 		end
 	end)
+
+	-- A ticket's line and "needs skill", and its first marks at the right, as inked on the ticket.
+	local function ticketSpans(r, ticket)
+		local spans = { marks = inked(r, ticket.marks, ticket), line = inked(r, ticket.line, ticket) }
+		if ticket.need.shown then
+			spans.need = inked(r, ticket.need, ticket)
+		end
+		return spans
+	end
+
+	it("hnt_r162 ends a ticket's line and its needs skill before its first marks, kept whole (#595)", function()
+		local r = oneOn({ pushed = TWO_ON })
+		-- "[1 of 3 first marks oigeu]": 156 wide, past the 92 units right of the line's room, as a longer
+		-- language's are
+		r.ns.L.TICKET_MARKS = "[{done:0} of {hunts:0} first marks oigeu]"
+		r.ns.OpenWagers()
+
+		for _, run in ipairs({ SHORE, VALE_PUSHED }) do
+			local ticket = ticketOf(r, run)
+			local spans = ticketSpans(r, ticket)
+			assert(
+				ticket.marks.width == 0 or ticket.marks.width >= #ticket.marks.text * 6,
+				run .. ": the first marks are cut"
+			)
+			assert(spans.line.right <= spans.marks.left, run .. ": the line runs under the first marks")
+			if run == VALE_PUSHED then
+				assert(spans.need, "the companion's run is short of skill")
+				assert(spans.need.right <= spans.marks.left, run .. ": needs skill runs under the first marks")
+			end
+		end
+	end)
+
+	it("hnt_r162 ends a settled ticket's line before its SETTLED stamp (#595)", function()
+		local history = onHistory()
+		history[#history + 1] = castAt(O + 3 * HOUR + 30 * 60, C.DARKSHORE, { C.DEVIATE })
+		history[#history].conditions.minute = 18 * 60 + 30
+		local r = oneOn({ history = history })
+		-- far wider than the ticket, as a longer language's line can be
+		r.ns.L.TICKET_LINE = "{eventZonesText} · {ticket_line_2}" .. (" · oigeu"):rep(20)
+		r.ns.OpenWagers()
+
+		local ticket = ticketOf(r, SHORE)
+		assert.is_true(ticket.stampFrame.shown)
+		-- the stamp: 96 wide, its centre 60 in from the ticket's right
+		local stampLeft = ticket.width - 60 - 96 / 2
+		assert(inked(r, ticket.line, ticket).right <= stampLeft, "the line runs under the SETTLED stamp")
+	end)
+
+	it("hnt_r162 cuts first marks wider than half their ticket, the line still before them (#595)", function()
+		local r = oneOn({ pushed = TWO_ON })
+		r.ns.L.TICKET_MARKS = ("[{done:0} of {hunts:0} first marks" .. (" on this run"):rep(8) .. "]")
+		r.ns.OpenWagers()
+
+		local ticket = ticketOf(r, VALE_PUSHED)
+		local spans = ticketSpans(r, ticket)
+		assert(ticket.marks.width > 0 and ticket.marks.width <= ticket.width / 2, "the first marks aren't cut at half")
+		assert(spans.line.right <= spans.marks.left, "the line runs under the first marks")
+		assert(spans.need.right <= spans.marks.left, "needs skill runs under the first marks")
+	end)
+
+	it("hnt_r162 keeps the ladder's line one line clear of its label, its count whole (#595)", function()
+		local r = oneOn()
+		-- far past the room the label leaves, even with the title cut short
+		r.ns.L.WAGERS_LADDER_LINE = "[{wagers_ladder_line_1} öñ ţħé ĺåďďéŕ őĩĝĕŭ ĩĝĕŭő] · "
+			.. "[{wagers_ladder_line_2:0} möŕé föŕ {title} őĩĝĕŭ ĩĝĕŭő ĝĕŭő ĩĝĕŭ]"
+		r.ns.OpenWagers()
+
+		local ladder = r.ns.board:Page(place(r), "left").spread.ladder
+		local label = inked(r, ladder.label, ladder)
+		local count
+		for i, text in ipairs(ladder.line) do
+			if text.shown then
+				local span = inked(r, text, ladder)
+				assert(span.left >= label.right + 10, "run " .. i .. " is drawn over the label")
+				assert(span.right <= ladder.width + 1e-9, "run " .. i .. " leaves the page")
+				if text.ink == "ladCount" then
+					count = text
+				end
+			end
+		end
+		assert(count, "the count shows")
+		assert(count.width == 0 or count.width >= #count.text * 6, "the count is cut")
+	end)
 end)
 
 describe("the spread's motion (HNT-R162)", function()

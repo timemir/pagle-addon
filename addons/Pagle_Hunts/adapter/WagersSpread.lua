@@ -115,6 +115,13 @@ local TAG_GAP, TAG_Y, TAG_H, TAG_PAD, TAG_CAP = 7, 8, 18, 8, 3
 local LINE_Y, SRC_SIZE, SRC_GAP, SRC_Y, NEED_GAP, NEED_Y = 28, 12, 4, 1.5, 8, 0.5
 local PIPS_R, PIPS_Y, PIP, PIP_GAP, MARKS_R, MARKS_Y = 11.5, 14, 8, 5, 10, 27.5
 local STAMP_R, STAMP_CY, STAMP_W, CLOSED_ALPHA, STRIKE_Y = 60, 26, 96, 0.5, 9.5
+-- The least gap between the line (or "needs skill") and the first marks at its right (#595).
+local MARKS_GAP = 8
+-- The least the line keeps before "needs skill" takes the rest: its zones' first letters and the ellipsis; and the
+-- least size the line is set at before the client cuts it (the kit's is 12.5).
+local LINE_LEAST, LINE_FLOOR = 40, 10.5
+-- The least size "needs skill" is set at to leave the line whole (the kit's is 14).
+local NEED_FLOOR = 11.5
 -- A row ahead: its mark, its words' left and room at the right, its lines' tops, the gap before "needs skill", and
 -- its right column's place from the right.
 local AHEAD_MARK, AHEAD_MARK_SIZE, AHEAD_X, AHEAD_RROOM, AHEAD_NAME_Y, AHEAD_ZONES_Y = 7, 24, 41, 101, 3.5, 19.5
@@ -133,6 +140,8 @@ local RAIL_X, RAIL_Y, RAIL_W, POST_CY, POST, POST_TITLE_Y, POST_TITLE_W, TOKEN_C
 -- "2d 20h" are wider in some fonts than the kit's); the least gap between two posts' titles, and the least width a
 -- title is cut to, its first letters and the ellipsis.
 local POST_INNER, DIAL_INNER, RING_FLOOR, POST_TITLE_GAP, POST_TITLE_MIN = 15, 28, 7, 8, 24
+-- The least width a run of the ladder's line words is cut to, past the title (#595): a few letters and the ellipsis.
+local LADDER_RUN_MIN = 16
 -- The least size a narrowed title is set at before the client cuts it (the kit's is 11.5).
 local POST_TITLE_FLOOR = 10
 -- Motion (HNT-R162's motion, data/art/wagers/art.json › motion): the stamp pressed from 1.6 times its size, in 0.22 s,
@@ -439,15 +448,31 @@ local function fillTicket(ticket, data)
 	ns.TintWager(ticket.src, LOOK.note)
 	ns.PlaceSprite(ticket.srcSeal, ticket, WORDS_X, LINE_Y + SRC_Y)
 	ticket.srcSeal:SetShown(data.source == "companion")
+	-- the first marks at the right, whole up to half the ticket and cut past it (a longer language's, CORE-R8); the
+	-- line and "needs skill" end MARKS_GAP before them, so they never run under them (#595),
+	local marksWidth = 0
+	if data.marks then
+		marksWidth = ns.FitWagerText(ticket.marks, data.marks, width / 2 - MARKS_R)
+		ns.PlaceWagerText(ticket.marks, ticket, MARKS_R, MARKS_Y, true)
+	else
+		ticket.marks:Hide()
+	end
 	local lineX = WORDS_X + SRC_SIZE + SRC_GAP
-	local lineRoom = width - lineX - WORDS_RROOM
+	-- likewise before a settled ticket's SETTLED stamp, which is wider than WORDS_RROOM leaves it
+	local stampRoom = data.settled and STAMP_R + STAMP_W / 2 + MARKS_GAP or 0
+	local lineRoom = width - lineX - math.max(WORDS_RROOM, MARKS_R + marksWidth + MARKS_GAP, stampRoom)
 	local needWidth = 0
 	if data.need then
-		ns.SetWagerWords(ticket.need, data.need)
-		ticket.need:SetWidth(0)
-		needWidth = math.ceil(ticket.need:GetStringWidth()) + NEED_GAP
+		-- "needs skill" is set smaller, down to NEED_FLOOR, while the whole line wouldn't fit beside it, and cut only
+		-- where the line would keep less than LINE_LEAST; the line, set smaller in turn, takes the rest
+		ns.SetWagerInk(ticket.line, "tkLine")
+		ns.SetWagerWords(ticket.line, data.line)
+		ticket.line:SetWidth(0)
+		local lineNeeds = math.ceil(ticket.line:GetStringWidth())
+		ns.ShrinkWagerText(ticket.need, data.need, math.max(1, lineRoom - lineNeeds - NEED_GAP), NEED_FLOOR)
+		needWidth = ns.FitWagerText(ticket.need, data.need, math.max(1, lineRoom - LINE_LEAST - NEED_GAP)) + NEED_GAP
 	end
-	local lineWidth = ns.FitWagerText(ticket.line, data.line, lineRoom - needWidth)
+	local lineWidth = ns.ShrinkWagerText(ticket.line, data.line, lineRoom - needWidth, LINE_FLOOR)
 	ns.PlaceWagerText(ticket.line, ticket, lineX, LINE_Y)
 	if data.need then
 		ns.PlaceWagerText(ticket.need, ticket, lineX + lineWidth + NEED_GAP, LINE_Y + NEED_Y)
@@ -478,13 +503,6 @@ local function fillTicket(ticket, data)
 		)
 	end
 	ns.BoardHideFrom(ticket.pips, #pips)
-	if data.marks then
-		ns.SetWagerWords(ticket.marks, data.marks)
-		ticket.marks:SetWidth(0)
-		ns.PlaceWagerText(ticket.marks, ticket, MARKS_R, MARKS_Y, true)
-	else
-		ticket.marks:Hide()
-	end
 	local showing = ns.board:Showing()
 	if data.settled then
 		ticket.stampFrame:Show()
@@ -698,9 +716,11 @@ local function layLadder(page, ladder, data, settled)
 	ns.SetWagerWords(ladder.label, data.label)
 	ns.PlaceWagerText(ladder.label, ladder, 0, LABEL_LADDER_Y)
 	-- the line, right to left, each run of words in its ink, centred on the line's height; past the room the label
-	-- leaves, the title is cut short (or, with none, the words)
+	-- leaves, the title is cut short, down to its first letters, then the line's words, its widest run first, each
+	-- down to LADDER_RUN_MIN; the count is never cut. Cutting the title alone left a longer language's line running
+	-- back over the label (#595).
 	local inks = { count = "ladCount", line = "ladLine", title = "ladTitle" }
-	local widths, total, cut = {}, 0, nil
+	local widths, total = {}, 0
 	for i, run in ipairs(data.runs) do
 		local text = ladder.line[i] or ns.NewWagerText(ladder, "ladLine")
 		ladder.line[i] = text
@@ -709,13 +729,29 @@ local function layLadder(page, ladder, data, settled)
 		text:SetWidth(0)
 		widths[i] = math.ceil(text:GetStringWidth())
 		total = total + widths[i]
-		if run.ink == "title" or (run.ink == "line" and not cut) then
-			cut = i
-		end
 	end
 	local room = ladder:GetWidth() - math.ceil(ladder.label:GetStringWidth()) - LADDER_LABEL_GAP
-	if total > room and cut then
-		widths[cut] = ns.FitWagerText(ladder.line[cut], data.runs[cut].text, math.max(1, room - (total - widths[cut])))
+	-- cuts run `i` by what the line is over the room, keeping it `least` wide (or whole, if narrower)
+	local function cut(i, least)
+		local to = math.max(math.min(widths[i], least), widths[i] - (total - room))
+		if total > room and to < widths[i] then
+			local width = ns.FitWagerText(ladder.line[i], data.runs[i].text, to)
+			total, widths[i] = total - widths[i] + width, width
+		end
+	end
+	local words = {}
+	for i, run in ipairs(data.runs) do
+		if run.ink == "title" then
+			cut(i, POST_TITLE_MIN)
+		elseif run.ink == "line" then
+			words[#words + 1] = i
+		end
+	end
+	table.sort(words, function(a, b)
+		return widths[a] > widths[b]
+	end)
+	for _, i in ipairs(words) do
+		cut(i, LADDER_RUN_MIN)
 	end
 	local right = 0
 	for i = #data.runs, 1, -1 do
