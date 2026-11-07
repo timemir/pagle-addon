@@ -427,4 +427,74 @@ describe("the Hunts tracker", function()
 			assert.are.same(waxseal.header[3], { ink[1], ink[2], ink[3] }) -- dark words on the parchment
 		end)
 	end)
+
+	describe("its empty line's room (HNT-R77, #618)", function()
+		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+		local RealFont = dofile("scripts/measure-layout/realfont.lua")
+
+		-- The tracker with nothing pinned, its empty line measured in its real face (RealFont.patch), reading `words`
+		-- when given, in the frame `goodID` when given.
+		---@param words string?
+		---@param goodID string?
+		local function emptyTracker(words, goodID)
+			local run = start()
+			RealFont.patch(run.ns.tracker.empty)
+			if words then
+				run.ns.L.TRACKER_EMPTY = words
+			end
+			if goodID then
+				run.fake.setPurchased({ [goodID] = true })
+				assert.is_true(run.fake.Pagle.SetEquipped(FRAME_SLOT, goodID))
+			end
+			run.ns.Redraw("names")
+			return run
+		end
+
+		-- The size the empty line is set at, as the client draws it.
+		local function size(run)
+			return select(2, RealFont.face(run.ns.tracker.empty))
+		end
+
+		-- That the empty line's words end at the look's right, where every line's words end.
+		local function inRoom(run)
+			local look, empty = run.ns.tracker.look, run.ns.tracker.empty
+			assert(empty:GetStringWidth() <= look.right - look.x - 14, "the words end within the room")
+			assert.are.equal(1, #RealFont.layout(empty).lines)
+		end
+
+		it("hnt_r77 keeps English's empty line at its size, whole", function()
+			local run = emptyTracker()
+
+			assert.are.equal("Pin a Hunt to keep it here.", run.ns.tracker.empty:GetText())
+			assert.are.equal(13, size(run))
+			assert.is_false(run.ns.tracker.empty:IsTruncated())
+			inRoom(run)
+		end)
+
+		it("hnt_r77 sets German's empty line a half step smaller, as it ran past the room's right", function()
+			-- 232 wide at 13 in the native look's 230 (#618)
+			local run = emptyTracker("Hefte eine Jagd an, um sie hier zu behalten.")
+
+			assert.are.equal(12.5, size(run))
+			assert.is_false(run.ns.tracker.empty:IsTruncated())
+			inRoom(run)
+		end)
+
+		it("hnt_r77 fits the empty line to each frame's own room: German's keeps its size on the map scrap", function()
+			local run = emptyTracker("Hefte eine Jagd an, um sie hier zu behalten.", "hunts.trackerframe.mapscrap")
+
+			assert.are.equal(run.ns.tracker.look.sub[2], size(run))
+			assert.is_false(run.ns.tracker.empty:IsTruncated())
+			inRoom(run)
+		end)
+
+		it("hnt_r77 sets a longer empty line smaller to three quarters, then cuts it with an ellipsis", function()
+			local run =
+				emptyTracker("Pin a Hunt on the board to keep it here, with its times, its zones and its progress.")
+
+			assert.are.equal(13 * 0.75, size(run))
+			assert.is_true(run.ns.tracker.empty:IsTruncated())
+			inRoom(run)
+		end)
+	end)
 end)
