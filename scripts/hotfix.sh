@@ -212,11 +212,11 @@ ship() {
 
 	# 6. The backend's pin bump, local while its Actions minutes are off (pagle-backend OPS-R9, PRJ-R66).
 	if [[ -n ${HOTFIX_BACKEND_DIR:-} ]]; then
-		[[ -x $HOTFIX_BACKEND_DIR/ci/local-pin-bump.sh ]] ||
-			fail "HOTFIX_BACKEND_DIR ($HOTFIX_BACKEND_DIR) has no ci/local-pin-bump.sh; $version is released, bump the backend by hand"
+		[[ -x $HOTFIX_BACKEND_DIR/ci/local-pin-bump.sh ]] \
+			|| fail "HOTFIX_BACKEND_DIR ($HOTFIX_BACKEND_DIR) has no ci/local-pin-bump.sh; $version is released, bump the backend by hand"
 		say "running pagle-backend's local pin bump in $HOTFIX_BACKEND_DIR; its local CI takes a while"
-		(cd "$HOTFIX_BACKEND_DIR" && ci/local-pin-bump.sh) ||
-			fail "the backend's local pin bump failed (above); $version is released, so run ci/local-pin-bump.sh there again once fixed"
+		(cd "$HOTFIX_BACKEND_DIR" && ci/local-pin-bump.sh) \
+			|| fail "the backend's local pin bump failed (above); $version is released, so run ci/local-pin-bump.sh there again once fixed"
 		say "$version is released and pagle-backend's bump pull request passed its local CI"
 		say "next, the Operator's: merge it by hand, then in $HOTFIX_BACKEND_DIR run ci/local-promote.sh <merge commit>"
 	else
