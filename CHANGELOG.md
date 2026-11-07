@@ -1,5 +1,14 @@
 # Pagle
 
+## 1.3.2 (2026-11-07)
+
+Long Notice goals and the Casting page's note fit.
+
+### Fixed
+
+- A Tackle Board Notice whose goal runs long, such as "30 Fänge in Vorgebirge des Hügellands" or "3 Catches of an uncommon variety or better", no longer pushes its progress line onto the card's footer. The goal is set a little smaller, and only a goal still too long is cut, with the whole goal in its tooltip. (#604)
+- The Field guide's Casting page note about double right-click no longer runs into « back in longer languages. (#605)
+
 ## 1.3.1 (2026-11-07)
 
 A clearer word on when the trackers show.
