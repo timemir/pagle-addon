@@ -651,12 +651,14 @@ describe("moving the card (ANN-R102)", function()
 	end
 
 	-- A left-button drag of the card that is let go with its centre at (`x`, `y`) from UIParent's centre, as the
-	-- client reports it then. Returns whether the drag moved the card.
-	local function dragCard(frame, x, y)
-		frame.scripts.OnDragStart(frame, "LeftButton")
+	-- client reports it then: on its page, or on `handle`, the part of it the drag starts on (its leather head).
+	-- Returns whether the drag moved the card.
+	local function dragCard(frame, x, y, handle)
+		handle = handle or frame
+		handle.scripts.OnDragStart(handle, "LeftButton")
 		local moved = frame.moving == true
 		frame.screenCenter = { SCREEN_WIDTH / 2 + x, SCREEN_HEIGHT / 2 + y }
-		frame.scripts.OnDragStop(frame)
+		handle.scripts.OnDragStop(handle)
 		return moved
 	end
 
@@ -689,13 +691,101 @@ describe("moving the card (ANN-R102)", function()
 		assert.are.equal("Fishing session", shownTitle(loaded))
 	end)
 
-	it("doesn't move with a plain drag (ANN-R102)", function()
+	it("doesn't move with a plain drag on its page (ANN-R102)", function()
 		local loaded, frame = withCard()
 
 		assert.is_false(dragCard(frame, 200, 150))
 
 		assert.is_nil(saved(loaded))
 		assert.are.same({ x = 0, y = 0 }, centreOf(loaded))
+	end)
+
+	it("takes a left-button drag on its leather head, the title bar with the title on it (ANN-R102)", function()
+		local _, frame = withCard()
+
+		assert.are.equal(frame, frame.head.parent)
+		assert.are.equal(frame.head, frame.title.parent)
+		assert.is_true(frame.head.mouseEnabled)
+		assert.are.same({ "LeftButton" }, frame.head.dragButtons)
+		-- Its close mark is a button on the head, over it, so it takes its own click.
+		local corner
+		for _, child in ipairs(frame.head.children) do
+			if child.kind == "Button" then
+				corner = child
+			end
+		end
+		assert.is_not_nil(corner)
+		assert.is_function(corner.scripts.OnClick)
+	end)
+
+	it("moves with a plain drag on its leather head and saves where it is left, as a window (ANN-R102)", function()
+		local loaded, frame = withCard()
+
+		assert.is_true(dragCard(frame, 200, 150, frame.head))
+
+		assert.are.same({ x = 200, y = 150 }, saved(loaded))
+		assert.are.same({ x = 200, y = 150 }, centreOf(loaded))
+		assert.is_false(frame.moving)
+		assert.is_false(frame:IsUserPlaced())
+		assert.are.equal("Fishing session", shownTitle(loaded))
+	end)
+
+	it("moves with a Shift-drag on its leather head too (ANN-R102)", function()
+		local loaded, frame = withCard()
+		loaded.client.keysDown.SHIFT = true
+
+		assert.is_true(dragCard(frame, -120, 80, frame.head))
+
+		assert.are.same({ x = -120, y = 80 }, saved(loaded))
+	end)
+
+	it("keeps a drag on its leather head on the screen, whole (ANN-R102)", function()
+		local loaded, frame = withCard()
+		local height = frame:GetHeight()
+
+		dragCard(frame, 5000, -5000, frame.head)
+
+		assert.are.same({ x = SCREEN_WIDTH / 2 - 290, y = -(SCREEN_HEIGHT / 2 - height / 2) }, saved(loaded))
+	end)
+
+	it("doesn't move with a drag on its leather head while restricted (ANN-R102)", function()
+		local loaded, frame = withCard()
+		loaded.env.Pagle.IsRestricted = function()
+			return true
+		end
+
+		assert.is_false(dragCard(frame, 200, 150, frame.head))
+
+		assert.is_nil(saved(loaded))
+		assert.are.same({ x = 0, y = 0 }, centreOf(loaded))
+	end)
+
+	it(
+		"stops a drag on its leather head where it is when the card hides for restriction, and saves it"
+			.. " (ANN-R102, ANN-R35)",
+		function()
+			local loaded, frame = withCard()
+			frame.head.scripts.OnDragStart(frame.head, "LeftButton")
+			frame.screenCenter = { SCREEN_WIDTH / 2 + 90, SCREEN_HEIGHT / 2 - 60 }
+
+			setCombat(loaded, true)
+
+			assert.is_false(frame.moving)
+			assert.are.same({ x = 90, y = -60 }, saved(loaded))
+			frame.screenCenter = { SCREEN_WIDTH / 2 + 300, SCREEN_HEIGHT / 2 }
+			frame.head.scripts.OnDragStop(frame.head)
+			assert.are.same({ x = 90, y = -60 }, saved(loaded))
+		end
+	)
+
+	it("does nothing on a click on its leather head that isn't a drag (ANN-R102)", function()
+		local loaded, frame = withCard()
+
+		for _, script in ipairs({ "OnClick", "OnMouseDown", "OnMouseUp" }) do
+			assert.is_nil(frame.head.scripts[script])
+		end
+		assert.is_nil(saved(loaded))
+		assert.are.equal("Fishing session", shownTitle(loaded))
 	end)
 
 	it("doesn't move while restricted, Shift or not (ANN-R102)", function()
@@ -836,10 +926,21 @@ describe("moving the card (ANN-R102)", function()
 		assert.are.same({ x = 200, y = 150 }, centreOf(loaded))
 	end)
 
-	it('says "Shift-drag to move" at the page\'s foot, beside the close button (ANN-R102)', function()
+	it("says nothing about moving it, as a window that moves by its title (ANN-R102)", function()
 		local _, frame = withCard()
 
-		assert.are.equal("Shift-drag to move", frame.moveHint:GetText())
-		assert.is_true(frame.moveHint:IsShown())
+		assert.is_nil(frame.moveHint)
+		local function says(widget, text)
+			if widget.text == text then
+				return true
+			end
+			for _, child in ipairs(widget.children) do
+				if says(child, text) then
+					return true
+				end
+			end
+			return false
+		end
+		assert.is_false(says(frame, "Shift-drag to move"))
 	end)
 end)

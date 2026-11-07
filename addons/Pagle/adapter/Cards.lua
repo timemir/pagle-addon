@@ -8,7 +8,8 @@ end
 
 -- The cards on the client (announcements.md › Session summary, › Write-up, › UI): logic/Cards.lua over
 -- PagleDB.global, the projection machinery's idle hook and the lanes' empty state, drawing each card centre-screen
--- until the Angler moves it with a Shift-drag (ANN-R102), closed with its button, its corner's close mark or Esc. The
+-- until the Angler moves it, as a window by its leather head or with a Shift-drag anywhere on it (ANN-R102), closed
+-- with its button, its corner's close mark or Esc. The
 -- look is the announcements art kit's session card (adapter/Art.lua), the same in every toast style: a page torn from
 -- the ledger under a leather head with the gilt title, Core's numbers in the Angler's hand, then the rows on the
 -- page's ruled lines.
@@ -53,6 +54,7 @@ local DETAIL_SIZE = 20
 
 ---@class PagleCardFrame: Frame
 ---@field card PagleCard? the card on screen
+---@field head Frame the leather head, its title bar: a left-button drag on it moves the card (ANN-R102)
 ---@field title FontString
 ---@field numbers PagleCardNumber[]
 ---@field numberRooms number[] the width each number may take, between its column's rules and their padding
@@ -64,13 +66,12 @@ local DETAIL_SIZE = 20
 ---@field content Frame
 ---@field rows PagleCardRowView[]
 ---@field close Button
----@field moveHint FontString "Shift-drag to move", beside the close button (ANN-R102)
 
 --- The card frame, made the first time a card shows.
 ---@type PagleCardFrame?
 ns.cardFrame = nil
 
--- Whether a Shift-drag is moving the card frame now (ANN-R102).
+-- Whether a drag, by the leather head or a Shift-drag, is moving the card frame now (ANN-R102).
 local dragging = false
 
 --- Where the card stands (ANN-R102): its CENTER, `x` right of and `y` above UIParent's CENTER, in UIParent's units.
@@ -137,14 +138,22 @@ local function place(frame)
 	frame:SetPoint("CENTER", UIParent, "CENTER", point.x, point.y)
 end
 
--- A drag of the card (ANN-R102): with Shift held and outside restriction, the card follows the pointer.
+-- A drag of the card (ANN-R102): outside restriction, the card follows the pointer.
 ---@param frame PagleCardFrame
-local function startDrag(frame)
-	if dragging or not IsShiftKeyDown() or Pagle.IsRestricted() then
+local function beginDrag(frame)
+	if dragging or Pagle.IsRestricted() then
 		return
 	end
 	dragging = true
 	frame:StartMoving()
+end
+
+-- A drag on the card's page (ANN-R102): with Shift held, as a toast's (ANN-R98).
+---@param frame PagleCardFrame
+local function startShiftDrag(frame)
+	if IsShiftKeyDown() then
+		beginDrag(frame)
+	end
 end
 
 -- Ends a drag in progress where the card is now: its centre, kept on the screen, is saved to `profile.cards.point`
@@ -359,11 +368,11 @@ local function build()
 	frame:SetWidth(WIDTH)
 	frame:SetFrameStrata("MEDIUM")
 	frame:EnableMouse(true)
-	-- A Shift-drag on the page moves it (ANN-R102); its buttons take their own clicks.
+	-- A Shift-drag on the page moves it (ANN-R102), as a toast's moves the column; its buttons take their own clicks.
 	frame:SetMovable(true)
 	frame:SetClampedToScreen(true)
 	frame:RegisterForDrag("LeftButton")
-	frame:SetScript("OnDragStart", startDrag)
+	frame:SetScript("OnDragStart", startShiftDrag)
 	frame:SetScript("OnDragStop", endDrag)
 	local function close()
 		closed(frame)
@@ -371,6 +380,17 @@ local function build()
 	local head = CreateFrame("Frame", nil, frame)
 	head:SetSize(WIDTH, HEAD)
 	head:SetPoint("TOPLEFT")
+	frame.head = head
+	-- The title bar: a plain left-button drag on it moves the card, as a window's (ANN-R102). The close mark on it is
+	-- a button over it, which takes its own click.
+	head:EnableMouse(true)
+	head:RegisterForDrag("LeftButton")
+	head:SetScript("OnDragStart", function()
+		beginDrag(frame)
+	end)
+	head:SetScript("OnDragStop", function()
+		endDrag(frame)
+	end)
 	ns.PlaceSprite(ns.ArtSprite(head, "Announce", "card-head", "BACKGROUND", 1), head, 0, 0)
 	frame.title = ns.ArtText(head, "CardTitle")
 	frame.title:SetPoint("LEFT", head, "LEFT", 26, 0)
@@ -440,17 +460,6 @@ local function build()
 	frame.close = giltButton(frame, close)
 	frame.close:SetPoint("BOTTOM", frame, "BOTTOM", 0, CLOSE_BOTTOM)
 	frame.close:SetFrameLevel(frame.foot:GetFrameLevel() + 2)
-	-- "Shift-drag to move" in small print right of the close button, as wide as the room there (ANN-R102); on the
-	-- close button's level, over the foot's art.
-	local hintRoom = (WIDTH - frame.close:GetWidth()) / 2 - 34 - 12
-	frame.moveHint = ns.ArtText(frame.close, "CardNumLabel")
-	frame.moveHint:SetText(L.SHIFT_DRAG_HINT)
-	frame.moveHint:SetJustifyH("RIGHT")
-	frame.moveHint:SetWidth(0) -- measured unbounded
-	-- A longer one wraps to a second line, both beside the button.
-	frame.moveHint:SetWordWrap(true)
-	frame.moveHint:SetWidth(math.min(frame.moveHint:GetStringWidth(), hintRoom))
-	frame.moveHint:SetPoint("RIGHT", frame, "BOTTOMRIGHT", -34, CLOSE_BOTTOM + 22)
 
 	-- Esc hides it (CloseSpecialWindows). Hiding UIParent (Alt-Z, a cinematic) also runs OnHide but leaves it shown:
 	-- that isn't the player closing it.
