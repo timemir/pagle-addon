@@ -192,7 +192,7 @@ The rules below are authoritative; this sketch only summarises them.
   | | Remind me about the Pagle companion | checkbox | on (HNT-R170, HNT-R171, `PagleHuntsDB.profile.companionHint`) | "A line on the Hunts board, and a Nod once a week, while the Pagle companion isn't bringing you new wagers." |
 
   Neither is greyed out in Cozy mode: the Nod then goes to the Session summary (ANN-R40), as moments do. The second row is registered only while Hunts' companion hint switch is on (HNT-R172), which it is at 1.0, so 1.0's section has both rows. *Default chosen while building (#305): hunts.md › Settings put it on a "Hunts" page, which Settings doesn't have (SET-R1); it governs a reminder and its Nod, so it sits here after the window row. Dismissing the hint on the board turns it off; turning it on brings the hint and the Nod back.* No other Module adds rows to Announcements: the Ledger has no rows, Stats raises no moments (STA-R2), and the Tackle Board's and QoL's sections are on other pages.
-- **SET-R33** The Announcements page's Defaults button restores every row of SET-R30, SET-R32, (from 1.5.2) SET-R36 and (from 1.6) SET-R35 to its default, the two looks included (SET-R60), and so the companion row, while it is registered, to on. It leaves the Toast position button alone (SET-R34).
+- **SET-R33** The Announcements page's Defaults button restores every row of SET-R30, SET-R32, (from 1.5.2) SET-R36, and (from 1.6) SET-R35 and SET-R37 to its default, the three looks included (SET-R60: Toast style, Sound set and, from 1.6, News sign, back to Wood), and so the companion row, while it is registered, to on. Share my moments, Show my party's moments and Party Hunts go to off: for a player not asked yet that writes nothing, so it answers nothing (ANN-R113); for a player who accepted the party letter it turns the party features off, and the letter, answered already, doesn't ask again (ONB-R16). A Defaults that turns Show news at login back on sets the sign's floor (SIGN-R18), as turning it on by hand does. It leaves the Toast position button alone (SET-R34).
 - **SET-R34** The Announcements page ends Core's rows with "Toast position", a button "Reset" that clears the saved foot and puts the Toast column back at the bottom of the screen (ANN-R98), and, from 1.2.1, clears the card's saved point and puts it back centre-screen (ANN-R102). Tooltip: "Shift-drag a toast to move the toasts and Nods, or the Session summary to move it. This puts them all back where they started." It is never greyed out; pressed while restricted, it does nothing, since neither moves then (ANN-R98, ANN-R102). It is a button, not a value row, so Defaults leaves it (SET-R60).
 - **SET-R35** *From 1.6 (pagle-2026j).* The Announcements page gains a **Party** section, Core's, after Core's rows and before the Modules' sections (SET-R3). SET-R36's party toast rows (from 1.5.2, [#640](https://github.com/timemir/pagle-addon/issues/640)) are already in it, under its **Party** header: Party Hunts comes first, above them:
 
@@ -218,6 +218,25 @@ The rules below are authoritative; this sketch only summarises them.
   | | Cheers sounds | checkbox | on (ANN-R108, `sounds`) | Cozy mode is on | "A clink when a groupmate's toast arrives, when you raise a mug, and when someone raises one to you." |
 
   Values are stored in `PagleDB.profile.party` (announcements.md › Data), nil meaning the default: `logic/` holds Core's defaults and is a hashed file, which a 1.5.x patch can't change, so the rows' getters apply the default themselves. From 1.5.3 Share and Show read off until the party letter is accepted (Fish together turns both on, with Cheers sounds) or the player sets them here, and a change of either here is stored as set and answers the letter, which then never asks (ANN-R113, ANN-R115); a 1.5.2 player's stored choice is kept. Every row is a native checkbox (SET-R5, SET-R6), the kind rows indented under Show my party's moments (`SetParentInitializer`). The page's Defaults button turns Share and Show off and the rest on (SET-R33, SET-R60); for a player not asked yet it changes nothing, so it answers nothing. From 1.6 the section starts with Party Hunts (SET-R35) above these rows, and Show my party's moments gains the kind row "Completed for the party" (ANN-R111). From 1.6 Party Hunts is governed by the same party letter, off until it is accepted (SET-R35, ANN-R113), and its Defaults turns it off too.
+
+- **SET-R37** *From 1.6 (pagle-2026j).* The Announcements page gains a section **The Morning Tide**, Core's, for the news sign ([core/news-sign.md](core/news-sign.md)), after the Party section (SET-R35, and #640's rows, SET-R36) and before the Modules' sections (SET-R3):
+
+  | Header | Row | Kind | Values · default | Greyed out when | Tooltip |
+  |---|---|---|---|---|---|
+  | The Morning Tide | Show news at login | checkbox | on (SIGN-R14, `PagleDB.global.newsSign.show`) | Cozy mode is on | "At login or /reload, a sign drops in with the best news about the Anglers you follow on the Pagle website. Needs the Pagle Companion. A left click opens the rest in the Fish Journal." |
+  | | ↳ First reported | checkbox | on (`newsSign.kinds.first`) | Cozy mode is on, or the sign is off | |
+  | | ↳ Legends | checkbox | on (`newsSign.kinds.legend`) | as above | |
+  | | ↳ Prestige | checkbox | on (`newsSign.kinds.prestige`) | as above | |
+  | | ↳ Ledger completed | checkbox | on (`newsSign.kinds.ledger`) | as above | |
+  | | ↳ Rare varieties | checkbox | on (`newsSign.kinds.colour`) | as above | |
+  | | ↳ Hunt gold | checkbox | on (`newsSign.kinds.hunt`) | as above | |
+  | | ↳ Zone Master | checkbox | on (`newsSign.kinds.zone`) | as above | |
+  | | ↳ Monster records | checkbox | on (`newsSign.kinds.monster`) | as above | |
+  | | ↳ Region headlines | checkbox | on (`newsSign.headlines`) | as above | "Who was first in your region this month to land a Legend, whether you follow them or not." |
+  | | Mute the sign | checkbox | off (SIGN-R31, `newsSign.mute`) | | "The sign drops without its sounds. The game's sound settings still apply." |
+  | | News sign | slot dropdown, `core.newssign` (SET-R51) | owned looks · `core.newssign.wood` (SHOP-R60) | | |
+
+  The kind rows are in the sign's rank (SIGN-R10) and only choose what the sign shows (SIGN-R15): the Fish Journal's news list keeps every kind (LED-R176). Turning "Show news at login" on sets the sign's floor (SIGN-R18), so it never brings the backlog that came while it was off. Mute the sign and the look aren't greyed: they are kept for when the sign shows. The rows bind to `PagleDB.global` like the sign's spot, since the Anglers followed are the Player's, not a character's; the look is a slot's, in `PagleDB.profile.appearance` (SHOP-R32). The page's Defaults button restores every row of this section to its default, the look to Wood, as SET-R33 restores the page's other rows; a Defaults that turns the sign back on sets the floor too.
 
 ### Trackers
 
@@ -254,25 +273,6 @@ The rules below are authoritative; this sketch only summarises them.
   | Show trackers only while fishing | checkbox (native, `Settings.CreateCheckbox`) | off (CORE-R88, `PagleDB.profile.dock.onlyWhileFishing`) | | "Shows the trackers while a fishing pole is in hand. Once you put it away, they stay up for a minute after your last Cast, then hide." |
 
   It shows or hides the whole dock at once (CORE-R88) and leaves the tracker Modules' own Show rows as they are: a tracker shows only while its own row and the dock both let it. It is never greyed out, whatever trackers are on.
-
-- **SET-R37** *From 1.6 (pagle-2026j).* The Announcements page gains a section **The Morning Tide**, Core's, for the news sign ([core/news-sign.md](core/news-sign.md)), after the Party section (SET-R35, and #640's rows, SET-R36) and before the Modules' sections (SET-R3):
-
-  | Header | Row | Kind | Values · default | Greyed out when | Tooltip |
-  |---|---|---|---|---|---|
-  | The Morning Tide | Show news at login | checkbox | on (SIGN-R14, `PagleDB.global.newsSign.show`) | Cozy mode is on | "At login or /reload, a sign drops in with the best news about the Anglers you follow on the Pagle website. Needs the Pagle Companion. A left click opens the rest in the Fish Journal." |
-  | | ↳ First reported | checkbox | on (`newsSign.kinds.first`) | Cozy mode is on, or the sign is off | |
-  | | ↳ Legends | checkbox | on (`newsSign.kinds.legend`) | as above | |
-  | | ↳ Prestige | checkbox | on (`newsSign.kinds.prestige`) | as above | |
-  | | ↳ Ledger completed | checkbox | on (`newsSign.kinds.ledger`) | as above | |
-  | | ↳ Rare varieties | checkbox | on (`newsSign.kinds.colour`) | as above | |
-  | | ↳ Hunt gold | checkbox | on (`newsSign.kinds.hunt`) | as above | |
-  | | ↳ Zone Master | checkbox | on (`newsSign.kinds.zone`) | as above | |
-  | | ↳ Monster records | checkbox | on (`newsSign.kinds.monster`) | as above | |
-  | | ↳ Region headlines | checkbox | on (`newsSign.headlines`) | as above | "Who was first in your region this month to land a Legend, whether you follow them or not." |
-  | | Mute the sign | checkbox | off (SIGN-R31, `newsSign.mute`) | | "The sign drops without its sounds. The game's sound settings still apply." |
-  | | News sign | slot dropdown, `core.newssign` (SET-R51) | owned looks · `core.newssign.wood` (SHOP-R60) | | |
-
-  The kind rows are in the sign's rank (SIGN-R10) and only choose what the sign shows (SIGN-R15): the Fish Journal's news list keeps every kind (LED-R176). Turning "Show news at login" on sets the sign's floor (SIGN-R18), so it never brings the backlog that came while it was off. Mute the sign and the look aren't greyed: they are kept for when the sign shows. The rows bind to `PagleDB.global` like the sign's spot, since the Anglers followed are the Player's, not a character's; the look is a slot's, in `PagleDB.profile.appearance` (SHOP-R32). The page's Defaults button restores every row of this section to its default, the look to Wood, as SET-R33 restores the page's other rows; a Defaults that turns the sign back on sets the floor too.
 
 ### Look and Feel
 
@@ -332,6 +332,7 @@ This file adds no data. Each row's value lives with its owner:
 | Tracker position, Show trackers only while fishing | `PagleDB.profile.dock.point`, and from 1.3 `PagleDB.profile.dock.onlyWhileFishing` (Core README Data) |
 | Toast position | `PagleDB.profile.announcements.point` (ANN-R98) and `PagleDB.profile.cards.point` (ANN-R102) |
 | Party toasts (from 1.5.2) | `PagleDB.profile.party` (SET-R36) |
+| Party Hunts (from 1.6) | `PagleDB.profile.partyHunts` (SET-R35, catch-log.md LOG-R121) |
 | Fishing | `PagleQoLDB` (qol.md Data), the fishing set per character in `global.gear[guid]` |
 | Hunts' rows | `PagleHuntsDB.profile.tracker.shown`, `profile.windowMoments`, `profile.companionHint` (only while its switch is on, HNT-R172) |
 | Stats' rows | `PagleStatsDB.profile.tracker`, `profile.watched` |
