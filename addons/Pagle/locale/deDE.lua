@@ -478,6 +478,14 @@ ns.Locale("deDE", function(L)
 	L.SETTINGS_MORE_LOOKS = "Weitere Optiken"
 	L.SETTINGS_MOTION = "Animationen"
 	L.SETTINGS_MOTION_TOOLTIP = "Einblendungen gleiten herein und stempeln sich, Banner lassen ihr Siegel fallen, und die Strahlen hinter einem Banner oder einer Legende drehen sich. Aus: Alles erscheint gleich in Ruhelage."
+	L.SETTINGS_NEWS = "Die Morgenflut"
+	L.SETTINGS_NEWS_HEADLINES = "Schlagzeilen der Region"
+	L.SETTINGS_NEWS_HEADLINES_TOOLTIP = "Wer diesen Monat in deiner Region als Erstes eine Legende gelandet hat, ob du ihm folgst oder nicht."
+	L.SETTINGS_NEWS_KINDS = { colour = "Seltene Varianten", first = "Erstmeldungen", hunt = "Jagdgold", ledger = "Anglerbuch vollendet", legend = "Legenden", monster = "Monsterrekorde", prestige = "Prestige", zone = "Gebietsmeister" }
+	L.SETTINGS_NEWS_MUTE = "Schild stummschalten"
+	L.SETTINGS_NEWS_MUTE_TOOLTIP = "Das Schild fällt ohne seine Klänge herab. Die Toneinstellungen des Spiels gelten weiterhin."
+	L.SETTINGS_NEWS_SHOW = "Neuigkeiten beim Einloggen zeigen"
+	L.SETTINGS_NEWS_SHOW_TOOLTIP = "Beim Einloggen oder nach /reload fällt ein Schild herab, mit der besten Neuigkeit über die Angler, denen du auf der Pagle-Website folgst. Braucht den Pagle-Begleiter. Ein Linksklick öffnet den Rest im Fischjournal."
 	L.SETTINGS_NO_MODULE = "Deine Fänge werden aufgezeichnet. Aktiviere ein Modul, um sie zu sehen."
 	L.SETTINGS_PAGES = { announcements = "Meldungen", fishing = "Angeln", look = "Aussehen", trackers = "Tracker" }
 	L.SETTINGS_PAGLE_MENU = "Pagle-Menü"

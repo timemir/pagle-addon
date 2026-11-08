@@ -636,6 +636,9 @@ describe("the Party block (SET-R36)", function()
 		local names = {}
 		local after = false
 		for _, initializer in ipairs(page(loaded).layout.initializers) do
+			if initializer:GetName() == "The Morning Tide" then
+				break -- the next section (SET-R37, spec/Pagle/adapter/NewsSignSettings_spec.lua)
+			end
 			if after then
 				names[#names + 1] = initializer:GetName()
 			end

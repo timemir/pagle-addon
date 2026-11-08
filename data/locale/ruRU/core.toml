@@ -407,6 +407,52 @@ en = "Cheers sounds"
 value = "Звон, когда приходит плашка участника группы, когда вы поднимаете кружку и когда кто-то поднимает кружку за вас."
 en = "A clink when a groupmate's toast arrives, when you raise a mug, and when someone raises one to you."
 
+[SETTINGS_NEWS]
+value = "Утренний прилив"
+en = "The Morning Tide"
+
+[SETTINGS_NEWS_SHOW]
+value = "Показывать новости при входе"
+en = "Show news at login"
+
+[SETTINGS_NEWS_SHOW_TOOLTIP]
+value = "При входе в игру или после /reload опускается вывеска с лучшей новостью о рыболовах, за которыми вы следите на сайте Pagle. Нужен компаньон Pagle. Щелчок левой кнопкой открывает остальное в Рыбацком журнале."
+en = "At login or /reload, a sign drops in with the best news about the Anglers you follow on the Pagle website. Needs the Pagle Companion. A left click opens the rest in the Fish Journal."
+
+[SETTINGS_NEWS_KINDS]
+value.colour = "Редкие разновидности"
+value.first = "Первые вести"
+value.hunt = "Золото охоты"
+value.ledger = "Реестр заполнен"
+value.legend = "Легенды"
+value.monster = "Рекорды «Чудовищ»"
+value.prestige = "Престиж"
+value.zone = "Мастер зоны"
+en.colour = "Rare varieties"
+en.first = "First reported"
+en.hunt = "Hunt gold"
+en.ledger = "Ledger completed"
+en.legend = "Legends"
+en.monster = "Monster records"
+en.prestige = "Prestige"
+en.zone = "Zone Master"
+
+[SETTINGS_NEWS_HEADLINES]
+value = "Новости региона"
+en = "Region headlines"
+
+[SETTINGS_NEWS_HEADLINES_TOOLTIP]
+value = "Кто первым в вашем регионе в этом месяце выловил легенду, следите вы за ним или нет."
+en = "Who was first in your region this month to land a Legend, whether you follow them or not."
+
+[SETTINGS_NEWS_MUTE]
+value = "Выключить звук вывески"
+en = "Mute the sign"
+
+[SETTINGS_NEWS_MUTE_TOOLTIP]
+value = "Вывеска опускается без своих звуков. Настройки звука игры по-прежнему действуют."
+en = "The sign drops without its sounds. The game's sound settings still apply."
+
 [SETTINGS_NO_MODULE]
 value = "Ваши уловы записываются. Включите модуль, чтобы их увидеть."
 en = "Recording your Catches. Enable a Module to see them."

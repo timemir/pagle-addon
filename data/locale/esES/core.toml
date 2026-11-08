@@ -2178,6 +2178,52 @@ en = "Cheers sounds"
 value = "Un tintineo cuando llega el aviso de un miembro del grupo, cuando alzas una jarra y cuando alguien alza una por ti."
 en = "A clink when a groupmate's toast arrives, when you raise a mug, and when someone raises one to you."
 
+[SETTINGS_NEWS]
+value = "La Marea Matinal"
+en = "The Morning Tide"
+
+[SETTINGS_NEWS_SHOW]
+value = "Mostrar noticias al conectarte"
+en = "Show news at login"
+
+[SETTINGS_NEWS_SHOW_TOOLTIP]
+value = "Al conectarte o tras /reload, baja un letrero con la mejor noticia sobre los Pescadores que sigues en la web de Pagle. Necesita Pagle Companion. Un clic izquierdo abre el resto en el Diario de peces."
+en = "At login or /reload, a sign drops in with the best news about the Anglers you follow on the Pagle website. Needs the Pagle Companion. A left click opens the rest in the Fish Journal."
+
+[SETTINGS_NEWS_KINDS]
+value.colour = "Variedades raras"
+value.first = "Primeros avisos"
+value.hunt = "Oro en Caza"
+value.ledger = "Libro completado"
+value.legend = "Leyendas"
+value.monster = "Récords de Monstruo"
+value.prestige = "Prestigio"
+value.zone = "Maestro de zona"
+en.colour = "Rare varieties"
+en.first = "First reported"
+en.hunt = "Hunt gold"
+en.ledger = "Ledger completed"
+en.legend = "Legends"
+en.monster = "Monster records"
+en.prestige = "Prestige"
+en.zone = "Zone Master"
+
+[SETTINGS_NEWS_HEADLINES]
+value = "Titulares de la región"
+en = "Region headlines"
+
+[SETTINGS_NEWS_HEADLINES_TOOLTIP]
+value = "Quién fue el primero de tu región este mes en pescar una Leyenda, lo sigas o no."
+en = "Who was first in your region this month to land a Legend, whether you follow them or not."
+
+[SETTINGS_NEWS_MUTE]
+value = "Silenciar el letrero"
+en = "Mute the sign"
+
+[SETTINGS_NEWS_MUTE_TOOLTIP]
+value = "El letrero baja sin sus sonidos. Los ajustes de sonido del juego siguen aplicándose."
+en = "The sign drops without its sounds. The game's sound settings still apply."
+
 [SETTINGS_RELOAD_REMINDER_TOOLTIP]
 value = "Una línea en el chat cada {reloadReminderStep:0} Lances sin guardar. WoW solo guarda al hacer /reload o cerrar sesión, así que un cierre inesperado los pierde."
 en = "A chat line every {reloadReminderStep:0} Casts not yet saved. WoW saves only on /reload or logout, so a crash loses them."

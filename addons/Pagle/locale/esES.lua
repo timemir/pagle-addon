@@ -479,6 +479,14 @@ ns.Locale("esES", function(L)
 	L.SETTINGS_MORE_LOOKS = "Más aspectos"
 	L.SETTINGS_MOTION = "Animaciones"
 	L.SETTINGS_MOTION_TOOLTIP = "Los avisos emergentes entran deslizándose y se estampan, los estandartes dejan caer su sello y giran los rayos tras un estandarte o una Leyenda. Desactivadas, cada uno aparece ya asentado."
+	L.SETTINGS_NEWS = "La Marea Matinal"
+	L.SETTINGS_NEWS_HEADLINES = "Titulares de la región"
+	L.SETTINGS_NEWS_HEADLINES_TOOLTIP = "Quién fue el primero de tu región este mes en pescar una Leyenda, lo sigas o no."
+	L.SETTINGS_NEWS_KINDS = { colour = "Variedades raras", first = "Primeros avisos", hunt = "Oro en Caza", ledger = "Libro completado", legend = "Leyendas", monster = "Récords de Monstruo", prestige = "Prestigio", zone = "Maestro de zona" }
+	L.SETTINGS_NEWS_MUTE = "Silenciar el letrero"
+	L.SETTINGS_NEWS_MUTE_TOOLTIP = "El letrero baja sin sus sonidos. Los ajustes de sonido del juego siguen aplicándose."
+	L.SETTINGS_NEWS_SHOW = "Mostrar noticias al conectarte"
+	L.SETTINGS_NEWS_SHOW_TOOLTIP = "Al conectarte o tras /reload, baja un letrero con la mejor noticia sobre los Pescadores que sigues en la web de Pagle. Necesita Pagle Companion. Un clic izquierdo abre el resto en el Diario de peces."
 	L.SETTINGS_NO_MODULE = "Registrando tus Capturas. Activa un Módulo para verlas."
 	L.SETTINGS_PAGES = { announcements = "Anuncios", fishing = "Pesca", look = "Apariencia", trackers = "Rastreadores" }
 	L.SETTINGS_PAGLE_MENU = "Menú de Pagle"
