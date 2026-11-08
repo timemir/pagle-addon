@@ -551,10 +551,8 @@ function Projections:Live(record)
 	local owner = ns.RecordReader(record)
 	for _, projection in ipairs(self.list) do
 		if not projection.run and not projection.updating and record.seq > projection.def.db.lastSeq then
-			local reader = projection.module or ns.COMPANION_READER
-			if owner == ns.PARTY_CATCH_READER and projection.def.partyCatches == true then
-				reader = owner
-			end
+			local takesParty = owner == ns.PARTY_CATCH_READER and projection.def.partyCatches == true
+			local reader = takesParty and ns.PARTY_CATCH_READER or (projection.module or ns.COMPANION_READER)
 			if owner and owner ~= reader then
 				projection.def.db.lastSeq = record.seq
 			else

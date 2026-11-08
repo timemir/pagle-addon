@@ -61,6 +61,10 @@
 --- WhenIdle and Live.
 ---@field live fun(record: PagleRecord) Hands an entry the spec appended to fake.catchLog to the projections, as Core
 --- does with every entry it appends (LOG-R73); playCast and readSkill do it themselves.
+---@field partyCatch fun(copy: string?, name: string?, sourceId: string?): PaglePartyCatch What Core's receiver does for
+--- a groupmate's Catch that passed its checks (LOG-R113, from 1.6): appends a G1 of `copy` (Kukli Emnabi's Oily
+--- Blackmouth in Darkshore a second ago by default) and hands it live, with `name` and `sourceId`, to the projections
+--- that take Party Catches, then fires PartyCatch (LOG-R115, LOG-R116)
 ---@field prestige fun(): PaglePrestige What M:RecordPrestige() does, without a Module handle (LOG-R38): appends a P1
 --- for the logged-in character, one rank above the Prestiges in fake.catchLog, applies it live, then fires Prestige.
 --- Returns the record, read-only. Raises an error before login. A purchase is Core's own: fake.ns.RecordPurchase

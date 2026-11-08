@@ -60,7 +60,7 @@ describe("the party catch message", function()
 			"C1|1|1791731748|0|c|494|1439|1|148|453|86|25|263|||0x1,0x2",
 		}) do
 			local cast = castRecord(entry)
-			assert.is_nil(ns.PartyCatchText(cast, entry, ADA), entry)
+			assert(ns.PartyCatchText(cast, entry, ADA) == nil, entry)
 		end
 	end)
 
@@ -104,7 +104,7 @@ describe("the party catch message", function()
 			"",
 			7,
 		}) do
-			assert.is_nil(ns.ParsePartyCatch(text), tostring(text))
+			assert(ns.ParsePartyCatch(text) == nil, tostring(text))
 		end
 	end)
 end)

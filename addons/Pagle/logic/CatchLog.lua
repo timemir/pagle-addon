@@ -1191,7 +1191,7 @@ end
 -- CatchLog:Reverse's walk; Casts carry their sizes when `sized` and the log has a catalogue. Walking back, the
 -- counts start at `fromSeq` and each entry passed is taken back out, so they always cover the entries before the next.
 ---@param catchLog PagleCatchLog
----@param kind "cast"|"skill"|"prestige"|"build"|"purchase"|"companion"
+---@param kind "cast"|"skill"|"prestige"|"build"|"purchase"|"companion"|"party"
 ---@param fromSeq integer?
 ---@param sized boolean
 ---@param byTag boolean? look at the entries of the kind's tag only, even for a Cast (never sized)
@@ -1510,6 +1510,7 @@ function CatchLog:Append(record)
 	if not appended then
 		error(("the Catch log can't write this %s record"):format(tostring(record.kind)), 2)
 	end
+	---@cast entry string
 	ensureLogId(data, record.time)
 	LogBlocks.Append(data, entry)
 	if counts then
