@@ -470,6 +470,35 @@ describe("The sign and the letters, one at a time (SIGN-R40, ONB-R17)", function
 		assert.are.same({ "all" }, fake.marked)
 	end)
 
+	it(
+		"sign_r40: waits for the Field guide that Open the letter opens, and drops with its items once it closes",
+		function()
+			-- a new Angler's Letter at 4 s (ONB-R10), the sign's decision at 5 s, waiting for it
+			local legend = item("legend")
+			local loaded = loadCore({ BUILD_ENTRY }, floored())
+			local fake = fakeNews(loaded, { legend })
+			loaded.ns.db.profile.announcements.motion = false
+			enterWorld(loaded, 3)
+			loaded.client.advance(5)
+			assert.is_true(loaded.ns.letter:IsShowing())
+			assert.is_nil(loaded.ns.NewsSignState())
+
+			local frame = assert(loaded.env.PagleLetter)
+			assert.are.equal("Open the letter", frame.open.label.text)
+			frame.open:Click()
+			loaded.client.advance(1)
+			assert.is_true(loaded.ns.guide:IsOpen())
+			assert.is_nil(loaded.ns.NewsSignState())
+			assert.are.same({}, fake.marked)
+			loaded.ns.guide:Close()
+			loaded.client.advance(0)
+
+			assert.is_not_nil(loaded.ns.NewsSignState())
+			assert.truthy(has(words(loaded), "News " .. legend.id))
+			assert.are.same({ "all" }, fake.marked)
+		end
+	)
+
 	it("onb_r17: a letter due while the sign shows waits until it has gone up, then LETTER_DELAY", function()
 		-- a new Angler's Letter, held by the login's card (ONB-R10) until the sign has dropped
 		local saved = floored({

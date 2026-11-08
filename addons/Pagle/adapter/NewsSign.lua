@@ -10,8 +10,8 @@ local Pagle = Pagle
 
 -- The news sign, The Morning Tide to players (core/news-sign.md): one piece of news about the Anglers the player follows, or a region headline,
 -- drops in from the top of the screen in one of six looks, hangs about 8 s and goes back up. This file is the sign's
--- frame and its drawing kit, and when a drop may start: out of combat and restriction, and with no letter on screen
--- (SIGN-R40, ONB-R17). adapter/NewsSignLooks.lua has the six looks' motion, adapter/NewsSignDev.lua `/pagle dev sign`
+-- frame and its drawing kit, and when a drop may start: out of combat and restriction, with no letter on screen and
+-- the Field guide closed (SIGN-R40, ONB-R17). adapter/NewsSignLooks.lua has the six looks' motion, adapter/NewsSignDev.lua `/pagle dev sign`
 -- (SIGN-R60), and adapter/NewsSignDrop.lua the once-a-session drop with the news (SIGN-R14–R19).
 --
 -- One frame, PagleNewsSign, sits where the sign rests (SIGN-R20); every region is placed from its top left each frame,
@@ -643,7 +643,7 @@ end
 local frame
 ---@type table? the drop showing: look, news, kit, words, t, exitAt, hover, hanging, hangLeft, cues, top
 local drop
----@type table? a drop waiting for combat, restriction and a letter to end: { look?, news, onStart? }
+---@type table? a drop waiting for combat, restriction, a letter and the guide to end: { look?, news, onStart? }
 local waiting
 
 -- The saved spot, or the default (SIGN-R20).
@@ -936,11 +936,11 @@ function ns.EquippedNewsSignLook()
 	return "wood"
 end
 
--- Starts the drop waiting, unless a letter is on screen (SIGN-R40, ONB-R17): then it waits on, and
--- ns.NewsSignLetterGone tries again as the letter goes.
+-- Starts the drop waiting, unless a letter is on screen or the Field guide is open (SIGN-R40, ONB-R17): then it waits
+-- on, and ns.NewsSignLetterGone or GuideClosed tries again.
 local function tryWaiting()
 	local w = waiting
-	if not w or (ns.letter and ns.letter:IsShowing()) then
+	if not w or (ns.letter and ns.letter:IsShowing()) or (ns.guide and ns.guide:IsOpen()) then
 		return
 	end
 	waiting = nil
@@ -952,8 +952,8 @@ end
 
 --- Drops the sign (SIGN-R40): `look` is a key of ns.NEWS_SIGN_LOOKS, or nil for the look equipped as it drops
 --- (SIGN-R57); `news` is what it shows; `onStart`, if given, is called as its entrance starts (SIGN-R17's marking).
---- Never in combat or while restricted, and never while a letter shows: it waits until all have ended, keeping its
---- words, and only the last one asked for waits.
+--- Never in combat or while restricted, never while a letter shows and never while the Field guide is open: it waits
+--- until all have ended, keeping its words, and only the last one asked for waits.
 ---@param lookKey string?
 ---@param news PagleNewsSignNews
 ---@param onStart fun()?
@@ -962,13 +962,24 @@ function ns.DropNewsSign(lookKey, news, onStart)
 	ns.RunWhenUnrestricted(tryWaiting)
 end
 
---- A letter left the screen (adapter/Letter.lua's hide: answered, or hidden by a restriction or an instance): a drop
---- waiting for it starts, once unrestricted (SIGN-R40).
-function ns.NewsSignLetterGone()
+-- A drop waiting tries again, once unrestricted.
+local function retry()
 	if waiting then
 		ns.RunWhenUnrestricted(tryWaiting)
 	end
 end
+
+--- A letter left the screen (adapter/Letter.lua's hide: answered, or hidden by a restriction or an instance): a drop
+--- waiting for it tries again a frame later (SIGN-R40), since the letter hides before its confirm button acts, and
+--- the onboarding Letter's opens the Field guide, which the drop then waits for.
+function ns.NewsSignLetterGone()
+	if waiting then
+		C_Timer.After(0, retry)
+	end
+end
+
+-- SIGN-R40: the Field guide closing lets a drop waiting for it start, as it lets a letter (ONB-R17).
+Pagle.RegisterCallback("Pagle news sign guide", "GuideClosed", retry)
 
 --- The drop showing, for the specs and the dev command: its look key, time and state.
 function ns.NewsSignState()
