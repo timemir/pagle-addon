@@ -36,4 +36,6 @@
 	<Script file="PartyToast.lua"/>
 	<Script file="PartySettings.lua"/>
 	<Script file="PartyLetter.lua"/>
+	<!-- "Completed for the party" (announcements.md ANN-R111; from 1.6, #646), over the party toasts' files above. -->
+	<Script file="PartyHunts.lua"/>
 </Ui>

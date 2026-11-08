@@ -131,6 +131,7 @@ ns.Locale("esES", function(L)
 	L.NEEDS_SKILL = "necesita habilidad {need:0}"
 	L.NO_HUNTS = "Aún no hay Cazas."
 	L.OUT_OF_SEASON = "fuera de temporada"
+	L.PARTY_WITH = "{text} · con {name}"
 	L.PAY_AMOUNT = "+{xpRun:0} XP · {coins:0} Monedas"
 	L.PAY_PAID_OUT = "pagado"
 	L.PAY_REFRESH = { many = "+{count} Renovaciones", one = "+{count} Renovación", other = "+{count} Renovaciones" }

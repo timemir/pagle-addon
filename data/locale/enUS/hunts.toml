@@ -212,6 +212,8 @@ WAGER_MARK_STAMP = "Mark"
 # "Silver mark"
 WAGER_TIER = "{trim} mark"
 WAGER_SETTLED = "Wager settled"
+# A moment a groupmate's Catch reached (HNT-R185, ANN-R110, from 1.6): the groupmate's name after its text.
+PARTY_WITH = "{text} · with {name}"
 WAGER_SETTLED_STAMP = "Settled"
 WRITE_UP_FIRST_BUILD.one = "Your Hunts were written up from {count:n} Cast"
 WRITE_UP_FIRST_BUILD.other = "Your Hunts were written up from {count:n} Casts"

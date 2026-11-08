@@ -321,6 +321,14 @@ ns.Locale("deDE", function(L)
 	L.PARTY_DETAIL = "{what} · {detail}"
 	L.PARTY_FULL_NAME = "{name} {surname}"
 	L.PARTY_GOLD = "Hat in {hunt} Gold geholt"
+	L.PARTY_HP_HUNT = "{hunt} · für {senders}"
+	L.PARTY_HP_MINE = "Dein Fang"
+	L.PARTY_HP_PARTY = "Für die Gruppe geschafft"
+	L.PARTY_HP_RUN = "{event} eingelöst · für {senders}"
+	L.PARTY_HP_SENDERS_MORE = { one = "{name}, {other} und {count} weitere", other = "{name}, {other} und {count} weitere" }
+	L.PARTY_HP_SENDERS_TWO = "{name} und {other}"
+	L.PARTY_HP_SOME_HUNT = "eine Jagd"
+	L.PARTY_HP_SOME_RUN = "eine Pagle-Wette"
 	L.PARTY_LETTER_KICKER = "Ein Brief, am Ufer weitergereicht"
 	L.PARTY_LETTER_LATER = "Jetzt nicht"
 	L.PARTY_LETTER_LINE = "{name} angelt mit dir in {zone} und nutzt auch Pagle. Angelt zusammen: Teile deine besten Fänge, stoß auf ihre an, und eure Fänge zählen gegenseitig für eure Jagden."
@@ -476,7 +484,7 @@ ns.Locale("deDE", function(L)
 	L.SETTINGS_PARTY = "Gruppe"
 	L.SETTINGS_PARTY_HUNTS = "Gruppenjagden"
 	L.SETTINGS_PARTY_HUNTS_TOOLTIP = "In einer Gruppe zählen die Fänge deiner Gruppenmitglieder für deine Jagden und Pagles Wetten, solange ihr in derselben Zone angelt, und deine für ihre. Aus: Pagle teilt deine Fänge nicht und zählt ihre nicht."
-	L.SETTINGS_PARTY_KINDS = { colour = "Seltene Varianten", gold = "Goldrang in einer Jagd", ledger = "Anglerbuch 100 %", legend = "Legenden", monster = "Rekorde in Monstergröße", prestige = "Prestige", zone = "Gebietsmeister" }
+	L.SETTINGS_PARTY_KINDS = { colour = "Seltene Varianten", gold = "Goldrang in einer Jagd", hp = "Für die Gruppe geschafft", ledger = "Anglerbuch 100 %", legend = "Legenden", monster = "Rekorde in Monstergröße", prestige = "Prestige", zone = "Gebietsmeister" }
 	L.SETTINGS_PARTY_SHARE = "Meine Momente mit der Gruppe teilen"
 	L.SETTINGS_PARTY_SHARE_TOOLTIP = "Fängst du eine Legende, stellst einen Rekord in Monstergröße auf und Ähnliches, bekommen Gruppenmitglieder mit Pagle eine kleine Einblendung davon. Gesendet wird nur der Moment, nie, wo du bist. Nicht im Schlachtzug."
 	L.SETTINGS_PARTY_SHOW = "Momente meiner Gruppe zeigen"

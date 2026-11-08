@@ -279,8 +279,9 @@ end
 ---@param reached HuntsRunsReached
 ---@param castID string?
 ---@param now integer?
+---@param party PaglePartyCatch? from 1.6, the live Party Catch that reached them (HNT-R185)
 ---@return PagleMoment[]
-function ns.CelebrateWagersReached(celebrated, state, reached, castID, now)
+function ns.CelebrateWagersReached(celebrated, state, reached, castID, now, party)
 	local moments = {}
 	for _, wager in ipairs(ns.ReachedWagers(reached)) do
 		local old = now and wager.run and ns.RunLongEnded(state.runs[wager.run], now)
@@ -292,12 +293,38 @@ function ns.CelebrateWagersReached(celebrated, state, reached, castID, now)
 				else
 					moment.summaryOnly = true
 				end
+				if party and wager.kind == "settled" then
+					local run = state.runs[wager.run]
+					local source = ns.SettlingSourceCatch(state, run, party)
+					if source then
+						moment.partyCatch, moment.partyEvent = source, run.event
+					end
+				end
 				moments[#moments + 1] = moment
 			end
 			ns.CelebrateWagers(celebrated, state, { wager })
 		end
 	end
 	return moments
+end
+
+--- The source Catch ID of the Party Catch item that settled `run` (HNT-R185): of its event's Hunts, in event order, the
+--- first whose tier 1 a `party` item reached (ns.PartySourceCatch), or nil for none.
+---@param state HuntsState
+---@param run HuntRun
+---@param party PaglePartyCatch
+---@return string?
+function ns.SettlingSourceCatch(state, run, party)
+	local event = ns.KnownEvent(state, run.event)
+	for _, hunt in ipairs(event and event.hunts or {}) do
+		local progress = run.hunts[hunt.id]
+		local first = progress and progress.reached[1]
+		local source = first and ns.PartySourceCatch(party, first.catchId)
+		if source then
+			return source
+		end
+	end
+	return nil
 end
 
 --- The moments for `wagers`, summary-only and with no `cast` (HNT-R112, ANN-R63).

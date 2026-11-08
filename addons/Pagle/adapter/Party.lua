@@ -459,7 +459,24 @@ local function lookups()
 			end
 			return nil
 		end,
+		-- From 1.6, an event's name, the same way (its def.partyEventName, ANN-R111).
+		eventName = function(eventID)
+			for _, module in ipairs(ns.Modules:Modules()) do
+				local name = module.def.partyEventName
+				if name then
+					local ok, text = pcall(name, eventID)
+					return ok and type(text) == "string" and text or nil
+				end
+			end
+			return nil
+		end,
 	}
+end
+
+--- What a party toast's line looks things up with (ns.PartyMomentLine, ns.PartyHuntLine).
+---@return PaglePartyLookups
+function ns.PartyLookups()
+	return lookups()
 end
 
 --- The party toast for a groupmate's moment (ANN-R106): one moment, `toast.low`, Core's own, titled by the groupmate,
@@ -517,10 +534,20 @@ function ns.PumpPartyToasts()
 	end
 end
 
+-- `expires`, GetTime()'s, defaults to EXPIRY seconds on.
 ---@param announcement PagleAnnouncement
-local function enqueue(announcement)
-	state.queue[#state.queue + 1] = { announcement = announcement, expires = GetTime() + EXPIRY }
+---@param expires number?
+local function enqueue(announcement, expires)
+	state.queue[#state.queue + 1] = { announcement = announcement, expires = expires or GetTime() + EXPIRY }
 	ns.PumpPartyToasts()
+end
+
+--- Puts a party toast in the party queue, behind the player's own toasts (ANN-R106): "Completed for the party"
+--- (adapter/PartyHunts.lua, ANN-R111), with `expires` (GetTime()'s) when it waited before.
+---@param announcement PagleAnnouncement
+---@param expires number?
+function ns.EnqueuePartyToast(announcement, expires)
+	enqueue(announcement, expires)
 end
 
 -- A valid moment from a groupmate (ANN-R106): a party toast while Show and its kind's switch are on.
@@ -732,7 +759,8 @@ end
 ---@return boolean
 function ns.RaisePartyMug(display)
 	local toast = display.announcement.headline.partyToast
-	if not toast or toast.raised then
+	-- "Completed for the party" has no mug (ANN-R111).
+	if not toast or toast.raised or toast.kind == ns.PARTY_HUNT_KIND then
 		return false
 	end
 	toast.raised = true
@@ -791,6 +819,11 @@ function ns.RunPartyDev(args)
 	elseif DEV_SAMPLES[word] then
 		devToast(word)
 		return
+	elseif word == ns.PARTY_HUNT_KIND then
+		-- From 1.6, "Completed for the party" from Kukli (ANN-R111), through the hp receiving path.
+		ns.DevPartyHunt((DEV_NAMES[1]:match("^%S+")))
+		print(ns.RenderText(L.DEV_PARTY_QUEUED, { name = DEV_NAMES[1], kind = word }))
+		return
 	elseif word == "cheer" then
 		local count = rest == "" and 1 or tonumber(rest)
 		if count and count >= 1 and count <= #DEV_NAMES and count == math.floor(count) then
@@ -803,5 +836,6 @@ function ns.RunPartyDev(args)
 			return
 		end
 	end
-	print(ns.RenderText(L.DEV_PARTY_USAGE, { kinds = table.concat(ns.PARTY_KINDS, ", ") }))
+	local kinds = table.concat(ns.PARTY_KINDS, ", ") .. ", " .. ns.PARTY_HUNT_KIND
+	print(ns.RenderText(L.DEV_PARTY_USAGE, { kinds = kinds }))
 end

@@ -525,6 +525,10 @@ en = "{trim} mark"
 value = "Пари выиграно"
 en = "Wager settled"
 
+[PARTY_WITH]
+value = "{text} • с {name}"
+en = "{text} · with {name}"
+
 [WAGER_SETTLED_STAMP]
 value = "Выиграно"
 en = "Settled"

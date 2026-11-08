@@ -322,6 +322,14 @@ ns.Locale("esES", function(L)
 	L.PARTY_DETAIL = "{what} · {detail}"
 	L.PARTY_FULL_NAME = "{name} {surname}"
 	L.PARTY_GOLD = "Consiguió oro en {hunt}"
+	L.PARTY_HP_HUNT = "{hunt} · para {senders}"
+	L.PARTY_HP_MINE = "Tu captura"
+	L.PARTY_HP_PARTY = "Completado para el grupo"
+	L.PARTY_HP_RUN = "{event} liquidada · para {senders}"
+	L.PARTY_HP_SENDERS_MORE = { many = "{name}, {other} y {count} más", one = "{name}, {other} y {count} más", other = "{name}, {other} y {count} más" }
+	L.PARTY_HP_SENDERS_TWO = "{name} y {other}"
+	L.PARTY_HP_SOME_HUNT = "una caza"
+	L.PARTY_HP_SOME_RUN = "una apuesta Pagle"
 	L.PARTY_LETTER_KICKER = "Una carta, pasada por la orilla"
 	L.PARTY_LETTER_LATER = "Ahora no"
 	L.PARTY_LETTER_LINE = "{name} está pescando en {zone} contigo y también usa Pagle. Pescad juntos: comparte tus mejores capturas, brinda por las suyas y que las capturas de cada uno cuenten para las Cazas del otro."
@@ -477,7 +485,7 @@ ns.Locale("esES", function(L)
 	L.SETTINGS_PARTY = "Grupo"
 	L.SETTINGS_PARTY_HUNTS = "Cazas en grupo"
 	L.SETTINGS_PARTY_HUNTS_TOOLTIP = "En un grupo, las capturas de tus compañeros cuentan para tus Cazas y Apuestas Pagle mientras pescáis en la misma zona, y las tuyas para las suyas. Desactivado, Pagle ni comparte tus capturas ni cuenta las suyas."
-	L.SETTINGS_PARTY_KINDS = { colour = "Colores raros", gold = "Nivel de Oro en una caza", ledger = "Libro de registro al 100 %", legend = "Leyendas", monster = "Récords de tamaño Monstruo", prestige = "Prestigio", zone = "Maestro de zona" }
+	L.SETTINGS_PARTY_KINDS = { colour = "Colores raros", gold = "Nivel de Oro en una caza", hp = "Completado para el grupo", ledger = "Libro de registro al 100 %", legend = "Leyendas", monster = "Récords de tamaño Monstruo", prestige = "Prestigio", zone = "Maestro de zona" }
 	L.SETTINGS_PARTY_SHARE = "Compartir mis momentos con mi grupo"
 	L.SETTINGS_PARTY_SHARE_TOOLTIP = "Cuando pescas una Leyenda, logras un récord de tamaño Monstruo y cosas así, los miembros del grupo que usan Pagle reciben un pequeño aviso. Solo se envía el momento, nunca dónde estás. No en una banda."
 	L.SETTINGS_PARTY_SHOW = "Mostrar los momentos de mi grupo"

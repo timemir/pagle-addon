@@ -504,6 +504,41 @@ en = "Not now"
 value = "No, gracias"
 en = "No thanks"
 
+[PARTY_HP_MINE]
+value = "Tu captura"
+en = "Your catch"
+
+[PARTY_HP_PARTY]
+value = "Completado para el grupo"
+en = "Completed for the party"
+
+[PARTY_HP_HUNT]
+value = "{hunt} · para {senders}"
+en = "{hunt} · for {senders}"
+
+[PARTY_HP_RUN]
+value = "{event} liquidada · para {senders}"
+en = "{event} settled · for {senders}"
+
+[PARTY_HP_SOME_HUNT]
+value = "una caza"
+en = "a Hunt"
+
+[PARTY_HP_SOME_RUN]
+value = "una apuesta Pagle"
+en = "a Pagle Wager"
+
+[PARTY_HP_SENDERS_TWO]
+value = "{name} y {other}"
+en = "{name} and {other}"
+
+[PARTY_HP_SENDERS_MORE]
+value.many = "{name}, {other} y {count} más"
+value.one = "{name}, {other} y {count} más"
+value.other = "{name}, {other} y {count} más"
+en.one = "{name}, {other} and {count} more"
+en.other = "{name}, {other} and {count} more"
+
 [TOAST_SAMPLE_TITLE]
 value = "Nueva Especie"
 en = "New Species"
@@ -2115,6 +2150,7 @@ en = "A small toast when a groupmate who runs Pagle has a moment, with a mug you
 [SETTINGS_PARTY_KINDS]
 value.colour = "Colores raros"
 value.gold = "Nivel de Oro en una caza"
+value.hp = "Completado para el grupo"
 value.ledger = "Libro de registro al 100 %"
 value.legend = "Leyendas"
 value.monster = "Récords de tamaño Monstruo"
@@ -2122,6 +2158,7 @@ value.prestige = "Prestigio"
 value.zone = "Maestro de zona"
 en.colour = "Rare colours"
 en.gold = "Gold tier in a Hunt"
+en.hp = "Completed for the party"
 en.ledger = "Ledger 100%"
 en.legend = "Legends"
 en.monster = "Monster-size records"
