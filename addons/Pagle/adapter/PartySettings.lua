@@ -11,7 +11,7 @@ end
 -- through adapter/Party.lua's ns.PartyOption and ns.PartyKindOn, since Core's defaults sit in logic/, which a patch
 -- can't change: from 1.5.3 Share and Show are off until the party letter is accepted (ANN-R113), and from 1.6 Party
 -- Hunts too (ns.PartyHuntsOn), the rest on unless stored off. adapter/AnnouncementSettings.lua calls it last. Loaded
--- by adapter/Settings.xml.
+-- from the TOC, before it.
 local L = ns.L
 
 -- The proxy setting variables: Core's Cozy mode (adapter/AnnouncementSettings.lua's), then the block's own.

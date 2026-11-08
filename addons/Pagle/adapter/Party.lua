@@ -15,7 +15,7 @@ local Pagle = Pagle
 -- adapter/PartyMessages.lua; the party toast's frame is adapter/PartyToast.lua's and its rows adapter/PartySettings.lua's.
 -- From 1.5.3 (#655) sharing and showing are off until the party letter is answered (ANN-R113, adapter/PartyLetter.lua),
 -- which reads here who in the party runs Pagle and is in the player's zone (ns.PartyGroupmateHere).
--- Loaded by adapter/Settings.xml, before the lanes exist: everything it reaches of them (ns.lanes, ns.db) it looks up
+-- Loaded from the TOC, after adapter/PartyMessages.lua and before the lanes exist: everything it reaches of them (ns.lanes, ns.db) it looks up
 -- when it runs. Its own owner on Core's bus.
 local OWNER = "Pagle party"
 

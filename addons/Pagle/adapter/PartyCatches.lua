@@ -12,7 +12,7 @@ local Pagle = Pagle
 -- catch message sent for each of the Angler's own caught Casts, and the groupmates' received, checked and logged, over
 -- logic/PartyCatches.lua. The message rides its own prefix (ns.PARTY_CATCH_PREFIX) and the party toasts' send queue
 -- (adapter/Party.lua's ns.SendPartyMessage, LOG-R112), and the receiver matches its sender as the party toasts do
--- (ns.PartyGroupmate). Loaded after adapter/Settings.xml, whose <Script> lines load Party.lua. Its own owner on Core's
+-- (ns.PartyGroupmate). Loaded from the TOC after adapter/Party.lua. Its own owner on Core's
 -- bus.
 local OWNER = "Pagle party catches"
 

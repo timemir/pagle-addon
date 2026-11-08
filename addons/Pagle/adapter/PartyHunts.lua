@@ -14,7 +14,7 @@ local Pagle = Pagle
 -- It rides the party catch prefix, PagleCatch (catch-log.md LOG-R110), through the party toasts' one send queue
 -- (adapter/Party.lua's ns.SendPartyMessage, LOG-R112). Live only, as every party toast: nothing here reaches PagleLog,
 -- a projection or the Session summary. Over adapter/PartyMessages.lua (the message and its line) and
--- adapter/Party.lua (the queue, the groupmates, the party queue, the mug). Loaded by adapter/Settings.xml after them,
+-- adapter/Party.lua (the queue, the groupmates, the party queue, the mug). Loaded from the TOC after them,
 -- before the lanes exist: what it reaches of them it looks up when it runs. Its own owner on Core's bus.
 local OWNER = "Pagle party hunts"
 

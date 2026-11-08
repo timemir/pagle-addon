@@ -15,7 +15,7 @@ local Pagle = Pagle
 -- time. It is sent mid-session, whenever its reason holds: a Pagle groupmate in the player's zone while the player
 -- fishes (ANN-R114). Its three buttons, Fish together, Not now and No thanks (ANN-R115), its words written as it shows
 -- and its asking again a day after Not now are the service's own (ONB-R15, ONB-R16), which keeps its answer
--- account-wide. Loaded by adapter/Settings.xml, after adapter/Party.lua and before adapter/Letter.lua: it reaches
+-- account-wide. Loaded from the TOC, after adapter/Party.lua and before adapter/Letter.lua: it reaches
 -- ns.letter and ns.onboarding only when it runs.
 local OWNER = "Pagle party letter"
 

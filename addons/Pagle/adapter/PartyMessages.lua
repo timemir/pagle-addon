@@ -5,8 +5,9 @@ local ns = select(2, ...)
 -- ANN-R103–R105, ANN-R108; from 1.5.2, #640): their format, the strict reading of what arrives, the limits on what
 -- is taken, a marked moment as it is shared, and the lines a party toast and a cheer's Nod read. Pure Lua over what
 -- it is handed, reading no client API: it would sit in logic/, but every file there is hashed, and a 1.5.2 patch
--- adds none (a new file changes the hashed list). adapter/Party.lua runs it on the client. Loaded by
--- adapter/Settings.xml, as the TOC's file list is hashed too.
+-- added none (a new file changes the hashed list). adapter/Party.lua runs it on the client. From 1.6 the party files
+-- have TOC lines of their own, after adapter/Settings.xml, which loaded them in 1.5.2 and 1.5.3, whose patches couldn't
+-- change the TOC's hashed file list.
 
 --- The field a Module sets on a moment it lets its player share (announcements.md › Contracts, ANN-R104): the kind
 --- Core shares it as. Declared here, beside logic/Moments.lua's PagleMoment, which a 1.5.2 patch can't change.
