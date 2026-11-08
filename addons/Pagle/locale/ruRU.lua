@@ -75,6 +75,7 @@ ns.Locale("ruRU", function(L)
 	L.DEV_ONBOARDING_RESET = "Pagle dev: знакомство сброшено как для нового рыболова, письмо ждёт; /reload, чтобы начать с этого места."
 	L.DEV_ONBOARDING_USAGE = "Pagle dev: /pagle dev onboarding {usages}"
 	L.DEV_PARTY_CHEERED = "Pagle dev: {count:0} тостов за ваш момент уже в пути."
+	L.DEV_PARTY_HUNT_OFF = "Pagle dev: ничего не появится, пока выключены Групповые охоты, Показывать моменты моей группы или Выполнено для группы."
 	L.DEV_PARTY_LETTER = "Pagle dev: письмо группы на экране, будто {name} рыбачит рядом с вами."
 	L.DEV_PARTY_LETTER_RESET = "Pagle dev: ответ на письмо группы забыт; обмен с группой выключен, пока на него не ответят."
 	L.DEV_PARTY_QUEUED = "Pagle dev: плашка группы от {name} в очереди: {kind}."

@@ -503,6 +503,35 @@ describe("Completed for the party in Settings (SET-R35, SET-R36)", function()
 		row:GetSetting():SetValue(false)
 		assert.are.same({ hp = false }, loaded.ns.db.profile.party.kinds)
 	end)
+
+	it("greys its row while Party Hunts is off, keeping its value, as it does nothing then", function()
+		local loaded = loggedIn(nil)
+		local page = assert(loaded.client.settings.category("Announcements"))
+		local row
+		for _, initializer in ipairs(page.layout.initializers) do
+			if initializer:GetName() == "Completed for the party" then
+				row = initializer
+			end
+		end
+		assert(row, "no Completed for the party row")
+		assert.is_true(row:EvaluateModifyPredicates())
+		assert.is_truthy(row.evaluateStateVariables)
+		local hunts
+		for _, variable in ipairs(row.evaluateStateVariables) do
+			hunts = hunts or variable == "Pagle_Core_partyHunts"
+		end
+		assert.is_true(hunts, "Party Hunts' changes re-evaluate the row")
+
+		loaded.ns.SetPartyHunts(false)
+		assert.is_false(row:EvaluateModifyPredicates())
+		assert.is_true(row:GetSetting():GetValue())
+		-- the moment kinds don't hang on Party Hunts
+		for _, initializer in ipairs(page.layout.initializers) do
+			if initializer:GetName() == "Legends" then
+				assert.is_true(initializer:EvaluateModifyPredicates())
+			end
+		end
+	end)
 end)
 
 describe("/pagle dev party hp (ANN-R109, ANN-R111)", function()
@@ -513,5 +542,30 @@ describe("/pagle dev party hp (ANN-R109, ANN-R111)", function()
 		loaded.client.advance(5)
 		assert.are.same({ "COMPLETED FOR THE PARTY", "Mackerel Run · for Kukli" }, reads(loaded))
 		assert.are.same({}, sent(loaded))
+	end)
+
+	-- What `line` prints in chat, run behind the dev switch.
+	local function printedBy(loaded, line)
+		loaded.env.SlashCmdList.PAGLE("dev on")
+		local from = #loaded.printed
+		loaded.env.SlashCmdList.PAGLE(line)
+		return { unpack(loaded.printed, from + 1) }
+	end
+
+	it("says so, rather than that a toast is queued, while Party Hunts, Show or its kind is off", function()
+		local loaded = loggedIn(nil, true)
+		local off = assert(loaded.ns.L.DEV_PARTY_HUNT_OFF)
+		assert.are.same({ off }, printedBy(loaded, "dev party hp"))
+		loaded.client.advance(5)
+		assert.is_nil(reads(loaded))
+
+		loaded = loggedIn(nil)
+		loaded.ns.SetPartyKind(loaded.ns.PARTY_HUNT_KIND, false)
+		assert.are.same({ off }, printedBy(loaded, "dev party hp"))
+		loaded.ns.SetPartyKind(loaded.ns.PARTY_HUNT_KIND, true)
+		assert.are.same(
+			{ "Pagle dev: a party toast from Kukli Emnabi is queued: hp." },
+			printedBy(loaded, "dev party hp")
+		)
 	end)
 end)

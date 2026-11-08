@@ -76,6 +76,7 @@ ns.L = {
 	DEV_ONBOARDING_RESET = "Pagle dev: onboarding is back as a new Angler's, with the Letter waiting; /reload to start from there.",
 	DEV_ONBOARDING_USAGE = "Pagle dev: /pagle dev onboarding {usages}",
 	DEV_PARTY_CHEERED = "Pagle dev: {count:0} cheers for a moment of yours are on their way.",
+	DEV_PARTY_HUNT_OFF = "Pagle dev: nothing shows while Party Hunts, Show my party's moments or Completed for the party is off.",
 	DEV_PARTY_LETTER = "Pagle dev: the party letter is on screen, as if {name} were fishing beside you.",
 	DEV_PARTY_LETTER_RESET = "Pagle dev: the party letter's answer is forgotten; party sharing is off until it is answered.",
 	DEV_PARTY_QUEUED = "Pagle dev: a party toast from {name} is queued: {kind}.",

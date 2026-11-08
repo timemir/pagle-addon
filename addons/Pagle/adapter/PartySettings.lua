@@ -91,7 +91,15 @@ function ns.PartySettingsRows(page, layout)
 		)
 		local row = Settings.CreateCheckbox(page, setting)
 		row:SetParentInitializer(show)
-		greys(row, kindsLive)
+		if kind == ns.PARTY_HUNT_KIND then
+			-- It does nothing while Party Hunts is off (ANN-R111), so it greys then too.
+			greys(row, function()
+				return kindsLive() and ns.PartyHuntsOn()
+			end)
+			row:AddEvaluateStateCVar(HUNTS)
+		else
+			greys(row, kindsLive)
+		end
 	end
 
 	local sounds = Settings.CreateCheckbox(

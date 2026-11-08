@@ -586,6 +586,27 @@ describe("the party letter's tour stop and dev command (ANN-R116)", function()
 			assert.is_nil((letterState(loaded)))
 		end
 	)
+
+	it("ann_r116 names the made-up groupmate in the sample and the dev command, never a real one in the zone", function()
+		-- Arwen, a Pagle groupmate, fishes the player's zone: the real letter would name her.
+		local loaded = loggedIn(party(DUROTAR))
+		hello(loaded, "Arwen-Testrealm")
+		local stop
+		for _, listed in ipairs(loaded.ns.tourStops:List(loaded.ns.Modules:Modules(), "core")) do
+			if listed.name == "core.onboarding.letter.core.party" then
+				stop = listed
+			end
+		end
+
+		assert(stop, "no tour stop for the party letter").show()
+		assert.matches("^Kukli Emnabi is fishing Elwynn Forest", letterOf(loaded).line.text)
+		stop.hide()
+
+		slash(loaded, "dev on")
+		slash(loaded, "dev party letter")
+		assert.matches("^Kukli Emnabi is fishing Elwynn Forest", letterOf(loaded).line.text)
+		press(loaded, "Not now")
+	end)
 end)
 
 describe("the party letter on the letter service (ANN-R115, ONB-R15, ONB-R16; from 1.6, #665)", function()

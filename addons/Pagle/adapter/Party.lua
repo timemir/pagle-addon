@@ -820,7 +820,12 @@ function ns.RunPartyDev(args)
 		devToast(word)
 		return
 	elseif word == ns.PARTY_HUNT_KIND then
-		-- From 1.6, "Completed for the party" from Kukli (ANN-R111), through the hp receiving path.
+		-- From 1.6, "Completed for the party" from Kukli (ANN-R111), through the hp receiving path, which drops it while
+		-- Party Hunts, Show or its kind is off: then it says so rather than that it is queued.
+		if not ns.PartyHuntShows() then
+			print(L.DEV_PARTY_HUNT_OFF)
+			return
+		end
 		ns.DevPartyHunt((DEV_NAMES[1]:match("^%S+")))
 		print(ns.RenderText(L.DEV_PARTY_QUEUED, { name = DEV_NAMES[1], kind = word }))
 		return

@@ -90,12 +90,21 @@ Pagle.RegisterEvent(OWNER, "ZONE_CHANGED_NEW_AREA", function()
 	ns.CheckPartyLetter()
 end)
 
+-- Whether the letter shows as the dev command's sample (`/pagle dev party letter`), while ns.letter:ShowNow writes it.
+local devShowing = false
+
 --- The party letter's words as it shows (ANN-R116): the Pagle groupmate in the player's zone and that zone, or, for the
---- tour's sample and the dev command, the made-up Kukli Emnabi in the player's zone (Elwynn Forest where the client
---- can't name it).
+--- tour's sample and the dev command, always the made-up Kukli Emnabi in the player's zone (Elwynn Forest where the
+--- client can't name it), never a real groupmate.
 ---@return PagleLetterWords
 function ns.PartyLetterWords()
-	local member, map = ns.PartyGroupmateHere()
+	-- The tour's sample is the letter service's preview while it is written (logic/Letter.lua's TourShow, ONB-R84).
+	---@diagnostic disable-next-line: invisible -- read only: the service names no accessor for its preview alone
+	local sample = devShowing or ns.letter.preview == ID
+	local member, map
+	if not sample then
+		member, map = ns.PartyGroupmateHere()
+	end
 	local zone = mapName(map) or mapName(unsecret((C_Map.GetBestMapForUnit("player")))) or SAMPLE_ZONE
 	return {
 		text = ns.RenderText(
@@ -161,6 +170,11 @@ function ns.RunPartyLetterDev(args)
 		print(L.DEV_PARTY_LETTER_RESET)
 		return
 	end
-	ns.letter:ShowNow(ID)
+	devShowing = true
+	local ok, problem = pcall(ns.letter.ShowNow, ns.letter, ID)
+	devShowing = false
+	if not ok then
+		error(problem, 0)
+	end
 	print(ns.RenderText(L.DEV_PARTY_LETTER, { name = ns.PARTY_DEV_NAME }))
 end

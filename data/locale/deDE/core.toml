@@ -1533,6 +1533,10 @@ en = "Pagle dev: /pagle dev party <kind | all | cheer [1-4] | letter [reset]>, w
 value = "Pagle dev: eine Gruppeneinblendung von {name} steht an: {kind}."
 en = "Pagle dev: a party toast from {name} is queued: {kind}."
 
+[DEV_PARTY_HUNT_OFF]
+value = "Pagle dev: Nichts erscheint, solange Gruppenjagden, Momente meiner Gruppe zeigen oder Für die Gruppe geschafft aus ist."
+en = "Pagle dev: nothing shows while Party Hunts, Show my party's moments or Completed for the party is off."
+
 [DEV_PARTY_CHEERED]
 value = "Pagle dev: {count:0} Krüge für einen deiner Momente sind unterwegs."
 en = "Pagle dev: {count:0} cheers for a moment of yours are on their way."

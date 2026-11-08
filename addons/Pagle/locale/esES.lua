@@ -76,6 +76,7 @@ ns.Locale("esES", function(L)
 	L.DEV_ONBOARDING_RESET = "Pagle dev: la introducción vuelve a ser la de un Pescador nuevo, con la Carta esperando; haz /reload para empezar desde ahí."
 	L.DEV_ONBOARDING_USAGE = "Pagle dev: /pagle dev onboarding {usages}"
 	L.DEV_PARTY_CHEERED = "Pagle dev: {count:0} brindis por un momento tuyo van en camino."
+	L.DEV_PARTY_HUNT_OFF = "Pagle dev: no se muestra nada mientras Cazas en grupo, Mostrar los momentos de mi grupo o Completado para el grupo estén desactivados."
 	L.DEV_PARTY_LETTER = "Pagle dev: la carta del grupo está en pantalla, como si {name} pescara a tu lado."
 	L.DEV_PARTY_LETTER_RESET = "Pagle dev: se ha olvidado la respuesta a la carta del grupo; compartir con el grupo queda desactivado hasta que se responda."
 	L.DEV_PARTY_QUEUED = "Pagle dev: un aviso de grupo de {name} está en cola: {kind}."

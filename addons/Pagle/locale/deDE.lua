@@ -75,6 +75,7 @@ ns.Locale("deDE", function(L)
 	L.DEV_ONBOARDING_RESET = "Pagle dev: Das Onboarding steht wieder wie bei einem neuen Angler, der Brief wartet; /reload, um dort zu beginnen."
 	L.DEV_ONBOARDING_USAGE = "Pagle dev: /pagle dev onboarding {usages}"
 	L.DEV_PARTY_CHEERED = "Pagle dev: {count:0} Krüge für einen deiner Momente sind unterwegs."
+	L.DEV_PARTY_HUNT_OFF = "Pagle dev: Nichts erscheint, solange Gruppenjagden, Momente meiner Gruppe zeigen oder Für die Gruppe geschafft aus ist."
 	L.DEV_PARTY_LETTER = "Pagle dev: Der Gruppenbrief ist zu sehen, als ob {name} neben dir angelt."
 	L.DEV_PARTY_LETTER_RESET = "Pagle dev: Die Antwort auf den Gruppenbrief ist vergessen; das Teilen mit der Gruppe ist aus, bis er beantwortet wird."
 	L.DEV_PARTY_QUEUED = "Pagle dev: eine Gruppeneinblendung von {name} steht an: {kind}."

@@ -87,14 +87,21 @@ end
 ---@type table<string, { message: PaglePartyHunt, names: string[], from: table<string, true>, at: number }>
 local gathering = {}
 
---- A groupmate's hp (ANN-R111), already checked: taken while Party Hunts, Show my party's moments and its kind's switch
---- are on (SET-R35, SET-R36). The first of one Catch and Hunt waits the merge window for the others, each groupmate
---- once, then goes to the party queue as one toast, expiring from its arrival.
+--- Whether a groupmate's hp would show now: Party Hunts, Show my party's moments and its kind's switch are on (SET-R35,
+--- SET-R36).
+---@return boolean
+function ns.PartyHuntShows()
+	return ns.PartyHuntsOn() and ns.PartyOption("show") and ns.PartyKindOn(ns.PARTY_HUNT_KIND)
+end
+
+--- A groupmate's hp (ANN-R111), already checked: taken while it would show (ns.PartyHuntShows). The first of one Catch
+--- and Hunt waits the merge window for the others, each groupmate once, then goes to the party queue as one toast,
+--- expiring from its arrival.
 ---@param message PaglePartyHunt
 ---@param name string the groupmate's first name, as ANN-R111's lines name them ("for Kukli and Bram")
 ---@param key string the groupmate's key
 function ns.ReceivePartyHunt(message, name, key)
-	if not ns.PartyHuntsOn() or not ns.PartyOption("show") or not ns.PartyKindOn(ns.PARTY_HUNT_KIND) then
+	if not ns.PartyHuntShows() then
 		return
 	end
 	local merge = table.concat({ message.what, message.id, message.source }, "|")
