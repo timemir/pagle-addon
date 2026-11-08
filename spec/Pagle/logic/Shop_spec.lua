@@ -124,6 +124,14 @@ local FOR_SALE = {
 		{ "pearl", 5 },
 		{ "trophycase", 5 },
 	},
+	-- From 1.6, the news sign's looks by tier (SHOP-R60).
+	newssign = {
+		{ "scroll", 3 },
+		{ "lantern", 3 },
+		{ "astro", 4 },
+		{ "coral", 4 },
+		{ "kraken", 5 },
+	},
 }
 -- The toast styles that aren't for sale come after those that are, as the list outlines them not owned: Prize Foil,
 -- the Curio crate's alone (SHOP-R50). Sonar Scope, earned once the companion is linked (SHOP-R29), is no longer among
@@ -185,6 +193,13 @@ local function bindingLines(balance)
 	return joined({ "Book binding (1 of 34)", "  core.binding.field In use" }, saleLines("binding", balance))
 end
 
+-- Core's news sign slot (SHOP-R60), from 1.6, after its other slots: Wood in use and a balance of `balance`.
+---@param balance integer
+---@return string[]
+local function newsSignLines(balance)
+	return joined({ "News sign (1 of 6)", "  core.newssign.wood In use" }, saleLines("newssign", balance))
+end
+
 -- Core's own slots (SHOP-R25) as the list outlines them while nothing of Core's is bought and the balance is under
 -- 150: each default in use, everything else priced in red.
 local CORE_UNBOUGHT = joined(
@@ -195,7 +210,7 @@ local CORE_UNBOUGHT = joined(
 		),
 		CREST_LINES
 	),
-	bindingLines(0)
+	joined(bindingLines(0), newsSignLines(0))
 )
 
 -- CORE_UNBOUGHT, then `lines`.
@@ -451,7 +466,7 @@ describe("The Curio Shop's list", function()
 								saleLines("soundset", 300)
 							)
 						),
-						joined(CREST_LINES, bindingLines(300))
+						joined(CREST_LINES, joined(bindingLines(300), newsSignLines(300)))
 					),
 					{
 						"Journal binding (1 of 2)",
@@ -543,13 +558,14 @@ describe("The Curio Shop's list", function()
 			return list
 		end
 
-		assert.are.equal(25 + 27 + 1 + 34 + 2 + 2, #ids("all"))
+		assert.are.equal(25 + 27 + 1 + 34 + 6 + 2 + 2, #ids("all"))
 		assert.are.same({
 			"core.toaststyle.page",
 			"core.toaststyle.ripple",
 			"core.soundset.driftwood",
 			"core.crest.plain",
 			"core.binding.field",
+			"core.newssign.wood",
 			"ledger.binding.oak",
 			"hunts.cover.plain",
 		}, ids("owned"))
@@ -558,7 +574,7 @@ describe("The Curio Shop's list", function()
 		table.remove(toastStyles, 1)
 		local notOwned = joined(
 			joined(joined(toastStyles, ROUND_TWO_IDS), saleAffordable("soundset", math.huge)),
-			saleAffordable("binding", math.huge)
+			joined(saleAffordable("binding", math.huge), saleAffordable("newssign", math.huge))
 		)
 		assert.are.same(joined(notOwned, { "ledger.binding.lapis", "hunts.cover.velvet" }), ids("notOwned"))
 		local affordableStyles = saleAffordable("toaststyle", 550)
@@ -2042,7 +2058,7 @@ describe("The Curio crate", function()
 
 		local pool = fake.ns.CRATE_POOL
 		local grown = { unpack(pool) }
-		grown[#grown + 1] = { id = "core.binding.later", tier = 1, kind = "binding", since = SERVER_TIME - 100 }
+		grown[#grown + 1] = { id = "core.binding.later", tier = 1, kind = "binding", since = "pagle-2026a" }
 		fake.ns.CRATE_POOL = grown
 		shop = model(fake)
 
@@ -2053,7 +2069,7 @@ describe("The Curio crate", function()
 		fake.ns.CRATE_POOL = pool
 	end)
 
-	it("keeps the row for a pool good that joins later, only once its release has come (SHOP-R53)", function()
+	it("keeps the row for a pool good that joins later, only under its rule set or a later one (SHOP-R53)", function()
 		local owned = {}
 		for _, row in ipairs(crated(0).ns.CRATE_POOL) do
 			owned[#owned + 1] = row.id
@@ -2061,10 +2077,10 @@ describe("The Curio crate", function()
 		local fake = crated(5000, owned)
 		local pool = fake.ns.CRATE_POOL
 		local grown = { unpack(pool) }
-		grown[#grown + 1] = { id = "core.binding.later", tier = 1, kind = "binding", since = SERVER_TIME + 1000 }
+		grown[#grown + 1] = { id = "core.binding.later", tier = 1, kind = "binding", since = "pagle-2099a" }
 		fake.ns.CRATE_POOL = grown
 
-		assert(model(fake):Crate({}) == nil, "a release not yet out adds no candidate")
+		assert(model(fake):Crate({}) == nil, "a rule set not yet in force adds no candidate")
 		fake.ns.CRATE_POOL = pool
 	end)
 
@@ -2085,7 +2101,7 @@ describe("The Curio crate", function()
 			assert.are.equal(purchaseEntry(SERVER_TIME, CRATE, 1500, 1), entries[#entries])
 			local guid = fake.catchLog.data.characters[1].guid
 			local entryID = ("%s-%d-1"):format(guid, SERVER_TIME)
-			assert.are.same(fake.ns.CrateRoll(entryID, {}, 0, SERVER_TIME, 1500), result)
+			assert.are.same(fake.ns.CrateRoll(entryID, {}, 0, nil, 1500), result)
 			local crates = fake.ns.walletSnapshot.crates
 			assert.are.same({ result.good or result.payback }, crates)
 			assert.are.equal(3500 - 1500 + (result.payback or 0), Pagle.GetBalance().balance)

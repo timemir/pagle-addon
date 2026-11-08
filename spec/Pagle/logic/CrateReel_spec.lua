@@ -119,14 +119,24 @@ describe("The reel's cards (SHOP-R55, Motion row)", function()
 		assert.are.same({ tier = "curio", face = "coin" }, spent[1])
 	end)
 
-	it("reads the candidates as of the crate's time (SHOP-R53)", function()
+	it("reads the candidates under the crate's rule set (SHOP-R53)", function()
 		local pool = fixturePool()
-		pool[#pool + 1] = { id = "later", tier = 2, kind = "soundset", since = 2000 }
+		pool[#pool + 1] = { id = "later", tier = 2, kind = "soundset", since = "pagle-2026j" }
 		ns.CRATE_POOL = pool
 
-		-- a roll of 500 is tier 2; the second roll of 2 asks for its second candidate, which only the later time has
-		local before = ns.CrateReelCards({ tier = 1, good = "t1.a" }, { ["t1.a"] = true }, 1000, rolls({ 500, 2 }))
-		local after = ns.CrateReelCards({ tier = 1, good = "t1.a" }, { ["t1.a"] = true }, 3000, rolls({ 500, 2 }))
+		-- a roll of 500 is tier 2; the second roll of 2 asks for its second candidate, which only the later rule set has
+		local before = ns.CrateReelCards(
+			{ tier = 1, good = "t1.a" },
+			{ ["t1.a"] = true },
+			"pagle-2026i",
+			rolls({ 500, 2 })
+		)
+		local after = ns.CrateReelCards(
+			{ tier = 1, good = "t1.a" },
+			{ ["t1.a"] = true },
+			"pagle-2026j",
+			rolls({ 500, 2 })
+		)
 
 		assert.are.same({ tier = 2, face = "kind", kind = "binding" }, before[1])
 		assert.are.same({ tier = 2, face = "kind", kind = "soundset" }, after[1])

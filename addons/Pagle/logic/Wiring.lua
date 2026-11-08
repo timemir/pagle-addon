@@ -968,7 +968,7 @@ function ns.WireShop(host, seams)
 		-- from the entry and that state alone), so its tier comes too: the log keeps only the good or the payback.
 		local before = ns.walletSnapshot or { owned = {}, dry = 0 }
 		local record = ns.RecordPurchase(purchase.id, purchase.price)
-		return true, ns.CrateRoll(record.id, before.owned, before.dry, record.time, record.price)
+		return true, ns.CrateRoll(record.id, before.owned, before.dry, before.rules, record.price)
 	end
 
 	--- Equips `goodID` in its slot, if it is an owned good registered this session (SHOP-R32): the stage's Use.

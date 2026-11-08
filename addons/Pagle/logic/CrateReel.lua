@@ -98,13 +98,14 @@ end
 --- SHOP-R51 draws, from what the Angler could still win: a crate tier by the odds, then, if that tier has candidates, the
 --- kind of one of them, and if not, a coin card in the tier's colour; Curio's card, while a crate-only good is a
 --- candidate, is the "?". `owned` is what the Angler owns now, the crate's own good among it (it gave a good not owned
---- before), `now` the server time, and `rand(n)` a whole number from 1 to n (math.random).
+--- before), `rules` the rule set the crate was drawn under (SHOP-R53), and `rand(n)` a whole number from 1 to n
+--- (math.random).
 ---@param result PagleCrateResult
 ---@param owned table<string, true>
----@param now integer?
+---@param rules string?
 ---@param rand fun(n: integer): integer
 ---@return PagleCrateCard[]
-function ns.CrateReelCards(result, owned, now, rand)
+function ns.CrateReelCards(result, owned, rules, rand)
 	local before = {}
 	for id in pairs(owned) do
 		before[id] = true
@@ -114,7 +115,7 @@ function ns.CrateReelCards(result, owned, now, rand)
 	end
 	local candidates = {}
 	for _, tier in ipairs(ns.CRATE_TIERS) do
-		candidates[tier] = ns.CrateCandidates(tier, before, now)
+		candidates[tier] = ns.CrateCandidates(tier, before, rules)
 	end
 	local reel = ns.CRATE_REEL
 	local cards = {}

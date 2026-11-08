@@ -32,14 +32,12 @@ local TWO_32 = 2 ^ 32
 ---@field id string
 ---@field tier 1|2|3|4|5|6|"curio"
 ---@field kind "toaststyle"|"soundset"|"binding"|"trackerframe"|"crest"|"newssign"
----@field since? integer   -- the server time of the release that added it: a candidate only for crates bought from
---- then on (SHOP-R53); nil for the pool's first goods
+---@field since? string  -- the rule set of the release that added it: a candidate only for crates bought under that
+--- rule set or a later one (SHOP-R53); nil for the pool's first goods
 
---- The server time of 1.6's release (SHOP-R53, SHOP-R62): the news sign's five looks join the pool from it, so only a
---- crate bought from then on can give one. 1.6's release commit sets it, in Unix seconds, no earlier than the release
---- is out; until then it is math.huge, so no crate gives one and no crate already in the log changes. A nil here would
---- put them in the pool from 1.0 (the pool's first rows' `since`), re-drawing past crates: never leave it nil.
-ns.RELEASE_1_6 = math.huge
+--- The rule set the news sign's five looks join the pool with (SHOP-R53, SHOP-R62): 1.6's, so only a crate bought under
+--- pagle-2026j or a later rule set can give one, and no crate bought under 1.5.x, whenever it was bought, is drawn again.
+ns.NEWS_SIGN_POOL_SINCE = "pagle-2026j"
 
 --- The crate pool (SHOP-R50, Tunables): every good for sale and every crate-only good at 1.0, in the shop's order
 --- (SHOP-R53): Core's slots as SHOP-R25 lists them (toast styles, sound sets, crests, bindings), then each Module's by
@@ -153,11 +151,11 @@ ns.CRATE_POOL = {
 	{ id = "tackleboard.trackerframe.tin", tier = 2, kind = "trackerframe" },
 	{ id = "tackleboard.trackerframe.bobber", tier = 2, kind = "trackerframe" },
 	-- 1.6: the news sign's five looks, in registration order (SHOP-R60, SHOP-R62).
-	{ id = "core.newssign.scroll", tier = 3, kind = "newssign", since = ns.RELEASE_1_6 },
-	{ id = "core.newssign.lantern", tier = 3, kind = "newssign", since = ns.RELEASE_1_6 },
-	{ id = "core.newssign.kraken", tier = 5, kind = "newssign", since = ns.RELEASE_1_6 },
-	{ id = "core.newssign.astro", tier = 4, kind = "newssign", since = ns.RELEASE_1_6 },
-	{ id = "core.newssign.coral", tier = 4, kind = "newssign", since = ns.RELEASE_1_6 },
+	{ id = "core.newssign.scroll", tier = 3, kind = "newssign", since = ns.NEWS_SIGN_POOL_SINCE },
+	{ id = "core.newssign.lantern", tier = 3, kind = "newssign", since = ns.NEWS_SIGN_POOL_SINCE },
+	{ id = "core.newssign.kraken", tier = 5, kind = "newssign", since = ns.NEWS_SIGN_POOL_SINCE },
+	{ id = "core.newssign.astro", tier = 4, kind = "newssign", since = ns.NEWS_SIGN_POOL_SINCE },
+	{ id = "core.newssign.coral", tier = 4, kind = "newssign", since = ns.NEWS_SIGN_POOL_SINCE },
 }
 
 --- What a crate gave (SHOP-R51): the crate tier it rolled, and the good, or, with no candidate left in that tier, the
@@ -168,38 +166,71 @@ ns.CRATE_POOL = {
 ---@field crateOnly? true    -- the good is crate only (SHOP-R52)
 ---@field payback? integer   -- the Coins it paid back (SHOP-R51)
 
--- Whether `row` is in the pool by `time` (SHOP-R53).
----@param row PagleCratePoolGood
----@param time integer?
----@return boolean
-local function inPool(row, time)
-	return row.since == nil or (time ~= nil and time >= row.since)
+-- A rule-set ID's year and letters ("pagle-2026j" is 2026 and "j"), or nil for an ID of another shape.
+---@param rules string?
+---@return integer? year
+---@return string? letters
+local function ruleSetParts(rules)
+	if type(rules) ~= "string" then
+		return nil, nil
+	end
+	local year, letters = rules:match("^pagle%-(%d%d%d%d)(%l+)$")
+	return tonumber(year), letters
 end
 
---- The candidates of crate tier `tier` for a crate bought at `time` (SHOP-R51): its pool goods that are in the pool by
---- then and not in `owned` (what earlier purchases and crates gave), in pool order.
+--- Whether the rule set `rules` is `since` or a later one (SHOP-R53): by year, then by its letters, a longer run of
+--- letters after a shorter ("pagle-2026z" before "pagle-2026aa"). A rule set of another shape, or none, is no later
+--- than any.
+---@param rules string?
+---@param since string
+---@return boolean
+function ns.RuleSetAtLeast(rules, since)
+	local year, letters = ruleSetParts(rules)
+	local sinceYear, sinceLetters = ruleSetParts(since)
+	if not (year and letters and sinceYear and sinceLetters) then
+		return false
+	end
+	if year ~= sinceYear then
+		return year > sinceYear
+	end
+	if #letters ~= #sinceLetters then
+		return #letters > #sinceLetters
+	end
+	return letters >= sinceLetters
+end
+
+-- Whether `row` is in the pool for a crate bought under the rule set `rules` (SHOP-R53).
+---@param row PagleCratePoolGood
+---@param rules string?
+---@return boolean
+local function inPool(row, rules)
+	return row.since == nil or ns.RuleSetAtLeast(rules, row.since)
+end
+
+--- The candidates of crate tier `tier` for a crate bought under the rule set `rules` (SHOP-R51): its pool goods that are
+--- in the pool for it and not in `owned` (what earlier purchases and crates gave), in pool order.
 ---@param tier 1|2|3|4|5|6|"curio"
 ---@param owned table<string, true>
----@param time integer?
+---@param rules string?
 ---@return PagleCratePoolGood[]
-function ns.CrateCandidates(tier, owned, time)
+function ns.CrateCandidates(tier, owned, rules)
 	local found = {}
 	for _, row in ipairs(ns.CRATE_POOL) do
-		if row.tier == tier and not owned[row.id] and inPool(row, time) then
+		if row.tier == tier and not owned[row.id] and inPool(row, rules) then
 			found[#found + 1] = row
 		end
 	end
 	return found
 end
 
---- Whether any pool good in the pool by `time` is a candidate (SHOP-R54): the Buy's first condition, and the crate's
+--- Whether any pool good in the pool under the rule set `rules` is a candidate (SHOP-R54): the Buy's first condition, and the crate's
 --- row staying in the list.
 ---@param owned table<string, true>
----@param time integer?
+---@param rules string?
 ---@return boolean
-function ns.CrateHasCandidates(owned, time)
+function ns.CrateHasCandidates(owned, rules)
 	for _, row in ipairs(ns.CRATE_POOL) do
-		if not owned[row.id] and inPool(row, time) then
+		if not owned[row.id] and inPool(row, rules) then
 			return true
 		end
 	end
@@ -233,22 +264,22 @@ local function tierOf(h)
 	return "curio"
 end
 
---- The crate whose purchase entry has the ID `entryID`, bought at `time` for `price`, as the draw opens it (SHOP-R51,
+--- The crate whose purchase entry has the ID `entryID`, bought under the rule set `rules` for `price`, as the draw opens it (SHOP-R51,
 --- SHOP-R52): its crate tier by the entry ID's hash, or Curio at the pity (`dry` crates in a row without a crate-only
 --- good, CRATE_PITY - 1 or more, while a crate-only good is a candidate); then the candidate of that tier at position
 --- `⌊h(entry ID .. "/good") × n / 2^32⌋ + 1`, or with none the Coins paid back.
 ---@param entryID string the crate's U1 entry ID (LOG-R13)
 ---@param owned table<string, true>
 ---@param dry integer
----@param time integer?
+---@param rules string? the rule set it was bought under: the log's last build entry's before it (LOG-R36)
 ---@param price integer the crate's price, the U1's
 ---@return PagleCrateResult
-function ns.CrateRoll(entryID, owned, dry, time, price)
+function ns.CrateRoll(entryID, owned, dry, rules, price)
 	local tier = tierOf(ns.SizeHash(entryID))
-	if (dry or 0) >= ns.CRATE_PITY - 1 and #ns.CrateCandidates("curio", owned, time) > 0 then
+	if (dry or 0) >= ns.CRATE_PITY - 1 and #ns.CrateCandidates("curio", owned, rules) > 0 then
 		tier = "curio"
 	end
-	local candidates = ns.CrateCandidates(tier, owned, time)
+	local candidates = ns.CrateCandidates(tier, owned, rules)
 	local n = #candidates
 	if n == 0 then
 		return { tier = tier, payback = ns.CratePayback(tier, price) }
@@ -265,14 +296,15 @@ end
 ---@field payback? integer     -- what the next crate pays back when it rolls the tier with none left
 
 --- The odds of each crate tier for the next crate, in CRATE_TIERS' order (SHOP-R54): its odds, its goods left in the
---- pool by `now`, and with none left what it would pay back at the crate's price now.
+--- pool under the rule set `rules` (the next crate's), and with none left what it would pay back at the crate's price
+--- now.
 ---@param owned table<string, true>
----@param now integer?
+---@param rules string?
 ---@return PagleCrateTierOdds[]
-function ns.CrateOdds(owned, now)
+function ns.CrateOdds(owned, rules)
 	local odds = {}
 	for i, tier in ipairs(ns.CRATE_TIERS) do
-		local left = #ns.CrateCandidates(tier, owned, now)
+		local left = #ns.CrateCandidates(tier, owned, rules)
 		odds[i] = {
 			tier = tier,
 			permille = ns.CRATE_ODDS[i],
@@ -284,13 +316,13 @@ function ns.CrateOdds(owned, now)
 end
 
 --- How many more crates at most until a crate-only good comes (SHOP-R52, SHOP-R54): CRATE_PITY less the crates in a
---- row without one, at least 1; nil when no crate-only good in the pool by `now` is a candidate.
+--- row without one, at least 1; nil when no crate-only good in the pool under `rules` is a candidate.
 ---@param owned table<string, true>
 ---@param dry integer
----@param now integer?
+---@param rules string?
 ---@return integer?
-function ns.CratePityLeft(owned, dry, now)
-	if #ns.CrateCandidates("curio", owned, now) == 0 then
+function ns.CratePityLeft(owned, dry, rules)
+	if #ns.CrateCandidates("curio", owned, rules) == 0 then
 		return nil
 	end
 	return math.max(ns.CRATE_PITY - (dry or 0), 1)

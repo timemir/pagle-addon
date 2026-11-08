@@ -15,8 +15,8 @@ local ns = select(2, ...)
 ---@field format? fun(value: number): string -- writes a number of Coins (BreakUpLargeNumbers); tostring by default
 ---@field wallet? PagleWalletSnapshot       -- the wallet projection's crates and owned set (ns.walletSnapshot); none
 --- before its first hand-over, read as nothing owned and no crate opened
----@field now? integer                      -- the server time, for the pool goods in the crate by now (SHOP-R53) and for an
---- earned good's fallback date (SHOP-R28); with none, no fallback has been reached
+---@field now? integer                      -- the server time, for an earned good's fallback date (SHOP-R28); with none, no
+--- fallback has been reached. The crate's pool goes by rule set, not time (SHOP-R53).
 
 ---@class PagleShopModel
 ---@field private sources PagleShopSources
@@ -161,6 +161,14 @@ local FILTERS = {
 ---@return PagleWalletSnapshot
 local function walletOf(sources)
 	return sources.wallet or { crates = {}, dry = 0, owned = {}, companion = false }
+end
+
+-- The rule set the next crate is drawn under (SHOP-R53): the log's last build entry's, as the wallet projection has it,
+-- else this client's own, whose build entry login appends (LOG-R36).
+---@param sources PagleShopSources
+---@return string
+local function crateRules(sources)
+	return walletOf(sources).rules or ns.RULE_SET_ID
 end
 
 -- Whether a Curio crate gave `goodID` (SHOP-R50).
@@ -718,7 +726,7 @@ function Model:CrateOpen()
 	if self.sources.goods:OwnsAll() then
 		return false
 	end
-	return ns.CrateHasCandidates(walletOf(self.sources).owned, self.sources.now)
+	return ns.CrateHasCandidates(walletOf(self.sources).owned, crateRules(self.sources))
 end
 
 --- The Curio crate's row (SHOP-R50, SHOP-R54): "Curio crate" with its price, in red when the balance falls short; nil
@@ -791,7 +799,7 @@ function Model:CrateStage()
 		return nil
 	end
 	local wallet = walletOf(self.sources)
-	local now = self.sources.now
+	local rules = crateRules(self.sources)
 	local stage = {
 		id = ns.CRATE_ID,
 		name = L.SHOP_CRATE,
@@ -804,7 +812,7 @@ function Model:CrateStage()
 		notes = {},
 		odds = {},
 	}
-	for i, odds in ipairs(ns.CrateOdds(wallet.owned, now)) do
+	for i, odds in ipairs(ns.CrateOdds(wallet.owned, rules)) do
 		stage.odds[i] = {
 			tier = odds.tier,
 			name = L.SHOP_CRATE_TIERS[odds.tier],
@@ -815,7 +823,7 @@ function Model:CrateStage()
 			chance = percent(odds.permille),
 		}
 	end
-	local left = ns.CratePityLeft(wallet.owned, wallet.dry, now)
+	local left = ns.CratePityLeft(wallet.owned, wallet.dry, rules)
 	if left then
 		stage.pity = ns.RenderText(L.SHOP_CRATE_PITY, { count = left })
 	end
@@ -928,5 +936,5 @@ end
 ---@param rand fun(n: integer): integer
 ---@return PagleCrateCard[]
 function Model:CrateReel(result, rand)
-	return ns.CrateReelCards(result, walletOf(self.sources).owned, self.sources.now, rand)
+	return ns.CrateReelCards(result, walletOf(self.sources).owned, crateRules(self.sources), rand)
 end

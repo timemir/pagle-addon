@@ -1980,7 +1980,7 @@ describe("The Curio crate in the window", function()
 
 			local pool = loaded.ns.CRATE_POOL
 			local grown = { unpack(pool) }
-			grown[#grown + 1] = { id = "core.binding.later", tier = 1, kind = "binding", since = 1 }
+			grown[#grown + 1] = { id = "core.binding.later", tier = 1, kind = "binding", since = "pagle-2026a" }
 			loaded.ns.CRATE_POOL = grown
 			loaded.env.Pagle.OpenShop("core.crate")
 

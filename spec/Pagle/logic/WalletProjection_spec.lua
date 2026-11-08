@@ -439,6 +439,45 @@ describe("The wallet projection's Curio crates", function()
 	)
 
 	it(
+		"draws each crate under the rule set of the last build entry before it: a good joining with pagle-2026j is"
+			.. " never a candidate for a crate bought under 1.5.x's, however late, so its payback stands; a crate bought"
+			.. " under pagle-2026j can give it (SHOP-R10, SHOP-R53, SHOP-R62, LOG-R36)",
+		function()
+			local late = "core.newssign.kraken"
+			ns.CRATE_POOL = {
+				{ id = CRIMSON, tier = 1, kind = "crest" },
+				{ id = late, tier = 4, kind = "newssign", since = "pagle-2026j" },
+			}
+			local function build(time, rules)
+				return ("B1|1|%d|0|70338|1.60.1|%s"):format(time, rules)
+			end
+			local first, second = SERVER_TIME - 90000 + 10, SERVER_TIME - 90000 + 30
+			stubHashes({ [first] = TIER_4, [second] = TIER_4 })
+			local entries = {
+				build(SERVER_TIME - 90000, "pagle-2026i"),
+				-- a 1.5.x client's crate, bought after any release time of 1.6
+				crateEntry(first),
+				build(SERVER_TIME - 90000 + 20, "pagle-2026j"),
+				crateEntry(second),
+			}
+			local world = newWorld(entries)
+			world.wallet:Report("Ledger", 5000)
+
+			world.enterWorld()
+
+			local state = world.db.projection
+			assert.are.same({ 1500, late }, state.crates)
+			assert.are.equal("pagle-2026j", state.rules)
+			assert.are.equal(1500 - 1500 + 1500, state.spent)
+			assert.are.equal("pagle-2026j", world.snapshots[#world.snapshots].rules)
+			-- the same again on a rebuild from the log alone
+			local again = newWorld(entries)
+			again.enterWorld()
+			assert.are.same(state.crates, again.db.projection.crates)
+		end
+	)
+
+	it(
 		"notes the time of the crate that gave a good, never of a payback, and hands the goods crates gave over as"
 			.. " fromCrate, purchased staying false for them (SHOP-R36, SHOP-R50)",
 		function()
@@ -598,7 +637,7 @@ describe("The wallet projection's Curio crates", function()
 			assert.are.equal(3, world.db.rulesVersion)
 			local state = world.db.projection
 			assert.are.equal(2, #state.crates)
-			local first = ns.CrateRoll(("%s-%d-0"):format(ADA, SERVER_TIME - 9000), {}, 0, SERVER_TIME - 9000, 2000)
+			local first = ns.CrateRoll(("%s-%d-0"):format(ADA, SERVER_TIME - 9000), {}, 0, nil, 2000)
 			assert.are.equal(first.good or first.payback, state.crates[1])
 		end
 	)
@@ -610,7 +649,7 @@ describe("The wallet projection's Curio crates", function()
 
 		world.live({ kind = "purchase", good = "core.crate", price = PRICE })
 
-		local roll = ns.CrateRoll(("%s-%d-0"):format(ADA, SERVER_TIME), {}, 0, SERVER_TIME, PRICE)
+		local roll = ns.CrateRoll(("%s-%d-0"):format(ADA, SERVER_TIME), {}, 0, nil, PRICE)
 		assert.are.equal(roll.good, world.db.projection.crates[1])
 		assert.is_true(world.goods:IsOwned(roll.good))
 		assert.are.equal(1500, world.wallet:Get().balance)

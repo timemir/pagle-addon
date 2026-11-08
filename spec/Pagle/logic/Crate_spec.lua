@@ -127,22 +127,13 @@ describe("The news sign's looks in the Curio crate (SHOP-R62)", function()
 		return rows
 	end
 
-	-- The real pool with the five's `since` at `time`, as 1.6's release commit sets it.
-	local function poolReleasedAt(time)
-		local rows = {}
-		for i, row in ipairs(realPool) do
-			rows[i] = { id = row.id, tier = row.tier, kind = row.kind, since = row.since and time or nil }
-		end
-		return rows
-	end
-
-	-- A history of `n` crates bought one after another from server time `from`, as the wallet projection opens them:
-	-- each crate's result, the goods it gave owned from then on, and the dry count of SHOP-R52.
-	local function history(pool, from, n)
+	-- A history of `n` crates bought one after another under the rule set `rules`, as the wallet projection opens
+	-- them: each crate's result, the goods it gave owned from then on, and the dry count of SHOP-R52.
+	local function history(pool, rules, n)
 		ns.CRATE_POOL = pool
 		local owned, dry, results = {}, 0, {}
 		for t = 0, n - 1 do
-			local roll = ns.CrateRoll(crateID(t), owned, dry, from + t * 60, PRICE)
+			local roll = ns.CrateRoll(crateID(t), owned, dry, rules, PRICE)
 			results[#results + 1] = roll
 			if roll.good then
 				owned[roll.good] = true
@@ -153,78 +144,77 @@ describe("The news sign's looks in the Curio crate (SHOP-R62)", function()
 		return results
 	end
 
-	local RELEASE = 1800000000
-
 	it("join the pool at its end, in registration order, at their price tiers, as kind newssign (SHOP-R62)", function()
 		local added = {}
 		for i = FIRST_ROWS + 1, #realPool do
 			local row = realPool[i]
-			added[#added + 1] = { row.id, row.tier, row.kind }
+			added[#added + 1] = { row.id, row.tier, row.kind, row.since }
 		end
 		assert.are.same({
-			{ "core.newssign.scroll", 3, "newssign" },
-			{ "core.newssign.lantern", 3, "newssign" },
-			{ "core.newssign.kraken", 5, "newssign" },
-			{ "core.newssign.astro", 4, "newssign" },
-			{ "core.newssign.coral", 4, "newssign" },
+			{ "core.newssign.scroll", 3, "newssign", "pagle-2026j" },
+			{ "core.newssign.lantern", 3, "newssign", "pagle-2026j" },
+			{ "core.newssign.kraken", 5, "newssign", "pagle-2026j" },
+			{ "core.newssign.astro", 4, "newssign", "pagle-2026j" },
+			{ "core.newssign.coral", 4, "newssign", "pagle-2026j" },
 		}, added)
+		assert.are.equal("pagle-2026j", ns.NEWS_SIGN_POOL_SINCE)
 	end)
 
 	it(
-		"join with 1.6's release time as their `since`, so they wait for the release commit to set it (SHOP-R53)",
+		"leave every crate bought under 1.5.x's rule set as it was, whenever it was bought: the same goods and paybacks"
+			.. " (SHOP-R10, SHOP-R53)",
 		function()
-			assert.is_number(ns.RELEASE_1_6)
-			for i = FIRST_ROWS + 1, #realPool do
-				assert.are.equal(ns.RELEASE_1_6, realPool[i].since, realPool[i].id)
-			end
-			-- No crate bought before it can give one: until the release sets it, however late a crate is bought.
-			local before = math.min(4102444800, ns.RELEASE_1_6 - 1)
-			for _, tier in ipairs({ 3, 4, 5 }) do
-				for _, row in ipairs(ns.CrateCandidates(tier, {}, before)) do
-					assert(not row.id:find("^core%.newssign%."), row.id .. " is a candidate before 1.6's release")
-				end
+			local before = history(poolAtOneZero(), "pagle-2026i", 400)
+			for _, rules in ipairs({ "pagle-2026i", "pagle-2026e", "pagle-2026a", "pagle-2025z", "dev", false }) do
+				assert.are.same(before, history(realPool, rules or nil, 400), tostring(rules))
 			end
 		end
 	)
 
 	it(
-		"leave every crate already in the log as it was: the same goods and paybacks before 1.6's release (SHOP-R53)",
+		"change only a tier 3, 4 or 5 crate bought under pagle-2026j or later, and only to give one of the five"
+			.. " (SHOP-R51, SHOP-R53)",
 		function()
-			local before = history(poolAtOneZero(), 1791731700, 400)
-			assert.are.same(before, history(realPool, 1791731700, 400))
-			assert.are.same(before, history(poolReleasedAt(RELEASE), 1791731700, 400))
-			-- One crate a second until the release's own second, which is the first crate that can give one.
-			assert.are.same(
-				history(poolAtOneZero(), RELEASE - 120, 2),
-				history(poolReleasedAt(RELEASE), RELEASE - 120, 2)
-			)
-		end
-	)
-
-	it(
-		"change only a tier 3, 4 or 5 crate bought from 1.6's release on, and only to give one of the five (SHOP-R51)",
-		function()
-			local old = history(poolAtOneZero(), RELEASE, 400)
-			local new = history(poolReleasedAt(RELEASE), RELEASE, 400)
-			local changed, gave = 0, {}
-			for i, roll in ipairs(new) do
-				assert.are.equal(old[i].tier, roll.tier, "crate " .. i .. "'s tier")
-				if roll.tier == 1 or roll.tier == 2 or roll.tier == 6 or roll.tier == "curio" then
-					-- Once an earlier crate gave one of the five, later ones may differ only by what that crate didn't give.
-					if changed == 0 then
-						assert.are.same(old[i], roll, "crate " .. i)
-					end
-				elseif not (old[i].good == roll.good and old[i].payback == roll.payback) then
-					changed = changed + 1
-					if roll.good and roll.good:find("^core%.newssign%.") then
-						gave[roll.good] = true
+			for _, rules in ipairs({ "pagle-2026j", "pagle-2026k", "pagle-2027a" }) do
+				local old = history(poolAtOneZero(), rules, 400)
+				local new = history(realPool, rules, 400)
+				local changed, gave = 0, {}
+				for i, roll in ipairs(new) do
+					assert.are.equal(old[i].tier, roll.tier, "crate " .. i .. "'s tier")
+					if roll.tier == 1 or roll.tier == 2 or roll.tier == 6 or roll.tier == "curio" then
+						-- Once an earlier crate gave one of the five, later ones may differ only by what that crate
+						-- didn't give.
+						if changed == 0 then
+							assert.are.same(old[i], roll, "crate " .. i)
+						end
+					elseif not (old[i].good == roll.good and old[i].payback == roll.payback) then
+						changed = changed + 1
+						if roll.good and roll.good:find("^core%.newssign%.") then
+							gave[roll.good] = true
+						end
 					end
 				end
+				assert(changed > 0, rules .. ": some crate gives a news sign look")
+				assert(next(gave), rules .. ": a changed crate gives one of the five")
 			end
-			assert(changed > 0, "some crate from the release on gives a news sign look")
-			assert(next(gave), "a changed crate gives one of the five")
 		end
 	)
+end)
+
+describe("ns.RuleSetAtLeast", function()
+	it("orders rule sets by year, then by letters, and puts no other shape after any (SHOP-R53)", function()
+		assert.are.same({ true, true, true, true, false, false, false, false, false }, {
+			ns.RuleSetAtLeast("pagle-2026j", "pagle-2026j"),
+			ns.RuleSetAtLeast("pagle-2026k", "pagle-2026j"),
+			ns.RuleSetAtLeast("pagle-2027a", "pagle-2026j"),
+			ns.RuleSetAtLeast("pagle-2026aa", "pagle-2026z"),
+			ns.RuleSetAtLeast("pagle-2026i", "pagle-2026j"),
+			ns.RuleSetAtLeast("pagle-2025z", "pagle-2026j"),
+			ns.RuleSetAtLeast(nil, "pagle-2026j"),
+			ns.RuleSetAtLeast("dev", "pagle-2026j"),
+			ns.RuleSetAtLeast("pagle-2026J", "pagle-2026j"),
+		})
+	end)
 end)
 
 describe("ns.CrateRoll's crate tier", function()
@@ -307,7 +297,7 @@ describe("ns.CrateRoll's good", function()
 	it("is never one already owned, nor one given twice, over a long run of the real pool (SHOP-R51)", function()
 		local owned, seen = {}, {}
 		for t = 0, 399 do
-			local roll = ns.CrateRoll(crateID(t), owned, 0, 1791731700, PRICE)
+			local roll = ns.CrateRoll(crateID(t), owned, 0, nil, PRICE)
 			if roll.good then
 				assert(seen[roll.good] == nil, roll.good .. " came twice")
 				seen[roll.good] = true
@@ -323,22 +313,29 @@ describe("ns.CrateRoll's good", function()
 
 	it("is the same for the same entry and owned set, every time (SHOP-R51, ADR 0004)", function()
 		for t = 0, 40 do
-			local first = ns.CrateRoll(crateID(t), { ["core.toaststyle.foil"] = true }, 2, 1791731700, PRICE)
-			assert.are.same(first, ns.CrateRoll(crateID(t), { ["core.toaststyle.foil"] = true }, 2, 1791731700, PRICE))
+			local first = ns.CrateRoll(crateID(t), { ["core.toaststyle.foil"] = true }, 2, "pagle-2026j", PRICE)
+			assert.are.same(
+				first,
+				ns.CrateRoll(crateID(t), { ["core.toaststyle.foil"] = true }, 2, "pagle-2026j", PRICE)
+			)
 		end
 	end)
 
-	it("comes from the pool's rows by `since`: a candidate only for a crate bought from then on (SHOP-R53)", function()
-		ns.CRATE_POOL = { { id = "late.a", tier = 1, kind = "binding", since = 1000 } }
-		hashes(0, 0)
-		assert.are.same({ tier = 1, payback = 250 }, ns.CrateRoll("e", {}, 0, 999, PRICE))
-		assert.are.same({ tier = 1, payback = 250 }, ns.CrateRoll("e", {}, 0, nil, PRICE))
-		assert.are.same({ tier = 1, good = "late.a" }, ns.CrateRoll("e", {}, 0, 1000, PRICE))
-		assert.are.same({}, ns.CrateCandidates(1, {}, 999))
-		assert.are.same({ "late.a" }, { ns.CrateCandidates(1, {}, 1001)[1].id })
-		assert.is_false(ns.CrateHasCandidates({}, 999))
-		assert.is_true(ns.CrateHasCandidates({}, 1000))
-	end)
+	it(
+		"comes from the pool's rows by `since`: a candidate only for a crate bought under that rule set or a later one"
+			.. " (SHOP-R53)",
+		function()
+			ns.CRATE_POOL = { { id = "late.a", tier = 1, kind = "binding", since = "pagle-2026j" } }
+			hashes(0, 0)
+			assert.are.same({ tier = 1, payback = 250 }, ns.CrateRoll("e", {}, 0, "pagle-2026i", PRICE))
+			assert.are.same({ tier = 1, payback = 250 }, ns.CrateRoll("e", {}, 0, nil, PRICE))
+			assert.are.same({ tier = 1, good = "late.a" }, ns.CrateRoll("e", {}, 0, "pagle-2026j", PRICE))
+			assert.are.same({}, ns.CrateCandidates(1, {}, "pagle-2026i"))
+			assert.are.same({ "late.a" }, { ns.CrateCandidates(1, {}, "pagle-2026k")[1].id })
+			assert.is_false(ns.CrateHasCandidates({}, "pagle-2026i"))
+			assert.is_true(ns.CrateHasCandidates({}, "pagle-2026j"))
+		end
+	)
 end)
 
 describe("ns.CrateRoll's payback", function()
