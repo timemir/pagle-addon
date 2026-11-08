@@ -25,12 +25,15 @@ local ns = select(2, ...)
 ---@field best integer             -- Pagle.GetAngler().bestBaseSkill (HNT-R33)
 ---@field sources HuntNameSources
 
---- One tier's step on the ladder (HNT-R64): its threshold and, once reached, its Catch's short date and zone.
+--- One tier's step on the ladder (HNT-R64): its threshold and, once reached, its Catch's short date and zone; from
+--- 1.6, "party" after them and a tooltip when a groupmate's Catch reached it (HNT-R186).
 ---@class HuntEntryTier
 ---@field tier integer
 ---@field threshold integer
 ---@field reached boolean
----@field when string?   -- "12 Oct, Darkshore", or "12 Oct" when the zone was 0
+---@field when string?   -- "12 Oct, Darkshore", or "12 Oct" when the zone was 0; "12 Oct, Darkshore · party"
+---@field party boolean?   -- a Party Catch reached it (HNT-R181, HNT-R186)
+---@field tooltip string[]?   -- a party tier's: what it is, and when pagle.app counts it (HNT-R186, HNT-R208)
 
 ---@class HuntEntryLadder
 ---@field updating string?             -- the updating line, in place of the tiers (HNT-R69)
@@ -87,17 +90,36 @@ local function sealOf(progress)
 	return { text = L.SEAL_NOT_YET, filled = false }
 end
 
--- A reached tier's words: the short date of its Catch's realm date, and its zone's name unless the zone was 0.
+-- A reached tier's words: the short date of its Catch's realm date, and its zone's name unless the zone was 0; then
+-- "party" when a Party Catch reached it (HNT-R186).
 ---@param reached HuntTier
 ---@param sources HuntNameSources
 ---@return string
 local function whenOf(reached, sources)
 	local L = ns.L
-	local date = ns.FormatShortDate(reached.date)
-	if reached.zone == 0 then
-		return date
+	local when = ns.FormatShortDate(reached.date)
+	if reached.zone ~= 0 then
+		when = ns.Text(L.LADDER_WHEN_ZONE, { date = when, areaName = sources.AreaName(reached.zone) or L.NAME_UNKNOWN })
 	end
-	return ns.Text(L.LADDER_WHEN_ZONE, { date = date, areaName = sources.AreaName(reached.zone) or L.NAME_UNKNOWN })
+	if reached.party then
+		when = ns.Text(L.LADDER_WHEN_PARTY, { when = when })
+	end
+	return when
+end
+
+-- One tier's step on the ladder (HNT-R64): a party tier's adds `party` and its tooltip (HNT-R186).
+---@param k integer
+---@param threshold integer
+---@param got HuntTier?
+---@param sources HuntNameSources
+---@return HuntEntryTier
+local function stepOf(k, threshold, got, sources)
+	local step = { tier = k, threshold = threshold, reached = got ~= nil, when = got and whenOf(got, sources) or nil }
+	if got and got.party then
+		step.party = true
+		step.tooltip = { ns.L.LADDER_PARTY_TIP, ns.L.LADDER_PARTY_TIP_SITE }
+	end
+	return step
 end
 
 --- The tier ladder (HNT-R64, HNT-R18's trims are the board's): one step per tier, then the ink bar toward the next
@@ -113,7 +135,7 @@ function ns.HuntLadder(hunt, progress, sources)
 	local tiers, next = {}, nil
 	for k, threshold in ipairs(hunt.tiers) do
 		local got = reached[k]
-		tiers[k] = { tier = k, threshold = threshold, reached = got ~= nil, when = got and whenOf(got, sources) or nil }
+		tiers[k] = stepOf(k, threshold, got, sources)
 		if not got and not next then
 			next = threshold
 		end
