@@ -45,6 +45,8 @@ local BOTH = {
 	spent = 550,
 	purchased = { [VELVET] = true, [SILK] = true },
 	ownedAt = { [VELVET] = SERVER_TIME - 3000, [SILK] = SERVER_TIME - 2000 },
+	-- the rule set of the log's last build entry, which a crate after it would be drawn under (SHOP-R53)
+	rules = "pagle-2026i",
 }
 
 describe("the wallet projection", function()

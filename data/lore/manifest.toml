@@ -217,6 +217,7 @@ ids = [
 # Core's goods (SHOP-R25), each with a name and a description (wallet-and-shop.md › UI), from M4 with Core's lore
 # check (DATA-R107). Then the fish crests (VAR-R12), one per Species with varieties, from the varieties release: each
 # allows {fish}, which only their names hold, filled with the Species' item name at runtime (DATA-R108, DATA-R134).
+# From 1.6, the news sign's six looks (SHOP-R60).
 [core.good]
 fields = ["name", "description"]
 ids = [
@@ -275,6 +276,12 @@ ids = [
 	"core.toaststyle.arcane",
 	"core.toaststyle.pirate",
 	"core.crate",
+	"core.newssign.wood",
+	"core.newssign.scroll",
+	"core.newssign.lantern",
+	"core.newssign.kraken",
+	"core.newssign.astro",
+	"core.newssign.coral",
 	{ id = "core.crest.fish.1467", placeholders = ["fish"] },
 	{ id = "core.crest.fish.4603", placeholders = ["fish"] },
 	{ id = "core.crest.fish.6289", placeholders = ["fish"] },

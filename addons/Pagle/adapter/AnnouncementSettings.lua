@@ -135,11 +135,10 @@ ns.CoreSettingsRows.announcements = function(page, layout)
 	Settings.CreateCheckbox(page, motion, L.SETTINGS_MOTION_TOOLTIP)
 
 	-- Toast style and Sound set: the same equipped looks as on Look and Feel, which this page's Defaults button
-	-- restores too (SET-R30, SET-R33, SET-R51). The news sign's look ends The Morning Tide's section instead (SET-R37).
+	-- restores too (SET-R30, SET-R33, SET-R51). The news sign's look ends The Morning Tide's section instead (SET-R37):
+	-- ns.CoreAnnouncementSlots leaves it out.
 	for _, slot in ipairs(ns.CoreAnnouncementSlots(ns.goods)) do
-		if slot.id ~= ns.NEWS_SIGN_SLOT then
-			ns.SlotDropdown(page, layout, slot, "announcements")
-		end
+		ns.SlotDropdown(page, layout, slot, "announcements")
 	end
 
 	-- Where toasts and Nods appear (ANN-R98) and the card (ANN-R102): a button that puts the column back at the bottom

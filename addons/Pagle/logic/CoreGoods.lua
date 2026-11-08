@@ -1,8 +1,8 @@
 ---@class PagleNS
 local ns = select(2, ...)
 
--- Core's own goods (wallet-and-shop.md › Goods, SHOP-R25): the toast style, sound set, bookplate crest and book
--- binding slots and their goods, as data (the bindings' from logic/Bindings.lua), and their registration on Core's
+-- Core's own goods (wallet-and-shop.md › Goods, SHOP-R25): the toast style, sound set, bookplate crest, book binding
+-- and (from 1.6) news sign slots and their goods, as data (the bindings' from logic/Bindings.lua), and their registration on Core's
 -- goods registry (logic/Goods.lua, logic/Wiring.lua's ns.RegisterCoreSlot and ns.RegisterCoreGood). Pure logic
 -- (CORE-R7): adapter/CoreGoods.lua draws the previews, and login step 1 registers them (adapter/Login.lua); FakePagle
 -- registers them too, so a Module's specs meet Core's crests and bindings.
@@ -29,7 +29,7 @@ local ns = select(2, ...)
 ---@field id string
 ---@field labelKey string          -- the slot's label as a key of ns.L, read when the slot registers (CORE-R8)
 ---@field category "Announcements"|"Crests"|"Books"
----@field openToEarned? true        -- other Modules may add earned goods to it (SHOP-R23): all four
+---@field openToEarned? true        -- other Modules may add earned goods to it (SHOP-R23): all but the news sign
 ---@field groups? PagleCoreGroup[]  -- its groups on the shop's list (SHOP-R27)
 ---@field goods PagleCoreGood[]
 
@@ -51,6 +51,12 @@ ns.SOUND_SET_SLOT = "core.soundset"
 ns.SOUND_SET_DEFAULT = "core.soundset.driftwood"
 --- Core's bookplate crest slot (SHOP-R25, LED-R112).
 ns.CREST_SLOT = "core.crest"
+--- Core's news sign slot (SHOP-R60, SIGN-R57), from 1.6: the look The Morning Tide wears.
+ns.NEWS_SIGN_SLOT = "core.newssign"
+--- Wood's good ID: the news sign slot's default, free, and the look for any ID that isn't one.
+ns.NEWS_SIGN_DEFAULT = "core.newssign.wood"
+-- A news sign good's ID: the slot's, then its look's key (SIGN-R50, SIGN-R57).
+local NEWS_SIGN_PREFIX = ns.NEWS_SIGN_SLOT .. "."
 
 -- Core's book binding slot's goods (SHOP-R25): Field Leather and every binding for sale, in the shop's order
 -- (ns.CoreBindings), each named from Core's lore kind `binding` (`binding.<key>.*`, DATA-R102).
@@ -71,8 +77,9 @@ end
 --- its icon, which the Ledger draws on the Journal's bookplate through Pagle.GetGood (LED-R112). Every good has an
 --- icon, the shop's swatch (wallet-and-shop.md › UI). Plain's is Core's own texture, drawn as the shield (SHOP-R25);
 --- every other is an in-client texture listed in build 70338's ManifestInterfaceData, standing in until Pagle has its
---- own art. A binding's look is its ns.BindingLook (logic/Bindings.lua), which every book wears (ADR 0015). All four
---- slots are open to earned goods (SHOP-R23): the toast styles and sound sets the Ledger, Hunts and the Tackle Board
+--- own art. A binding's look is its ns.BindingLook (logic/Bindings.lua), which every book wears (ADR 0015); a news
+--- sign good's is the sign's look of its key (ns.NewsSignLookOf, SIGN-R57). The first four slots are open to earned
+--- goods (SHOP-R23): the toast styles and sound sets the Ledger, Hunts and the Tackle Board
 --- earn, the Ledger's zone crests (LED-R113), and the bindings the Ledger and Hunts earn (LED-R110, HNT-R122), each
 --- drawn on the stage by its slot's preview. The crest slot holds Plain alone, and hides its earned crests, the zone
 --- crests and Core's fish crests (VAR-R12), from the shop: Look and Feel equips them (SHOP-R25).
@@ -174,7 +181,38 @@ ns.CORE_GOODS = {
 		openToEarned = true,
 		goods = BINDING_GOODS,
 	},
+	-- From 1.6 (SHOP-R60): The Morning Tide's six looks, after Core's other slots, in SIGN-R50's order (the sign's
+	-- ns.NEWS_SIGN_LOOK_ORDER), each ID its look's key; Wood free, the other five for sale at the dev's tiers (#650):
+	-- the Scroll and the Lantern 3, the Kraken 5, the Astrolabe and the Coral 4. Not open to earned goods, and no
+	-- groups. Their icons stand in, as the others' do, until each has its board as an icon of its own (SHOP-R60).
+	{
+		id = ns.NEWS_SIGN_SLOT,
+		labelKey = "SLOT_NEWS_SIGN",
+		category = "Announcements",
+		goods = {
+			{ id = ns.NEWS_SIGN_DEFAULT, default = true, icon = ICONS .. "INV_Crate_02" },
+			{ id = "core.newssign.scroll", tier = 3, icon = ICONS .. "INV_Scroll_05" },
+			{ id = "core.newssign.lantern", tier = 3, icon = ICONS .. "INV_Misc_Lantern_01" },
+			{ id = "core.newssign.kraken", tier = 5, icon = ICONS .. "INV_Misc_MonsterTail_03" },
+			{ id = "core.newssign.astro", tier = 4, icon = ICONS .. "Spell_Arcane_StarFire" },
+			{ id = "core.newssign.coral", tier = 4, icon = ICONS .. "INV_Misc_Gem_Pearl_02" },
+		},
+	},
 }
+
+--- The look a news sign good wears (SIGN-R57): its ID's last part, the look's key (`core.newssign.kraken` is
+--- "kraken"), or Wood's for an ID that isn't one of the slot's.
+---@param goodID string?
+---@return string
+function ns.NewsSignLookOf(goodID)
+	if type(goodID) == "string" and goodID:sub(1, #NEWS_SIGN_PREFIX) == NEWS_SIGN_PREFIX then
+		local key = goodID:sub(#NEWS_SIGN_PREFIX + 1)
+		if key:find("^%w+$") then
+			return key
+		end
+	end
+	return (ns.NEWS_SIGN_DEFAULT:sub(#NEWS_SIGN_PREFIX + 1))
+end
 
 -- A good's lore text for `field` (DATA-R101: `<kind>.<id>.<field>`, `good.<goodID>` unless `key` names another),
 -- or nil while the key has none.

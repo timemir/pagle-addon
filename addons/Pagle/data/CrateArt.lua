@@ -66,7 +66,7 @@ ns.ATLASES.Crate = {
 			use = "fixed",
 		},
 		["card-glow"] = {
-			x = 1144,
+			x = 1325,
 			y = 359,
 			w = 138,
 			h = 151,
@@ -78,7 +78,7 @@ ns.ATLASES.Crate = {
 			alpha = 0.6,
 		},
 		["card-hatch"] = {
-			x = 1007,
+			x = 1188,
 			y = 359,
 			w = 135,
 			h = 155,
@@ -101,7 +101,7 @@ ns.ATLASES.Crate = {
 			use = "fixed",
 		},
 		["card-sheen"] = {
-			x = 1212,
+			x = 1363,
 			y = 623,
 			w = 90,
 			h = 103,
@@ -146,8 +146,8 @@ ns.ATLASES.Crate = {
 			use = "fixed",
 		},
 		["crate-ribbon"] = {
-			x = 1866,
-			y = 623,
+			x = 2,
+			y = 745,
 			w = 55,
 			h = 73,
 			box = { 1.33, 1.33, 34, 46.67 },
@@ -157,7 +157,7 @@ ns.ATLASES.Crate = {
 			use = "fixed",
 		},
 		["crate-seal-left"] = {
-			x = 1452,
+			x = 1603,
 			y = 623,
 			w = 42,
 			h = 87,
@@ -168,7 +168,7 @@ ns.ATLASES.Crate = {
 			use = "fixed",
 		},
 		["crate-seal-right"] = {
-			x = 1402,
+			x = 1553,
 			y = 623,
 			w = 48,
 			h = 87,
@@ -190,7 +190,7 @@ ns.ATLASES.Crate = {
 			use = "tint",
 		},
 		["emblem-book-hi"] = {
-			x = 1612,
+			x = 1763,
 			y = 623,
 			w = 121,
 			h = 82,
@@ -201,7 +201,7 @@ ns.ATLASES.Crate = {
 			use = "fixed",
 		},
 		["emblem-coin"] = {
-			x = 842,
+			x = 1023,
 			y = 359,
 			w = 163,
 			h = 163,
@@ -212,7 +212,7 @@ ns.ATLASES.Crate = {
 			use = "tint",
 		},
 		["emblem-coin-hi"] = {
-			x = 1496,
+			x = 1647,
 			y = 623,
 			w = 114,
 			h = 84,
@@ -222,8 +222,30 @@ ns.ATLASES.Crate = {
 			anchor = "card",
 			use = "fixed",
 		},
+		["emblem-sign"] = {
+			x = 842,
+			y = 359,
+			w = 179,
+			h = 164,
+			box = { 3.56, 0.89, 72.44, 65.33 },
+			size = { 79.56, 72.89 },
+			at = { 20.19, 17.88 },
+			anchor = "card",
+			use = "tint",
+		},
+		["emblem-sign-hi"] = {
+			x = 1212,
+			y = 623,
+			w = 149,
+			h = 104,
+			box = { 0.89, 0.44, 18.67, 28.44 },
+			size = { 66.22, 46.22 },
+			at = { 25.52, 20.1 },
+			anchor = "card",
+			use = "fixed",
+		},
 		["emblem-sound"] = {
-			x = 1457,
+			x = 1638,
 			y = 359,
 			w = 199,
 			h = 144,
@@ -256,7 +278,7 @@ ns.ATLASES.Crate = {
 			use = "tint",
 		},
 		["emblem-toast-hi"] = {
-			x = 114,
+			x = 204,
 			y = 745,
 			w = 156,
 			h = 52,
@@ -267,7 +289,7 @@ ns.ATLASES.Crate = {
 			use = "fixed",
 		},
 		["emblem-tracker"] = {
-			x = 1284,
+			x = 1465,
 			y = 359,
 			w = 171,
 			h = 148,
@@ -278,7 +300,7 @@ ns.ATLASES.Crate = {
 			use = "tint",
 		},
 		["emblem-tracker-hi"] = {
-			x = 1735,
+			x = 1886,
 			y = 623,
 			w = 129,
 			h = 80,
@@ -289,7 +311,7 @@ ns.ATLASES.Crate = {
 			use = "fixed",
 		},
 		["fx-beam"] = {
-			x = 1691,
+			x = 1872,
 			y = 359,
 			w = 174,
 			h = 139,
@@ -313,7 +335,7 @@ ns.ATLASES.Crate = {
 			alpha = 0.94,
 		},
 		["fx-coin"] = {
-			x = 428,
+			x = 518,
 			y = 745,
 			w = 36,
 			h = 36,
@@ -324,7 +346,7 @@ ns.ATLASES.Crate = {
 			use = "fixed",
 		},
 		["fx-dust"] = {
-			x = 2,
+			x = 92,
 			y = 745,
 			w = 110,
 			h = 54,
@@ -336,7 +358,7 @@ ns.ATLASES.Crate = {
 			alpha = 0.49,
 		},
 		["fx-ember"] = {
-			x = 385,
+			x = 475,
 			y = 745,
 			w = 41,
 			h = 41,
@@ -347,7 +369,7 @@ ns.ATLASES.Crate = {
 			use = "tint add",
 		},
 		["fx-flash"] = {
-			x = 555,
+			x = 645,
 			y = 745,
 			w = 8,
 			h = 8,
@@ -370,7 +392,7 @@ ns.ATLASES.Crate = {
 			alpha = 0.55,
 		},
 		["fx-seal-glow"] = {
-			x = 1304,
+			x = 1455,
 			y = 623,
 			w = 96,
 			h = 96,
@@ -382,7 +404,7 @@ ns.ATLASES.Crate = {
 			alpha = 0.79,
 		},
 		["fx-spark"] = {
-			x = 272,
+			x = 362,
 			y = 745,
 			w = 45,
 			h = 47,
@@ -393,7 +415,7 @@ ns.ATLASES.Crate = {
 			use = "tint add",
 		},
 		["fx-straw"] = {
-			x = 374,
+			x = 464,
 			y = 745,
 			w = 9,
 			h = 43,
@@ -404,7 +426,7 @@ ns.ATLASES.Crate = {
 			use = "fixed",
 		},
 		["kind-book"] = {
-			x = 494,
+			x = 584,
 			y = 745,
 			w = 25,
 			h = 30,
@@ -415,7 +437,7 @@ ns.ATLASES.Crate = {
 			use = "fixed",
 		},
 		["kind-sound"] = {
-			x = 466,
+			x = 556,
 			y = 745,
 			w = 26,
 			h = 30,
@@ -426,7 +448,7 @@ ns.ATLASES.Crate = {
 			use = "fixed",
 		},
 		["kind-toast"] = {
-			x = 521,
+			x = 611,
 			y = 745,
 			w = 32,
 			h = 24,
@@ -437,8 +459,8 @@ ns.ATLASES.Crate = {
 			use = "fixed",
 		},
 		["plaque-cap"] = {
-			x = 1923,
-			y = 623,
+			x = 59,
+			y = 745,
 			w = 24,
 			h = 64,
 			box = { 1.33, 2, 14.67, 39.33 },
@@ -448,8 +470,8 @@ ns.ATLASES.Crate = {
 			use = "cap mirror",
 		},
 		["plaque-mid"] = {
-			x = 1949,
-			y = 623,
+			x = 85,
+			y = 745,
 			w = 5,
 			h = 64,
 			box = { 0, 2, 3.33, 39.33 },
@@ -496,7 +518,7 @@ ns.ATLASES.Crate = {
 			tint = { 255, 214, 120 },
 		},
 		["reel-bobber"] = {
-			x = 319,
+			x = 409,
 			y = 745,
 			w = 29,
 			h = 47,
@@ -507,7 +529,7 @@ ns.ATLASES.Crate = {
 			use = "fixed",
 		},
 		["reel-fade"] = {
-			x = 565,
+			x = 655,
 			y = 745,
 			w = 75,
 			h = 4,
@@ -540,7 +562,7 @@ ns.ATLASES.Crate = {
 			use = "slice",
 		},
 		["reel-hook"] = {
-			x = 350,
+			x = 440,
 			y = 745,
 			w = 22,
 			h = 43,
@@ -574,7 +596,7 @@ ns.ATLASES.Crate = {
 			use = "fixed",
 		},
 		["reel-line-glow"] = {
-			x = 1658,
+			x = 1839,
 			y = 359,
 			w = 31,
 			h = 140,

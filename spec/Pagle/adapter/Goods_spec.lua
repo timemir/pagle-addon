@@ -282,7 +282,7 @@ describe("Core's own goods", function()
 		local loaded = huntsCore()
 		local ns = loaded.ns
 
-		-- Core's four slots (SHOP-R25) are in already, from login step 1 (spec/Pagle/adapter/CoreGoods_spec.lua).
+		-- Core's five slots (SHOP-R25, SHOP-R60) are in already, from login step 1 (spec/Pagle/adapter/CoreGoods_spec.lua).
 		ns.RegisterCoreSlot({ id = "core.frame", label = "Tracker frame", category = "Trackers" })
 		ns.RegisterCoreGood({ id = "core.frame.plain", slot = "core.frame", name = "Plain", default = true })
 		local ok, err = pcall(function()
@@ -293,8 +293,8 @@ describe("Core's own goods", function()
 		assert.is_false(ok)
 		assert.matches("Goods_spec.lua:%d+: M:RegisterGood: hunts.frame doesn't start with core.", tostring(err))
 		assert.are.same({ "core.frame", "hunts.cover" }, {
-			ns.goods:Slots()[5].id,
 			ns.goods:Slots()[6].id,
+			ns.goods:Slots()[7].id,
 		})
 		assert.are.equal("Core", loaded.env.Pagle.GetGood("core.frame.plain").module)
 		assert.are.equal("core.frame.plain", loaded.env.Pagle.GetEquipped("core.frame"))
@@ -346,19 +346,24 @@ describe("What a view of every good reads (SHOP-R36)", function()
 				})
 
 				local slots = Pagle.GetSlots()
-				assert.are.equal(slots[6].category, Pagle.GetGood("hunts.cover.velvet").category)
+				assert.are.equal(slots[7].category, Pagle.GetGood("hunts.cover.velvet").category)
 
 				local ids = {}
 				for i, slot in ipairs(slots) do
 					ids[i] = slot.id
 				end
-				assert.are.same(
-					{ "core.toaststyle", "core.soundset", "core.crest", "core.binding", "core.frame", "hunts.cover" },
-					ids
-				)
+				assert.are.same({
+					"core.toaststyle",
+					"core.soundset",
+					"core.crest",
+					"core.binding",
+					"core.newssign",
+					"core.frame",
+					"hunts.cover",
+				}, ids)
 				assert.are.same(
 					{ id = "hunts.cover", label = "Notebook cover", category = "Trackers", module = "Hunts" },
-					slots[6]
+					slots[7]
 				)
 				assert.are.same({
 					id = "core.frame",
@@ -366,7 +371,7 @@ describe("What a view of every good reads (SHOP-R36)", function()
 					category = "Trackers",
 					module = "Core",
 					groups = { { key = "a", name = "A frames" } },
-				}, slots[5])
+				}, slots[6])
 				assert.are.same(
 					{ { key = "zone", name = "Zone crests" }, { key = "fish", name = "Fish crests" } },
 					slots[3].groups
@@ -387,7 +392,7 @@ describe("What a view of every good reads (SHOP-R36)", function()
 				ids[i] = slot.id
 			end
 
-			assert.are.same({ "core.toaststyle", "core.soundset", "core.crest", "core.binding" }, ids)
+			assert.are.same({ "core.toaststyle", "core.soundset", "core.crest", "core.binding", "core.newssign" }, ids)
 		end)
 	end)
 

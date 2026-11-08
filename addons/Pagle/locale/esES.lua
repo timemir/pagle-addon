@@ -537,7 +537,7 @@ ns.Locale("esES", function(L)
 	L.SHOP_CRATE_CONFIRM = "¿Abrir un Cofre de curiosidades?"
 	L.SHOP_CRATE_FINE = "Un aspecto que aún no tienes, al azar; las probabilidades están en el cofre."
 	L.SHOP_CRATE_KIND = "Un cofre de aspectos"
-	L.SHOP_CRATE_KINDS = { binding = "Encuadernación", crest = "Blasón", soundset = "Juego de sonidos", toaststyle = "Estilo de aviso emergente", trackerframe = "Marco de rastreador" }
+	L.SHOP_CRATE_KINDS = { binding = "Encuadernación", crest = "Blasón", newssign = "Cartel de noticias", soundset = "Juego de sonidos", toaststyle = "Estilo de aviso emergente", trackerframe = "Marco de rastreador" }
 	L.SHOP_CRATE_LEFT = "quedan {left:0}"
 	L.SHOP_CRATE_NEW_LOOK = "Un aspecto nuevo"
 	L.SHOP_CRATE_ONLY_NOTE = "Solo en un Cofre de curiosidades, nunca a la venta"
@@ -603,6 +603,7 @@ ns.Locale("esES", function(L)
 	L.SLOT_CREST = "Blasones"
 	L.SLOT_CREST_FISH = "Blasones de pez"
 	L.SLOT_CREST_ZONES = "Blasones de zona"
+	L.SLOT_NEWS_SIGN = "Cartel de noticias"
 	L.SLOT_SOUND_SET = "Juego de sonidos"
 	L.SLOT_TOAST_STYLE = "Estilo de aviso emergente"
 	L.TOAST_SAMPLE_STAMP = "Nuevo aquí"

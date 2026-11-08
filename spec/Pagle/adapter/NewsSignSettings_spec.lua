@@ -27,25 +27,12 @@ for i, kind in ipairs(KINDS) do
 end
 UNDER[#UNDER + 1] = HEADLINES
 
--- The news sign's slot as wallet-and-shop.md SHOP-R60 has #660 register it, cut to Wood and two of the looks for sale.
----@param ns table Core's namespace
-local function registerSignSlot(ns)
-	ns.RegisterCoreSlot({ id = "core.newssign", label = "News sign", category = "Announcements" })
-	ns.RegisterCoreGood({ id = "core.newssign.wood", slot = "core.newssign", name = "Wood", default = true })
-	ns.RegisterCoreGood({ id = "core.newssign.scroll", slot = "core.newssign", name = "Scroll", tier = 3 })
-	ns.RegisterCoreGood({ id = "core.newssign.kraken", slot = "core.newssign", name = "Kraken", tier = 5 })
-end
-
--- Core logged in and in the world over `saved` (a PagleDB), the Ledger registered; with `withSlot`, the news sign's
--- slot registered before the pages are built, as #660 will.
+-- Core logged in and in the world over `saved` (a PagleDB), the Ledger registered. Core's goods register the news
+-- sign's slot, `core.newssign`, with Wood and the five looks for sale (SHOP-R60).
 ---@param saved table?
----@param withSlot boolean?
-local function loggedIn(saved, withSlot)
+local function loggedIn(saved)
 	local loaded = loadCore(nil, saved)
 	loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
-	if withSlot then
-		registerSignSlot(loaded.ns)
-	end
 	return enterWorld(loaded, 3)
 end
 
@@ -117,31 +104,35 @@ local function set(loaded, label, to)
 end
 
 describe("The Morning Tide's section (SET-R37)", function()
-	it("follows the Party block under its header: the master, its nine rows indented, then Mute the sign", function()
-		local loaded = loggedIn()
+	it(
+		"follows the Party block under its header: the master, its nine rows indented, Mute the sign, then the look",
+		function()
+			local loaded = loggedIn()
 
-		local names = sectionNames(loaded)
+			local names = sectionNames(loaded)
 
-		local expected = { "The Morning Tide", MASTER }
-		for _, label in ipairs(UNDER) do
-			expected[#expected + 1] = label
-		end
-		expected[#expected + 1] = MUTE
-		assert.are.same(expected, names)
-		local master = row(loaded, MASTER)
-		for _, label in ipairs(UNDER) do
-			assert.are.equal(master, row(loaded, label):GetParentInitializer(), label)
-		end
-		assert.is_nil(master:GetParentInitializer())
-		assert.is_nil(row(loaded, MUTE):GetParentInitializer())
-		-- The Party block's last row comes just before it (SET-R36).
-		local initializers = page(loaded).layout.initializers
-		for i, initializer in ipairs(initializers) do
-			if initializer:GetName() == "The Morning Tide" then
-				assert.are.equal("Cheers sounds", initializers[i - 1]:GetName())
+			local expected = { "The Morning Tide", MASTER }
+			for _, label in ipairs(UNDER) do
+				expected[#expected + 1] = label
+			end
+			expected[#expected + 1] = MUTE
+			expected[#expected + 1] = LOOK
+			assert.are.same(expected, names)
+			local master = row(loaded, MASTER)
+			for _, label in ipairs(UNDER) do
+				assert.are.equal(master, row(loaded, label):GetParentInitializer(), label)
+			end
+			assert.is_nil(master:GetParentInitializer())
+			assert.is_nil(row(loaded, MUTE):GetParentInitializer())
+			-- The Party block's last row comes just before it (SET-R36).
+			local initializers = page(loaded).layout.initializers
+			for i, initializer in ipairs(initializers) do
+				if initializer:GetName() == "The Morning Tide" then
+					assert.are.equal("Cheers sounds", initializers[i - 1]:GetName())
+				end
 			end
 		end
-	end)
+	)
 
 	it("gives the master, Region headlines and Mute the sign their tooltips", function()
 		local loaded = loggedIn()
@@ -267,7 +258,7 @@ describe("Greying in The Morning Tide (SET-R37, SET-R31, SET-R61)", function()
 	end)
 
 	it("greys the master and its rows in Cozy mode, and never Mute the sign or the look", function()
-		local loaded = loggedIn(nil, true)
+		local loaded = loggedIn()
 
 		set(loaded, "Cozy mode", true)
 
@@ -353,16 +344,8 @@ describe("Mute the sign (SET-R37, SIGN-R31)", function()
 end)
 
 describe("The Morning Tide's look (SET-R37, SET-R51, SHOP-R60)", function()
-	it("has no row while Core has no news sign slot, so the section ends with Mute the sign", function()
-		local loaded = loggedIn()
-
-		local names = sectionNames(loaded)
-
-		assert.are.equal(MUTE, names[#names])
-	end)
-
 	it("ends the section with the slot's dropdown, Wood alone while no other look is owned", function()
-		local loaded = loggedIn(nil, true)
+		local loaded = loggedIn()
 		local settings = loaded.client.settings
 
 		local names = sectionNames(loaded)
@@ -372,16 +355,20 @@ describe("The Morning Tide's look (SET-R37, SET-R51, SHOP-R60)", function()
 		local look = settings.rowNamed(settings.show(page(loaded)), LOOK)
 		assert.are.same({ "core.newssign.wood=Wood" }, settings.optionValues(look))
 		assert.are.equal("core.newssign.wood", settings.dropdownOf(look).selected)
-		assert.are.same({ "2 more in the Curio Shop" }, settings.notesOf(look))
+		assert.are.same({ "5 more in the Curio Shop" }, settings.notesOf(look))
 	end)
 
 	it("lists Wood and each look owned, in registration order, and picking one equips it", function()
-		local loaded = loggedIn(nil, true)
+		local loaded = loggedIn()
 		local settings = loaded.client.settings
 		loaded.ns.goods:SetPurchased({ ["core.newssign.kraken"] = true })
 		local look = settings.rowNamed(settings.show(page(loaded)), LOOK)
 
-		assert.are.same({ "core.newssign.wood=Wood", "core.newssign.kraken=Kraken" }, settings.optionValues(look))
+		local Pagle = loaded.env.Pagle
+		assert.are.same({
+			"core.newssign.wood=" .. Pagle.GetGood("core.newssign.wood").name,
+			"core.newssign.kraken=" .. Pagle.GetGood("core.newssign.kraken").name,
+		}, settings.optionValues(look))
 
 		settings.dropdownOf(look):pick("core.newssign.kraken")
 		assert.are.equal("core.newssign.kraken", loaded.env.Pagle.GetEquipped("core.newssign"))
@@ -392,7 +379,7 @@ describe("The Morning Tide's look (SET-R37, SET-R51, SHOP-R60)", function()
 	end)
 
 	it("isn't among Core's rows before Toast position, Toast style and Sound set being the only looks there", function()
-		local loaded = loggedIn(nil, true)
+		local loaded = loggedIn()
 		local names = {}
 		for _, initializer in ipairs(page(loaded).layout.initializers) do
 			if initializer:GetName() == "Toast position" then

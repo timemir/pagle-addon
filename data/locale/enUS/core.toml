@@ -520,6 +520,7 @@ SHOP_CRATE_UNSHOWN = "It shows here once its Module is on."
 # stamp on its card.
 SHOP_CRATE_KINDS.binding = "Binding"
 SHOP_CRATE_KINDS.crest = "Crest"
+SHOP_CRATE_KINDS.newssign = "News sign"
 SHOP_CRATE_KINDS.soundset = "Sound set"
 SHOP_CRATE_KINDS.toaststyle = "Toast style"
 SHOP_CRATE_KINDS.trackerframe = "Tracker frame"
@@ -963,6 +964,8 @@ SLOT_TOAST_STYLE = "Toast style"
 SLOT_SOUND_SET = "Sound set"
 SLOT_CREST = "Crests"
 SLOT_BOOK_BINDING = "Book binding"
+# From 1.6: The Morning Tide's looks (SHOP-R60).
+SLOT_NEWS_SIGN = "News sign"
 # The crest slot's groups (SHOP-R27): the zones' crests, then the fishes', which name them; the Curio Shop lists
 # neither, as it lists no earned crest (SHOP-R25).
 SLOT_CREST_ZONES = "Zone crests"

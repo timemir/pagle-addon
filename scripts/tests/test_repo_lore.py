@@ -84,6 +84,13 @@ CORE_GOODS = [
     "core.toaststyle.arcane",
     "core.toaststyle.pirate",
     "core.crate",  # the Curio crate, no good (SHOP-R20): its description is the crate stage's lore (SHOP-R54)
+    # From 1.6, the news sign's six looks (SHOP-R60).
+    "core.newssign.wood",
+    "core.newssign.scroll",
+    "core.newssign.lantern",
+    "core.newssign.kraken",
+    "core.newssign.astro",
+    "core.newssign.coral",
 ]
 # LED-R75: the title IDs, in its table's order.
 LEVEL_TITLES = ["level1", "level10", "level20", "level30", "level40", "level50", "level60"]
