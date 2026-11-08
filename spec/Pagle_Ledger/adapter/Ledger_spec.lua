@@ -199,7 +199,8 @@ describe("Pagle_Ledger with Core", function()
 			-- Core's own: SET-R30's nine and, from 1.5.2, SET-R36's Party block (its header and ten rows), headed from 1.6 by
 			-- Party Hunts (SET-R35).
 			assert.are.equal(21, #settings.category("Announcements").layout.initializers)
-			assert.are.same({ "Books", "Book binding", "More looks" }, { look[7], look[8], look[9] })
+			-- from 1.6 the news sign's dropdown follows Sound set under Announcements (SET-R50, SHOP-R60)
+			assert.are.same({ "Books", "Book binding", "More looks" }, { look[8], look[9], look[10] })
 		end
 	)
 end)
