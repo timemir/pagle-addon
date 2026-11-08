@@ -65,7 +65,13 @@ local ns = select(2, ...)
 ---@field marginNotes PagleMarginNotes Core's Margin notes (ns.WireMarginNotes, ONB-R50–R53).
 ---@field firstLooks PagleFirstLooks Core's First looks (ns.WireFirstLooks, ONB-R55–R59).
 ---@field pushedContent PaglePushedContent Core's pushed content this login (ns.WirePushedContent, PUSH-R10–R23).
----@field anglerViews PagleAnglerViews Core's reads of the Companion's data files (ns.WireAnglerViews, VIEW-R1–R12).
+---@field anglerViews PagleAnglerViews Core's reads of the Companion's data files (ns.WireAnglerViews, VIEW-R1–R12,
+--- and from 1.6 the news, VIEW-R40–R46).
+---@field SetNewsFloor fun() Sets the news floor to the server time now (ns.WireAnglerViews, SIGN-R18, SET-R37).
+---@field NewsOffered fun(): (fun(id: string?))? The first On Module's `def.news` by def.order, or nil (ns.WireAnglerViews,
+--- VIEW-R46).
+---@field OpenNews fun(id: string?): boolean Opens the news through it, on item `id` if given; false with none
+--- (ns.WireAnglerViews, VIEW-R46).
 
 --- Core's projection machinery (LOG-R70–R78) as ns.projections, and `M:NewProjection` and `M:IterateCatches` on every
 --- Module handle. A Module's records are the ones Pagle.IterateCatches yields plus its own Module records (LOG-R42).
@@ -1598,7 +1604,9 @@ end
 --- Core's reads of the Companion's data files as ns.anglerViews (core/anglers-in-game.md, ADR 0001), on the server
 --- time, the restriction state and PagleDB.profile.anglerTooltips (VIEW-R3, VIEW-R30), with ns.StartAnglerViews,
 --- login step 2's part (VIEW-R1). The tooltip block calls ns.anglerViews:HoverPlayer for each player unit it shows
---- (VIEW-R3, VIEW-R10); `/pagle dev views` (VIEW-R12) prints its report (ns.WireDev).
+--- (VIEW-R3, VIEW-R10); `/pagle dev views` (VIEW-R12) prints its report (ns.WireDev). From 1.6 it keeps the news seen
+--- and the floor in PagleDB.global.news (VIEW-R44), with ns.SetNewsFloor for the sign's switch (SET-R37), and offers
+--- the news view of a Module's `def.news` (VIEW-R46).
 ---@param host PagleHost
 ---@param client PagleAnglerViewsClient
 function ns.WireAnglerViews(host, client)
@@ -1613,10 +1621,45 @@ function ns.WireAnglerViews(host, client)
 			return host.db().profile.anglerTooltips == true
 		end,
 		isSecret = client.isSecret,
+		global = function()
+			return host.db().global
+		end,
 	})
 	--- Login step 2, after ModulesChanged: reads PagleFollowingData once (VIEW-R1).
 	function ns.StartAnglerViews()
 		ns.anglerViews:Start()
+	end
+
+	--- Sets the news floor to the server time now (SIGN-R18, VIEW-R44): what turning "Show news at login" on does, and
+	--- a Defaults that turns it back on (SET-R37).
+	function ns.SetNewsFloor()
+		ns.anglerViews:SetNewsFloor()
+	end
+
+	--- The first On Module's `def.news` by def.order, its view of the news (VIEW-R46, the Ledger's news list); nil when
+	--- no On Module has one.
+	---@return (fun(id: string?))?
+	function ns.NewsOffered()
+		for _, module in ipairs(host.registry:Modules()) do
+			if module.def.news then
+				return module.def.news
+			end
+		end
+		return nil
+	end
+
+	--- Opens the news (VIEW-R46) on item `id`, if given, through the first On Module's `def.news`, as the sign's left
+	--- click does (SIGN-R42); one that raises is reported through `call` (geterrorhandler()). Returns whether a Module
+	--- offers one: with none nothing opens.
+	---@param id string?
+	---@return boolean
+	function ns.OpenNews(id)
+		local news = ns.NewsOffered()
+		if not news then
+			return false
+		end
+		host.call(news, id)
+		return true
 	end
 end
 

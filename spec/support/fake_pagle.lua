@@ -123,7 +123,14 @@
 --- moves it, VIEW-R2), none or ok as IGV-R44 and IGV-R45 say, and Pagle.GetFollowedAnglers serves it, fresh copies,
 --- never read-only (VIEW-R11). helpers.lua's anglerFileExamples().following is IGV Contracts' example. With none set,
 --- as with no Pagle_Following installed, it reads absent. Raises an error after login. Pagle_Anglers is never
---- installed here: no Module reads it.
+--- installed here: no Module reads it. From 1.6 the same file's news block (VIEW-R40): Pagle.GetNews and
+--- Pagle.MarkNewsSeen over Core's real reads, keeping the seen items and the floor in fake.global.news (VIEW-R44), so a
+--- spec that wants items `new` sets `fake.global.news = { since = …, seen = {} }` before fake.login (with no floor,
+--- the first read calls nothing new; the sign's decision sets it, SIGN-R18); Pagle.NewsWords on Core's real words over fake.itemNames,
+--- fake.areaNames, the fixture catalogue's varieties and Pagle.GetVarietiesCaught, as an enUS client words them
+--- (VIEW-R45); helpers.lua's anglerFileExamples().news is IGV Contracts' example with a news block.
+---@field areaNames table<integer, string> The zone names the fake's client gives, by areaID, for Pagle.NewsWords; a
+--- spec sets them. A zone without one reads "Zone {areaID}" (SIGN-R19).
 ---@field setSpent fun(spent: integer) Sets the Coins spent, for a spec that doesn't care about the log: BalanceChanged
 --- fires if the balance or held changes (SHOP-R12). The wallet projection sets the log's own at enterWorld's done and
 --- on each live purchase (fake.global.projections.wallet, SHOP-R11), replacing it; set it after enterWorld to keep it.
@@ -1284,6 +1291,50 @@ part(function(fake, Pagle, ns, host)
 	local views = ns.anglerViews
 	function Pagle.GetFollowedAnglers()
 		return views:FollowedAnglers()
+	end
+	function Pagle.GetNews()
+		return views:News()
+	end
+	function Pagle.MarkNewsSeen(ids)
+		views:MarkNewsSeen(ids)
+	end
+	fake.areaNames = {}
+	local lookups = {
+		itemName = function(itemID)
+			return fake.itemNames[itemID]
+		end,
+		dropPrefix = ns.L.FISH_CREST_DROP_PREFIX,
+		varieties = function(species)
+			return Pagle.GetVarieties(species)
+		end,
+		caught = function(species)
+			return Pagle.GetVarietiesCaught(species)
+		end,
+		areaName = function(areaID)
+			return fake.areaNames[areaID]
+		end,
+		formatLength = function(mm)
+			return ns.FormatLength(mm, ns.LengthUnit())
+		end,
+		ledgerOn = function()
+			for _, module in ipairs(fake.registry:Modules()) do
+				if module.def.name == "Ledger" then
+					return true
+				end
+			end
+			return false
+		end,
+		fishCrest = function(species)
+			for _, id in ipairs(ns.Catalogue.GetVarietySpecies()) do
+				if id == species then
+					return true
+				end
+			end
+			return false
+		end,
+	}
+	function Pagle.NewsWords(item)
+		return ns.NewsWords(item, lookups)
 	end
 
 	function fake.setFollowing(data)

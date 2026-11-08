@@ -1713,6 +1713,11 @@ en = "Pagle dev: Pagle_Anglers has loaded this login."
 value = "Pagle dev: Pagle_Anglers wurde in diesem Login nicht geladen."
 en = "Pagle dev: Pagle_Anglers hasn't loaded this login."
 
+# Machine-drafted (Claude) for the news reader (#656); awaits a native speaker's review.
+[DEV_VIEWS_NEWS]
+value = "Pagle dev: Nachrichten {state}: Zeilen genutzt {used}, übersprungen {skipped}; gesehen {seen}, Untergrenze {floor}."
+en = "Pagle dev: news {state}: lines used {used}, skipped {skipped}; seen {seen}, floor {floor}."
+
 [DEV_VIEWS_NONE]
 value = "keine"
 en = "none"
@@ -2698,6 +2703,23 @@ en = "{variety} {species}"
 [SIGN_DETAIL_MONSTER]
 value = "{species}, {length}"
 en = "{species}, {length}"
+
+# Machine-drafted (Claude) for the news reader (#656); awaits a native speaker's review.
+[SIGN_DETAIL_COLOUR_HIDDEN]
+value = "{species} ({rarity})"
+en = "{rarity} {species}"
+
+[SIGN_HEAD_MASTER_PRESTIGE]
+value = "{name} hat Meisterprestige {master:0} erreicht"
+en = "{name} reached Master Prestige {master:0}"
+
+[SIGN_ITEM_UNKNOWN]
+value = "ein Fisch"
+en = "a fish"
+
+[SIGN_ZONE_UNKNOWN]
+value = "Gebiet {zone}"
+en = "Zone {zone}"
 
 [SIGN_MORE]
 value.one = "+{count:0} weitere von deinen Anglern"
