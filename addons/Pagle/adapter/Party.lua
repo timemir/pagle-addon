@@ -37,7 +37,7 @@ local state = {
 	sharedOrder = {}, ---@type string[]
 	queue = {}, ---@type { announcement: PagleAnnouncement, expires: number }[] party toasts waiting (ANN-R106)
 	heldCheers = {}, ---@type table[] cheers gathered while the lanes hold, waiting to show merged (ANN-R108)
-	outbox = {}, ---@type string[] messages waiting for the limiter (ANN-R103)
+	outbox = {}, ---@type PaglePartyOutgoing[] messages waiting for the limiter (ANN-R103, LOG-R112)
 	helloAt = nil, ---@type number?
 	rosterToken = 0,
 	retrying = false,
@@ -133,11 +133,13 @@ end
 
 --- A groupmate as Core keeps them (ANN-R105): `key`, their GUID (their first name only where the client gives none),
 --- what Core remembers them by; `first`, their first name; and `name`, how a party toast and a cheer's Nod name them,
---- "{name} {surname}" where Forever gives a surname, as the website writes it (pagle-backend ANG-R13).
+--- "{name} {surname}" where Forever gives a surname, as the website writes it (pagle-backend ANG-R13). From 1.6, `guid`
+--- too, their unit's UnitGUID, nil where the client gives none (the party catch check, LOG-R113 item 4).
 ---@class PagleGroupmate
 ---@field key string
 ---@field first string
 ---@field name string
+---@field guid string?
 
 -- `unit`'s groupmate, or nil for none: UnitName's first return and Forever's surname, its second (CORE's Angler reads
 -- the player's the same way, adapter/Angler.lua), and UnitGUID.
@@ -154,7 +156,8 @@ local function memberAt(unit)
 	if type(surname) == "string" and surname ~= "" then
 		name = ns.RenderText(ns.L.PARTY_FULL_NAME, { name = first, surname = surname })
 	end
-	return { key = type(guid) == "string" and guid or ("name:" .. first), first = first, name = name }
+	guid = type(guid) == "string" and guid or nil
+	return { key = guid or ("name:" .. first), first = first, name = name, guid = guid }
 end
 
 -- The groupmates, party1 to party4.
@@ -201,7 +204,25 @@ local function groupmate(sender)
 	return named
 end
 
--- Sending (ANN-R103): through the limiter, waiting out chat lockdown, and only in a party.
+--- The groupmate `sender` is (ANN-R105), or nil: not one, the player, or a first name two of them share. The party
+--- catch receiver (adapter/PartyCatches.lua, LOG-R113 item 4) matches the sender as the party toasts do.
+---@param sender any
+---@return PagleGroupmate?
+function ns.PartyGroupmate(sender)
+	return groupmate(sender)
+end
+
+--- A message waiting in the party send queue (ANN-R103, LOG-R112): its prefix and text; `first`, a party catch
+--- message, which goes before every toast, cheer and hello waiting; and `expires`, the server time after which it is
+--- dropped unsent.
+---@class PaglePartyOutgoing
+---@field prefix string
+---@field text string
+---@field first boolean?
+---@field expires integer?
+
+-- Sending (ANN-R103, LOG-R112): one queue for every party message, the party toasts' and the party catches', through the
+-- limiter, waiting out chat lockdown, and only in a party.
 local pump
 
 local function retry()
@@ -215,7 +236,19 @@ local function retry()
 	end)
 end
 
+-- Drops every message waiting past its `expires` (LOG-R112).
+local function dropExpired()
+	local now = GetServerTime()
+	for i = #state.outbox, 1, -1 do
+		local expires = state.outbox[i].expires
+		if expires and now > expires then
+			table.remove(state.outbox, i)
+		end
+	end
+end
+
 function pump()
+	dropExpired()
 	while state.outbox[1] do
 		if not inParty() then
 			state.outbox = {}
@@ -225,18 +258,66 @@ function pump()
 			retry()
 			return
 		end
-		C_ChatInfo.SendAddonMessage(ns.PARTY_PREFIX, table.remove(state.outbox, 1), "PARTY")
+		local message = table.remove(state.outbox, 1)
+		C_ChatInfo.SendAddonMessage(message.prefix, message.text, "PARTY")
 	end
 end
 
+-- Where a message goes in the queue: a `first` one after the others waiting that are first, before the rest.
+---@param first boolean?
+---@return integer
+local function placeFor(first)
+	if not first then
+		return #state.outbox + 1
+	end
+	local at = 1
+	while state.outbox[at] and state.outbox[at].first do
+		at = at + 1
+	end
+	return at
+end
+
+-- Makes room for a `first` message in a full queue (LOG-R112): the last toast, cheer or hello waiting goes, or, when
+-- every one waiting is a party catch message, the oldest, nearest its expiry. False when a message that isn't first
+-- finds the queue full: it is dropped, as from 1.5.2 (ANN-R103).
+---@param first boolean?
+---@return boolean
+local function makeRoom(first)
+	if #state.outbox < SEND_WAITING then
+		return true
+	elseif not first then
+		return false
+	end
+	for i = #state.outbox, 1, -1 do
+		if not state.outbox[i].first then
+			table.remove(state.outbox, i)
+			return true
+		end
+	end
+	table.remove(state.outbox, 1)
+	return true
+end
+
+--- Puts `text` in the party send queue (ANN-R103, LOG-R112), on `options.prefix` (the party toasts' `Pagle` unless
+--- given), ahead of the toasts, cheers and hellos waiting when `options.first`, and dropped unsent after the server
+--- time `options.expires`. Nothing is queued outside a party.
 ---@param text string
-local function send(text)
-	if not inParty() or #state.outbox >= SEND_WAITING then
+---@param options { prefix: string?, first: boolean?, expires: integer? }?
+local function send(text, options)
+	options = options or {}
+	if not inParty() then
 		return
 	end
-	state.outbox[#state.outbox + 1] = text
+	dropExpired()
+	if not makeRoom(options.first) then
+		return
+	end
+	local message =
+		{ prefix = options.prefix or ns.PARTY_PREFIX, text = text, first = options.first, expires = options.expires }
+	table.insert(state.outbox, placeFor(options.first), message)
 	pump()
 end
+ns.SendPartyMessage = send
 
 ---@param ask boolean
 local function sayHello(ask)

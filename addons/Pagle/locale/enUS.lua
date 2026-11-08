@@ -465,6 +465,8 @@ ns.L = {
 	SETTINGS_PAGLE_MENU = "Pagle menu",
 	SETTINGS_PAGLE_WEBSITE = "Pagle website",
 	SETTINGS_PARTY = "Party",
+	SETTINGS_PARTY_HUNTS = "Party Hunts",
+	SETTINGS_PARTY_HUNTS_TOOLTIP = "In a party, your groupmates' catches count toward your Hunts and Pagle Wagers while you fish the same zone, and yours count toward theirs. Off, Pagle neither shares your catches nor counts theirs.",
 	SETTINGS_PARTY_KINDS = { colour = "Rare colours", gold = "Gold tier in a Hunt", ledger = "Ledger 100%", legend = "Legends", monster = "Monster-size records", prestige = "Prestige", zone = "Zone Master" },
 	SETTINGS_PARTY_SHARE = "Share my moments with my party",
 	SETTINGS_PARTY_SHARE_TOOLTIP = "When you catch a Legend, set a Monster-size record and the like, groupmates who run Pagle get a small toast of it. Only the moment is sent, never where you are. Not in a raid.",

@@ -24,10 +24,14 @@ local OWNER = "Pagle fishing"
 --- Payload of `FishingStateChanged`: the new state (LOG-R9).
 ---@alias PagleFishingStateChangedHandler fun(event: "FishingStateChanged", state: PagleFishingState)
 
+-- Whether the Cast being recorded is /pagle dev catch's (#247), which is never sent to the party (LOG-R111).
+local synthetic = false
+
 -- Records a Cast that ended caught or got away (LOG-R9 steps 1 and 2): takes the Cast snapshot (LOG-R20), adds the
 -- items, and appends the C1 entry for the current character at the snapshot's server time, then its diagnostics
--- entry (LOG-R81), and hands it to the projections live (LOG-R9 step 4). Returns the record every reader will see, or
--- nil before PLAYER_LOGIN, when no character is current.
+-- entry (LOG-R81), and hands it to the projections live (LOG-R9 step 4). Then, from 1.6, it hands the Cast to the
+-- party send queue (LOG-R111, adapter/PartyCatches.lua), which never waits on recording. Returns the record every
+-- reader will see, or nil before PLAYER_LOGIN, when no character is current.
 ---@param outcome "caught"|"gotAway"
 ---@param items PagleLootItem[]
 ---@param startedAt number? GetTime() when the Cast's channel started
@@ -56,6 +60,9 @@ local function recordCast(outcome, items, startedAt, area)
 	ns.AddCastDiagnostic(cast, unresolved, startedAt)
 	ns.sessions:Cast() -- LOG-R9 step 3: SessionEnded still due, then SessionStarted
 	ns.projections:Live(cast) -- LOG-R9 step 4, before Catch and CastEnded (LOG-R73)
+	if ns.SharePartyCatch then
+		ns.SharePartyCatch(cast, synthetic)
+	end
 	return cast
 end
 
@@ -66,6 +73,20 @@ local fishing = ns.NewFishing({
 	fire = ns.Fire,
 })
 ns.fishing = fishing
+
+--@do-not-package@
+-- `/pagle dev catch` records through RecordSynthetic: its Cast is marked synthetic while it is recorded (LOG-R111).
+local recordSynthetic = fishing.RecordSynthetic
+function fishing:RecordSynthetic(...)
+	synthetic = true
+	local ok, cast = pcall(recordSynthetic, self, ...)
+	synthetic = false
+	if not ok then
+		error(cast, 0)
+	end
+	return cast
+end
+--@end-do-not-package@
 
 -- Every offered item in the open loot window, in slot order (LOG-R3, LOG-R8).
 ---@return PagleLootItem[]

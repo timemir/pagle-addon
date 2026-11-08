@@ -25,6 +25,7 @@ local Pagle = Pagle
 ---| "ClockFormatChanged" # PagleClockFormatChangedHandler
 ---| "SessionStarted" # PagleSessionStartedHandler
 ---| "SessionEnded" # PagleSessionEndedHandler
+---| "PartyCatch" # PaglePartyCatchHandler (from 1.6, LOG-R115)
 ---| "GuideOpened" # the Field guide opened (core/onboarding.md › Contracts): no payload
 ---| "GuideClosed" # the Field guide closed: (stepId), the step it was on
 ---| string

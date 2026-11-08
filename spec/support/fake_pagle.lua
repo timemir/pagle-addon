@@ -1128,6 +1128,20 @@ part(function(fake, _, ns, host)
 	function fake.prestige()
 		return readOnly(ns.RecordPrestige())
 	end
+	--- A groupmate's Catch the receiver's checks passed (LOG-R113, from 1.6): appends a real G1 of `copy` (its time and
+	--- tie, then its C1 fields from minute to items), hands it live, with `name` and `sourceId`, to the projections that
+	--- take Party Catches, and fires PartyCatch, as Core's receiver does (LOG-R115, LOG-R116). The defaults: Kukli
+	--- Emnabi's Oily Blackmouth in Darkshore (148, The Long Wash 453) a second before the fake's server time.
+	function fake.partyCatch(copy, name, sourceId)
+		local time = host.serverTime() - 1
+		copy = copy or ("%d|0|494|148|453|120|0||||6358x1"):format(time)
+		local record = ns.RecordPartyCatch(
+			copy,
+			name or "Kukli Emnabi",
+			sourceId or ("Player-4618-0B00000A-" .. copy:match("^(%d+|%d+)"):gsub("|", "-"))
+		)
+		return readOnly(record)
+	end
 end)
 
 -- Activity XP (AXP-R2–R7, ADR 0011), on Core's wiring over fake.global.activityXP: M:ReportXPEarned on the handle,
@@ -1945,8 +1959,8 @@ function newFakePagle()
 		fingerprint = function()
 			return Pagle.CONTENT_FINGERPRINT
 		end,
-		iterate = function(afterSeq, module)
-			local records = fake.catchLog:Iterate(afterSeq, module)
+		iterate = function(afterSeq, module, party)
+			local records = fake.catchLog:Iterate(afterSeq, module, party)
 			return function()
 				return readOnly(records())
 			end
