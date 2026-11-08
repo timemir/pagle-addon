@@ -761,14 +761,14 @@ en = "Shift-drag to move"
 
 [PARTY_LINES]
 value.epic = "Поймал(а) эпическую окраску"
-value.gold = "Достиг(ла) золотой ступени в охоте"
+value.gold = "Взял(а) золото в охоте"
 value.ledger = "Реестр на 100%"
 value.legend = "Поймал(а) легенду"
 value.monster = "Рекорд размера «Чудовище»"
 value.rare = "Поймал(а) редкую окраску"
 value.zone = "Мастер зоны"
 en.epic = "Caught an epic colour"
-en.gold = "Reached a Hunt's Gold tier"
+en.gold = "Took gold in a Hunt"
 en.ledger = "Ledger 100%"
 en.legend = "Caught a Legend"
 en.monster = "Monster-size record"
@@ -778,6 +778,18 @@ en.zone = "Zone Master"
 [PARTY_PRESTIGE]
 value = "Престиж {rank:0}"
 en = "Prestige {rank:0}"
+
+[PARTY_ZONE]
+value = "Стал(а) мастером зоны {zone}"
+en = "Became Master of {zone}"
+
+[PARTY_GOLD]
+value = "Взял(а) золото в охоте «{hunt}»"
+en = "Took gold in {hunt}"
+
+[PARTY_FULL_NAME]
+value = "{name} {surname}"
+en = "{name} {surname}"
 
 [PARTY_DETAIL]
 value = "{what} • {detail}"

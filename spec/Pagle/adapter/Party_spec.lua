@@ -1,7 +1,7 @@
 -- Party toasts and cheers on the client, through the real TOC (announcements.md › Party toasts and cheers, ANN-R103–
--- R110; settings.md SET-R35; from 1.5.x, #640): who is a Pagle groupmate, what is sent and when, what is read and what
--- is ignored, the party toast in the column behind the player's own, held in combat, silent in Cozy mode and expiring,
--- the mug and the merged cheers, the Party block's rows, and /pagle dev party.
+-- R109, ANN-R112; settings.md SET-R36; from 1.5.2, #640): who is a Pagle groupmate, what is sent and when, what is
+-- read and what is ignored, the party toast in the column behind the player's own, held in combat, silent in Cozy mode
+-- and expiring, the mug and the merged cheers, the Party block's rows, and /pagle dev party.
 
 local SOUNDS = "Interface\\AddOns\\Pagle\\media\\sounds\\"
 local ARRIVE, RAISE, CHEERED =
@@ -206,6 +206,7 @@ describe("sharing a moment", function()
 			text = "Elwynn Forest",
 			cast = "Player-1-1-1791731700-0",
 			party = "zone",
+			partyArea = 357,
 		})
 		local texts = sent(loaded)
 		assert.are.equal(2, #texts)
@@ -214,7 +215,7 @@ describe("sharing a moment", function()
 			ids[i] = text:match("^1:M:([0-9a-z]+):")
 		end
 		assert.are_not.equal(ids[1], ids[2])
-		assert.matches(":zone$", texts[2])
+		assert.matches(":zone:357$", texts[2])
 	end)
 
 	it(
@@ -276,7 +277,7 @@ describe("receiving a groupmate's moment", function()
 			loaded.client.itemNames = { [KEEFER] = "Keefer's Angelfish" }
 			receive(loaded, "1:M:abcd1:legend:" .. KEEFER)
 			local toast = assert(partyToast(loaded))
-			assert.are.equal("KUKLI", toast.kicker:GetText())
+			assert.are.equal("KUKLI STONEBREW", toast.kicker:GetText())
 			assert.are.equal("Caught a Legend · Keefer's Angelfish", toast.line:GetText())
 			assert.is_true(toast.mug:IsShown())
 			assert.are.equal("Interface\\Icons\\INV_Drink_04", toast.mug.icon:GetTexture())
@@ -317,9 +318,9 @@ describe("receiving a groupmate's moment", function()
 	it("takes a groupmate's moments up to 3, then one per 20 s, and each id once (ANN-R105)", function()
 		local loaded = inParty()
 		for i = 1, 4 do
-			receive(loaded, "1:M:abcd" .. i .. ":zone")
+			receive(loaded, "1:M:abcd" .. i .. ":zone:0")
 		end
-		receive(loaded, "1:M:abcd1:zone", "Kukli-Testrealm")
+		receive(loaded, "1:M:abcd1:zone:0", "Kukli-Testrealm")
 		local shown = 0
 		for _ = 1, 20 do
 			if partyToast(loaded) then
@@ -329,40 +330,105 @@ describe("receiving a groupmate's moment", function()
 			loaded.client.advance(1)
 		end
 		assert.are.equal(3, shown)
-		receive(loaded, "1:M:abcd5:zone")
+		receive(loaded, "1:M:abcd5:zone:0")
 		assert.is_not_nil(partyToast(loaded))
 	end)
 
-	it("shows nothing with Show my party's moments off, or with the kind's switch off (ANN-R106, SET-R35)", function()
+	it("shows nothing with Show my party's moments off, or with the kind's switch off (ANN-R106, SET-R36)", function()
 		local loaded = inParty(false, { party = { show = false } })
-		receive(loaded, "1:M:abcd1:zone")
+		receive(loaded, "1:M:abcd1:zone:0")
 		assert.is_nil(partyToast(loaded))
 
 		local kinds = inParty(false, { party = { kinds = { zone = false } } })
-		receive(kinds, "1:M:abcd1:zone")
+		receive(kinds, "1:M:abcd1:zone:0")
 		assert.is_nil(partyToast(kinds))
 		receive(kinds, "1:M:abcd2:ledger")
 		assert.is_not_nil(partyToast(kinds))
 	end)
 end)
 
+describe("naming a groupmate and their moment", function()
+	it(
+		"names a Zone Master's zone in the player's language, or says Zone Master for one it can't name (ANN-R106)",
+		function()
+			local loaded = inParty()
+			loaded.client.areaNames[357] = "Feralas"
+			receive(loaded, "1:M:abcd1:zone:357")
+			assert.are.equal("Became Master of Feralas", assert(partyToast(loaded)).line:GetText())
+			loaded.ns.lanes:Dismiss(partyToast(loaded).display)
+			loaded.client.advance(1)
+			receive(loaded, "1:M:abcd2:zone:9999")
+			assert.are.equal("Zone Master", assert(partyToast(loaded)).line:GetText())
+		end
+	)
+
+	it("names a Hunt gold's Hunt through the player's Hunts, or says a Hunt without it (ANN-R106)", function()
+		local loaded = inParty()
+		receive(loaded, "1:M:abcd1:gold:6303:mackerelZrun")
+		assert.are.equal("Took gold in a Hunt", assert(partyToast(loaded)).line:GetText())
+
+		local named = loggedIn(party())
+		named.env.Pagle.RegisterModule({
+			name = "Hunts",
+			title = "Hunts",
+			order = 20,
+			partyHuntName = function(huntID)
+				return huntID == "mackerel_run" and "Mackerel Run" or nil
+			end,
+		})
+		named.client.advance(2)
+		receive(named, "1:H:0")
+		receive(named, "1:M:abcd1:gold:6303:mackerelZrun")
+		assert.are.equal("Took gold in Mackerel Run", assert(partyToast(named)).line:GetText())
+		named.ns.lanes:Dismiss(partyToast(named).display)
+		named.client.advance(1)
+		receive(named, "1:M:abcd2:gold:6303:unknownZhunt")
+		assert.are.equal("Took gold in a Hunt", assert(partyToast(named)).line:GetText())
+	end)
+
+	it(
+		"tells two groupmates of one first name apart by GUID, and ignores a sender it can only match by a shared first"
+			.. " name (ANN-R105)",
+		function()
+			local loaded = loggedIn({
+				members = {
+					{ name = "Kukli", surname = "Stonebrew", sender = "Kukli-Testrealm" },
+					{ name = "Kukli", surname = "Emnabi", guid = "Party-Emnabi", sender = "Kukli-Otherrealm" },
+				},
+			})
+			loaded.client.advance(2)
+			receive(loaded, "1:M:abcd1:zone:0", "Kukli-Otherrealm")
+			assert.are.equal("Kukli Emnabi", showing(loaded, "party"))
+			loaded.ns.lanes:Dismiss(partyToast(loaded).display)
+			loaded.client.advance(1)
+			receive(loaded, "1:M:abcd2:zone:0", "Kukli-Testrealm")
+			assert.are.equal("Kukli Stonebrew", showing(loaded, "party"))
+			loaded.ns.lanes:Dismiss(partyToast(loaded).display)
+			loaded.client.advance(1)
+			receive(loaded, "1:M:abcd3:zone:0", "Kukli")
+			loaded.client.advance(1)
+			assert.is_nil(partyToast(loaded))
+		end
+	)
+end)
+
 describe("the party toast in the column", function()
 	it("waits behind the player's own toast and shows once it has gone (ANN-R106)", function()
 		local loaded, M = inParty()
 		raise(loaded, M, { rung = "toast", kind = "spec", title = "New Species", text = "Nightfin Snapper" })
-		receive(loaded, "1:M:abcd1:zone")
+		receive(loaded, "1:M:abcd1:zone:0")
 		assert.are.equal("New Species", showing(loaded, "toast"))
 		assert.is_nil(partyToast(loaded))
 		loaded.client.advance(10)
 		assert.is_nil(showing(loaded, "toast"))
-		assert.are.equal("Kukli", showing(loaded, "party"))
+		assert.are.equal("Kukli Stonebrew", showing(loaded, "party"))
 	end)
 
 	it("shows one party toast at a time, in the order they came (ANN-R106)", function()
 		local loaded = inParty(true)
-		receive(loaded, "1:M:abcd1:zone", "Kukli-Testrealm")
+		receive(loaded, "1:M:abcd1:zone:0", "Kukli-Testrealm")
 		receive(loaded, "1:M:efgh1:ledger", "Arwen-Testrealm")
-		assert.are.equal("Kukli", showing(loaded, "party"))
+		assert.are.equal("Kukli Stonebrew", showing(loaded, "party"))
 		loaded.client.advance(10)
 		assert.are.equal("Arwen", showing(loaded, "party"))
 	end)
@@ -371,8 +437,8 @@ describe("the party toast in the column", function()
 		"is held in combat with the column, and one arriving in combat waits until it ends (ANN-R106, ANN-R35)",
 		function()
 			local loaded = inParty(true)
-			receive(loaded, "1:M:abcd1:zone", "Kukli-Testrealm")
-			assert.are.equal("Kukli", showing(loaded, "party"))
+			receive(loaded, "1:M:abcd1:zone:0", "Kukli-Testrealm")
+			assert.are.equal("Kukli Stonebrew", showing(loaded, "party"))
 			setCombat(loaded, true)
 			assert.is_nil(partyToast(loaded))
 			receive(loaded, "1:M:efgh1:ledger", "Arwen-Testrealm")
@@ -381,7 +447,7 @@ describe("the party toast in the column", function()
 
 			setCombat(loaded, false)
 			loaded.client.advance(2)
-			assert.are.equal("Kukli", showing(loaded, "party"))
+			assert.are.equal("Kukli Stonebrew", showing(loaded, "party"))
 			loaded.client.advance(10)
 			assert.are.equal("Arwen", showing(loaded, "party"))
 		end
@@ -390,7 +456,7 @@ describe("the party toast in the column", function()
 	it("goes nowhere in Cozy mode, and plays nothing (ANN-R106, ANN-R40)", function()
 		local loaded = inParty(false, { announcements = { cozy = true } })
 		sounds(loaded)
-		receive(loaded, "1:M:abcd1:zone")
+		receive(loaded, "1:M:abcd1:zone:0")
 		loaded.client.advance(10)
 		assert.is_nil(partyToast(loaded))
 		assert.is_nil(showing(loaded, "nod"))
@@ -400,7 +466,7 @@ describe("the party toast in the column", function()
 	it("is dropped once it has waited 120 s (ANN-R106, ANN-R45)", function()
 		local loaded = inParty()
 		setCombat(loaded, true)
-		receive(loaded, "1:M:abcd1:zone")
+		receive(loaded, "1:M:abcd1:zone:0")
 		loaded.client.advance(121)
 		setCombat(loaded, false)
 		loaded.client.advance(3)
@@ -409,13 +475,13 @@ describe("the party toast in the column", function()
 
 	it("steps down to a Nod with no mug once the Interruption budget is spent (ANN-R106, ANN-R31)", function()
 		local loaded = inParty(false, { announcements = { budget = { on = true, count = 1, window = 300 } } })
-		receive(loaded, "1:M:abcd1:zone")
+		receive(loaded, "1:M:abcd1:zone:0")
 		assert.is_not_nil(partyToast(loaded))
 		loaded.client.advance(10)
 		loaded.client.advance(20)
 		receive(loaded, "1:M:abcd2:ledger")
 		assert.is_nil(partyToast(loaded))
-		assert.are.equal("Kukli", showing(loaded, "nod"))
+		assert.are.equal("Kukli Stonebrew", showing(loaded, "nod"))
 		assert.are.equal("Ledger 100%", loaded.ns.announcementFrames.nod.display.announcement.headline.text)
 	end)
 
@@ -424,13 +490,13 @@ describe("the party toast in the column", function()
 		function()
 			local loaded = inParty()
 			sounds(loaded)
-			receive(loaded, "1:M:abcd1:zone")
+			receive(loaded, "1:M:abcd1:zone:0")
 			assert.are.same({ ARRIVE .. " SFX" }, sounds(loaded))
 			assert.are.same({}, loaded.ns.db.global.summary.moments)
 
 			local quiet = inParty(false, { party = { sounds = false } })
 			sounds(quiet)
-			receive(quiet, "1:M:abcd1:zone")
+			receive(quiet, "1:M:abcd1:zone:0")
 			assert.is_not_nil(partyToast(quiet))
 			assert.are.same({}, sounds(quiet))
 		end
@@ -443,7 +509,7 @@ describe("cheers", function()
 			.. " does nothing (ANN-R108)",
 		function()
 			local loaded = inParty()
-			receive(loaded, "1:M:abcd1:zone")
+			receive(loaded, "1:M:abcd1:zone:0")
 			local toast = assert(partyToast(loaded))
 			sounds(loaded)
 			toast.mug:Click()
@@ -458,7 +524,7 @@ describe("cheers", function()
 
 	it("keep the toast's clock stopped while the pointer is on the mug (ANN-R108)", function()
 		local loaded = inParty()
-		receive(loaded, "1:M:abcd1:zone")
+		receive(loaded, "1:M:abcd1:zone:0")
 		local toast = assert(partyToast(loaded))
 		toast.mug.scripts.OnEnter(toast.mug)
 		loaded.client.advance(30)
@@ -483,15 +549,32 @@ describe("cheers", function()
 			loaded.client.advance(2.9)
 			assert.is_nil(showing(loaded, "nod"))
 			loaded.client.advance(0.2)
-			assert.are.equal("Kukli raised a mug", showing(loaded, "nod"))
+			assert.are.equal("Kukli Stonebrew raised a mug", showing(loaded, "nod"))
 			assert.are.same({ CHEERED .. " SFX" }, sounds(loaded))
 			loaded.client.advance(5)
 
 			receive(loaded, "1:C:" .. id, "Arwen-Testrealm")
 			loaded.client.advance(3.1)
-			assert.are.equal("Kukli and Arwen raised a mug", showing(loaded, "nod"))
+			assert.are.equal("Kukli Stonebrew and Arwen raised a mug", showing(loaded, "nod"))
 		end
 	)
+
+	it("wait out combat, merged, and show once it ends, not dropped as a Nod would be (ANN-R108)", function()
+		local loaded, M = inParty(true)
+		raise(loaded, M, legend({ rung = "nod" }))
+		local id = sent(loaded)[1]:match("^1:M:([0-9a-z]+):")
+		loaded.client.advance(5)
+		setCombat(loaded, true)
+		receive(loaded, "1:C:" .. id, "Kukli-Testrealm")
+		loaded.client.advance(5)
+		receive(loaded, "1:C:" .. id, "Arwen-Testrealm")
+		loaded.client.advance(30)
+		assert.is_nil(showing(loaded, "nod"))
+
+		setCombat(loaded, false)
+		loaded.client.advance(2.2)
+		assert.are.equal("Kukli Stonebrew and Arwen raised a mug", showing(loaded, "nod"))
+	end)
 
 	it("count from three on, and ignore a cheer for an id that isn't the player's (ANN-R108)", function()
 		local loaded = loggedIn({ members = { { name = "Kukli" }, { name = "Arwen" }, { name = "Bram" } } })
@@ -514,7 +597,7 @@ describe("cheers", function()
 	end)
 end)
 
-describe("the Party block (SET-R35)", function()
+describe("the Party block (SET-R36)", function()
 	local LABELS = {
 		"Share my moments with my party",
 		"Show my party's moments",
@@ -541,7 +624,7 @@ describe("the Party block (SET-R35)", function()
 		error("no row " .. label)
 	end
 
-	it("follows Toast position under a Party header, its kinds indented under Show (SET-R35)", function()
+	it("follows Toast position under a Party header, its kinds indented under Show (SET-R36)", function()
 		local loaded = loggedIn(nil)
 		local names = {}
 		local after = false
@@ -565,7 +648,7 @@ describe("the Party block (SET-R35)", function()
 
 	it(
 		"starts every row on with nothing stored, writes false for off and clears it for on, and Defaults turns them"
-			.. " all back on (SET-R35, SET-R33)",
+			.. " all back on (SET-R36, SET-R33)",
 		function()
 			local loaded = loggedIn(nil)
 			for _, label in ipairs(LABELS) do
@@ -591,7 +674,7 @@ describe("the Party block (SET-R35)", function()
 	)
 
 	it(
-		"greys Show, its kinds and Cheers sounds in Cozy mode, and the kinds while Show is off (SET-R35, SET-R31)",
+		"greys Show, its kinds and Cheers sounds in Cozy mode, and the kinds while Show is off (SET-R36, SET-R31)",
 		function()
 			local loaded = loggedIn(nil)
 			local shown = loaded.client.settings.show(page(loaded))
@@ -641,7 +724,7 @@ describe("/pagle dev party (ANN-R109)", function()
 		local loaded = loggedIn(nil)
 		slash(loaded, "dev on")
 		slash(loaded, "dev party monster")
-		assert.are.equal("Kukli", showing(loaded, "party"))
+		assert.are.equal("Kukli Emnabi", showing(loaded, "party"))
 		assert.matches("^Monster%-size record", partyToast(loaded).line:GetText())
 		partyToast(loaded).mug:Click()
 		assert.are.same({}, sent(loaded))
@@ -663,7 +746,7 @@ describe("/pagle dev party (ANN-R109)", function()
 		slash(loaded, "dev on")
 		slash(loaded, "dev party cheer 2")
 		loaded.client.advance(3.1)
-		assert.are.equal("Kukli and Arwen raised a mug", showing(loaded, "nod"))
+		assert.are.equal("Kukli Emnabi and Arwen Tull raised a mug", showing(loaded, "nod"))
 		loaded.client.advance(10)
 		slash(loaded, "dev party cheer 4")
 		loaded.client.advance(3.1)

@@ -39,9 +39,11 @@
 ---@field chatLockdown boolean? What C_ChatInfo.InChatMessagingLockdown() answers. Default false.
 
 --- The player's group (party toasts, ANN-R103): its groupmates, in party1, party2, … order, each by first name with
---- Forever's surname (UnitName's second return), and whether it is a raid.
+--- Forever's surname (UnitName's second return), their GUID (UnitGUID("partyN"), "Party-<name>" by default) and the
+--- sender name their add-on messages arrive from, which UnitGUID also takes as a unit ("<name>-Testrealm" by default);
+--- and whether it is a raid.
 ---@class FakeGroup
----@field members { name: string, surname: string? }[]
+---@field members { name: string, surname: string?, guid: string?, sender: string? }[]
 ---@field raid boolean?
 
 --- The loot window the loot API reads: whether it's fishing loot (`IsFishingLoot()`) and its slots, in order.
@@ -362,8 +364,17 @@ local function clientStubs(client)
 				return true, nil
 			end,
 		},
+		-- The player's, and a groupmate's by their party unit or their sender name (client.group).
 		UnitGUID = function(unit)
-			return unit == "player" and PLAYER_GUID or nil
+			if unit == "player" then
+				return PLAYER_GUID
+			end
+			for i, member in ipairs(client.group and client.group.members or {}) do
+				if unit == "party" .. i or unit == (member.sender or member.name .. "-Testrealm") then
+					return member.guid or ("Party-" .. member.name)
+				end
+			end
+			return nil
 		end,
 		GetLocale = function()
 			return "enUS"

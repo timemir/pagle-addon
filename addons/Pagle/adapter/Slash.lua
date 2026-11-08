@@ -40,7 +40,7 @@ local function run(line)
 		ns.RunTrailer(rest)
 		return
 	end
-	-- `/pagle dev party` (ANN-R109, from 1.5.x) is adapter/Party.lua's: logic/Dev.lua, where the other dev commands
+	-- `/pagle dev party` (ANN-R109, from 1.5.2) is adapter/Party.lua's: logic/Dev.lua, where the other dev commands
 	-- are, is a hashed file a patch can't change. It keeps their dev switch.
 	if name == "dev" and ns.ParseSlash(rest) == "party" then
 		ns.RunPartyDev(select(2, ns.ParseSlash(rest)))

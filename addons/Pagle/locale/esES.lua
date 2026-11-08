@@ -315,11 +315,14 @@ ns.Locale("esES", function(L)
 	L.PARTY_CHEER_NAME = "{name} alzó una jarra"
 	L.PARTY_CHEER_NAMES = "{name} y {other} alzaron una jarra"
 	L.PARTY_DETAIL = "{what} · {detail}"
-	L.PARTY_LINES = { epic = "Pescó un color épico", gold = "Alcanzó el Nivel de Oro en una caza", ledger = "Libro de registro al 100 %", legend = "Pescó una Leyenda", monster = "Récord de tamaño Monstruo", rare = "Pescó un color raro", zone = "Maestro de zona" }
+	L.PARTY_FULL_NAME = "{name} {surname}"
+	L.PARTY_GOLD = "Consiguió oro en {hunt}"
+	L.PARTY_LINES = { epic = "Pescó un color épico", gold = "Consiguió oro en una caza", ledger = "Libro de registro al 100 %", legend = "Pescó una Leyenda", monster = "Récord de tamaño Monstruo", rare = "Pescó un color raro", zone = "Maestro de zona" }
 	L.PARTY_MUG = "Alzar una jarra"
 	L.PARTY_MUG_RAISED = "Alzaste una jarra"
 	L.PARTY_PRESTIGE = "Prestigio {rank:0}"
 	L.PARTY_RECORD = "{item} · {length}"
+	L.PARTY_ZONE = "Se convirtió en Maestro de {zone}"
 	L.PASTE_AFTER_COMBAT = "Pagle: la ventana de exportación se abre tras el combate."
 	L.PASTE_AT = "PÉGALO EN"
 	L.PASTE_CANT_EXPORT = "Pagle no puede exportar este Registro de capturas."

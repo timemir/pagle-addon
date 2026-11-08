@@ -314,11 +314,14 @@ ns.Locale("ruRU", function(L)
 	L.PARTY_CHEER_NAME = "{name} поднимает кружку"
 	L.PARTY_CHEER_NAMES = "{name} и {other} поднимают кружки"
 	L.PARTY_DETAIL = "{what} • {detail}"
-	L.PARTY_LINES = { epic = "Поймал(а) эпическую окраску", gold = "Достиг(ла) золотой ступени в охоте", ledger = "Реестр на 100%", legend = "Поймал(а) легенду", monster = "Рекорд размера «Чудовище»", rare = "Поймал(а) редкую окраску", zone = "Мастер зоны" }
+	L.PARTY_FULL_NAME = "{name} {surname}"
+	L.PARTY_GOLD = "Взял(а) золото в охоте «{hunt}»"
+	L.PARTY_LINES = { epic = "Поймал(а) эпическую окраску", gold = "Взял(а) золото в охоте", ledger = "Реестр на 100%", legend = "Поймал(а) легенду", monster = "Рекорд размера «Чудовище»", rare = "Поймал(а) редкую окраску", zone = "Мастер зоны" }
 	L.PARTY_MUG = "Поднять кружку"
 	L.PARTY_MUG_RAISED = "Вы подняли кружку"
 	L.PARTY_PRESTIGE = "Престиж {rank:0}"
 	L.PARTY_RECORD = "{item} • {length}"
+	L.PARTY_ZONE = "Стал(а) мастером зоны {zone}"
 	L.PASTE_AFTER_COMBAT = "Pagle: окно экспорта откроется после боя."
 	L.PASTE_AT = "ВСТАВЬТЕ НА"
 	L.PASTE_CANT_EXPORT = "Pagle не может экспортировать этот Журнал уловов."

@@ -81,7 +81,7 @@ describe("The Announcements page", function()
 		function()
 			local loaded = login(core())
 
-			-- Core's own rows end at Toast position; the Party block follows (SET-R35, spec/Pagle/adapter/Party_spec.lua).
+			-- Core's own rows end at Toast position; the Party block follows (SET-R36, spec/Pagle/adapter/Party_spec.lua).
 			local names = {}
 			for i, initializer in ipairs(page(loaded).layout.initializers) do
 				if i <= 9 then
@@ -192,7 +192,7 @@ describe("The Announcements page", function()
 
 		setCombat(loaded, false)
 
-		-- Core's nine rows, then the Party block's header and ten rows (SET-R35).
+		-- Core's nine rows, then the Party block's header and ten rows (SET-R36).
 		assert.are.equal(20, #page(loaded).layout.initializers)
 	end)
 end)
@@ -261,7 +261,7 @@ describe("Core's Announcements rows", function()
 			local values = {}
 			for i, shown in ipairs(loaded.client.settings.show(page(loaded))) do
 				if i > 8 then
-					break -- the Toast position button, then the Party block (SET-R35, spec/Pagle/adapter/Party_spec.lua)
+					break -- the Toast position button, then the Party block (SET-R36, spec/Pagle/adapter/Party_spec.lua)
 				end
 				values[i] = shown.frame.value
 				for _, child in ipairs(shown.frame.children) do

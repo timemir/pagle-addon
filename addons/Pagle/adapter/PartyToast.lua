@@ -7,7 +7,7 @@ if not Pagle then
 end
 
 -- The party toast's frame (announcements.md › Party toasts and cheers, ANN-R107, ANN-R108, UI › Party toast; from
--- 1.5.x, #640): one compact style for every groupmate and every toast style, the groupmate's name over the moment's
+-- 1.5.2, #640): one compact style for every groupmate and every toast style, the groupmate's name over the moment's
 -- line, and the mug at its right edge. adapter/Announcements.lua's lanes acquire it for a party toast shown as a
 -- toast (a stepped-down one is a plain Nod) and draw it through ns.DrawAnnouncement. Loaded by adapter/Settings.xml.
 local L = ns.L

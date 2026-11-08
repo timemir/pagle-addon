@@ -131,7 +131,7 @@ SETTINGS_TRACKERS_WHILE_FISHING_TOOLTIP = "Shows the trackers while a fishing po
 SETTINGS_TOAST_POSITION = "Toast position"
 SETTINGS_TOAST_RESET = "Reset"
 SETTINGS_TOAST_RESET_TOOLTIP = "Shift-drag a toast to move the toasts and Nods, or the Session summary to move it. This puts them all back where they started."
-# The Party block on the Announcements page (SET-R35, ANN-R103–R108, from 1.5.x): its header, its rows' labels and
+# The Party block on the Announcements page (SET-R36, ANN-R103–R108, from 1.5.2): its header, its rows' labels and
 # tooltips, and each kind's switch.
 SETTINGS_PARTY = "Party"
 SETTINGS_PARTY_SHARE = "Share my moments with my party"
@@ -271,16 +271,21 @@ CARD_COINS = 'Pagle Coins +{coins} |TInterface\MoneyFrame\UI-GoldIcon:0|t'
 CARD_CLOSE = "Close"
 # The shared hint where a Shift-drag moves something: the card (ANN-R102), the toasts (ANN-R98).
 SHIFT_DRAG_HINT = "Shift-drag to move"
-# A party toast's line (ANN-R106, UI › Party toast, from 1.5.x): what the groupmate did, then " · " and what it was
+# A party toast's line (ANN-R106, UI › Party toast, from 1.5.2): what the groupmate did, then " · " and what it was
 # about when Pagle can name it (an item, a variety, a record's item and length).
 PARTY_LINES.legend = "Caught a Legend"
 PARTY_LINES.rare = "Caught a rare colour"
 PARTY_LINES.epic = "Caught an epic colour"
 PARTY_LINES.monster = "Monster-size record"
-PARTY_LINES.gold = "Reached a Hunt's Gold tier"
+PARTY_LINES.gold = "Took gold in a Hunt"
 PARTY_LINES.zone = "Zone Master"
 PARTY_LINES.ledger = "Ledger 100%"
 PARTY_PRESTIGE = "Prestige {rank:0}"
+PARTY_ZONE = "Became Master of {zone}"
+PARTY_GOLD = "Took gold in {hunt}"
+# A groupmate's name on a party toast and a cheer's Nod (ANN-R105): first name and Forever's surname, as the website
+# writes it (pagle-backend ANG-R13); the first name alone without one.
+PARTY_FULL_NAME = "{name} {surname}"
 PARTY_DETAIL = "{what} · {detail}"
 PARTY_RECORD = "{item} · {length}"
 # The mug on a party toast (ANN-R108): its tooltip before and after it is raised.
@@ -514,7 +519,7 @@ DEV_ON = "Pagle dev: dev commands are on."
 DEV_OFF = "Pagle dev: dev commands are off."
 DEV_IS_OFF = "Pagle dev: dev commands are off; /pagle dev on turns them on."
 DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | stage <count> | glyphs | tour [module | list | stop] | probe | fonts | pseudo on | off | onboarding <command> | content | views | pastetest <KB>"
-# /pagle dev party (ANN-R109, from 1.5.x): its usage, and what it queued.
+# /pagle dev party (ANN-R109, from 1.5.2): its usage, and what it queued.
 DEV_PARTY_USAGE = "Pagle dev: /pagle dev party <kind | all | cheer [1-4]>, where kind is one of {kinds}"
 DEV_PARTY_QUEUED = "Pagle dev: a party toast from {name} is queued: {kind}."
 DEV_PARTY_CHEERED = "Pagle dev: {count:0} cheers for a moment of yours are on their way."

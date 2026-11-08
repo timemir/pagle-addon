@@ -2,16 +2,23 @@
 local ns = select(2, ...)
 
 -- Party toasts and cheers' messages (announcements.md › Party toasts and cheers, › Contracts › Party messages;
--- ANN-R103–R105, ANN-R108; from 1.5.x, #640): their format, the strict reading of what arrives, the limits on what
+-- ANN-R103–R105, ANN-R108; from 1.5.2, #640): their format, the strict reading of what arrives, the limits on what
 -- is taken, a marked moment as it is shared, and the lines a party toast and a cheer's Nod read. Pure Lua over what
--- it is handed, reading no client API: it would sit in logic/, but every file there is hashed, and a 1.5.x patch
+-- it is handed, reading no client API: it would sit in logic/, but every file there is hashed, and a 1.5.2 patch
 -- adds none (a new file changes the hashed list). adapter/Party.lua runs it on the client. Loaded by
 -- adapter/Settings.xml, as the TOC's file list is hashed too.
 
 --- The field a Module sets on a moment it lets its player share (announcements.md › Contracts, ANN-R104): the kind
---- Core shares it as. Declared here, beside logic/Moments.lua's PagleMoment, which a 1.5.x patch can't change.
+--- Core shares it as. Declared here, beside logic/Moments.lua's PagleMoment, which a 1.5.2 patch can't change.
 ---@class PagleMoment
 ---@field party? "legend"|"colour"|"monster"|"gold"|"zone"|"prestige"|"ledger"
+---@field partyArea? integer   -- with party "zone": the mastered zone's areaID, for the receiver to name (ANN-R104)
+---@field partyHunt? string    -- with party "gold": the Hunt's ID, for the receiver's Hunts to name (ANN-R104)
+
+--- What a Module's def may offer Core for party toasts (ANN-R106): Hunts names a Hunt by its ID, or nil for one it
+--- doesn't know. Declared here, beside logic/Modules.lua's PagleModuleDef, which a 1.5.2 patch can't change.
+---@class PagleModuleDef
+---@field partyHuntName? fun(huntID: string): string?
 
 --- What marks Core's own party Announcements' headlines (ANN-R106, ANN-R108), for the display: a party toast's
 --- groupmate, moment and mug, or a cheer's Nod. Never stored: neither reaches the Session summary.
@@ -25,7 +32,7 @@ ns.PARTY_PREFIX = "Pagle"
 ns.PARTY_VERSION = "1"
 --- A message's most bytes (ANN-R105; Tunables).
 ns.PARTY_MAX_BYTES = 64
---- The kinds a moment may be shared as (ANN-R104), in the order Settings lists their switches (SET-R35).
+--- The kinds a moment may be shared as (ANN-R104), in the order Settings lists their switches (SET-R36).
 ns.PARTY_KINDS = { "legend", "colour", "monster", "gold", "zone", "prestige", "ledger" }
 
 -- Each kind's arguments after its id, in order (Contracts › Party messages).
@@ -33,14 +40,23 @@ local ARGS = {
 	legend = { "item" },
 	colour = { "item", "rarity", "place" },
 	monster = { "item", "length" },
-	gold = { "item0" },
-	zone = {},
+	gold = { "item0", "hunt" },
+	zone = { "area" },
 	prestige = { "rank" },
 	ledger = {},
 }
 
 -- What a field is called in a read message.
-local KEY = { item = "item", item0 = "item", rarity = "rarity", place = "place", length = "length", rank = "rank" }
+local KEY = {
+	item = "item",
+	item0 = "item",
+	rarity = "rarity",
+	place = "place",
+	length = "length",
+	rank = "rank",
+	area = "area",
+	hunt = "hunt",
+}
 
 -- Each number field's range.
 local RANGE = {
@@ -49,7 +65,36 @@ local RANGE = {
 	place = { 0, 10 },
 	length = { 1, 99999 },
 	rank = { 1, 999 },
+	area = { 0, 9999999 },
 }
+
+-- A Hunt's ID as written (ANN-R104): its letters and digits, each `_` as `Z` (Hunt IDs are lower case), at most 32,
+-- so it keeps to the message's letters, digits and colons; "0" for none.
+local HUNT_MAX = 32
+
+---@param id any
+---@return string?
+local function writeHunt(id)
+	if id == nil then
+		return "0"
+	end
+	if type(id) ~= "string" or id == "" or #id > HUNT_MAX or not id:find("^[a-z0-9_]+$") then
+		return nil
+	end
+	return (id:gsub("_", "Z"))
+end
+
+---@param text string
+---@return string|false|nil the ID, false for none, nil for a field that isn't one
+local function readHunt(text)
+	if text == "0" then
+		return false
+	end
+	if #text > HUNT_MAX or not text:find("^[a-z0-9Z]+$") then
+		return nil
+	end
+	return (text:gsub("Z", "_"))
+end
 
 -- A colour's rarity as written and as read.
 local RARITY_CODE = { rare = "r", epic = "e" }
@@ -69,6 +114,8 @@ end
 local function write(name, value)
 	if name == "rarity" then
 		return RARITY_CODE[value]
+	elseif name == "hunt" then
+		return writeHunt(value)
 	end
 	local range = RANGE[name]
 	if type(value) ~= "number" or value ~= math.floor(value) or value < range[1] or value > range[2] then
@@ -77,13 +124,16 @@ local function write(name, value)
 	return ("%d"):format(value)
 end
 
--- A field read from `text`, or nil when it isn't one: whole numbers of 1 to 9 digits in range, a known rarity.
+-- A field read from `text`, or nil when it isn't one: whole numbers of 1 to 9 digits in range, a known rarity, a
+-- Hunt's ID (false for none).
 ---@param name string
 ---@param text string
----@return (integer|string)?
+---@return (integer|string|false)?
 local function read(name, text)
 	if name == "rarity" then
 		return RARITY_OF[text]
+	elseif name == "hunt" then
+		return readHunt(text)
 	end
 	if not text:find("^%d%d?%d?%d?%d?%d?%d?%d?%d?$") then
 		return nil
@@ -118,6 +168,8 @@ end
 ---@field place integer?
 ---@field length integer?
 ---@field rank integer?
+---@field area integer?          -- a Zone Master's zone (its areaID)
+---@field hunt string?           -- a Hunt gold's Hunt (its ID)
 
 --- A shared moment `share` as moment `id` (ANN-R104), or nil when its id, kind or an argument can't be written.
 ---@param id string
@@ -131,7 +183,7 @@ function ns.PartyMomentText(id, share)
 	local fields = { ns.PARTY_VERSION, "M", id, share.kind }
 	for _, name in ipairs(args) do
 		local value = share[KEY[name]]
-		if name == "item0" and value == nil then
+		if (name == "item0" or name == "area") and value == nil then
 			value = 0
 		end
 		local text = write(name, value)
@@ -190,7 +242,10 @@ function ns.ParsePartyText(text)
 		if value == nil then
 			return nil
 		end
-		message[KEY[name]] = value
+		-- No Hunt, or the zone's areaID 0, is none.
+		if value ~= false and not (name == "area" and value == 0) then
+			message[KEY[name]] = value
+		end
 	end
 	return message
 end
@@ -231,7 +286,9 @@ function ns.PartyShareOf(moment, varieties)
 		local length = type(ruler) == "table" and type(ruler.new) == "number" and math.floor(ruler.new + 0.5) or nil
 		return { kind = kind, item = item, length = length }
 	elseif kind == "gold" then
-		return { kind = kind, item = item or 0 }
+		return { kind = kind, item = item or 0, hunt = type(moment.partyHunt) == "string" and moment.partyHunt or nil }
+	elseif kind == "zone" then
+		return { kind = kind, area = type(moment.partyArea) == "number" and moment.partyArea or nil }
 	elseif kind == "prestige" then
 		return { kind = kind, rank = moment.frameRank }
 	end
@@ -333,6 +390,8 @@ end
 ---@field itemName fun(itemID: integer): string?
 ---@field varieties fun(species: integer): table[]?
 ---@field formatLength fun(mm: number): string
+---@field areaName fun(areaID: integer): string?    -- the zone's name in the client's language
+---@field huntName fun(huntID: string): string?     -- the Hunt's name from the player's Hunts, nil without it
 
 --- A party toast's line for a moment read (UI › Party toast): what the groupmate did, then " · " and what it was
 --- about where Core can name it; an item the client hasn't cached is left off with its " · ".
@@ -357,6 +416,12 @@ function ns.PartyMomentLine(message, lookups)
 		detail = item and ns.RenderText(L.PARTY_RECORD, { item = item, length = length }) or length
 	elseif kind == "legend" then
 		what, detail = L.PARTY_LINES.legend, item
+	elseif kind == "zone" then
+		local zone = message.area and lookups.areaName(message.area)
+		return zone and ns.RenderText(L.PARTY_ZONE, { zone = zone }) or L.PARTY_LINES.zone
+	elseif kind == "gold" then
+		local hunt = message.hunt and lookups.huntName(message.hunt)
+		return hunt and ns.RenderText(L.PARTY_GOLD, { hunt = hunt }) or L.PARTY_LINES.gold
 	else
 		what = L.PARTY_LINES[kind]
 	end

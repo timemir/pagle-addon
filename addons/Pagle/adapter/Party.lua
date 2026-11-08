@@ -8,7 +8,7 @@ end
 ---@class Pagle
 local Pagle = Pagle
 
--- Party toasts and cheers on the client (announcements.md › Party toasts and cheers, ANN-R103–R110; from 1.5.x,
+-- Party toasts and cheers on the client (announcements.md › Party toasts and cheers, ANN-R103–R109, ANN-R112; from 1.5.2,
 -- #640): who in the party runs Pagle, the moments the player shares, what arrives and what is ignored, the party
 -- queue behind the player's own toasts, the mug and the merged cheers, the Party block's values and /pagle dev party.
 -- Live only: nothing here reaches PagleLog, the Catch log, a projection or the Session summary. Over
@@ -36,6 +36,7 @@ local state = {
 	shared = {}, ---@type table<string, { line: string, at: number, names: string[], cheered: table<string, true>, gathering: boolean? }>
 	sharedOrder = {}, ---@type string[]
 	queue = {}, ---@type { announcement: PagleAnnouncement, expires: number }[] party toasts waiting (ANN-R106)
+	heldCheers = {}, ---@type table[] cheers gathered while the lanes hold, waiting to show merged (ANN-R108)
 	outbox = {}, ---@type string[] messages waiting for the limiter (ANN-R103)
 	helloAt = nil, ---@type number?
 	rosterToken = 0,
@@ -53,7 +54,7 @@ local function unsecret(value)
 	return ns.UnlessSecret(issecretvalue, value)
 end
 
--- The Party block's values (SET-R35): `PagleDB.profile.party`, nil meaning on, so no default sits in logic/.
+-- The Party block's values (SET-R36): `PagleDB.profile.party`, nil meaning on, so no default sits in logic/.
 
 ---@return table?
 local function stored()
@@ -68,7 +69,7 @@ local function writable()
 	return profile.party
 end
 
---- Whether a Party option is on (SET-R35): `share`, `show` or `sounds`, on unless stored as false.
+--- Whether a Party option is on (SET-R36): `share`, `show` or `sounds`, on unless stored as false.
 ---@param key "share"|"show"|"sounds"
 ---@return boolean
 function ns.PartyOption(key)
@@ -90,7 +91,7 @@ function ns.SetPartyOption(key, on)
 	end
 end
 
---- Whether a kind's switch is on (SET-R35): on unless stored as false.
+--- Whether a kind's switch is on (SET-R36): on unless stored as false.
 ---@param kind string
 ---@return boolean
 function ns.PartyKindOn(kind)
@@ -130,33 +131,74 @@ local function inParty()
 	return IsInGroup() and not IsInRaid()
 end
 
--- The groupmates' first names, party1 to party4.
----@return string[]
-local function members()
-	local names = {}
-	for i = 1, 4 do
-		local name = unsecret((UnitName("party" .. i)))
-		if type(name) == "string" and name ~= "" then
-			names[#names + 1] = name
-		end
-	end
-	return names
-end
+--- A groupmate as Core keeps them (ANN-R105): `key`, their GUID (their first name only where the client gives none),
+--- what Core remembers them by; `first`, their first name; and `name`, how a party toast and a cheer's Nod name them,
+--- "{name} {surname}" where Forever gives a surname, as the website writes it (pagle-backend ANG-R13).
+---@class PagleGroupmate
+---@field key string
+---@field first string
+---@field name string
 
--- The groupmate a sender is (ANN-R105), by name, or nil: not one, or the player.
----@param sender any
----@return string?
-local function groupmate(sender)
-	local name = ns.PartySenderName(unsecret(sender))
-	if not name or name == unsecret((UnitName("player"))) then
+-- `unit`'s groupmate, or nil for none: UnitName's first return and Forever's surname, its second (CORE's Angler reads
+-- the player's the same way, adapter/Angler.lua), and UnitGUID.
+---@param unit string
+---@return PagleGroupmate?
+local function memberAt(unit)
+	local first, surname = UnitName(unit)
+	first, surname = unsecret(first), unsecret(surname)
+	if type(first) ~= "string" or first == "" then
 		return nil
 	end
+	local guid = unsecret((UnitGUID(unit)))
+	local name = first
+	if type(surname) == "string" and surname ~= "" then
+		name = ns.RenderText(ns.L.PARTY_FULL_NAME, { name = first, surname = surname })
+	end
+	return { key = type(guid) == "string" and guid or ("name:" .. first), first = first, name = name }
+end
+
+-- The groupmates, party1 to party4.
+---@return PagleGroupmate[]
+local function members()
+	local list = {}
+	for i = 1, 4 do
+		list[#list + 1] = memberAt("party" .. i)
+	end
+	return list
+end
+
+-- The groupmate a sender is (ANN-R105), or nil: not one, the player, or a first name two of them share. By GUID
+-- where the client resolves the sender's name to a unit (a groupmate's name is a unit token), else by first name,
+-- only when one groupmate has it.
+---@param sender any
+---@return PagleGroupmate?
+local function groupmate(sender)
+	sender = unsecret(sender)
+	local first = ns.PartySenderName(sender)
+	if not first then
+		return nil
+	end
+	local guid = unsecret(
+		(
+			UnitGUID(sender --[[@as string]])
+		)
+	)
+	if type(guid) == "string" and guid == unsecret((UnitGUID("player"))) then
+		return nil
+	end
+	local named, count = nil, 0
 	for _, member in ipairs(members()) do
-		if member == name then
+		if type(guid) == "string" and member.key == guid then
 			return member
 		end
+		if member.first == first then
+			named, count = member, count + 1
+		end
 	end
-	return nil
+	if type(guid) == "string" or count ~= 1 or first == unsecret((UnitName("player"))) then
+		return nil
+	end
+	return named
 end
 
 -- Sending (ANN-R103): through the limiter, waiting out chat lockdown, and only in a party.
@@ -210,10 +252,10 @@ local function rosterSettled()
 		return
 	end
 	local present, newcomer = {}, false
-	for _, name in ipairs(members()) do
-		present[name] = true
-		if not state.greeted[name] then
-			state.greeted[name] = true
+	for _, member in ipairs(members()) do
+		present[member.key] = true
+		if not state.greeted[member.key] then
+			state.greeted[member.key] = true
 			newcomer = true
 		end
 	end
@@ -255,6 +297,20 @@ local function lookups()
 		formatLength = function(mm)
 			return ns.FormatLength(mm, ns.LengthUnit())
 		end,
+		areaName = function(areaID)
+			return unsecret((C_Map.GetAreaInfo(areaID)))
+		end,
+		-- The player's Hunts names it (its def.partyHuntName, adapter/Hunts.lua); nil without Hunts On.
+		huntName = function(huntID)
+			for _, module in ipairs(ns.Modules:Modules()) do
+				local name = module.def.partyHuntName
+				if name then
+					local ok, text = pcall(name, huntID)
+					return ok and type(text) == "string" and text or nil
+				end
+			end
+			return nil
+		end,
 	}
 end
 
@@ -282,12 +338,22 @@ function ns.PartyToastOf(message, name)
 	return { headline = headline, rung = "toast.low", stamps = {}, more = 0, coins = 0, moments = { headline } }
 end
 
+-- A cheer's Nod, below (cheerNod).
+local showCheers
+
 --- Puts what waits in the party queue into the lanes, one at a time, while they hold nothing of the player's and
 --- aren't held (ANN-R106); drops one that waited past its expiry. The lanes' `empty` calls it too.
 function ns.PumpPartyToasts()
 	local lanes = ns.lanes
 	if not lanes then
 		return
+	end
+	if not lanes:IsHeld() and state.heldCheers[1] then
+		local held = state.heldCheers
+		state.heldCheers = {}
+		for _, entry in ipairs(held) do
+			showCheers(entry)
+		end
 	end
 	local now = GetTime()
 	while state.queue[1] do
@@ -329,6 +395,17 @@ local function cheerNod(entry)
 	if not lanes then
 		return
 	end
+	-- Held with the lanes (combat, the Field guide), where a Nod would be dropped: it shows when they let go, with
+	-- every cheer gathered meanwhile.
+	if lanes:IsHeld() then
+		for _, held in ipairs(state.heldCheers) do
+			if held == entry then
+				return
+			end
+		end
+		state.heldCheers[#state.heldCheers + 1] = entry
+		return
+	end
 	local headline = {
 		rung = "nod",
 		kind = "partyCheer",
@@ -343,18 +420,26 @@ local function cheerNod(entry)
 	}
 	lanes:Push({ headline = headline, rung = "nod", stamps = {}, more = 0, coins = 0, moments = { headline } })
 end
+showCheers = cheerNod
 
--- A cheer from `name` for moment `id` (ANN-R108): one of the player's kept ids, once per groupmate; the first starts
+-- After combat's wait (ANN-R36), held cheers show at once, even while held toasts still fill the column.
+Pagle.RegisterCallback(OWNER, "RestrictionChanged", function(_, isRestricted)
+	if not isRestricted then
+		C_Timer.After(ns.AFTER_COMBAT_SECONDS + 0.1, ns.PumpPartyToasts)
+	end
+end)
+
+-- A cheer from `member` for moment `id` (ANN-R108): one of the player's kept ids, once per groupmate; the first starts
 -- CHEER_GATHER seconds of gathering, then one Nod.
 ---@param id string
----@param name string
-local function cheered(id, name)
+---@param member PagleGroupmate
+local function cheered(id, member)
 	local entry = state.shared[id]
-	if not entry or GetTime() - entry.at > IDS_FOR or entry.cheered[name] then
+	if not entry or GetTime() - entry.at > IDS_FOR or entry.cheered[member.key] then
 		return
 	end
-	entry.cheered[name] = true
-	entry.names[#entry.names + 1] = name
+	entry.cheered[member.key] = true
+	entry.names[#entry.names + 1] = member.name
 	if entry.gathering then
 		return
 	end
@@ -377,14 +462,14 @@ local function remember(id, line)
 end
 
 -- Whether `name`'s message of `kind` is past their limit (ANN-R105); one within it is spent.
----@param name string
+---@param key string the groupmate's key
 ---@param kind string
 ---@return boolean
-local function overLimit(name, kind)
-	local limits = state.limits[name]
+local function overLimit(key, kind)
+	local limits = state.limits[key]
 	if not limits then
 		limits = {}
-		state.limits[name] = limits
+		state.limits[key] = limits
 	end
 	local limit = limits[kind]
 	if not limit then
@@ -395,14 +480,14 @@ local function overLimit(name, kind)
 end
 
 -- Whether moment `id` from `name` was taken already; notes it if not.
----@param name string
+---@param key string the groupmate's key
 ---@param id string
 ---@return boolean
-local function seen(name, id)
-	local list = state.received[name]
+local function seen(key, id)
+	local list = state.received[key]
 	if not list or list.count >= RECEIVED_KEPT then
 		list = { count = 0, ids = {} }
-		state.received[name] = list
+		state.received[key] = list
 	end
 	if list.ids[id] then
 		return true
@@ -418,28 +503,28 @@ Pagle.RegisterEvent(OWNER, "CHAT_MSG_ADDON", function(_, prefix, text, channel, 
 	if unsecret(prefix) ~= ns.PARTY_PREFIX or unsecret(channel) ~= "PARTY" or not inParty() then
 		return
 	end
-	local name = groupmate(sender)
-	local message = name and ns.ParsePartyText(unsecret(text))
-	if not name or not message then
+	local member = groupmate(sender)
+	local message = member and ns.ParsePartyText(unsecret(text))
+	if not member or not message then
 		return
 	end
 	if
-		message.type == "moment" and seen(name, message.id --[[@as string]])
+		message.type == "moment" and seen(member.key, message.id --[[@as string]])
 	then
 		return
 	end
-	if overLimit(name, message.type) then
+	if overLimit(member.key, message.type) then
 		return
 	end
-	state.peers[name] = true
+	state.peers[member.key] = true
 	if message.type == "hello" then
 		if message.ask and (not state.helloAt or GetTime() - state.helloAt >= HELLO_GAP) then
 			sayHello(false)
 		end
 	elseif message.type == "moment" then
-		received(message, name)
+		received(message, member.name)
 	else
-		cheered(message.id --[[@as string]], name)
+		cheered(message.id --[[@as string]], member)
 	end
 end)
 
@@ -487,12 +572,13 @@ local DEV_SAMPLES = {
 	legend = { kind = "legend", item = 19805 },
 	colour = { kind = "colour", item = 6291, rarity = "rare", place = 8 },
 	monster = { kind = "monster", item = 6303, length = 612 },
-	gold = { kind = "gold", item = 6303 },
-	zone = { kind = "zone" },
+	gold = { kind = "gold", item = 6303, hunt = "mackerel_run" },
+	zone = { kind = "zone", area = 357 },
 	prestige = { kind = "prestige", rank = 3 },
 	ledger = { kind = "ledger" },
 }
-local DEV_NAMES = { "Kukli", "Arwen", "Bram", "Dela" }
+-- Made-up groupmates, with Forever's surnames and one without.
+local DEV_NAMES = { "Kukli Emnabi", "Arwen Tull", "Bram", "Dela Marsh" }
 
 -- A party toast of `kind` from Kukli, through the receiving path past the party and the limits.
 ---@param kind string
@@ -530,7 +616,7 @@ function ns.RunPartyDev(args)
 			local id = ids:Next()
 			remember(id, ns.PartyMomentLine({ type = "moment", kind = "legend", item = 19805 }, lookups()))
 			for i = 1, count do
-				cheered(id, DEV_NAMES[i])
+				cheered(id, { key = "dev:" .. i, first = DEV_NAMES[i], name = DEV_NAMES[i] })
 			end
 			print(ns.RenderText(L.DEV_PARTY_CHEERED, { count = count }))
 			return

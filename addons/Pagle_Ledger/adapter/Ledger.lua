@@ -180,12 +180,12 @@ local function monsterBandName()
 	return nil
 end
 
---- The party kind of a Ledger moment (announcements.md ANN-R104, from 1.5.x, #640), which Core shares with the
+--- The party kind of a Ledger moment (announcements.md ANN-R104, from 1.5.2, #640), which Core shares with the
 --- player's party, or nil: a Legend's first Catch (`legend`), a Rare or Epic variety's (`colour`), a size record in
 --- the Monster band (`monster`, its ruler labelled with that band's name, LED-R82), a Zone Master (`zone`), a
 --- Prestige (`prestige`) and the `complete.ledger` title's moment (`ledger`, its text that title's name, LED-R75).
 --- Read from what the moment already holds, so what the Ledger computes is unchanged; it is here, not in logic/, as
---- a 1.5.x patch changes no hashed file.
+--- a 1.5.2 patch changes no hashed file.
 ---@param moment PagleMoment
 ---@return ("legend"|"colour"|"monster"|"zone"|"prestige"|"ledger")?
 function ns.PartyKind(moment)
@@ -214,10 +214,17 @@ end
 ---@param module PagleModuleHandle
 ---@return LedgerOutlets
 function ns.Outlets(module)
+	-- Each zone name the moments looked up, back to its areaID: a Zone Master's moment names its zone in its text
+	-- (LED-R97), and its party mark carries the areaID, so a groupmate reads the name in their own language
+	-- (ANN-R104).
+	local areaOf = {}
 	return {
 		RaiseMoment = function(moment)
 			-- Marked for the player's party, if it is a kind Core shares (ANN-R104).
 			moment.party = ns.PartyKind(moment)
+			if moment.party == "zone" then
+				moment.partyArea = areaOf[moment.text]
+			end
 			module:RaiseMoment(moment)
 		end,
 		ReportCoinsEarned = function(total)
@@ -227,7 +234,13 @@ function ns.Outlets(module)
 			module:SetSummaryLine("ledger", text)
 		end,
 		ItemName = ns.ClientNames.ItemName,
-		AreaName = ns.ClientNames.AreaName,
+		AreaName = function(areaID)
+			local name = ns.ClientNames.AreaName(areaID)
+			if name then
+				areaOf[name] = areaID
+			end
+			return name
+		end,
 		RaiseWriteUp = function(section)
 			module:RaiseWriteUp(section)
 		end,

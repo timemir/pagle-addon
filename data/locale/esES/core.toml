@@ -423,14 +423,14 @@ en = "Shift-drag to move"
 
 [PARTY_LINES]
 value.epic = "Pescó un color épico"
-value.gold = "Alcanzó el Nivel de Oro en una caza"
+value.gold = "Consiguió oro en una caza"
 value.ledger = "Libro de registro al 100 %"
 value.legend = "Pescó una Leyenda"
 value.monster = "Récord de tamaño Monstruo"
 value.rare = "Pescó un color raro"
 value.zone = "Maestro de zona"
 en.epic = "Caught an epic colour"
-en.gold = "Reached a Hunt's Gold tier"
+en.gold = "Took gold in a Hunt"
 en.ledger = "Ledger 100%"
 en.legend = "Caught a Legend"
 en.monster = "Monster-size record"
@@ -440,6 +440,18 @@ en.zone = "Zone Master"
 [PARTY_PRESTIGE]
 value = "Prestigio {rank:0}"
 en = "Prestige {rank:0}"
+
+[PARTY_ZONE]
+value = "Se convirtió en Maestro de {zone}"
+en = "Became Master of {zone}"
+
+[PARTY_GOLD]
+value = "Consiguió oro en {hunt}"
+en = "Took gold in {hunt}"
+
+[PARTY_FULL_NAME]
+value = "{name} {surname}"
+en = "{name} {surname}"
 
 [PARTY_DETAIL]
 value = "{what} · {detail}"

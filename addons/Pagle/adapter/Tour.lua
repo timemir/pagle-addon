@@ -44,7 +44,7 @@ for _, kind in ipairs({ "toast", "nod", "banner", "splash" }) do
 	end)
 end
 
--- A party toast (ANN-R107, from 1.5.x): a Legend from a made-up groupmate, Kukli, put straight in the lanes as the
+-- A party toast (ANN-R107, from 1.5.2): a Legend from a made-up groupmate, Kukli Emnabi, put straight in the lanes as the
 -- forms above are, so the layout harness measures the party style; its hide takes it back off screen.
 do
 	---@type PagleAnnouncement?
@@ -52,7 +52,7 @@ do
 	add("announce.party", function()
 		return ns.RenderText(ns.L.DEV_TOUR_ANNOUNCE, { kind = "party" })
 	end, function()
-		sample = ns.PartyToastOf({ type = "moment", id = "tour1", kind = "legend", item = 19805 }, "Kukli")
+		sample = ns.PartyToastOf({ type = "moment", id = "tour1", kind = "legend", item = 19805 }, "Kukli Emnabi")
 		ns.lanes:Push(sample)
 	end, function()
 		if sample then

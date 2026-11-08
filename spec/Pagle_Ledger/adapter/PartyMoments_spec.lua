@@ -1,4 +1,4 @@
--- The Ledger's moments marked for the player's party (announcements.md ANN-R104, from 1.5.x, #640): the adapter's
+-- The Ledger's moments marked for the player's party (announcements.md ANN-R104, from 1.5.2, #640): the adapter's
 -- ns.PartyKind reads each moment as raised and marks a Legend, a Rare or Epic variety, a Monster-size record, a Zone
 -- Master, a Prestige and Ledger completion's title, and nothing else; the outlets' RaiseMoment carries the mark.
 
@@ -6,6 +6,11 @@
 local function ledger()
 	local fake = newFakePagle()
 	fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+	fake.globals.C_Map = {
+		GetAreaInfo = function(areaID)
+			return ({ [357] = "Feralas", [12] = "Elwynn Forest" })[areaID]
+		end,
+	}
 	local loaded = fake.load("Pagle_Ledger")
 	fake.login()
 	return loaded, fake
@@ -59,5 +64,21 @@ describe("the Ledger's party moments (ANN-R104)", function()
 		outlets.RaiseMoment({ rung = "toast", kind = "newSpecies", title = "New Species" })
 		assert.are.same({ "legend" }, { raised[1].party })
 		assert.is_nil(raised[2].party)
+	end)
+
+	it("carries a Zone Master's zone as the areaID its name was looked up by, never the name", function()
+		local loaded = ledger()
+		local raised = {}
+		local outlets = loaded.ns.Outlets({
+			RaiseMoment = function(_, moment)
+				raised[#raised + 1] = moment
+			end,
+		})
+		-- As celebrate.zoneRank names it (LED-R97).
+		local name = outlets.AreaName(357)
+		outlets.RaiseMoment({ rung = "banner", kind = "zoneMaster", title = "Zone Master", text = name })
+		outlets.RaiseMoment({ rung = "banner", kind = "zoneMaster", title = "Zone Master", text = "Nowhere" })
+		assert.are.same({ "zone", 357 }, { raised[1].party, raised[1].partyArea })
+		assert.are.same({ "zone" }, { raised[2].party, raised[2].partyArea })
 	end)
 end)

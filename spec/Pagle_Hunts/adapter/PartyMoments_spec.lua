@@ -1,34 +1,43 @@
--- Hunts' moments marked for the player's party (announcements.md ANN-R104, from 1.5.x, #640): a Hunt's gold tier, as
--- its adapter raises it, carries `party = "gold"`, and nothing else of Hunts' does.
+-- Hunts' moments marked for the player's party (announcements.md ANN-R104, from 1.5.2, #640): the moment of a Hunt's
+-- first gold tier, as the adapter wraps logic's ns.HuntTierMoment, carries `party = "gold"` and the Hunt's ID, and no
+-- other tier does; Hunts' def names a Hunt by its ID for a groupmate's toast (ANN-R106).
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local hunts = dofile("spec/Pagle_Hunts/support.lua")
 
--- What FakePagle kept of Hunts' moments, each as "<kind> <stamp> <party>".
-local function marked(fake)
-	local out = {}
-	for _, moment in ipairs(fake.summarized) do
-		if moment.module == "Hunts" then
-			out[#out + 1] = ("%s %s %s"):format(moment.kind, tostring(moment.stamp), tostring(moment.party))
+-- A Hunt of the fixture list with three tiers or more.
+local function threeTiered(loaded)
+	for _, hunt in ipairs(loaded.ns.hunts:Hunts()) do
+		if #hunt.tiers >= 3 then
+			return hunt
 		end
 	end
-	return out
+	error("no Hunt with three tiers in the fixture list")
 end
 
 describe("Hunts' party moments (ANN-R104)", function()
-	it("mark a Hunt's gold tier as gold, and not its silver tier, its completion or a set title", function()
-		local loaded, fake = hunts.login(nil, {})
-		local raise = loaded.ns.moments.client.RaiseMoment
+	it("mark the gold tier's moment with its Hunt, and not bronze or silver, and say what it says as before", function()
+		local loaded = hunts.login(nil, {})
+		local hunt = threeTiered(loaded)
+		local marks = {}
+		for k = 1, 3 do
+			local moment = loaded.ns.HuntTierMoment(hunt, k, { itemID = 6303 })
+			marks[k] = { tostring(moment.party), tostring(moment.partyHunt), moment.stamp }
+		end
 		local L = loaded.ns.L
-		raise({ rung = "toast.high", kind = "huntTier", title = "Gold tier", stamp = L.TRIMS.gold, icon = 6303 })
-		raise({ rung = "toast.high", kind = "huntTier", title = "Silver tier", stamp = L.TRIMS.silver, icon = 6303 })
-		raise({ rung = "toast.high", kind = "huntCompleted", title = "Hunt complete", stamp = "Hunt", icon = 6303 })
-		raise({ rung = "banner", kind = "huntSetTitle", title = "Title earned", stamp = L.TITLE_EARNED_STAMP })
 		assert.are.same({
-			"huntTier Gold gold",
-			"huntTier Silver nil",
-			"huntCompleted Hunt nil",
-			"huntSetTitle " .. L.TITLE_EARNED_STAMP .. " nil",
-		}, marked(fake))
+			{ "nil", "nil", L.HUNT_COMPLETE_STAMP },
+			{ "nil", "nil", L.TRIMS.silver },
+			{ "gold", hunt.id, L.TRIMS.gold },
+		}, marks)
+	end)
+
+	it("name a Hunt it knows by its ID through its def, and nothing for one it doesn't (ANN-R106)", function()
+		local loaded, fake = hunts.login(nil, {})
+		local hunt = threeTiered(loaded)
+		local def = fake.registry:ModuleOf(loaded.ns.Module).def
+		assert(def.partyHuntName, "Hunts' def has no partyHuntName")
+		assert.are.equal(loaded.ns.hunts:HuntName(hunt.id), def.partyHuntName(hunt.id))
+		assert.is_nil(def.partyHuntName("no_such_hunt"))
 	end)
 end)

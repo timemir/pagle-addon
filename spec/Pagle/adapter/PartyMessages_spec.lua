@@ -1,5 +1,5 @@
 -- Party toasts' messages, pure (announcements.md › Party toasts and cheers, › Contracts › Party messages; ANN-R103–R105,
--- ANN-R108, from 1.5.x, #640): adapter/PartyMessages.lua's format, its strict reading of what arrives, the limits on
+-- ANN-R108, from 1.5.2, #640): adapter/PartyMessages.lua's format, its strict reading of what arrives, the limits on
 -- what is taken, a shared moment as sent, and the lines a party toast and a cheer's Nod read. Loaded through the real
 -- TOC, where adapter/Settings.xml's <Script> lines load it, since a patch can't add to the TOC.
 
@@ -31,9 +31,11 @@ describe("party messages", function()
 			{ { kind = "colour", item = 6291, rarity = "rare", place = 8 }, "1:M:k3x91:colour:6291:r:8" },
 			{ { kind = "colour", item = 6291, rarity = "epic", place = 0 }, "1:M:k3x91:colour:6291:e:0" },
 			{ { kind = "monster", item = 6303, length = 612 }, "1:M:k3x91:monster:6303:612" },
-			{ { kind = "gold", item = 6303 }, "1:M:k3x91:gold:6303" },
-			{ { kind = "gold" }, "1:M:k3x91:gold:0" },
-			{ { kind = "zone" }, "1:M:k3x91:zone" },
+			{ { kind = "gold", item = 6303, hunt = "mackerel_run" }, "1:M:k3x91:gold:6303:mackerelZrun" },
+			{ { kind = "gold", item = 6303 }, "1:M:k3x91:gold:6303:0" },
+			{ { kind = "gold" }, "1:M:k3x91:gold:0:0" },
+			{ { kind = "zone", area = 357 }, "1:M:k3x91:zone:357" },
+			{ { kind = "zone" }, "1:M:k3x91:zone:0" },
 			{ { kind = "prestige", rank = 3 }, "1:M:k3x91:prestige:3" },
 			{ { kind = "ledger" }, "1:M:k3x91:ledger" },
 		}
@@ -51,6 +53,9 @@ describe("party messages", function()
 		assert.is_nil(n.PartyMomentText("k3x91", { kind = "prestige", rank = 1.5 }))
 		assert.is_nil(n.PartyMomentText("k3x91", { kind = "catch", item = 6303 }))
 		assert.is_nil(n.PartyMomentText("K3X91", { kind = "zone" }))
+		assert.is_nil(n.PartyMomentText("k3x91", { kind = "gold", item = 6303, hunt = "Mackerel_Run" }))
+		assert.is_nil(n.PartyMomentText("k3x91", { kind = "gold", item = 6303, hunt = string.rep("a", 33) }))
+		assert.is_nil(n.PartyMomentText("k3x91", { kind = "zone", area = 10000000 }))
 	end)
 
 	it("read back every message it writes (ANN-R105)", function()
@@ -68,9 +73,21 @@ describe("party messages", function()
 		)
 		assert.are.same(
 			{ type = "moment", id = "k3x91", kind = "gold", item = 0 },
-			n.ParsePartyText("1:M:k3x91:gold:0")
+			n.ParsePartyText("1:M:k3x91:gold:0:0")
 		)
-		assert.are.same({ type = "moment", id = "k3x91", kind = "zone" }, n.ParsePartyText("1:M:k3x91:zone"))
+		assert.are.same(
+			{ type = "moment", id = "k3x91", kind = "gold", item = 6303, hunt = "mackerel_run" },
+			n.ParsePartyText("1:M:k3x91:gold:6303:mackerelZrun")
+		)
+		assert.are.same({ type = "moment", id = "k3x91", kind = "zone" }, n.ParsePartyText("1:M:k3x91:zone:0"))
+		assert.are.same(
+			{ type = "moment", id = "k3x91", kind = "zone", area = 357 },
+			n.ParsePartyText("1:M:k3x91:zone:357")
+		)
+		-- The longest a moment gets, a Hunt of 32 in a 12-character id, fits the 64 bytes.
+		local longest = "1:M:" .. string.rep("z", 12) .. ":gold:999999999:" .. string.rep("a", 32)
+		assert.are.equal(64, #longest)
+		assert.is_not_nil(n.ParsePartyText(longest))
 		assert.are.same(
 			{ type = "moment", id = "k3x91", kind = "prestige", rank = 3 },
 			n.ParsePartyText("1:M:k3x91:prestige:3")
@@ -105,7 +122,11 @@ describe("party messages", function()
 				"1:M:k3x91:colour:6291:r:11",
 				"1:M:k3x91:monster:6303:0",
 				"1:M:k3x91:prestige:1000",
-				"1:M:k3x91:zone:12",
+				"1:M:k3x91:zone",
+				"1:M:k3x91:zone:357:1",
+				"1:M:k3x91:gold:6303",
+				"1:M:k3x91:gold:6303:mackerel_run",
+				"1:M:k3x91:gold:6303:" .. string.rep("a", 33),
 				"1:M:k3x91:legend:19803|r",
 				"1:M:k3x91:legend:|cff0000ff",
 				"1:M:k3x91:legend:19803 ",
@@ -202,10 +223,18 @@ describe("party messages", function()
 			)
 			assert.are.same({ kind = "gold", item = 6303 }, n.PartyShareOf({ party = "gold", icon = 6303 }))
 			assert.are.same(
+				{ kind = "gold", item = 6303, hunt = "mackerel_run" },
+				n.PartyShareOf({ party = "gold", icon = 6303, partyHunt = "mackerel_run" })
+			)
+			assert.are.same(
 				{ kind = "gold", item = 0 },
 				n.PartyShareOf({ party = "gold", icon = "Interface\\Icons\\X" })
 			)
 			assert.are.same({ kind = "zone" }, n.PartyShareOf({ party = "zone", icon = 1, text = "Elwynn Forest" }))
+			assert.are.same(
+				{ kind = "zone", area = 12 },
+				n.PartyShareOf({ party = "zone", icon = 1, text = "Elwynn Forest", partyArea = 12 })
+			)
 			assert.are.same({ kind = "prestige", rank = 3 }, n.PartyShareOf({ party = "prestige", frameRank = 3 }))
 			assert.are.same({ kind = "ledger" }, n.PartyShareOf({ party = "ledger" }))
 			assert.is_nil(n.PartyShareOf({ party = "catch", icon = 6303 }))
@@ -228,6 +257,12 @@ describe("party messages", function()
 			formatLength = function(mm)
 				return ("%.1f cm"):format(mm / 10)
 			end,
+			areaName = function(areaID)
+				return areaID == 357 and "Feralas" or nil
+			end,
+			huntName = function(huntID)
+				return huntID == "darkshore_moonlight" and "Grouper by Moonlight" or nil
+			end,
 		}
 		local function line(message)
 			return n.PartyMomentLine(message, lookups)
@@ -247,8 +282,15 @@ describe("party messages", function()
 			line({ kind = "monster", item = 6303, length = 612 })
 		)
 		assert.are.equal("Monster-size record · 61.2 cm", line({ kind = "monster", item = 1, length = 612 }))
-		assert.are.equal("Reached a Hunt's Gold tier", line({ kind = "gold", item = 6303 }))
+		assert.are.equal("Took gold in a Hunt", line({ kind = "gold", item = 6303 }))
+		assert.are.equal("Took gold in a Hunt", line({ kind = "gold", item = 6303, hunt = "nowhere" }))
+		assert.are.equal(
+			"Took gold in Grouper by Moonlight",
+			line({ kind = "gold", item = 6303, hunt = "darkshore_moonlight" })
+		)
 		assert.are.equal("Zone Master", line({ kind = "zone" }))
+		assert.are.equal("Zone Master", line({ kind = "zone", area = 1 }))
+		assert.are.equal("Became Master of Feralas", line({ kind = "zone", area = 357 }))
 		assert.are.equal("Prestige 3", line({ kind = "prestige", rank = 3 }))
 		assert.are.equal("Ledger 100%", line({ kind = "ledger" }))
 	end)

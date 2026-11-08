@@ -195,7 +195,7 @@ local EXPECTED = {
 			{ "slot", "Toast style" },
 			{ "slot", "Sound set" },
 			{ "button", "Toast position", caption = "Reset", tip = TIPS.toastPosition },
-			-- The Party block (SET-R35, from 1.5.x).
+			-- The Party block (SET-R36, from 1.5.2).
 			{ "header", "Party" },
 			{ "checkbox", "Share my moments with my party", tip = TIPS.partyShare },
 			{ "checkbox", "Show my party's moments", tip = TIPS.partyShow },
@@ -778,7 +778,7 @@ describe("Greying in the Settings tree", function()
 			"Interruptions",
 			"Per",
 			"Show every catch",
-			-- The Party block's, but Share (SET-R35).
+			-- The Party block's, but Share (SET-R36).
 			"Show my party's moments",
 			"Legends",
 			"Rare colours",
@@ -1134,7 +1134,7 @@ describe("Each page's Defaults button", function()
 			["Animations"] = true,
 			["Announce open Hunt windows"] = false,
 			["Remind me about the Pagle companion"] = true,
-			-- SET-R35's: every one on.
+			-- SET-R36's: every one on.
 			["Share my moments with my party"] = true,
 			["Show my party's moments"] = true,
 			["Legends"] = true,
@@ -1466,7 +1466,7 @@ local AVOIDED = {
 ---@return string[]
 local function avoidedIn(text)
 	local said = {}
-	-- A Hunt's Gold tier (its trim, HNT-R18) is a tier, not money (SET-R35).
+	-- A Hunt's Gold tier (its trim, HNT-R18) is a tier, not money (SET-R36).
 	local lower = text:lower():gsub("curio shop", ""):gsub("field report", ""):gsub("gold tier", "")
 	for _, word in ipairs(AVOIDED) do
 		if lower:find("%f[%w]" .. word .. "%f[^%w]") then
@@ -1493,7 +1493,7 @@ local NAMES = {
 	Hunts = true,
 	["I'm"] = true,
 	Journal = true,
-	-- A Zone Mastery rank (CONTEXT.md), as in Zone Master (SET-R35).
+	-- A Zone Mastery rank (CONTEXT.md), as in Zone Master (SET-R36).
 	Master = true,
 	Modules = true,
 	Pagle = true,

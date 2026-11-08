@@ -6,7 +6,7 @@ if not Pagle then
 	return
 end
 
--- The Party block on the Announcements page (settings.md SET-R35; announcements.md ANN-R104–R108; from 1.5.x, #640):
+-- The Party block on the Announcements page (settings.md SET-R36; announcements.md ANN-R104–R108; from 1.5.2, #640):
 -- after Core's rows, under its own header, native checkboxes on proxy settings over PagleDB.profile.party, nil meaning
 -- on (adapter/Party.lua's ns.PartyOption and ns.PartyKindOn), since Core's defaults sit in logic/, which a patch can't
 -- change. adapter/AnnouncementSettings.lua calls it last. Loaded by adapter/Settings.xml.
@@ -36,7 +36,7 @@ local function greys(initializer, isLive)
 	initializer:AddEvaluateStateCVar(SHOW)
 end
 
---- Builds the Party block on the Announcements page (SET-R35): the header, Share, Show with a switch per kind under
+--- Builds the Party block on the Announcements page (SET-R36): the header, Share, Show with a switch per kind under
 --- it, then Cheers sounds. Each reads the stored value each time the page is shown and writes it at once (SET-R62);
 --- each defaults to on, which the page's Defaults button restores (SET-R33).
 ---@param page SettingsCategory
