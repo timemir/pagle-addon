@@ -717,7 +717,8 @@ end)
 
 --- The Pagle groupmate the party letter names (ANN-R114): the first of party1 to party4 who sent a valid message (a
 --- Pagle groupmate, ANN-R103) and whom the client places on the player's own map (`C_Map.GetBestMapForUnit`), with that
---- map's ID; nil out of a party, with no Pagle groupmate, or none the client places beside the player.
+--- map's ID; else the first such groupmate where the client places them or the player nowhere (nil), with no map, as
+--- an unknown zone isn't another one; nil out of a party, with no Pagle groupmate, or only ones placed elsewhere.
 ---@return PagleGroupmate?
 ---@return integer? map
 function ns.PartyGroupmateHere()
@@ -725,17 +726,23 @@ function ns.PartyGroupmateHere()
 		return nil
 	end
 	local here = unsecret((C_Map.GetBestMapForUnit("player")))
-	if type(here) ~= "number" then
-		return nil
-	end
+	here = type(here) == "number" and here or nil
+	local unplaced
 	for i = 1, 4 do
 		local unit = "party" .. i
 		local member = memberAt(unit)
-		if member and state.peers[member.key] and unsecret((C_Map.GetBestMapForUnit(unit))) == here then
-			return member, here
+		if member and state.peers[member.key] then
+			local map = unsecret((C_Map.GetBestMapForUnit(unit)))
+			map = type(map) == "number" and map or nil
+			if here and map == here then
+				return member, here
+			elseif not here or not map then
+				-- Where the client places one of the two nowhere, the zone is unknown, not another (ANN-R114).
+				unplaced = unplaced or member
+			end
 		end
 	end
-	return nil
+	return unplaced, nil
 end
 
 --- Shares the moments of `announcement` a Module marked with `party` (ANN-R104), each once, while Share is on, in a

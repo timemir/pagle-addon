@@ -885,6 +885,10 @@ en = "A letter, passed along the bank"
 value = "{name} angelt mit dir in {zone} und nutzt auch Pagle. Angelt zusammen: Teile deine besten Fänge, stoß auf ihre an, und eure Fänge zählen gegenseitig für eure Jagden."
 en = "{name} is fishing {zone} with you, and they run Pagle too. Fish together: share your best catches, cheer theirs, and count each other’s catches toward your Hunts."
 
+[PARTY_LETTER_LINE_NO_ZONE]
+value = "{name} nutzt auch Pagle und ist in deiner Gruppe. Angelt zusammen: Teile deine besten Fänge, stoß auf ihre an, und eure Fänge zählen gegenseitig für eure Jagden."
+en = "{name} runs Pagle too and is in your party. Fish together: share your best catches, cheer theirs, and count each other’s catches toward your Hunts."
+
 [PARTY_LETTER_YES]
 value = "Zusammen angeln"
 en = "Fish together"

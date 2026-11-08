@@ -61,8 +61,9 @@ local function setByHand()
 end
 
 --- Whether the party letter's reason holds now (ANN-R114): no party switch set by hand, the player cast in the last
---- 300 s, and a Pagle groupmate is in the player's party and zone. Whether it was answered, and when Not now lets it
---- ask again, is the letter service's (ONB-R16). The service asks it again as the letter is about to show (`isDue`,
+--- 300 s, and a Pagle groupmate is in the player's party and zone, or in the party where the client can't place them
+--- or the player (ns.PartyGroupmateHere): an unknown zone isn't another one. Whether it was answered, and when Not now
+--- lets it ask again, is the letter service's (ONB-R16). The service asks it again as the letter is about to show (`isDue`,
 --- ONB-R17), so a reason that passed while the letter waited (combat, another letter) shows nothing.
 ---@return boolean
 function ns.PartyLetterIsDue()
@@ -104,6 +105,10 @@ function ns.PartyLetterWords()
 	local member, map
 	if not sample then
 		member, map = ns.PartyGroupmateHere()
+	end
+	if member and not map then
+		-- The client placed one of the two nowhere: the words name no zone (ANN-R114).
+		return { text = ns.RenderText(ns.L.PARTY_LETTER_LINE_NO_ZONE, { name = member.name }) }
 	end
 	local zone = mapName(map) or mapName(unsecret((C_Map.GetBestMapForUnit("player")))) or SAMPLE_ZONE
 	return {

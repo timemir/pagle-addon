@@ -335,6 +335,7 @@ ns.Locale("esES", function(L)
 	L.PARTY_LETTER_KICKER = "Una carta, pasada por la orilla"
 	L.PARTY_LETTER_LATER = "Ahora no"
 	L.PARTY_LETTER_LINE = "{name} está pescando en {zone} contigo y también usa Pagle. Pescad juntos: comparte tus mejores capturas, brinda por las suyas y que las capturas de cada uno cuenten para las Cazas del otro."
+	L.PARTY_LETTER_LINE_NO_ZONE = "{name} también usa Pagle y está en tu grupo. Pescad juntos: comparte tus mejores capturas, brinda por las suyas y que las capturas de cada uno cuenten para las Cazas del otro."
 	L.PARTY_LETTER_NO = "No, gracias"
 	L.PARTY_LETTER_YES = "Pescar juntos"
 	L.PARTY_LINES = { epic = "Pescó un color épico", gold = "Consiguió oro en una caza", ledger = "Libro de registro al 100 %", legend = "Pescó una Leyenda", monster = "Récord de tamaño Monstruo", rare = "Pescó un color raro", zone = "Maestro de zona" }
