@@ -384,6 +384,7 @@ en = "A small toast when a groupmate who runs Pagle has a moment, with a mug you
 [SETTINGS_PARTY_KINDS]
 value.colour = "Seltene Varianten"
 value.gold = "Goldrang in einer Jagd"
+value.hp = "Für die Gruppe geschafft"
 value.ledger = "Anglerbuch 100 %"
 value.legend = "Legenden"
 value.monster = "Rekorde in Monstergröße"
@@ -391,6 +392,7 @@ value.prestige = "Prestige"
 value.zone = "Gebietsmeister"
 en.colour = "Rare colours"
 en.gold = "Gold tier in a Hunt"
+en.hp = "Completed for the party"
 en.ledger = "Ledger 100%"
 en.legend = "Legends"
 en.monster = "Monster-size records"
@@ -828,6 +830,40 @@ value.one = "{count} hebt einen Krug"
 value.other = "{count} heben einen Krug"
 en.one = "{count} raised a mug"
 en.other = "{count} raised a mug"
+
+[PARTY_HP_MINE]
+value = "Dein Fang"
+en = "Your catch"
+
+[PARTY_HP_PARTY]
+value = "Für die Gruppe geschafft"
+en = "Completed for the party"
+
+[PARTY_HP_HUNT]
+value = "{hunt} · für {senders}"
+en = "{hunt} · for {senders}"
+
+[PARTY_HP_RUN]
+value = "{event} eingelöst · für {senders}"
+en = "{event} settled · for {senders}"
+
+[PARTY_HP_SOME_HUNT]
+value = "eine Jagd"
+en = "a Hunt"
+
+[PARTY_HP_SOME_RUN]
+value = "eine Pagle-Wette"
+en = "a Pagle Wager"
+
+[PARTY_HP_SENDERS_TWO]
+value = "{name} und {other}"
+en = "{name} and {other}"
+
+[PARTY_HP_SENDERS_MORE]
+value.one = "{name}, {other} und {count} weitere"
+value.other = "{name}, {other} und {count} weitere"
+en.one = "{name}, {other} and {count} more"
+en.other = "{name}, {other} and {count} more"
 
 [TOAST_SAMPLE_TITLE]
 value = "Neue Art"

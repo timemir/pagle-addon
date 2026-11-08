@@ -69,7 +69,10 @@ function ns.PartySettingsRows(page, layout)
 	local show =
 		Settings.CreateCheckbox(page, option(SHOW, L.SETTINGS_PARTY_SHOW, "show"), L.SETTINGS_PARTY_SHOW_TOOLTIP)
 	greys(show, notCozy)
-	for _, kind in ipairs(ns.PARTY_KINDS) do
+	-- The moment kinds, then from 1.6 "Completed for the party" (SET-R35, ANN-R111), which isn't one a moment is shared as.
+	local kinds = { unpack(ns.PARTY_KINDS) }
+	kinds[#kinds + 1] = ns.PARTY_HUNT_KIND
+	for _, kind in ipairs(kinds) do
 		local setting = Settings.RegisterProxySetting(
 			page,
 			KIND .. kind,

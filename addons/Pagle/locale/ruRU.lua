@@ -319,6 +319,14 @@ ns.Locale("ruRU", function(L)
 	L.PARTY_DETAIL = "{what} • {detail}"
 	L.PARTY_FULL_NAME = "{name} {surname}"
 	L.PARTY_GOLD = "Взял(а) золото в охоте «{hunt}»"
+	L.PARTY_HP_HUNT = "{hunt} • для: {senders}"
+	L.PARTY_HP_MINE = "Твой улов"
+	L.PARTY_HP_PARTY = "Выполнено для группы"
+	L.PARTY_HP_RUN = "Выиграно для {senders}: {event}"
+	L.PARTY_HP_SENDERS_MORE = { few = "{name}, {other} и ещё {count}", many = "{name}, {other} и ещё {count}", one = "{name}, {other} и ещё {count}", other = "{name}, {other} и ещё {count}" }
+	L.PARTY_HP_SENDERS_TWO = "{name} и {other}"
+	L.PARTY_HP_SOME_HUNT = "охота"
+	L.PARTY_HP_SOME_RUN = "пари Пэгла"
 	L.PARTY_LINES = { epic = "Поймал(а) эпическую окраску", gold = "Взял(а) золото в охоте", ledger = "Реестр на 100%", legend = "Поймал(а) легенду", monster = "Рекорд размера «Чудовище»", rare = "Поймал(а) редкую окраску", zone = "Мастер зоны" }
 	L.PARTY_MUG = "Поднять кружку"
 	L.PARTY_MUG_RAISED = "Вы подняли кружку"
@@ -469,7 +477,7 @@ ns.Locale("ruRU", function(L)
 	L.SETTINGS_PARTY = "Группа"
 	L.SETTINGS_PARTY_HUNTS = "Групповые охоты"
 	L.SETTINGS_PARTY_HUNTS_TOOLTIP = "В группе улов участников засчитывается в ваши Охоты и Пари Пэгла, пока вы рыбачите в одной зоне, а ваш — в их. Если выключено, Pagle не делится вашим уловом и не засчитывает их улов."
-	L.SETTINGS_PARTY_KINDS = { colour = "Редкие окраски", gold = "Золотая ступень в охоте", ledger = "Реестр на 100%", legend = "Легенды", monster = "Рекорды размера «Чудовище»", prestige = "Престиж", zone = "Мастер зоны" }
+	L.SETTINGS_PARTY_KINDS = { colour = "Редкие окраски", gold = "Золотая ступень в охоте", hp = "Выполнено для группы", ledger = "Реестр на 100%", legend = "Легенды", monster = "Рекорды размера «Чудовище»", prestige = "Престиж", zone = "Мастер зоны" }
 	L.SETTINGS_PARTY_SHARE = "Делиться моими моментами с группой"
 	L.SETTINGS_PARTY_SHARE_TOOLTIP = "Когда вы ловите легенду, ставите рекорд размера «Чудовище» и тому подобное, участники группы с Pagle видят небольшую плашку. Отправляется только сам момент, а не то, где вы находитесь. Не в рейде."
 	L.SETTINGS_PARTY_SHOW = "Показывать моменты моей группы"

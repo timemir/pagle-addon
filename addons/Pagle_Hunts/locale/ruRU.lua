@@ -130,6 +130,8 @@ ns.Locale("ruRU", function(L)
 	L.NEEDS_SKILL = "нужен навык {need:0}"
 	L.NO_HUNTS = "Охот пока нет."
 	L.OUT_OF_SEASON = "не сезон"
+	L.PARTY_A_GROUPMATE = "участником группы"
+	L.PARTY_WITH = "{text} • с {name}"
 	L.PAY_AMOUNT = "+{xpRun:0} опыта • {coins:0} мон."
 	L.PAY_PAID_OUT = "выплачено"
 	L.PAY_REFRESH = { few = "+{count} обновления", many = "+{count} обновлений", one = "+{count} обновление", other = "+{count} обновления" }

@@ -1,7 +1,8 @@
 -- A live Party Catch in Hunts on FakePagle (HNT-R185's first half, HNT-R182, HNT-R184, ANN-R110), through Core's
 -- receiver path as fake.partyCatch drives it (#644): a real `G1` appended and handed live to the projections that take
 -- Party Catches. The moments of what it newly reaches merge under its entry ID, and the Coins it earns are reported,
--- as a Cast's are; Core's filter asks Hunts' def. The groupmate's name on the moments and the party toast are #646's.
+-- as a Cast's are; Core's filter asks Hunts' def. From #646, the moments name the groupmate, and a Hunt completed
+-- through one carries its source Catch ID for Core's party toast (HNT-R185, ANN-R111).
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local hunts = dofile("spec/Pagle_Hunts/support.lua")
@@ -59,12 +60,61 @@ describe("a live Party Catch in Hunts", function()
 			{ 10, true },
 			{ state.hunts.fixture_snapper.count, state.hunts.fixture_snapper.reached[2].party }
 		)
-		assert.are.same({ { kind = "huntTier", text = "Snapper Run · 10 caught", cast = pc.id } }, kept(fake))
+		-- The groupmate's name after its text (HNT-R185, #646): the live record carries it.
+		assert.are.same(
+			{ { kind = "huntTier", text = "Snapper Run · 10 caught · with " .. hunts.GROUPMATE_NAME, cast = pc.id } },
+			kept(fake)
+		)
 		assert.are.same({ pc.id }, { fake.announcements[1].cast })
 		assert.are.same({ before + loaded.ns.COINS_TIER }, { coinReports(fake)[#coinReports(fake)] })
 		assert.are.equal(2, loaded.env.PagleHuntsDB.global.celebrated.tiers.fixture_snapper)
 		assert.are.same({}, fake.reported)
 	end)
+
+	it(
+		"carries the source Catch ID and the Hunt on a Hunt it completes, for Core's party toast (HNT-R185, ANN-R111)",
+		function()
+			local loaded, fake = hunts.login()
+			local copy, sourceId = hunts.partyCopy(cast(0, NIGHT + 20, ELWYNN, { C.NIGHTFIN }))
+			local pc = fake.partyCatch(copy, hunts.GROUPMATE_NAME, sourceId)
+			fake.nextFrame()
+
+			assert.is_true(loaded.ns.State().hunts.fixture_snapper.reached[1].party)
+			local completed
+			for _, announcement in ipairs(fake.announcements) do
+				for _, moment in ipairs(announcement.moments) do
+					if moment.kind == "huntCompleted" then
+						completed = moment
+					end
+				end
+			end
+			assert(completed, "no huntCompleted moment")
+			-- Shown with the groupmate's name; stored with none, nor their Catch ID (ANN-R110).
+			local stored = {}
+			for _, moment in ipairs(fake.global.summary.moments) do
+				stored[#stored + 1] = moment.text
+			end
+			for _, moment in ipairs(fake.global.pending) do
+				stored[#stored + 1] = moment.text
+			end
+			assert.are.same({ "Snapper Run · with a groupmate" }, stored)
+			for _, text in ipairs(stored) do
+				assert.is_nil(text:find(hunts.GROUPMATE_NAME, 1, true))
+				assert.is_nil(text:find(sourceId, 1, true))
+			end
+			assert.are.same({
+				cast = pc.id,
+				text = "Snapper Run · with " .. hunts.GROUPMATE_NAME,
+				partyCatch = sourceId .. ":1",
+				partyHunt = "fixture_snapper",
+			}, {
+				cast = completed.cast,
+				text = completed.text,
+				partyCatch = completed.partyCatch,
+				partyHunt = completed.partyHunt,
+			})
+		end
+	)
 
 	it("is asked by Core's filter through Hunts' def, which takes what could count (HNT-R184, LOG-R114)", function()
 		local _, fake = hunts.login()
