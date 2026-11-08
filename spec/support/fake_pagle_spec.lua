@@ -1253,7 +1253,7 @@ describe("FakePagle", function()
 		end
 
 		it(
-			"serve the news block as Core's reads do, setting the floor at the first read with none (VIEW-R42, VIEW-R44)",
+			"serve the news block as Core's reads do, calling nothing new before the sign sets a floor (VIEW-R42, VIEW-R44)",
 			function()
 				local fake = newFakePagle()
 				fake.setFollowing(news())
@@ -1263,7 +1263,7 @@ describe("FakePagle", function()
 
 				assert.are.same({ "ok", 3 }, { got.state, #got.items })
 				assert.are.same({ false, false, false }, { got.items[1].new, got.items[2].new, got.items[3].new })
-				assert.are.same({ since = SERVER_TIME, seen = {} }, fake.global.news)
+				assert.are.same({ seen = {} }, fake.global.news)
 			end
 		)
 

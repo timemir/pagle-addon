@@ -1050,12 +1050,15 @@ describe("the Companion's data files", function()
 
 		describe("seen and the floor", function()
 			it(
-				"sets the floor at the first read of ok news with none, and calls nothing new then (VIEW-R42, VIEW-R44, SIGN-R18)",
+				"calls nothing new at the first login with news, and leaves its floor to the sign's decision (VIEW-R42, SIGN-R18)",
 				function()
 					local read, global = views(anglerFileExamples().news)
 
 					assert.are.same(lines(), read:News().items)
-					assert.are.same({ since = NOW, seen = {} }, global.news)
+					assert.are.same({ seen = {} }, global.news)
+					-- The decision sets the floor after reading; the session still calls nothing new.
+					global.news.since = NOW
+					assert.are.same(lines(), read:News().items)
 				end
 			)
 

@@ -125,8 +125,8 @@
 --- as with no Pagle_Following installed, it reads absent. Raises an error after login. Pagle_Anglers is never
 --- installed here: no Module reads it. From 1.6 the same file's news block (VIEW-R40): Pagle.GetNews and
 --- Pagle.MarkNewsSeen over Core's real reads, keeping the seen items and the floor in fake.global.news (VIEW-R44), so a
---- spec that wants items `new` sets `fake.global.news = { since = …, seen = {} }` before fake.login (the first read
---- with no floor sets it and calls nothing new); Pagle.NewsWords on Core's real words over fake.itemNames,
+--- spec that wants items `new` sets `fake.global.news = { since = …, seen = {} }` before fake.login (with no floor,
+--- the first read calls nothing new; the sign's decision sets it, SIGN-R18); Pagle.NewsWords on Core's real words over fake.itemNames,
 --- fake.areaNames, the fixture catalogue's varieties and Pagle.GetVarietiesCaught, as an enUS client words them
 --- (VIEW-R45); helpers.lua's anglerFileExamples().news is IGV Contracts' example with a news block.
 ---@field areaNames table<integer, string> The zone names the fake's client gives, by areaID, for Pagle.NewsWords; a

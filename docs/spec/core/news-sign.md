@@ -106,7 +106,7 @@ ns.DecideNewsSign()              -- from 1.6: SIGN-R14's decision, run once a se
 ---@field head string
 ---@field detail string?
 ---@field more string?
----@field emblem table    -- SIGN-R13: { sign = name, tape? } | { atlas, sprite } | { legend, item } | { variety = { species, position, silhouette? } } | { file, fill, tape? }
+---@field emblem table    -- SIGN-R13: { sign = name } | { atlas, sprite } | { legend, item } | { variety = { species, position } } | { file, fill, tape? }
 ```
 
 *From 1.6,* the words of an item are `Pagle.NewsWords(item)` (VIEW-R45, SIGN-R19), which gives a `PagleNewsSignNews` without its more line; the decision adds the more line (SIGN-R16).

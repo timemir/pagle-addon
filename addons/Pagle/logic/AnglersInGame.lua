@@ -783,9 +783,10 @@ local function newsKept(views)
 	return kept
 end
 
--- The session's first read of ok news (VIEW-R42, VIEW-R44, SIGN-R18), once: with no floor yet, sets it to `now` and
--- calls nothing new (the first login with news); otherwise an item is new when its id wasn't seen and its time is at
--- or after the floor. Then drops from `seen` every entry older than the seen age, and any that isn't a time.
+-- The session's first read of ok news (VIEW-R42, VIEW-R44), once: with no floor yet it calls nothing new (the first
+-- login with news, whose decision sets the floor, SIGN-R18); otherwise an item is new when its id wasn't seen and its
+-- time is at or after the floor. Then drops from `seen` every entry older than the seen age, and any that isn't a
+-- time. Reading never sets the floor: the sign's decision does (SIGN-R14), and the switch (ns.SetNewsFloor, SET-R37).
 ---@param views PagleAnglerViews
 ---@param items PagleNewsItem[]
 ---@param now integer
@@ -794,9 +795,7 @@ local function firstRead(views, items, now)
 		return
 	end
 	local kept, fresh = newsKept(views), {}
-	if kept.since == nil then
-		kept.since = now
-	else
+	if kept.since ~= nil then
 		for _, item in ipairs(items) do
 			if kept.seen[item.id] == nil and item.time >= kept.since then
 				fresh[item.id] = true
@@ -813,8 +812,8 @@ local function firstRead(views, items, now)
 end
 
 --- Pagle.GetNews() (VIEW-R42) at the server time now: the news state, and while it's "ok" a fresh copy of every item
---- used, in the file's order, each with `new`. The session's first call that finds "ok" news sets the floor if there's
---- none and prunes what was seen (VIEW-R44). Absent before Start.
+--- used, in the file's order, each with `new`. The session's first call that finds "ok" news decides `new` for the
+--- session and prunes what was seen (VIEW-R44); it never sets the floor. Absent before Start.
 ---@return PagleNews
 function AnglerViews:News()
 	local now = self.options.serverTime()

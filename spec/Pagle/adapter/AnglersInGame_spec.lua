@@ -352,7 +352,7 @@ describe("the Companion's data addons", function()
 		end
 
 		it(
-			"is read at PLAYER_LOGIN, and the first login's Pagle.GetNews sets the floor in PagleDB and calls nothing new (VIEW-R40, VIEW-R42, SIGN-R18)",
+			"is read at PLAYER_LOGIN, and the first login's Pagle.GetNews calls nothing new and sets no floor (VIEW-R40, VIEW-R42, SIGN-R18)",
 			function()
 				local loaded = withNews()
 				local Pagle = loaded.env.Pagle
@@ -367,7 +367,7 @@ describe("the Companion's data addons", function()
 					news.items[2].kind,
 					news.items[3].name,
 				})
-				assert.are.same({ since = SERVER_TIME, seen = {} }, loaded.env.PagleDB.global.news)
+				assert.is_nil(loaded.env.PagleDB.global.news.since)
 				assert.are.equal("ok", Pagle.GetFollowedAnglers().state)
 			end
 		)
@@ -448,10 +448,7 @@ describe("the Companion's data addons", function()
 
 			local lines = devViews(loaded)
 
-			assert.are.equal(
-				("Pagle dev: news ok: lines used 3, skipped 0; seen 1, floor %d."):format(SERVER_TIME),
-				lines[#lines]
-			)
+			assert.are.equal("Pagle dev: news ok: lines used 3, skipped 0; seen 1, floor none.", lines[#lines])
 		end)
 
 		it(
