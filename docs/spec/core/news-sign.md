@@ -60,7 +60,7 @@ Part of [Core](README.md). **The Morning Tide** is what players call the news si
 
 ### A drop (SIGN-R40–R43)
 
-- **SIGN-R40** The sign drops only when Pagle isn't restricted: a drop asked for in combat waits for it to end, and the last asked for wins. If combat starts while it shows, it goes up at once.
+- **SIGN-R40** The sign drops only when Pagle isn't restricted: a drop asked for in combat waits for it to end, and the last asked for wins. If combat starts while it shows, it goes up at once. *From 1.6,* it shares the screen with Core's letters (the letter service, ONB-R15–R17, such as the Prestige letter or the party letter of [#655](https://github.com/timemir/pagle-addon/issues/655)) one at a time: a drop asked for while a letter shows waits until no letter shows, then drops (a letter answered, or hidden by a restriction, ONB-R14); and a letter due while the sign shows waits until the sign has gone up (ONB-R17). Whichever is due first shows first. At login that is usually the sign, at the drop delay (SIGN-R14), since a letter also waits for the login's held Announcements and cards (ONB-R10); the letter follows `LETTER_DELAY` after the sign has gone up. A drop waiting for a letter keeps its words, as one waiting for combat does (SIGN-R14).
 - **SIGN-R41** It plays its look's entrance, then hangs 8 s and goes up, then hides. While the mouse is over it, it eases a little toward the player and its time stands still; its time runs on once the mouse leaves.
 - **SIGN-R42** A right click sends it up at once. A left click opens the Fish Journal and sends it up. *From 1.6,* the left click opens the Fish Journal's news list on the item shown (LED-R176), through the first On Module's `def.news(id)` (VIEW-R46), and sends the sign up; with no On Module offering one (the Ledger off), it only sends the sign up. The sign from the Curio Shop's "Show on screen" or the dev command opens nothing.
 - **SIGN-R43** With Animations off (`announcements.motion`), it appears at rest and still, plays no sounds, and hides at once when its time is up.
@@ -111,7 +111,7 @@ ns.DecideNewsSign()              -- from 1.6: SIGN-R14's decision, run once a se
 
 *From 1.6,* the words of an item are `Pagle.NewsWords(item)` (VIEW-R45, SIGN-R19), which gives a `PagleNewsSignNews` without its more line; the decision adds the more line (SIGN-R16).
 
-The code is in `adapter/NewsSign.lua` (the frame, its drop and the drawing kit), `adapter/NewsSignLooks.lua` (the six looks) and `adapter/NewsSignDev.lua` (the kinds, the samples and the dev command), loaded by `adapter/Settings.xml`, after the files they use, so no TOC line changes. Specs: `spec/Pagle/adapter/NewsSign_spec.lua`.
+The code is in `adapter/NewsSign.lua` (the frame, its drop and the drawing kit), `adapter/NewsSignLooks.lua` (the six looks) and `adapter/NewsSignDev.lua` (the kinds, the samples and the dev command), loaded by `adapter/Settings.xml`, after the files they use, so no TOC line changes. *From 1.6* (Decisions), they get TOC lines of their own in `Pagle.toc`, after the files they use, and `adapter/Settings.xml` loses their `<Script>` lines. Specs: `spec/Pagle/adapter/NewsSign_spec.lua`.
 
 ## Data
 
@@ -150,12 +150,24 @@ The look in use is `PagleDB.profile.appearance["core.newssign"]`, as every slot'
 | News age | 30 days: an item older than this is never due, whatever the block holds (from 1.6) | SIGN-R15 |
 | Name wait | 2 s for an item name the client hasn't loaded (from 1.6) | SIGN-R19 |
 
+## Decisions
+
+*Decided by the dev (2026-11-08, [#650](https://github.com/timemir/pagle-addon/issues/650)):*
+
+- **Prices:** cheaper starters. Scroll and Lantern at tier 3 (900 Coins each), Astrolabe and Coral at tier 4 (3,000), Kraken at tier 5 (10,000): 17,800 in all (SHOP-R25, SHOP-R60).
+- **Rare colour** is a Rare or an Epic variety (SIGN-R10; pagle-backend's PRJ-R34).
+- **Monster:** each new size record in the Monster band is news again (pagle-backend's PRJ-R34).
+- **The news** is the Feed's: 30 days and 50 items (pagle-backend's IGV-R61).
+
+*Adopted recommendations, the dev may revisit:*
+
+- **Cozy mode** holds the sign and marks the items seen; the Fish Journal's list keeps them (SIGN-R14, SET-R37).
+- **Region headlines** aren't counted in "+N", as the line says "from your anglers"; a sign showing a headline has no more line (SIGN-R16).
+- **A variety the player hasn't caught** is never named or coloured, keeping VAR-R27's discovery: "Epic Spotted Yellowtail" on a silhouette (SIGN-R12, SIGN-R13, SIGN-R19).
+- **TOC lines.** 1.6 ships on a new rule set, so the sign's files get TOC lines of their own in Core's TOC, in place of the `<Script>` lines in `adapter/Settings.xml` (Contracts).
+- From pagle-backend's side: the server sends the news only to a news-aware Companion, by its version header (IGV-R65); a Hunt's name comes as enUS text in the line (IGV-R60); the player's own Monthly first is never their headline (IGV-R62); Hunt gold is Standing Hunts only (PRJ-R34); Monthly firsts are shown only in game (LB-R80).
+
 ## Open questions
 
-- **Cozy mode.** Recommended (SIGN-R14): Cozy mode holds the sign, as nothing else pops up or plays in it (ANN-R40), and the items are marked seen; the Fish Journal's list keeps them. The alternative leaves the sign to its own master switch alone.
-- **Region headlines in "+N".** Recommended (SIGN-R16): not counted, as the line says "from your anglers"; a sign showing a headline has no more line.
-- **A variety the player hasn't caught.** Recommended (SIGN-R12, SIGN-R13, SIGN-R19): never named or coloured, keeping VAR-R27's discovery, so the sign reads "Epic Spotted Yellowtail" on a silhouette. The alternative names it, as the design's samples do, and spoils the discovery.
-- **Prices.** Recommended by SHOP-R25's tier principles: Scroll, Lantern, Astrolabe and Coral at tier 4 (3,000 Coins each), the Kraken at tier 5 (10,000), so the five cost 22,000, about 130 casual hours (the pacing table). Each look moves and has its own entrance, which the principles put at tier 4 or higher. If the dev wants a cheaper first look, Scroll and Lantern at tier 3 (900) is the alternative, against the principle that a distinctive entrance is tier 4.
-- **Loading through Settings.xml.** The new files load from `adapter/Settings.xml` because the TOC couldn't change on the branch they were made on; 1.6 ships on a new rule set (pagle-2026j), so TOC lines of their own can replace these there.
 - **Size.** The textures are about 5.7 MB of BLPs. SIGN-R57 loads only the atlas of the look in use; DXT1 where a look has no soft alpha would shrink them further.
 - **In game, before 1.6 ships** (the designer couldn't check them): `SetClipsChildren` on `clip` for the Scroll and the Astrolabe; `SetRotation` on the Astrolabe's rings; the height of a wrapped two-line headline; the Legend emblem's item icon; each look's sound levels against the game's SFX, and the mute; the region headline's and the hidden variety's words in every language (`fitcheck.lua`).

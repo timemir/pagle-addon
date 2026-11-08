@@ -558,19 +558,19 @@ There is no check 22: it looked for a per-character Self-Found call, and the cha
 
 **Build order:** 1. Core's read of the news block, seen and the floor (VIEW-R40–R46). 2. The decision and the words (SIGN-R14–R19, SIGN-R57), and the Curio Shop's slot, goods and preview (SHOP-R60–R62), in parallel. 3. The Ledger's news list and `def.news` (LED-R176–R179), and the Settings section (SET-R37).
 
-**Core rules:** VIEW-R4, VIEW-R12, VIEW-R40–R46, VIEW-R96–R98; SIGN-R10–R19, SIGN-R31, SIGN-R42, SIGN-R57; SHOP-R25 (its News sign row and tier principle), SHOP-R60–R62
+**Core rules:** VIEW-R4, VIEW-R12, VIEW-R40–R46, VIEW-R96–R98; SIGN-R10–R19, SIGN-R31, SIGN-R40 (letters), SIGN-R42, SIGN-R57; ONB-R17 for the sign; SHOP-R25 (its News sign row and tier principle), SHOP-R60–R62
 
 **Module rules:** Ledger: LED-R163 for its News link, LED-R176–R179
 
 **Settings rules:** SET-R37, and SET-R50's News sign slot
 
-**Hashed files the build changes:** Core's `logic/AnglersInGame.lua` (the news read, VIEW-R40–R44), `logic/Wiring.lua` (the new `Pagle.` calls), `logic/CoreGoods.lua` (the slot and goods, SHOP-R60) and `logic/Crate.lua` (`ns.CRATE_POOL`, SHOP-R62); the Ledger's `logic/Module.lua` (`def.news`, LED-R178) and `logic/JournalFollowing.lua` (the News link, LED-R163), with a new `logic/` file for the news list if the build makes one; `logic/Migrations.lua` only if the new `PagleDB.global` keys get defaults there rather than reading nil as their default; and the TOCs, if the sign's files move from `adapter/Settings.xml` to TOC lines (news-sign.md's open questions). `logic/Catalogue.lua`, the item catalogue, isn't touched: the goods are registered in `CoreGoods.lua`.
+**Hashed files the build changes:** Core's `logic/AnglersInGame.lua` (the news read, VIEW-R40–R44), `logic/Wiring.lua` (the new `Pagle.` calls), `logic/CoreGoods.lua` (the slot and goods, SHOP-R60) and `logic/Crate.lua` (`ns.CRATE_POOL`, SHOP-R62); the Ledger's `logic/Module.lua` (`def.news`, LED-R178) and `logic/JournalFollowing.lua` (the News link, LED-R163), with a new `logic/` file for the news list if the build makes one; `logic/Letter.lua` (the sign and a letter never show together, SIGN-R40, ONB-R17); `Pagle.toc`, whose new lines load the sign's files in place of `adapter/Settings.xml` (news-sign.md's Decisions); and `logic/Migrations.lua` only if the new `PagleDB.global` keys get defaults there rather than reading nil as their default. `logic/Catalogue.lua`, the item catalogue, isn't touched: the goods are registered in `CoreGoods.lua`.
 
 **Exit check,** with a news-aware Pagle Companion linked, following one Published Angler of another account:
 1. The first login with 1.6 drops nothing, though the Following spread's News link lists the last 30 days.
 2. The followed account lands a Legend and uploads; at the next login after the Companion's next download, the sign drops with it, "+N more" counting any other new news, and a right click sends it up. A `/reload` doesn't drop it again.
 3. A left click opens the Fish Journal's news list on that item; with the Ledger off it only sends the sign up.
-4. In combat at login, the sign waits until combat ends.
+4. In combat at login, the sign waits until combat ends; with a letter showing (the Prestige letter, or the party letter), it waits until the letter is answered, and a letter due while the sign hangs follows once it has gone up.
 5. Turning a kind off and back on, or the sign off and on, never brings back news that came meanwhile.
 6. A Rare variety the player hasn't caught shows its rarity and the silhouette, never its name or colours.
 7. Each of the five looks can be bought in the Curio Shop, previewed with Show on screen, equipped from the shop, Look and Feel, the Announcements page or the Collection, and the next drop wears it; Mute the sign silences it.
