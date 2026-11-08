@@ -1305,12 +1305,13 @@ local function printHuntProgress(hunts, id, hunt, progress, now)
 	for k, tier in ipairs(reached) do
 		tier = tableOr(tier)
 		print(
-			("    tier %d %s: %s (realm date), zone %s, item %s"):format(
+			("    tier %d %s: %s (realm date), zone %s, item %s%s"):format(
 				k,
 				hunts.Trim(k),
 				dateText(tier.date),
 				tostring(tier.zone),
-				tostring(tier.itemID)
+				tostring(tier.itemID),
+				tier.party and ", a Party Catch (HNT-R181)" or ""
 			)
 		)
 	end

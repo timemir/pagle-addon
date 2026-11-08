@@ -468,6 +468,8 @@ ns.Locale("ruRU", function(L)
 	L.SETTINGS_PAGLE_MENU = "Меню Pagle"
 	L.SETTINGS_PAGLE_WEBSITE = "Сайт Pagle"
 	L.SETTINGS_PARTY = "Группа"
+	L.SETTINGS_PARTY_HUNTS = "Групповые охоты"
+	L.SETTINGS_PARTY_HUNTS_TOOLTIP = "В группе улов участников засчитывается в ваши Охоты и Пари Пэгла, пока вы рыбачите в одной зоне, а ваш — в их. Если выключено, Pagle не делится вашим уловом и не засчитывает их улов."
 	L.SETTINGS_PARTY_KINDS = { colour = "Редкие окраски", gold = "Золотая ступень в охоте", ledger = "Реестр на 100%", legend = "Легенды", monster = "Рекорды размера «Чудовище»", prestige = "Престиж", zone = "Мастер зоны" }
 	L.SETTINGS_PARTY_SHARE = "Делиться моими моментами с группой"
 	L.SETTINGS_PARTY_SHARE_TOOLTIP = "Когда вы ловите легенду, ставите рекорд размера «Чудовище» и тому подобное, участники группы с Pagle видят небольшую плашку. Отправляется только сам момент, а не то, где вы находитесь. Не в рейде."

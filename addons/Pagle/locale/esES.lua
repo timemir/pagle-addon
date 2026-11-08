@@ -469,6 +469,8 @@ ns.Locale("esES", function(L)
 	L.SETTINGS_PAGLE_MENU = "Menú de Pagle"
 	L.SETTINGS_PAGLE_WEBSITE = "Web de Pagle"
 	L.SETTINGS_PARTY = "Grupo"
+	L.SETTINGS_PARTY_HUNTS = "Cazas en grupo"
+	L.SETTINGS_PARTY_HUNTS_TOOLTIP = "En un grupo, las capturas de tus compañeros cuentan para tus Cazas y Apuestas Pagle mientras pescáis en la misma zona, y las tuyas para las suyas. Desactivado, Pagle ni comparte tus capturas ni cuenta las suyas."
 	L.SETTINGS_PARTY_KINDS = { colour = "Colores raros", gold = "Nivel de Oro en una caza", ledger = "Libro de registro al 100 %", legend = "Leyendas", monster = "Récords de tamaño Monstruo", prestige = "Prestigio", zone = "Maestro de zona" }
 	L.SETTINGS_PARTY_SHARE = "Compartir mis momentos con mi grupo"
 	L.SETTINGS_PARTY_SHARE_TOOLTIP = "Cuando pescas una Leyenda, logras un récord de tamaño Monstruo y cosas así, los miembros del grupo que usan Pagle reciben un pequeño aviso. Solo se envía el momento, nunca dónde estás. No en una banda."

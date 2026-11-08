@@ -468,6 +468,8 @@ ns.Locale("deDE", function(L)
 	L.SETTINGS_PAGLE_MENU = "Pagle-Menü"
 	L.SETTINGS_PAGLE_WEBSITE = "Pagle-Website"
 	L.SETTINGS_PARTY = "Gruppe"
+	L.SETTINGS_PARTY_HUNTS = "Gruppenjagden"
+	L.SETTINGS_PARTY_HUNTS_TOOLTIP = "In einer Gruppe zählen die Fänge deiner Gruppenmitglieder für deine Jagden und Pagles Wetten, solange ihr in derselben Zone angelt, und deine für ihre. Aus: Pagle teilt deine Fänge nicht und zählt ihre nicht."
 	L.SETTINGS_PARTY_KINDS = { colour = "Seltene Varianten", gold = "Goldrang in einer Jagd", ledger = "Anglerbuch 100 %", legend = "Legenden", monster = "Rekorde in Monstergröße", prestige = "Prestige", zone = "Gebietsmeister" }
 	L.SETTINGS_PARTY_SHARE = "Meine Momente mit der Gruppe teilen"
 	L.SETTINGS_PARTY_SHARE_TOOLTIP = "Fängst du eine Legende, stellst einen Rekord in Monstergröße auf und Ähnliches, bekommen Gruppenmitglieder mit Pagle eine kleine Einblendung davon. Gesendet wird nur der Moment, nie, wo du bist. Nicht im Schlachtzug."

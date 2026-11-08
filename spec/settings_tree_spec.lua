@@ -87,6 +87,8 @@ local TIPS = {
 	trackerPosition = "Shift-drag any Pagle tracker to move them all. This puts them back under the minimap.",
 	whileFishing = "Shows the trackers while a fishing pole is in hand. Once you put it away, they stay up for a minute "
 		.. "after your last Cast, then hide.",
+	partyHunts = "In a party, your groupmates' catches count toward your Hunts and Pagle Wagers while you fish the same "
+		.. "zone, and yours count toward theirs. Off, Pagle neither shares your catches nor counts theirs.",
 	partyShare = "When you catch a Legend, set a Monster-size record and the like, groupmates who run Pagle get a "
 		.. "small toast of it. Only the moment is sent, never where you are. Not in a raid.",
 	partyShow = "A small toast when a groupmate who runs Pagle has a moment, with a mug you can raise to cheer them. It "
@@ -195,8 +197,9 @@ local EXPECTED = {
 			{ "slot", "Toast style" },
 			{ "slot", "Sound set" },
 			{ "button", "Toast position", caption = "Reset", tip = TIPS.toastPosition },
-			-- The Party block (SET-R36, from 1.5.2).
+			-- The Party block (SET-R36, from 1.5.2), Party Hunts first (SET-R35, from 1.6).
 			{ "header", "Party" },
+			{ "checkbox", "Party Hunts", tip = TIPS.partyHunts },
 			{ "checkbox", "Share my moments with my party", tip = TIPS.partyShare },
 			{ "checkbox", "Show my party's moments", tip = TIPS.partyShow },
 			{ "checkbox", "Legends", under = true },
@@ -794,6 +797,21 @@ describe("Greying in the Settings tree", function()
 		assert.are.same({}, greyedOn(loaded, "Announcements"))
 	end)
 
+	it(
+		"writes Party Hunts to PagleDB.profile.partyHunts at once, one switch for both sides (SET-R35, LOG-R121)",
+		function()
+			local loaded = ready()
+			local profile = loaded.namespaces.Pagle.db.profile
+			assert.is_true(profile.partyHunts)
+
+			setRow(loaded, "Announcements", "Party Hunts", false)
+			assert.is_false(profile.partyHunts)
+
+			setRow(loaded, "Announcements", "Party Hunts", true)
+			assert.is_true(profile.partyHunts)
+		end
+	)
+
 	it("greys Interruptions and Per while the budget is off, until it is on again (SET-R30, SET-R31)", function()
 		local loaded = ready()
 
@@ -965,6 +983,7 @@ describe("Each page's Defaults button", function()
 				"Ledger 100%",
 				"Legends",
 				"Monster-size records",
+				"Party Hunts",
 				"Per",
 				"Prestige",
 				"Rare colours",
@@ -1114,6 +1133,7 @@ describe("Each page's Defaults button", function()
 			["Animations"] = false,
 			["Announce open Hunt windows"] = true,
 			["Remind me about the Pagle companion"] = false,
+			["Party Hunts"] = false,
 			["Share my moments with my party"] = false,
 			["Zone Master"] = false,
 			["Cheers sounds"] = false,
@@ -1134,7 +1154,8 @@ describe("Each page's Defaults button", function()
 			["Animations"] = true,
 			["Announce open Hunt windows"] = false,
 			["Remind me about the Pagle companion"] = true,
-			-- SET-R36's: every one on.
+			-- SET-R35's and SET-R36's: every one on.
+			["Party Hunts"] = true,
 			["Share my moments with my party"] = true,
 			["Show my party's moments"] = true,
 			["Legends"] = true,

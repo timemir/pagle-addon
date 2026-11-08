@@ -5,15 +5,16 @@ end
 ---@class PagleHuntsNS
 local ns = select(2, ...)
 
--- Hunts' one projection (HNT-R136–R138): the def it hands `M:NewProjection`, over the Catch log's Casts and Hunts' own
--- `run` and `def` records. Pure logic, everything passed in (CORE-R7); the Hunt list (`ns.hunts`), the event pool
--- (`ns.events`), where each Hunt bites (`ns.where`) and the outlets are read at call time. The state is hunts.md ›
--- Projection state (`HuntsState`, logic/Seams.lua); the runs' part of the fold is logic/Runs.lua.
+-- Hunts' one projection (HNT-R136–R138): the def it hands `M:NewProjection`, over the Catch log's Casts, Hunts' own
+-- `run` and `def` records and, from 1.6, Party Catches (HNT-R180–R184). Pure logic, everything passed in (CORE-R7);
+-- the Hunt list (`ns.hunts`), the event pool (`ns.events`), where each Hunt bites (`ns.where`) and the outlets are
+-- read at call time. The state is hunts.md › Projection state (`HuntsState`, logic/Seams.lua); the runs' part of the
+-- fold is logic/Runs.lua.
 
 --- Tunables (hunts.md): the Hunts rules version, which rises whenever a rule changes what the projection holds
 --- (HNT-R138): 1 before Hunt Events, 2 with runs, Activity XP and the ladder (HNT-R136), 3 for the retuned Coins (HNT-R110, #412),
---- 4 with the Refreshes a run earns (HNT-R116).
-ns.HUNTS_RULES_VERSION = 4
+--- 4 with the Refreshes a run earns (HNT-R116), 5 from 1.6 with Party Catches (HNT-R187).
+ns.HUNTS_RULES_VERSION = 5
 
 --- Tunables (hunts.md): the Coins paid when a Hunt completes, for each further tier, and for each set title
 --- (HNT-R110).
@@ -31,7 +32,10 @@ ns.COINS_COMPLETED, ns.COINS_TIER, ns.COINS_TITLE = 30, 15, 100
 --- through `ns.outlets` at call time, so the replacement reaches the projection. Stand-ins: do nothing;
 --- logic/Moments.lua replaces Reached, Credited and Done when it loads.
 ---   Reached(cast, reached)  after a `"live"` Cast that newly reached a tier, a set title, a mark, a completed run
----                           or a ladder step, before Coins and Activity XP are reported (HNT-R137 step 4)
+---                           or a ladder step, before Coins and Activity XP are reported (HNT-R137 step 4); from 1.6
+---                           also after a `"live"` Party Catch, with its own record (`kind` "party", its `id` the
+---                           Party Catch's entry ID, and the live-only `name` and `sourceId`, LOG-R116), whose
+---                           moments merge by that ID (HNT-R185, ANN-R110). A tier or mark it reached has `party`.
 ---   Credited(record, reached) after a `"live"` `run` record whose earlier Casts reached a mark, a completed run or
 ---                           a ladder step (HNT-R149), before Coins and Activity XP are reported: the wager moments,
 ---                           summary-only (logic/WagerMoments.lua)
@@ -47,7 +51,7 @@ ns.COINS_COMPLETED, ns.COINS_TIER, ns.COINS_TITLE = 30, 15, 100
 ---                           Done marks what it celebrates: `M:RefreshGoods()` for the earned goods (HNT-R122,
 ---                           SHOP-R31). Stand-in: nothing; adapter/Goods.lua replaces it.
 ns.outlets = {
-	---@param cast PagleCast
+	---@param cast PagleCast|PaglePartyCatch
 	---@param reached HuntsReached
 	Reached = function(cast, reached) end, -- luacheck: no unused args
 	---@param record PagleModuleRecord
@@ -283,38 +287,41 @@ function ns.HuntsToTest(cast, lookups)
 	return ns.CastHunts(built.index, cast, lookups)
 end
 
---- Applies one Cast to `state` (HNT-R137 steps 1–3): its count of Casts (and the hour index, logic/Runs.lua); for
---- every Standing Hunt that exists at its time and may change it (HNT-R139), then the event Hunts of each known run on
---- at its time (HNT-R144), the effort counter, then its qualifying Catches in loot-slot order (count, tiers, Coins,
---- Activity XP); then the set titles at its time, each run on for completion and the ladder. Returns what it newly
---- reached.
+-- Folds what `cast` caught into every Hunt that exists at its time (HNT-R137 steps 2 and 3): for each Standing Hunt
+-- that exists then and may change it (HNT-R139), then the event Hunts of each known run on at its time (HNT-R144),
+-- the effort counter, then its qualifying Catches in loot-slot order (count, tiers, Coins, Activity XP); then the set
+-- titles at its time, each run on for completion and the ladder. With `party`, `cast` is a Party Catch's
+-- (ns.PartyCast): it adds no effort and leaves `sinceLast` alone, and each tier it reaches is marked `party`
+-- (HNT-R181). Adds what it newly reached to `reached`.
 ---@param state HuntsState
 ---@param cast PagleCast
 ---@param lookups HuntsCoreLookups
----@return HuntsReached
-function ns.ApplyCast(state, cast, lookups)
-	local reached = ns.NewReached()
-	state.casts = state.casts + 1
-	ns.NoteCastHour(state, cast)
+---@param party boolean
+---@param reached HuntsReached
+local function foldCatches(state, cast, lookups, party, reached)
 	-- Only the Standing Hunts the Cast can change: the rest would leave their progress as it was (HNT-R139).
 	for _, hunt in ipairs(ns.HuntsToTest(cast, lookups)) do
 		-- Casts before its since or from its retired on don't count (HNT-R2, HNT-R13).
 		if ns.Exists(hunt, cast.time) then
 			local progress = state.hunts[hunt.id] or ns.NewHuntProgress()
-			-- The effort counter first (HNT-R25, HNT-R26).
-			if isEffort(hunt, cast, lookups) then
+			-- The effort counter first (HNT-R25, HNT-R26): the Angler's own Casts only (HNT-R181).
+			if not party and isEffort(hunt, cast, lookups) then
 				progress.effort = progress.effort + 1
 				progress.sinceLast = progress.sinceLast + 1
 			end
 			-- Then its qualifying Catches (HNT-R11, HNT-R15).
 			local count = progress.count
 			for _, k in ipairs(ns.CountCatches(progress, hunt, cast, lookups)) do
+				if party then
+					progress.reached[k].party = true
+				end
 				state.coins = state.coins + (k == 1 and ns.COINS_COMPLETED or ns.COINS_TIER)
 				state.xp = state.xp + ns.TierAmount(ns.XP_STANDING, k) -- Retired Hunts' too, once each (HNT-R113)
 				reached.tiers[#reached.tiers + 1] = { hunt = hunt.id, tier = k }
 			end
-			-- A Cast holding a qualifying Catch resets the second number, after it was counted (HNT-R26).
-			if progress.count > count then
+			-- A Cast holding a qualifying Catch resets the second number, after it was counted (HNT-R26); a Party Catch
+			-- leaves it alone (HNT-R181).
+			if not party and progress.count > count then
 				progress.sinceLast = 0
 			end
 			-- A Hunt has an entry once it has effort or a Catch (hunts.md › Projection state).
@@ -323,13 +330,14 @@ function ns.ApplyCast(state, cast, lookups)
 			end
 		end
 	end
-	-- The event Hunts of each known run on at the Cast's time, by the Cast entry's server time alone (HNT-R144).
+	-- The event Hunts of each known run on at the Cast's time, by the Cast entry's server time alone (HNT-R144); for
+	-- a Party Catch, the Angler's own known runs on at its catchTime (HNT-R183).
 	local on = ns.RunsOnAt(state, cast.time)
 	local events = {}
 	for i, run in ipairs(on) do
 		events[i] = ns.KnownEvent(state, run.run.event, lookups) or false
 		if events[i] then
-			ns.CreditRunCast(state, run, events[i], cast, lookups, reached)
+			ns.CreditRunCast(state, run, events[i], cast, lookups, reached, party)
 		end
 	end
 	-- The set titles, up to the Cast's time (HNT-R23).
@@ -343,7 +351,87 @@ function ns.ApplyCast(state, cast, lookups)
 			ns.SettleRun(state, run, events[i], reached)
 		end
 	end
+end
+
+--- Applies one Cast to `state` (HNT-R137 steps 1–3): its count of Casts (and the hour index, logic/Runs.lua); for
+--- every Standing Hunt that exists at its time and may change it (HNT-R139), then the event Hunts of each known run on
+--- at its time (HNT-R144), the effort counter, then its qualifying Catches in loot-slot order (count, tiers, Coins,
+--- Activity XP); then the set titles at its time, each run on for completion and the ladder. Returns what it newly
+--- reached.
+---@param state HuntsState
+---@param cast PagleCast
+---@param lookups HuntsCoreLookups
+---@return HuntsReached
+function ns.ApplyCast(state, cast, lookups)
+	local reached = ns.NewReached()
+	state.casts = state.casts + 1
+	ns.NoteCastHour(state, cast)
+	foldCatches(state, cast, lookups, false, reached)
 	return reached
+end
+
+--- A Party Catch (LOG-R116) as the caught Cast it copies (HNT-R180): the groupmate's Cast's time (`catchTime`) as its
+--- `time`, its conditions and its items (each with its Party Catch ID, and no size), under the Party Catch's own `seq`
+--- and entry ID. What judges a Cast judges it: the Cast index, `Exists`, the qualifying Catches, the runs on, the
+--- titles. A new table; the record is left as it is.
+---@param record PaglePartyCatch
+---@return PagleCast
+function ns.PartyCast(record)
+	---@type table
+	local cast = {
+		seq = record.seq,
+		id = record.id,
+		char = record.char,
+		time = record.catchTime,
+		outcome = "caught",
+		conditions = record.conditions,
+		items = record.items,
+	}
+	return cast
+end
+
+--- Applies one Party Catch to `state` (HNT-R137's last paragraph, HNT-R180, HNT-R181): steps 2 and 3 at its
+--- `catchTime`, under its copied conditions, in log order, as the Angler's own Catch would be folded, but with no
+--- effort, `sinceLast` left alone and nothing added to `casts`; each tier it reaches stores its Party Catch ID and
+--- `party`. Its Standing Hunts are those that exist at `catchTime`, its event Hunts those of the Angler's own known
+--- runs on then (HNT-R183), and an item without a size never meets a `minBand` (HNT-R10 item 3). The hour index notes
+--- it by its `catchTime` with the Casts, so a `run` record logged after it walks it again (HNT-R149). It never logs
+--- a run (HNT-R151). Returns what it newly reached.
+---@param state HuntsState
+---@param record PaglePartyCatch
+---@param lookups HuntsCoreLookups
+---@return HuntsReached
+function ns.ApplyPartyCatch(state, record, lookups)
+	local reached = ns.NewReached()
+	local cast = ns.PartyCast(record)
+	ns.NoteCastHour(state, cast)
+	foldCatches(state, cast, lookups, true, reached)
+	return reached
+end
+
+--- Hunts' filter for Party Catches (HNT-R184, LOG-R114): whether at least one item of `record` qualifies (HNT-R180)
+--- for a Standing Hunt that exists at its `catchTime`, or for an event Hunt of a known run on then, whether or not that
+--- Hunt's tiers are all reached, since its count still rises (HNT-R16). Reads `state` and the lists; changes nothing.
+---@param state HuntsState
+---@param record PaglePartyCatch
+---@param lookups HuntsCoreLookups
+---@return boolean
+function ns.WantsPartyCatch(state, record, lookups)
+	local cast = ns.PartyCast(record)
+	for _, hunt in ipairs(ns.HuntsToTest(cast, lookups)) do
+		if #ns.QualifyingCatches(hunt, cast, lookups) > 0 then
+			return true
+		end
+	end
+	for _, on in ipairs(ns.RunOn(state, cast.time)) do
+		local event = ns.KnownEvent(state, on.run.event, lookups)
+		for _, hunt in ipairs(event and event.hunts or {}) do
+			if #ns.MatchingCatches(hunt, cast, lookups) > 0 then
+				return true
+			end
+		end
+	end
+	return false
 end
 
 --- What Hunts hands Core as its projection's extraFingerprint (LOG-R70, HNT-R136): the Hunt list's fingerprint joined
@@ -490,10 +578,12 @@ function ns.JournalValues(state, sessionRows) -- luacheck: no unused args (the d
 end
 
 --- Hunts' projection def (HNT-R136, LOG-R70), bound to `global.projection`, which it makes if missing: Core owns it
---- from here on. `apply` reads Casts and Hunts' own `run` and `def` records (logic/Runs.lua); every other kind is
---- ignored. A `"live"` entry hands what it newly reached to `ns.outlets.Reached` (a Cast) or `ns.outlets.Credited` (a
---- `run` record), reports Coins and Activity XP if they changed (HNT-R110, HNT-R115) and redraws the views (HNT-R42);
---- a `"replay"` or `"rebuild"` one only changes the state, which `done` then reads and reports.
+--- from here on. `apply` reads Casts, Hunts' own `run` and `def` records (logic/Runs.lua) and, from 1.6, Party Catches
+--- (`partyCatches`, HNT-R180, LOG-R117), which `wantsPartyCatch` filters (HNT-R184, LOG-R114); every other kind is
+--- ignored. A `"live"` entry hands what it newly reached to `ns.outlets.Reached` (a Cast or a Party Catch) or
+--- `ns.outlets.Credited` (a `run` record), reports Coins and Activity XP if they changed (HNT-R110, HNT-R115) and
+--- redraws the views (HNT-R42); a `"replay"` or `"rebuild"` one only changes the state, which `done` then reads and
+--- reports.
 ---@param global table PagleHuntsDB's global section
 ---@param lookups HuntsCoreLookups
 ---@param client HuntsProjectionClient
@@ -516,6 +606,13 @@ function ns.ProjectionDef(global, lookups, client)
 		rulesVersion = ns.HUNTS_RULES_VERSION,
 		extraFingerprint = ns.HuntsExtraFingerprint(ns.hunts, ns.eventList),
 		reset = ns.NewHuntsState,
+		partyCatches = true,
+		---@param state HuntsState
+		---@param record PaglePartyCatch
+		---@return boolean
+		wantsPartyCatch = function(state, record)
+			return ns.WantsPartyCatch(state, record, lookups)
+		end,
 		---@param state HuntsState
 		---@param record PagleRecord
 		---@param mode PagleApplyMode
@@ -532,6 +629,13 @@ function ns.ProjectionDef(global, lookups, client)
 					ns.NoteReplayedCast(record.time)
 				end
 				reached = ns.ApplyCast(state, record, lookups)
+				if live and ns.AnyReached(reached) then
+					ns.outlets.Reached(record, reached)
+				end
+			elseif record.kind == "party" then
+				---@cast record PaglePartyCatch
+				-- A Party Catch never notes a replayed Cast: a catch-up's span is the Casts' (HNT-R155, HNT-R183).
+				reached = ns.ApplyPartyCatch(state, record, lookups)
 				if live and ns.AnyReached(reached) then
 					ns.outlets.Reached(record, reached)
 				end
@@ -565,7 +669,8 @@ function ns.ProjectionDef(global, lookups, client)
 				noteGoods(state)
 				ns.outlets.RefreshGoods()
 			end
-			-- A Cast always changes the state (its count of Casts at least), and so does a record folded.
+			-- A Cast always changes the state (its count of Casts at least), and so does a record folded; a Party Catch
+			-- the filter took is redrawn for too.
 			ns.Redraw("projection")
 		end,
 		---@param state HuntsState

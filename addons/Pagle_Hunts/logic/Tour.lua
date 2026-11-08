@@ -186,7 +186,7 @@ end
 
 --- The tour's sample at server time `now` (CORE-R65), over the Hunt list's data (ns.huntList; nil reads as none):
 --- every Hunt out; the first set's title earned, each of its Hunts at tier 1 (its first Hunt at tier 2 when it has
---- three); one Retired Hunt, done; and the other Hunts in turn part way past tier 1, with effort only, and untouched.
+--- three, its highest tier reached by a groupmate's Catch, HNT-R186); one Retired Hunt, done; and the other Hunts in turn part way past tier 1, with effort only, and untouched.
 --- The three first current Hunts with tiers left are pinned. Its runs (HNT-R160) are `real`'s when a run is on, else
 --- two sample runs of the event pool's (`pool`, ns.events:Events()) first two events.
 ---@param data HuntListData?
@@ -213,6 +213,8 @@ function ns.HuntsTourSample(data, now, pool, real)
 			inSet = inSet + 1
 			local k = (inSet == 1 and #hunt.tiers >= 3) and 2 or 1
 			made = progress(hunt, i, k, between(hunt, k), data.classes, now)
+			-- The set's entry stop shows a tier a groupmate's Catch reached, "· party" on the ladder (HNT-R186).
+			made.reached[k].party = inSet == 1 or nil
 		elseif i % 3 == 1 then
 			made = progress(hunt, i, 1, between(hunt, 1), data.classes, now)
 		elseif i % 3 == 2 then

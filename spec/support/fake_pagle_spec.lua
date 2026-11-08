@@ -2104,6 +2104,55 @@ describe("FakePagle", function()
 		end)
 	end)
 
+	describe("Party Catches (from 1.6)", function()
+		it(
+			"append a real G1 for fake.partyCatch, live with the name and source ID only to a projection that takes"
+				.. " them, then fire PartyCatch (LOG-R115–R117)",
+			function()
+				local fake = newFakePagle()
+				local seen = {}
+				local function module(name, takes)
+					local M = fake.Pagle.RegisterModule({ name = name, title = name, order = 10 })
+					M:NewProjection({
+						db = {},
+						rulesVersion = 1,
+						partyCatches = takes,
+						reset = function()
+							return {}
+						end,
+						apply = function(_, record, mode)
+							seen[#seen + 1] = ("%s %s %s %s"):format(name, record.kind, mode, tostring(record.name))
+						end,
+					})
+					return M
+				end
+				local hunts = module("Hunts", true)
+				module("Ledger", false)
+				fake.Pagle.RegisterCallback("Spec", "PartyCatch", function(_, record)
+					seen[#seen + 1] = "PartyCatch " .. record.sourceId
+				end)
+				fake.login()
+				fake.enterWorld()
+
+				local record = fake.partyCatch()
+
+				assert.are.same({
+					"Hunts party live Kukli Emnabi",
+					("PartyCatch Player-4618-0B00000A-%d-0"):format(SERVER_TIME - 1),
+				}, seen)
+				assert.are.equal(
+					("G1|1|%d|0|%d|0|494|148|453|120|0||||6358x1"):format(SERVER_TIME, SERVER_TIME - 1),
+					fake.catchLog:Get(record.seq)
+				)
+				local yielded = {}
+				for read in hunts:IterateCatches(0) do
+					yielded[#yielded + 1] = read.kind
+				end
+				assert.are.same({ "party" }, yielded)
+			end
+		)
+	end)
+
 	describe("Prestige and purchase entries", function()
 		-- The Ledger registered on `fake`, its projection noting each apply ("<seq> <kind> <mode>") and each Prestige
 		-- event ("Prestige <rank>, writable <bool>") in `seen`, in order.
