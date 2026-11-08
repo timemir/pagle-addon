@@ -826,17 +826,18 @@ describe("Greying in the Settings tree", function()
 	end)
 
 	it(
-		"writes Party Hunts to PagleDB.profile.partyHunts at once, one switch for both sides (SET-R35, LOG-R121)",
+		"writes Party Hunts to PagleDB.profile.partyHunts at once, one switch for both sides, off until the party"
+			.. " letter is accepted (SET-R35, LOG-R121, ANN-R113)",
 		function()
 			local loaded = ready()
 			local profile = loaded.namespaces.Pagle.db.profile
+			assert.is_nil(profile.partyHunts)
+
+			setRow(loaded, "Announcements", "Party Hunts", true)
 			assert.is_true(profile.partyHunts)
 
 			setRow(loaded, "Announcements", "Party Hunts", false)
 			assert.is_false(profile.partyHunts)
-
-			setRow(loaded, "Announcements", "Party Hunts", true)
-			assert.is_true(profile.partyHunts)
 		end
 	)
 
@@ -1161,7 +1162,7 @@ describe("Each page's Defaults button", function()
 			["Animations"] = false,
 			["Announce open Hunt windows"] = true,
 			["Remind me about the Pagle companion"] = false,
-			["Party Hunts"] = false,
+			["Party Hunts"] = true,
 			["Share my moments with my party"] = true,
 			["Zone Master"] = false,
 			["Cheers sounds"] = false,
@@ -1182,9 +1183,9 @@ describe("Each page's Defaults button", function()
 			["Animations"] = true,
 			["Announce open Hunt windows"] = false,
 			["Remind me about the Pagle companion"] = true,
-			-- SET-R35's Party Hunts on; SET-R36's Share and Show off until the party letter is accepted (ANN-R113), the
+			-- SET-R35's Party Hunts and SET-R36's Share and Show off until the party letter is accepted (ANN-R113), the
 			-- rest on.
-			["Party Hunts"] = true,
+			["Party Hunts"] = false,
 			["Share my moments with my party"] = false,
 			["Show my party's moments"] = false,
 			["Legends"] = true,

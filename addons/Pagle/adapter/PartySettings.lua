@@ -9,8 +9,8 @@ end
 -- The Party block on the Announcements page (settings.md SET-R36; announcements.md ANN-R104–R108; from 1.5.2, #640):
 -- after Core's rows, under its own header, native checkboxes on proxy settings over PagleDB.profile.party, read
 -- through adapter/Party.lua's ns.PartyOption and ns.PartyKindOn, since Core's defaults sit in logic/, which a patch
--- can't change: from 1.5.3 Share and Show are off until the party letter is accepted (ANN-R113), the rest on unless
--- stored off. adapter/AnnouncementSettings.lua calls it last. Loaded by adapter/Settings.xml.
+-- can't change: from 1.5.3 Share and Show are off until the party letter is accepted (ANN-R113), and from 1.6 Party
+-- Hunts too (ns.PartyHuntsOn), the rest on unless stored off. adapter/AnnouncementSettings.lua calls it last. Loaded by adapter/Settings.xml.
 local L = ns.L
 
 -- The proxy setting variables: Core's Cozy mode (adapter/AnnouncementSettings.lua's), then the block's own.
@@ -40,20 +40,20 @@ end
 
 --- Builds the Party block on the Announcements page (SET-R36): the header, from 1.6 Party Hunts (SET-R35), then Share,
 --- Show with a switch per kind under it, then Cheers sounds. Each reads the stored value each time the page is shown and
---- writes it at once (SET-R62); Share and Show default to off (ANN-R113), the rest to on, which the page's Defaults
---- button restores (SET-R33).
+--- writes it at once (SET-R62); Party Hunts, Share and Show default to off (ANN-R113), the rest to on, which the
+--- page's Defaults button restores (SET-R33).
 ---@param page SettingsCategory
 ---@param layout SettingsLayout
 function ns.PartySettingsRows(page, layout)
 	local Boolean = Settings.VarType.Boolean
 	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_PARTY))
 
-	-- Party Hunts (SET-R35, LOG-R121): PagleDB.profile.partyHunts, on by default (logic/Migrations.lua), never greyed:
-	-- it governs what is shared and what counts, not what pops up.
-	local hunts = Settings.RegisterProxySetting(page, HUNTS, Boolean, L.SETTINGS_PARTY_HUNTS, true, function()
-		return ns.db.profile.partyHunts ~= false
+	-- Party Hunts (SET-R35, LOG-R121): PagleDB.profile.partyHunts, off until the party letter is accepted (ANN-R113,
+	-- adapter/Party.lua's ns.PartyHuntsOn), never greyed: it governs what is shared and what counts, not what pops up.
+	local hunts = Settings.RegisterProxySetting(page, HUNTS, Boolean, L.SETTINGS_PARTY_HUNTS, false, function()
+		return ns.PartyHuntsOn()
 	end, function(value)
-		ns.db.profile.partyHunts = value == true
+		ns.SetPartyHunts(value == true)
 	end)
 	Settings.CreateCheckbox(page, hunts, L.SETTINGS_PARTY_HUNTS_TOOLTIP)
 

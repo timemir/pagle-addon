@@ -836,8 +836,8 @@ value = "Письмо, переданное по берегу"
 en = "A letter, passed along the bank"
 
 [PARTY_LETTER_LINE]
-value = "{name} рыбачит с вами в зоне {zone} и тоже пользуется Pagle. Рыбачьте вместе: делитесь лучшими уловами и поднимайте кружку за чужие."
-en = "{name} is fishing {zone} with you, and they run Pagle too. Fish together: share your best catches and cheer theirs."
+value = "{name} рыбачит с вами в зоне {zone} и тоже пользуется Pagle. Рыбачьте вместе: делитесь лучшими уловами, поднимайте кружку за чужие, и ваш улов будет засчитываться в Охоты друг друга."
+en = "{name} is fishing {zone} with you, and they run Pagle too. Fish together: share your best catches, cheer theirs, and count each other’s catches toward your Hunts."
 
 [PARTY_LETTER_YES]
 value = "Рыбачить вместе"

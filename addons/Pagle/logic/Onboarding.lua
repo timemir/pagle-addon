@@ -20,6 +20,7 @@ ns.ONBOARDING_LETTER = "core.onboarding"
 ---@class PagleOnboardingState
 ---@field letter PagleLetterState         -- ONB-R2, ONB-R12: the onboarding Letter's (ONB-R15)
 ---@field letters? table<string, PagleLetterState> -- ONB-R16: each Module letter's, by id; made as the first is sent
+---@field laterAt? table<string, integer> -- ONB-R16 (from 1.6): a letter with a re-ask policy, the GetServerTime() of its last Later, by id; made as the first is kept
 ---@field guideStep string?                -- the step id last shown (ONB-R22)
 ---@field stepsSeen table<string, true>    -- every step shown, by id (ONB-R22, ONB-R24)
 ---@field guideDone boolean                -- Off to the water was pressed (ONB-R26)
@@ -254,25 +255,66 @@ function Onboarding:RaiseLetter(id)
 	return self:IsLetterDue(id)
 end
 
+-- Forgets the time kept for letter `id`'s last Later (ONB-R16), and the table once it is empty.
+---@param onboarding PagleOnboarding
+---@param id string?
+local function forgetLaterAt(onboarding, id)
+	local state = onboarding:State()
+	local times = state.laterAt
+	if type(times) == "table" and id then
+		times[id] = nil
+		if next(times) == nil then
+			state.laterAt = nil
+		end
+	end
+end
+
 --- Open the letter (ONB-R12): `opened`, so it never shows again.
 ---@param id string?
 function Onboarding:OpenLetter(id)
 	local holder, key = letterSlot(self, id)
 	holder[key] = "opened"
+	forgetLaterAt(self, id)
+end
+
+--- The third button (ONB-R16, from 1.6): `declined`, so it never shows again.
+---@param id string
+function Onboarding:DeclineLetter(id)
+	local holder, key = letterSlot(self, id)
+	holder[key] = "declined"
+	forgetLaterAt(self, id)
 end
 
 --- Later (ONB-R12): from `waiting` to `later`, so the next login shows it once more; from `later` to `declined`. Any
---- other state stays. Returns the state after.
+--- other state stays. With `at` (from 1.6, a letter with a re-ask policy, ONB-R16), from `waiting` or `later` it is
+--- `later` and `at`, the answer's GetServerTime(), is kept for it in `laterAt`. Returns the state after.
 ---@param id string?
+---@param at integer?
 ---@return PagleLetterState
-function Onboarding:LetterLater(id)
+function Onboarding:LetterLater(id, at)
 	local holder, key = letterSlot(self, id)
-	if holder[key] == "waiting" then
+	if at and id and (holder[key] == "waiting" or holder[key] == "later") then
+		holder[key] = "later"
+		local state = self:State()
+		if type(state.laterAt) ~= "table" then
+			state.laterAt = {}
+		end
+		state.laterAt[id] = at
+	elseif holder[key] == "waiting" then
 		holder[key] = "later"
 	elseif holder[key] == "later" then
 		holder[key] = "declined"
 	end
 	return holder[key]
+end
+
+--- The GetServerTime() of letter `id`'s last Later, kept for a letter with a re-ask policy (ONB-R16), or nil.
+---@param id string
+---@return integer?
+function Onboarding:LetterLaterAt(id)
+	local times = self:State().laterAt
+	local at = type(times) == "table" and times[id] or nil
+	return type(at) == "number" and at or nil
 end
 
 -- The Field guide (ONB-R22, ONB-R25, ONB-R26).

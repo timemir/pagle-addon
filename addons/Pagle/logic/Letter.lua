@@ -2,7 +2,8 @@
 local ns = select(2, ...)
 
 -- The Letter (core/onboarding.md › The Letter) and the letters a Module sends through Core (ONB-R15–R18): when a
--- letter shows, once per login, as ONB-R10's conditions hold; Open the letter and Later (ONB-R12, ONB-R16); which of
+-- letter shows, once per login, as ONB-R10's conditions hold; Open the letter, Later and, from 1.6, a letter's third
+-- button and its re-ask policy (ONB-R12, ONB-R16); a letter's words written as it shows (ONB-R15); which of
 -- several letters shows first, one at a time (ONB-R17); whether one shows now, for the menu's tooltip (ONB-R13); a
 -- restriction or an instance hiding it until the checks pass again (ONB-R14); the Modules' dialogs it waits for
 -- (ONB-R100, QoL's conflict note); `/pagle dev onboarding letter` (ONB-R83) and its tour stops' samples (ONB-R84).
@@ -13,16 +14,27 @@ local ns = select(2, ...)
 --- next letter (ONB-R17) no sooner than this many after the one before was answered.
 ns.LETTER_DELAY = 4
 
---- One letter's words and what its confirm button does (ONB-R15): the frame's kicker, its line in the hand, its two
---- buttons, and the function called once the letter is `opened`. `isDue`, if given, is asked as the letter is about to
---- show: while it answers false the letter waits, so a letter whose reason has passed while it waited never shows.
----@class PagleLetterSpec
+--- A letter's words as the frame writes them (ONB-R15): its kicker, its line in the hand and its buttons' labels, the
+--- third (`decline`) only for a letter that has one.
+---@class PagleLetterWords
 ---@field kicker string
 ---@field text string
 ---@field confirm string
 ---@field later string
+---@field decline? string
+
+--- One letter's words and what its buttons do (ONB-R15, ONB-R16): the frame's kicker, its line in the hand, its
+--- buttons, and the function called once the letter is `opened`. `isDue`, if given, is asked as the letter is about to
+--- show: while it answers false the letter waits, so a letter whose reason has passed while it waited never shows.
+--- From 1.6 (#665), each optional: `decline`, a third button's label, which declines the letter for good; `words`,
+--- asked as the letter shows (the tour's sample included) for words written then, each of its fields standing in for
+--- the registered one, which stays where it gives none or fails; and `again`, a re-ask policy in seconds: Later keeps
+--- the letter `later`, never `declined`, and it is due again once that long has passed since.
+---@class PagleLetterSpec: PagleLetterWords
 ---@field onConfirm fun()
 ---@field isDue? fun(): boolean
+---@field words? fun(): table
+---@field again? number
 
 --- What the Letter is fed. Every function is called when needed, never stored.
 ---@class PagleLetterOptions
@@ -31,13 +43,14 @@ ns.LETTER_DELAY = 4
 ---@field inInstance fun(): boolean         -- IsInInstance()
 ---@field cardsSettled fun(): boolean       -- the login's held Announcements and cards have shown and closed (ANN-R21)
 ---@field after fun(seconds: number, fn: fun()) -- runs fn `seconds` from now
----@field show fun(content: PagleLetterSpec) -- puts the frame on screen with these words, rising in with the `letter` sound (ONB-R11)
+---@field show fun(content: PagleLetterWords) -- puts the frame on screen with these words, rising in with the `letter` sound (ONB-R11)
 ---@field hide fun()                        -- takes it off screen at once
 ---@field openGuide fun()                   -- opens the Field guide at its first step (ONB-R12, ONB-R20)
 ---@field guideOpen? fun(): boolean         -- the Field guide is open: a Module's letter waits (ONB-R17); none: never
 ---@field call? fun(fn: function, ...: any) -- calls a Module's function, an error reported and not raised (host.call)
 ---@field afterMoments? fun(fn: fun())     -- runs fn once the moments raised so far have reached the lanes (the next frame's flush, ANN-R10); none: at once
 ---@field testLog? fun(): boolean           -- the Catch log is a test log (`PagleLog.test`): no Module's letter is sent (ONB-R16); none: never
+---@field now? fun(): integer               -- GetServerTime(), a re-ask policy's clock (ONB-R16); none: a letter with `again` is due at once
 
 --- Where the letters are: `waiting` for one to show, `shown` on screen, `away` hidden by a restriction or an instance
 --- to show again (ONB-R14).
@@ -74,7 +87,8 @@ function ns.NewLetter(options)
 end
 
 --- What is wrong with a Module's letter, or nil (ONB-R15): a table with an id `<module>.<name>` and non-empty
---- `kicker`, `text`, `confirm` and `later` strings and an `onConfirm` function. `module` is the Module's def.name.
+--- `kicker`, `text`, `confirm` and `later` strings and an `onConfirm` function; `isDue` and `words` functions, `decline`
+--- a non-empty string and `again` a number of seconds above 0, where given. `module` is the Module's def.name.
 ---@param id any
 ---@param spec any
 ---@param module string
@@ -98,8 +112,16 @@ function ns.LetterProblem(id, spec, module)
 	if type(spec.onConfirm) ~= "function" then
 		return ("RegisterLetter: letter %s needs an onConfirm function"):format(id)
 	end
-	if spec.isDue ~= nil and type(spec.isDue) ~= "function" then
-		return ("RegisterLetter: letter %s's isDue is a function, got %s"):format(id, type(spec.isDue))
+	for _, field in ipairs({ "isDue", "words" }) do
+		if spec[field] ~= nil and type(spec[field]) ~= "function" then
+			return ("RegisterLetter: letter %s's %s is a function, got %s"):format(id, field, type(spec[field]))
+		end
+	end
+	if spec.decline ~= nil and (type(spec.decline) ~= "string" or spec.decline == "") then
+		return ("RegisterLetter: letter %s needs a decline label, if it has one"):format(id)
+	end
+	if spec.again ~= nil and (type(spec.again) ~= "number" or spec.again <= 0) then
+		return ("RegisterLetter: letter %s's again is a number of seconds above 0"):format(id)
 	end
 	return nil
 end
@@ -127,6 +149,9 @@ function Letter:Register(id, spec, owner)
 			later = spec.later,
 			onConfirm = spec.onConfirm,
 			isDue = spec.isDue,
+			decline = spec.decline,
+			words = spec.words,
+			again = spec.again,
 		},
 		owner = owner,
 	}
@@ -200,20 +225,60 @@ local function keptAway(letter)
 	return letter.options.isRestricted() or letter.options.inInstance()
 end
 
+-- Calls a Module's function `fn` through the host (an error reported, and nil), or as it is where there is none.
+---@param letter PagleLetter
+---@param fn function
+---@return any
+local function run(letter, fn)
+	local call = letter.options.call
+	if call then
+		return call(fn)
+	end
+	return fn()
+end
+
 -- Whether the reason a Module's letter was sent still holds (its `isDue`, if it has one): an error in it counts as no.
 ---@param letter PagleLetter
 ---@param spec PagleLetterSpec
 ---@return boolean
 local function reasonHolds(letter, spec)
-	local isDue = spec.isDue
-	if not isDue then
-		return true
+	return not spec.isDue or run(letter, spec.isDue) == true
+end
+
+-- The words a letter is written with now (ONB-R15): its registered ones, each replaced by what its `words` gives
+-- (from 1.6), where that is a non-empty string; an error in `words` is reported, and the registered words stand. A
+-- third button's label only for a letter registered with one.
+---@param letter PagleLetter
+---@param spec PagleLetterSpec
+---@return PagleLetterWords
+local function wordsOf(letter, spec)
+	local live = spec.words and run(letter, spec.words)
+	local words = {}
+	for _, field in ipairs({ "kicker", "text", "confirm", "later", "decline" }) do
+		local value = type(live) == "table" and live[field] or nil
+		words[field] = type(value) == "string" and value ~= "" and value or spec[field]
 	end
-	local call = letter.options.call
-	if call then
-		return call(isDue) == true
+	if not spec.decline then
+		words.decline = nil
 	end
-	return isDue() == true
+	return words
+end
+
+-- Whether letter `id` is due (ONB-R16): `waiting` or `later`, and for a letter with a re-ask policy (`again`, from
+-- 1.6) not answered Later within the last `again` seconds.
+---@param letter PagleLetter
+---@param id string
+---@return boolean
+local function dueNow(letter, id)
+	local onboarding = letter.options.onboarding()
+	if not onboarding:IsLetterDue(id) then
+		return false
+	end
+	local entry = letter.letters[id]
+	local again = entry and entry.spec.again
+	local at = again and onboarding:LetterLaterAt(id)
+	local now = letter.options.now
+	return not (at and now and now() < at + again)
 end
 
 -- The letter to show next (ONB-R17): the onboarding Letter if it is due, else the first of the Modules' sent this
@@ -230,7 +295,7 @@ local function nextLetter(letter)
 		return nil
 	end
 	for _, id in ipairs(letter.queue) do
-		if not letter.answered[id] and onboarding:IsLetterDue(id) and reasonHolds(letter, letter.letters[id].spec) then
+		if not letter.answered[id] and dueNow(letter, id) and reasonHolds(letter, letter.letters[id].spec) then
 			return id
 		end
 	end
@@ -263,7 +328,7 @@ function Letter:Check()
 	if id and spec then
 		self.current = id
 		self.phase = "shown"
-		options.show(spec)
+		options.show(wordsOf(self, spec))
 	end
 end
 
@@ -300,7 +365,8 @@ function Letter:SetDialogOpen(owner, open)
 end
 
 --- A Module sends its letter (M:ShowLetter, ONB-R16): a letter with no state yet becomes `waiting`, and one that is
---- `waiting` or `later` and not answered this login joins the queue, to show as ONB-R10's conditions hold (ONB-R17).
+--- `waiting` or `later` and not answered this login joins the queue, to show as ONB-R10's conditions hold (ONB-R17);
+--- one with a re-ask policy (`again`) not until that long after its Later.
 --- A `declined` or `opened` letter, one answered this login and one never registered are left alone, and sending a
 --- letter again changes nothing; nor does any send count on a test log, whose Casts are no player's (ONB-R16). The
 --- check that may show it waits for the moments raised so far to reach the lanes (ANN-R10), so a letter sent as a Cast
@@ -313,7 +379,7 @@ function Letter:Send(id)
 	if not self.letters[id] or self.answered[id] or (options.testLog and options.testLog()) then
 		return false
 	end
-	if not options.onboarding():RaiseLetter(id) then
+	if not options.onboarding():RaiseLetter(id) or not dueNow(self, id) then
 		return false
 	end
 	local queued = false
@@ -384,13 +450,30 @@ function Letter:Open()
 end
 
 --- Later (ONB-R12, ONB-R16): the letter goes; from `waiting` it is `later`, shown once more at the next login, and
---- from `later` it is `declined`.
+--- from `later` it is `declined`. A letter with a re-ask policy (`again`, from 1.6) stays `later`, the time kept, to be
+--- due again `again` seconds on.
 function Letter:Later()
 	if endPreview(self) or self.phase ~= "shown" then
 		return
 	end
+	local id, spec = answer(self)
+	local now = self.options.now
+	self.options.onboarding():LetterLater(id, spec.again and (now and now() or 0) or nil)
+	self.options.hide()
+end
+
+--- The third button (ONB-R16, from 1.6), on a letter registered with one: the letter goes, `declined`, never to show
+--- again. Nothing for a letter without one.
+function Letter:Decline()
+	if endPreview(self) or self.phase ~= "shown" then
+		return
+	end
+	local spec = self:Spec(self.current --[[@as string]])
+	if not (spec and spec.decline) then
+		return
+	end
 	local id = answer(self)
-	self.options.onboarding():LetterLater(id)
+	self.options.onboarding():DeclineLetter(id)
 	self.options.hide()
 end
 
@@ -417,7 +500,7 @@ function Letter:ShowNow(id)
 	if self.phase ~= "shown" or self.current ~= id then
 		self.current = id
 		self.phase = "shown"
-		self.options.show(spec)
+		self.options.show(wordsOf(self, spec))
 	end
 	return true
 end
@@ -433,7 +516,7 @@ function Letter:TourShow(id)
 		return
 	end
 	self.preview = id
-	self.options.show(spec)
+	self.options.show(wordsOf(self, spec))
 end
 
 --- The tour stop's hide (CORE-R68): the sample goes, and a letter still to show this login is checked for again.

@@ -31,11 +31,15 @@ end
 -- Core logged in on Forever with `group`, the player fishing in Darkshore, and a Module "Hunts" whose projection
 -- takes Party Catches, noting each record it is applied (`seen.applied`, "<kind> <mode>", and `seen.records`) and
 -- asked about (`seen.asked`); `seen.wants` is its filter's answer (true by default). `options.takes = false` gives it
--- a projection that doesn't take them; `options.log` another PagleLog.
+-- a projection that doesn't take them; `options.log` another PagleLog. Party Hunts on, as the party letter's Fish
+-- together leaves it (ANN-R115), unless `options.unasked`.
 local function loggedIn(group, options)
 	options = options or {}
 	local loaded = loadCore(options.log or playerLog(20))
 	loaded.env.PagleDB.global.onboarding.notesOn = false
+	if not options.unasked then
+		loaded.ns.db.profile.partyHunts = true
+	end
 	loaded.client.group = group
 	loaded.client.areaNames[148] = "Darkshore"
 	loaded.env.GetRealZoneText = function()
@@ -362,10 +366,21 @@ describe("receiving a groupmate's catch", function()
 		end
 	)
 
-	it("is on by default (LOG-R121, SET-R35)", function()
-		local loaded = loggedIn(party())
-		assert.is_true(loaded.ns.db.profile.partyHunts)
-	end)
+	it(
+		"set_r35 is off until the party letter is accepted: no party catch message is sent, and none logged"
+			.. " (LOG-R121, ANN-R113)",
+		function()
+			local loaded = loggedIn(party(), { unasked = true })
+			assert.is_nil(loaded.ns.db.profile.partyHunts)
+			assert.is_false(loaded.ns.PartyHuntsOn())
+
+			catchOne(loaded)
+			assert.are.same({}, sentOn(loaded))
+			local before = loaded.env.PagleLog.count
+			receive(loaded, (kukliCatch(loaded)))
+			assert.are.equal(before, loaded.env.PagleLog.count)
+		end
+	)
 end)
 
 describe("a shared moment and a party catch together", function()

@@ -324,7 +324,7 @@ ns.L = {
 	PARTY_GOLD = "Took gold in {hunt}",
 	PARTY_LETTER_KICKER = "A letter, passed along the bank",
 	PARTY_LETTER_LATER = "Not now",
-	PARTY_LETTER_LINE = "{name} is fishing {zone} with you, and they run Pagle too. Fish together: share your best catches and cheer theirs.",
+	PARTY_LETTER_LINE = "{name} is fishing {zone} with you, and they run Pagle too. Fish together: share your best catches, cheer theirs, and count each other’s catches toward your Hunts.",
 	PARTY_LETTER_NO = "No thanks",
 	PARTY_LETTER_YES = "Fish together",
 	PARTY_LINES = { epic = "Caught an epic colour", gold = "Took gold in a Hunt", ledger = "Ledger 100%", legend = "Caught a Legend", monster = "Monster-size record", rare = "Caught a rare colour", zone = "Zone Master" },

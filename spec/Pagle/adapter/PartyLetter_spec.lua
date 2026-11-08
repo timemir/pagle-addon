@@ -1,7 +1,8 @@
--- The party letter on the client, through the real TOC (announcements.md › The party letter, ANN-R113–R116; settings.md
--- SET-R36; from 1.5.3, #655): party sharing, showing and cheers are off until the player answers it, a 1.5.2 player's
--- stored choice is kept, a switch set by hand is an answer; when it shows (a Pagle groupmate in the same zone while
--- the player fishes, through Core's letter service and its gates, ONB-R15–R17); its words and three buttons; and
+-- The party letter on the client, through the real TOC (announcements.md › The party letter, ANN-R113–R117; settings.md
+-- SET-R35, SET-R36; from 1.5.3, #655, and from 1.6, #665): Party Hunts, party sharing, showing and cheers are off until
+-- the player accepts it, a 1.5.2 player's stored choice is kept, a switch set by hand is an answer; when it shows (a
+-- Pagle groupmate in the same zone while the player fishes, through Core's letter service and its gates,
+-- ONB-R15–R17); its words and three buttons, all the service's own; 1.5.3's answer moved into the service; and
 -- /pagle dev party letter.
 
 local ELWYNN, DUROTAR = 1429, 1411
@@ -9,7 +10,8 @@ local KEEFER = 19805
 local DAY = 24 * 60 * 60
 
 local LINE = "Kukli Stonebrew is fishing Elwynn Forest with you, and they run Pagle too. Fish together: share your best"
-	.. " catches and cheer theirs."
+	.. " catches, cheer theirs, and count each other’s catches toward your Hunts."
+local ID = "core.party"
 
 -- Kukli (with Forever's surname) and Arwen, both in Elwynn Forest unless `kukliMap` says otherwise; a raid with `raid`.
 local function party(kukliMap, raid)
@@ -32,20 +34,33 @@ local function loggedIn(group, saved, globals)
 	loaded.client.playerMap = ELWYNN
 	loaded.client.mapNames[ELWYNN] = "Elwynn Forest"
 	loaded.client.mapNames[DUROTAR] = "Durotar"
+	-- the zone a Cast is logged in, so a caught one goes to the party as a party catch with Party Hunts on (LOG-R111)
+	loaded.client.areaNames[148] = "Darkshore"
+	loaded.env.GetRealZoneText = function()
+		return "Darkshore"
+	end
 	local M = loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
 	enterWorld(loaded, 3)
 	loaded.client.advance(4)
 	return loaded, M
 end
 
--- The texts Core sent on the prefix Pagle, in order, and forgets them.
-local function sent(loaded)
+-- The texts Core sent on `prefix` (Pagle, the party toasts', by default), in order; every message sent is forgotten.
+local function sent(loaded, prefix)
 	local texts = {}
 	for _, message in ipairs(loaded.client.addonMessages) do
-		texts[#texts + 1] = message.text
+		if message.prefix == (prefix or "Pagle") then
+			texts[#texts + 1] = message.text
+		end
 	end
 	loaded.client.addonMessages = {}
 	return texts
+end
+
+-- The letter service's state of the party letter, and the time its Not now was kept (ONB-R16).
+local function letterState(loaded)
+	local onboarding = loaded.env.PagleDB.global.onboarding
+	return onboarding.letters and onboarding.letters[ID], onboarding.laterAt and onboarding.laterAt[ID]
 end
 
 -- A message arriving on the party channel from `sender` (Kukli by default).
@@ -116,19 +131,22 @@ local function row(loaded, label)
 end
 
 describe("the opt-in (ANN-R113)", function()
-	it("ann_r113 shares nothing and shows nothing of the party until the letter is answered", function()
+	it("ann_r113 shares nothing, shows nothing and counts nothing of the party until the letter is accepted", function()
 		local loaded, M = loggedIn(party())
 		hello(loaded)
 		sent(loaded)
 
 		legend(loaded, M)
 		receive(loaded, "1:M:k3x91:legend:19805")
+		cast(loaded)
 		loaded.client.advance(1)
 
-		assert.are.same({}, sent(loaded))
+		assert.are.same({}, loaded.client.addonMessages)
 		assert.is_nil(loaded.ns.announcementFrames.party and loaded.ns.announcementFrames.party.display)
 		assert.is_false(loaded.ns.PartyOption("share"))
 		assert.is_false(loaded.ns.PartyOption("show"))
+		assert.is_false(loaded.ns.PartyHuntsOn())
+		assert.is_nil(loaded.ns.db.profile.partyHunts)
 	end)
 
 	it("ann_r113 still says hello, which carries no moment and no place, so a groupmate can be found", function()
@@ -203,9 +221,23 @@ describe("the opt-in (ANN-R113)", function()
 		assert.are.equal(1, #sent(loaded))
 	end)
 
+	it("ann_r113 counts Party Hunts turned on in Settings by hand as an answer too (SET-R35)", function()
+		local loaded = loggedIn(party())
+		row(loaded, "Party Hunts"):GetSetting():SetValue(true)
+		assert.is_true(loaded.ns.db.profile.partyHunts)
+		assert.is_false(loaded.ns.PartyOption("share"))
+
+		hello(loaded)
+		cast(loaded)
+		assert.is_false(shows(loaded))
+		assert.are.equal(1, #sent(loaded, "PagleCatch"))
+	end)
+
 	it("ann_r113 counts no answer from the Defaults button on a player not asked yet (SET-R33)", function()
 		local loaded = loggedIn(party())
 		loaded.client.settings.defaults(loaded.client.settings.page("Announcements"))
+		assert.is_nil(loaded.ns.db.profile.partyHunts)
+		assert.is_false(row(loaded, "Party Hunts"):GetSetting():GetValue())
 		assert.is_false(row(loaded, "Share my moments with my party"):GetSetting():GetValue())
 		assert.is_false(row(loaded, "Show my party's moments"):GetSetting():GetValue())
 		assert.is_true(row(loaded, "Cheers sounds"):GetSetting():GetValue())
@@ -345,7 +377,8 @@ describe("the party letter's buttons (ANN-R115)", function()
 	end
 
 	it(
-		"ann_r115 Fish together turns sharing, showing and cheers on, stored, and the letter never asks again",
+		"ann_r115 Fish together turns Party Hunts, sharing, showing and cheers on, stored, and the letter never asks"
+			.. " again (SET-R35)",
 		function()
 			local loaded, M = asked()
 
@@ -353,12 +386,17 @@ describe("the party letter's buttons (ANN-R115)", function()
 
 			assert.is_false(letterOf(loaded):IsShown())
 			local saved = stored(loaded)
-			assert.are.same({ true, true, true, "accepted" }, { saved.share, saved.show, saved.sounds, saved.letter })
+			assert.are.same({ true, true, true }, { saved.share, saved.show, saved.sounds })
+			assert.is_nil(saved.letter)
+			assert.is_true(loaded.ns.db.profile.partyHunts)
+			assert.are.equal("opened", (letterState(loaded)))
 			receive(loaded, "1:M:k3x91:legend:19805")
 			loaded.client.advance(10)
 			assert.are.equal("Kukli Stonebrew", loaded.ns.announcementFrames.party.display.announcement.headline.title)
 			legend(loaded, M)
 			assert.are.equal(1, #sent(loaded))
+			cast(loaded)
+			assert.are.equal(1, #sent(loaded, "PagleCatch"))
 
 			local next = loggedIn(party(), loaded.env.PagleDB, {
 				GetServerTime = function()
@@ -378,9 +416,10 @@ describe("the party letter's buttons (ANN-R115)", function()
 		press(loaded, "Not now")
 
 		assert.is_false(letterOf(loaded):IsShown())
-		local saved = stored(loaded)
-		assert.are.same({ "later", now }, { saved.letter, saved.laterAt })
+		assert.are.same({ "later", now }, { letterState(loaded) })
+		assert.is_nil(stored(loaded))
 		assert.is_false(loaded.ns.PartyOption("share"))
+		assert.is_false(loaded.ns.PartyHuntsOn())
 		loaded.client.advance(10)
 		cast(loaded)
 		assert.is_false(letterOf(loaded):IsShown())
@@ -403,7 +442,7 @@ describe("the party letter's buttons (ANN-R115)", function()
 		cast(day)
 		assert.is_true(shows(day))
 		press(day, "Not now")
-		assert.are.equal("later", stored(day).letter)
+		assert.are.same({ "later", SERVER_TIME + DAY + 60 }, { letterState(day) })
 	end)
 
 	it("ann_r115 No thanks never asks again, and leaves every switch off", function()
@@ -412,9 +451,11 @@ describe("the party letter's buttons (ANN-R115)", function()
 		press(loaded, "No thanks")
 
 		assert.is_false(letterOf(loaded):IsShown())
-		assert.are.equal("declined", stored(loaded).letter)
+		assert.are.same({ "declined" }, { letterState(loaded) })
+		assert.is_nil(stored(loaded))
 		assert.is_false(loaded.ns.PartyOption("share"))
 		assert.is_false(loaded.ns.PartyOption("show"))
+		assert.is_false(loaded.ns.PartyHuntsOn())
 
 		local later = loggedIn(party(), loaded.env.PagleDB, {
 			GetServerTime = function()
@@ -495,7 +536,9 @@ describe("the party letter's tour stop and dev command (ANN-R116)", function()
 
 		assert.is_false(frame:IsShown())
 		assert.is_nil(stored(loaded))
+		assert.is_nil(loaded.ns.db.profile.partyHunts)
 		assert.is_nil(loaded.env.PagleDB.global.onboarding.letters)
+		assert.is_nil(loaded.env.PagleDB.global.onboarding.laterAt)
 	end)
 
 	it(
@@ -508,20 +551,173 @@ describe("the party letter's tour stop and dev command (ANN-R116)", function()
 			assert.is_true(frame:IsShown())
 			assert.are.equal(
 				"Kukli Emnabi is fishing Elwynn Forest with you, and they run Pagle too. Fish together: share your best"
-					.. " catches and cheer theirs.",
+					.. " catches, cheer theirs, and count each other’s catches toward your Hunts.",
 				frame.line.text
 			)
 			press(loaded, "No thanks")
-			assert.are.equal("declined", stored(loaded).letter)
+			assert.are.equal("declined", (letterState(loaded)))
 
 			slash(loaded, "dev party letter")
 			press(loaded, "Fish together")
-			assert.are.equal("accepted", stored(loaded).letter)
+			assert.are.equal("opened", (letterState(loaded)))
 			assert.is_true(loaded.ns.PartyOption("share"))
+			assert.is_true(loaded.ns.PartyHuntsOn())
 
 			slash(loaded, "dev party letter reset")
 			assert.is_false(loaded.ns.PartyOption("share"))
-			assert.is_nil(stored(loaded).letter)
+			assert.is_false(loaded.ns.PartyHuntsOn())
+			assert.is_nil((letterState(loaded)))
 		end
 	)
+end)
+
+describe("the party letter on the letter service (ANN-R115, ONB-R15, ONB-R16; from 1.6, #665)", function()
+	it("ann_r115 is the service's own letter: its third button, live words and asking again a day on", function()
+		local loaded = loggedIn(nil)
+		local spec = assert(loaded.ns.letter:Spec(ID))
+
+		assert.are.equal("No thanks", spec.decline)
+		assert.are.equal(DAY, spec.again)
+		assert.are.equal("function", type(spec.words))
+		assert.are.equal("function", type(spec.isDue))
+	end)
+
+	it("ann_r115 leaves no workaround in the adapter: no letter extras, no answer kept beside the switches", function()
+		local loaded = loggedIn(party())
+		hello(loaded)
+		cast(loaded)
+		press(loaded, "Not now")
+
+		assert.is_nil(rawget(loaded.ns, "letterExtras"))
+		assert.is_nil(stored(loaded))
+		assert.are.equal("later", (letterState(loaded)))
+	end)
+end)
+
+describe("1.5.3's answer, moved into the letter service (ANN-R117)", function()
+	-- The onboarding state as 1.5.3 saved it for a returning Angler, with `letters` and `laterAt` as given.
+	local function onboardingState(letters, laterAt)
+		return {
+			letter = "returning",
+			stepsSeen = {},
+			guideDone = false,
+			skipped = false,
+			reopen = false,
+			notesOn = false,
+			notesSeen = {},
+			looksSeen = {},
+			evening = { shown = false, closed = false, done = {} },
+			characters = {},
+			letters = letters,
+			laterAt = laterAt,
+		}
+	end
+
+	-- A PagleDB as 1.5.3 left it (schemaVersion 3): `profiles` by name, the service's state `letters`.
+	local function from153(profiles, letters)
+		return { global = { schemaVersion = 3, onboarding = onboardingState(letters) }, profiles = profiles }
+	end
+
+	-- 1.5.3's Fish together, Not now and No thanks, as profile.party kept them (ANN-R115 as 1.5.3 had it), each a new
+	-- table, since the migration changes it.
+	local function accepted()
+		return { optIn = 1, share = true, show = true, sounds = true, letter = "accepted" }
+	end
+	local function notNow(at)
+		return { optIn = 1, letter = "later", laterAt = at }
+	end
+	local function declined()
+		return { optIn = 1, letter = "declined" }
+	end
+
+	it("ann_r117 keeps Party Hunts on for a player who accepted it, and never asks again", function()
+		local loaded = loggedIn(party(), from153({ Default = { party = accepted() } }, { [ID] = "opened" }))
+
+		assert.is_true(loaded.ns.PartyHuntsOn())
+		assert.is_true(loaded.ns.PartyOption("share"))
+		assert.is_true(loaded.ns.PartyOption("show"))
+		assert.are.equal("opened", (letterState(loaded)))
+		assert.is_nil(stored(loaded).letter)
+		assert.are.equal(4, loaded.env.PagleDB.global.schemaVersion)
+		hello(loaded)
+		sent(loaded)
+		cast(loaded)
+		assert.is_false(shows(loaded))
+		assert.are.equal(1, #sent(loaded, "PagleCatch"))
+	end)
+
+	it("ann_r117 keeps a Not now: asked again 24 h after it, not before, with Party Hunts off", function()
+		-- 1.5.3's service had stepped the letter to declined after two Not nows; profile.party is the answer.
+		local at = SERVER_TIME - 3600
+		local saved = from153({ Default = { party = notNow(at) } }, { [ID] = "declined" })
+
+		local soon = loggedIn(party(), saved)
+		assert.are.same({ "later", at }, { letterState(soon) })
+		assert.is_nil(stored(soon).letter)
+		assert.is_nil(stored(soon).laterAt)
+		assert.is_false(soon.ns.PartyHuntsOn())
+		hello(soon)
+		cast(soon)
+		assert.is_false(shows(soon))
+
+		local day = loggedIn(party(), soon.env.PagleDB, {
+			GetServerTime = function()
+				return at + DAY + 60
+			end,
+		})
+		hello(day)
+		cast(day)
+		assert.is_true(shows(day))
+	end)
+
+	it("ann_r117 keeps a No thanks: never asked again, Party Hunts off", function()
+		local loaded = loggedIn(party(), from153({ Default = { party = declined() } }, { [ID] = "later" }))
+
+		assert.are.equal("declined", (letterState(loaded)))
+		assert.is_false(loaded.ns.PartyHuntsOn())
+		hello(loaded)
+		cast(loaded)
+		assert.is_false(shows(loaded))
+	end)
+
+	it("ann_r117 drops the service's own state where no profile answered, unless the letter was waiting", function()
+		local stale = loggedIn(party(), from153({ Default = { party = { optIn = 1 } } }, { [ID] = "declined" }))
+		assert.is_nil((letterState(stale)))
+		hello(stale)
+		cast(stale)
+		assert.is_true(shows(stale))
+
+		local waiting = loggedIn(party(), from153({}, { [ID] = "waiting" }))
+		assert.are.equal("waiting", (letterState(waiting)))
+	end)
+
+	it("ann_r117 takes the strongest answer of every profile, Party Hunts on only where it was accepted", function()
+		local saved = from153({
+			Default = { party = notNow(SERVER_TIME - 60) },
+			Alt = { party = declined() },
+			Main = { party = accepted() },
+		})
+
+		local loaded = loggedIn(nil, saved)
+
+		local profiles = loaded.env.PagleDB.profiles
+		assert.are.equal("opened", (letterState(loaded)))
+		assert.is_true(profiles.Main.partyHunts)
+		assert.is_nil(profiles.Alt.partyHunts)
+		assert.is_nil(profiles.Default.partyHunts)
+		for _, name in ipairs({ "Default", "Alt", "Main" }) do
+			assert.are.same({ name }, { name, profiles[name].party.letter, profiles[name].party.laterAt })
+		end
+	end)
+
+	it("ann_r117 changes nothing for a 1.5.2 player's kept choice: still never asked, Party Hunts off", function()
+		local loaded = loggedIn(party(), from153({ Default = { party = { share = false } } }))
+
+		assert.is_nil((letterState(loaded)))
+		assert.is_false(loaded.ns.PartyHuntsOn())
+		assert.is_true(loaded.ns.PartyOption("show"))
+		hello(loaded)
+		cast(loaded)
+		assert.is_false(shows(loaded))
+	end)
 end)

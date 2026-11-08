@@ -138,6 +138,25 @@ function ns.SetPartyOption(key, on)
 	end
 end
 
+--- Whether Party Hunts is on (SET-R35, LOG-R121; from 1.6): only once `PagleDB.profile.partyHunts` is stored true, by
+--- the party letter's Fish together (ANN-R115) or by hand in Settings; nil, not asked yet, reads off. The one switch
+--- for party-wide Hunts: the party catch message sent and received (adapter/PartyCatches.lua) and "Completed for the
+--- party" sent (ANN-R111) each ask it.
+---@return boolean
+function ns.PartyHuntsOn()
+	return ns.db ~= nil and ns.db.profile.partyHunts == true
+end
+
+--- Sets Party Hunts, stored as given: a change by hand is an answer to the party letter, as Share's and Show's are
+--- (ANN-R113). Setting what it already is writes nothing, so the Defaults button on a player not asked yet answers
+--- nothing.
+---@param on boolean
+function ns.SetPartyHunts(on)
+	if ns.PartyHuntsOn() ~= on then
+		ns.db.profile.partyHunts = on
+	end
+end
+
 --- Whether a kind's switch is on (SET-R36): on unless stored as false.
 ---@param kind string
 ---@return boolean

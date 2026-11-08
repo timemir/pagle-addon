@@ -489,8 +489,8 @@ value = "Una carta, pasada por la orilla"
 en = "A letter, passed along the bank"
 
 [PARTY_LETTER_LINE]
-value = "{name} está pescando en {zone} contigo y también usa Pagle. Pescad juntos: comparte tus mejores capturas y brinda por las suyas."
-en = "{name} is fishing {zone} with you, and they run Pagle too. Fish together: share your best catches and cheer theirs."
+value = "{name} está pescando en {zone} contigo y también usa Pagle. Pescad juntos: comparte tus mejores capturas, brinda por las suyas y que las capturas de cada uno cuenten para las Cazas del otro."
+en = "{name} is fishing {zone} with you, and they run Pagle too. Fish together: share your best catches, cheer theirs, and count each other’s catches toward your Hunts."
 
 [PARTY_LETTER_YES]
 value = "Pescar juntos"

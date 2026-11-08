@@ -149,7 +149,7 @@ Before step 1, Core applies the player's Language (CORE-R8, SET-R10): it reads `
 - **LOG-R118** **A Party Catch is no Catch of the Angler's.** It is never a Cast, never in a Session (LOG-R60, LOG-R98), never counted among the earlier Catches of a Simulated Size (LOG-R65, LOG-R100: those count `C1` items only), never in the diagnostics buffer or the Field report (LOG-R81), and never a Catch for a Module that doesn't take Party Catches (LOG-R117).
 - **LOG-R119** **Additive kind.** `G1`, like `K1` (LOG-R37), changes no earlier entry, so `PagleLog.format` stays 4 (LOG-R17) and no log is started over. A Core from before 1.6 skips a `G1` as an entry it can't decode (LOG-R16). Pagle's backend refuses a Catch log it can't admit, so the backend reads `G1` before 1.6 is released (pagle-backend's record contract).
 - **LOG-R120** **Privacy.** The party catch message carries the catcher's GUID, the Cast's zone, subzone, skill, lure, events, auras and items, and nothing else, to the party only, never further. The receiver uses the GUID for the live checks of LOG-R113 (items 4 and 5) and drops it: the `G1` entry, the record a replay or rebuild makes and every Module's state hold no GUID and no name of the groupmate (LOG-R115, LOG-R116, HNT-R181), and its Party Catch IDs are the receiver's own. Pagle's website never names a groupmate (pagle-backend's angler-page.md). A groupmate's name shows only in game, in the receiver's own moments (ANN-R110).
-- **LOG-R121** **The Party Hunts setting** (`PagleDB.profile.partyHunts`, on by default; [settings.md](../settings.md), SET-R35) turns both sides off at once: off, Core sends no party catch message and logs none it receives. It changes nothing already logged. *Decided by the dev (2026-11-08): one switch for both sides, on by default, independent of #640's party toast switches.*
+- **LOG-R121** **The Party Hunts setting** (`PagleDB.profile.partyHunts`, off until the party letter is accepted; [settings.md](../settings.md), SET-R35; [announcements.md](announcements.md) ANN-R113) turns both sides off at once: off, Core sends no party catch message and logs none it receives. It changes nothing already logged. *Decided by the dev (2026-11-08): one switch for both sides, independent of #640's party toast switches. On [#665](https://github.com/timemir/pagle-addon/issues/665) it became off until the party letter is accepted, which turns it on, rather than on by default.*
 
 ### Reading the log back
 
@@ -371,13 +371,13 @@ The ADR 0003 and ADR 0008 notes sketch `B1`, `U1` and `A1` without the shared he
 | `global.activityXP` | the Activity XP totals ([activity-xp.md](activity-xp.md#data)) |
 | `global.tickets` | the Refresh totals, `earned` and `spent` by Module, and their `logId` ([refresh.md](refresh.md#data)); default `{ earned = {}, spent = {} }`, no schema step |
 | `global.pushed` | `seq`, the last pushed file's `seq` Core accepted ([pushed-content.md](pushed-content.md#data), PUSH-R13); no default |
-| `global.onboarding` | the onboarding state ([onboarding.md](onboarding.md#data)), added by migration step 2 (ONB-R1) |
+| `global.onboarding` | the onboarding state ([onboarding.md](onboarding.md#data)), added by migration step 2 (ONB-R1); *from 1.6* migration step 4 moves the party letter's 1.5.3 answer from each `profile.party` into its `letters` and `laterAt`, and turns Party Hunts on where it was accepted ([announcements.md](announcements.md) ANN-R117) |
 | `global.projections.*` | Core's own projections (LOG-R78): `fieldReport` ([field-report.md](field-report.md#data)), `wallet` ([wallet-and-shop.md](wallet-and-shop.md#data)), `varieties` ([varieties.md](varieties.md#data)) |
 | `global.pasteExports` | `{ [logId] = seq }`, each log's last exported seq for the Paste string ([paste-string.md](paste-string.md#data), PST-R40); default `{}` |
 | `global.pasteCheckpoints` | the content checkpoints kept for the next Paste export ([paste-string.md](paste-string.md#data), PST-R42); default `{}` |
 | `global.minimap` | the minimap icon's place and shown state (CORE-R53, CORE-R56): `angle`, degrees round the minimap counterclockwise from its right, to 0.1, default `225` (its bottom left); `hide`, default `false`; *from 1.5:* `detached`, Detach from the minimap (CORE-R53, SET-R10 row 10a), default `false`; `point`, the detached icon's spot, `{ x, y }`, its centre as fractions of `UIParent`'s width and height from its bottom left, no default (no key) until the icon is first detached, and dropped when it goes back to the edge; *from 1.5.1:* `style`, the icon's style (CORE-R53, SET-R10 row 10b), `"classic"`, `"ledger"` or `"bobber"`, and `scale`, its size (row 10c), a fraction from `0.8` to `1.5`, neither with a default (no key until picked: Core reads a missing or unusable one as `ns.MINIMAP_ICON_STYLE_DEFAULT`, Classic, and 1) |
 | `profile.reloadReminder` | boolean, the `/reload` reminder (LOG-R86); default `false` |
-| `profile.partyHunts` | boolean, the Party Hunts setting (LOG-R121, SET-R35), *from 1.6*; default `true`, no schema step |
+| `profile.partyHunts` | boolean, the Party Hunts setting (LOG-R121, SET-R35), *from 1.6*; no default: nil, not asked yet, reads off until the party letter's Fish together or Settings stores it (ANN-R113, ANN-R115); migration step 4 stores `true` in each profile whose 1.5.3 `party.letter` was `"accepted"` (ANN-R117) |
 | `profile.lengthUnit` | `"cm"`, `"in"`, or `nil` for the region default (LOG-R69); default `nil`. The Defaults button sets it back to `nil` (SET-R13). |
 | `profile.anglerTooltips` | the "Show other Anglers on player tooltips" setting ([anglers-in-game.md](anglers-in-game.md#data), VIEW-R30); default `true` |
 | `profile.*` (other keys) | Core settings in the other topic files: `profile.announcements`, `profile.appearance`, `profile.dock` |
@@ -564,7 +564,7 @@ None of its own. The only visible output is the optional unsaved-Casts chat line
 |---|---|---|
 | Remind me to `/reload` when Casts are unsaved (`profile.reloadReminder`) | on/off | off |
 | Length unit (`profile.lengthUnit`) | cm / in | in on region 1, else cm (LOG-R69) |
-| Party Hunts: count my party's catches, and share mine (`profile.partyHunts`), *from 1.6* | on/off | on (LOG-R121) |
+| Party Hunts: count my party's catches, and share mine (`profile.partyHunts`), *from 1.6* | on/off | off until the party letter is accepted (LOG-R121, ANN-R113) |
 
 The first two sit on the Settings root, in its Saving and Units sections (CORE-R40, SET-R10); Party Hunts sits on the Announcements page (SET-R35).
 

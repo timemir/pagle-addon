@@ -59,15 +59,15 @@ describe("ns.Migrate", function()
 	end)
 
 	it(
-		"brings a new PagleDB to schemaVersion 3, the Coins totals' logId (catch-log.md › Data, ONB-R1, SHOP-R3)",
+		"brings a new PagleDB to schemaVersion 4, the Coins totals' logId (catch-log.md › Data, ONB-R1, SHOP-R3)",
 		function()
 			local db = { global = { coins = { earned = {} } } }
 			local catchLog = ns.OpenCatchLog(savedLog(), { decodeErrors = 0 }, SERVER_TIME)
 
 			ns.Migrate(db, ns.PAGLEDB_MIGRATIONS, { catchLog = catchLog })
 
-			assert.are.equal(3, #ns.PAGLEDB_MIGRATIONS)
-			assert.are.equal(3, db.global.schemaVersion)
+			assert.are.equal(4, #ns.PAGLEDB_MIGRATIONS)
+			assert.are.equal(4, db.global.schemaVersion)
 			assert.are.equal("waiting", db.global.onboarding.letter)
 			assert.are.equal(catchLog.data.logId, db.global.coins.logId)
 		end
@@ -115,4 +115,89 @@ describe("ns.PAGLEDB_DEFAULTS", function()
 	it('turns "Show other Anglers on player tooltips" on (VIEW-R30)', function()
 		assert.is_true(ns.PAGLEDB_DEFAULTS.profile.anglerTooltips)
 	end)
+end)
+
+describe("PagleDB's step 4: the party letter's 1.5.3 answer (announcements.md ANN-R117; from 1.6, #665)", function()
+	-- A DB at schemaVersion 3 with `profiles` by name and the service's state `letters`, after step 4.
+	local function migrated(profiles, letters)
+		local db = {
+			global = { schemaVersion = 3, onboarding = ns.NewOnboardingState("opened") },
+			profiles = profiles,
+		}
+		db.global.onboarding.letters = letters
+		local catchLog = ns.OpenCatchLog(savedLog(), { decodeErrors = 0 }, SERVER_TIME)
+		ns.Migrate(db, ns.PAGLEDB_MIGRATIONS, { catchLog = catchLog })
+		assert.are.equal(4, db.global.schemaVersion)
+		return db, db.global.onboarding
+	end
+
+	it("ann_r117 makes accepted opened, and turns Party Hunts on in that profile", function()
+		local db, onboarding = migrated({ Default = { party = { optIn = 1, share = true, letter = "accepted" } } })
+
+		assert.are.same({ ["core.party"] = "opened" }, onboarding.letters)
+		assert.is_nil(onboarding.laterAt)
+		assert.are.same({ party = { optIn = 1, share = true }, partyHunts = true }, db.profiles.Default)
+	end)
+
+	it("ann_r117 keeps a Not now as later, with its time, and a No thanks as declined", function()
+		local _, later = migrated({ Default = { party = { optIn = 1, letter = "later", laterAt = 1234 } } })
+		assert.are.same({ ["core.party"] = "later" }, later.letters)
+		assert.are.same({ ["core.party"] = 1234 }, later.laterAt)
+
+		local db, declined = migrated({ Default = { party = { optIn = 1, letter = "declined" } } }, {
+			["core.party"] = "later",
+			["ledger.prestige"] = "later",
+		})
+		assert.are.same({ ["core.party"] = "declined", ["ledger.prestige"] = "later" }, declined.letters)
+		assert.is_nil(db.profiles.Default.partyHunts)
+	end)
+
+	it("ann_r117 takes accepted over declined over Not now across profiles, and the latest Not now", function()
+		local db, onboarding = migrated({
+			A = { party = { letter = "later", laterAt = 10 } },
+			B = { party = { letter = "declined" } },
+			C = { party = { letter = "accepted" } },
+		})
+		assert.are.same({ ["core.party"] = "opened" }, onboarding.letters)
+		assert.are.same({ C = true }, {
+			A = db.profiles.A.partyHunts,
+			B = db.profiles.B.partyHunts,
+			C = db.profiles.C.partyHunts,
+		})
+
+		local _, laters = migrated({
+			A = { party = { letter = "later", laterAt = 10 } },
+			B = { party = { letter = "later", laterAt = 30 } },
+			C = { party = {} },
+		})
+		assert.are.same({ ["core.party"] = "later" }, laters.letters)
+		assert.are.same({ ["core.party"] = 30 }, laters.laterAt)
+	end)
+
+	it("ann_r117 drops the service's own state where no profile answered, unless it is waiting", function()
+		local _, stale = migrated(
+			{ Default = { party = { optIn = 1, share = false } } },
+			{ ["core.party"] = "declined" }
+		)
+		assert.are.same({}, stale.letters)
+
+		local _, waiting = migrated({}, { ["core.party"] = "waiting" })
+		assert.are.same({ ["core.party"] = "waiting" }, waiting.letters)
+
+		local db = migrated(nil)
+		assert.is_nil(db.global.onboarding.letters)
+	end)
+
+	it(
+		"ann_r117 adds the onboarding state back first for a DB that lost it, so an answer isn't lost (ONB-R1)",
+		function()
+			local db = { global = { schemaVersion = 3 }, profiles = { Default = { party = { letter = "declined" } } } }
+			local catchLog = ns.OpenCatchLog(savedLog(), { decodeErrors = 0 }, SERVER_TIME)
+
+			ns.Migrate(db, ns.PAGLEDB_MIGRATIONS, { catchLog = catchLog })
+
+			assert.are.equal("declined", db.global.onboarding.letters["core.party"])
+			assert.is_nil(db.profiles.Default.party.letter)
+		end
+	)
 end)

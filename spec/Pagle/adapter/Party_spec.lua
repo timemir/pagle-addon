@@ -20,7 +20,9 @@ local function loggedIn(group, unasked)
 	local loaded = loadCore(history(2))
 	loaded.env.PagleDB.global.onboarding.notesOn = false
 	if not unasked then
-		loaded.ns.db.profile.party = { optIn = 1, share = true, show = true, sounds = true, letter = "accepted" }
+		loaded.ns.db.profile.party = { optIn = 1, share = true, show = true, sounds = true }
+		loaded.ns.db.profile.partyHunts = true
+		loaded.env.PagleDB.global.onboarding.letters = { ["core.party"] = "opened" }
 	end
 	loaded.client.group = group
 	local M = loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
