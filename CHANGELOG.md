@@ -1,5 +1,19 @@
 # Pagle
 
+## 1.5.2 (2026-11-08)
+
+Cheer your party's best catches.
+
+### Added
+
+- Party toasts. In a party, when a groupmate who also runs Pagle catches a Legend, lands a rare or epic colour, sets a Monster-size record, reaches a Hunt's Gold tier, becomes a Zone Master, Prestiges or fills their Ledger to 100%, a small toast with their name shows in your toast column. It waits behind your own toasts, keeps to your interruption budget, waits out combat and stays quiet in Cozy mode. Not in a raid. (#640)
+- Raise a mug. Each party toast has a mug on its right edge: click it to cheer your groupmate, and they see "Kukli raised a mug". When several of you cheer the same moment, it comes back as one line, such as "Kukli and Arwen raised a mug". (#640)
+- Settings › Announcements › Party: "Share my moments with my party", "Show my party's moments" with a switch for each kind of moment, and "Cheers sounds". All are on to start. Only the moment itself is sent to your party (for a Zone Master, the zone you mastered), and nothing is saved or sent to pagle.app. (#640)
+
+### TRANSLATORS
+
+- Español: fmartingr
+
 ## 1.5.1 (2026-11-08)
 
 Pick how the Pagle button looks, and how big it is.

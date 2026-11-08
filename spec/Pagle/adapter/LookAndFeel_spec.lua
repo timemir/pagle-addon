@@ -334,9 +334,12 @@ describe("The Announcements page's slot rows", function()
 		function()
 			local loaded = coreWithModules()
 
+			-- Core's rows, up to the Party block that follows them (SET-R36, spec/Pagle/adapter/Party_spec.lua).
 			local names = {}
 			for i, row in ipairs(loaded.client.settings.show(loaded.client.settings.page("Announcements"))) do
-				names[i] = row.initializer:GetName()
+				if i <= 9 then
+					names[i] = row.initializer:GetName()
+				end
 			end
 
 			assert.are.same({

@@ -2324,6 +2324,11 @@ local MOTION = {
 ---@param frame PagleAnnouncementFrame
 ---@param display PagleDisplay
 function ns.DrawAnnouncement(frame, display)
+	-- A party toast's frame is drawn in the party style, whatever the toast style (ANN-R107, adapter/PartyToast.lua).
+	if frame.party then
+		ns.DrawPartyToast(frame, display)
+		return
+	end
 	local style = ns.DisplayStyle(display)
 	local form = display.form
 	DRAW[form](frame, display, style)
@@ -2535,7 +2540,18 @@ local EASE_IN = ns.Bezier(0.42, 0, 1, 1)
 
 -- Every frame made, by form, showing or free: the column shows as many toasts and Nods as fit at once.
 ---@type table<PagleAnnouncementForm, PagleAnnouncementFrame[]>
-local made = { toast = {}, nod = {}, banner = {}, splash = {} }
+local made = { toast = {}, nod = {}, banner = {}, splash = {}, party = {} }
+
+-- The frames a display shows in: its form's, but a party toast shown as a toast has the party style's (ANN-R107); one
+-- the budget stepped down is a plain Nod.
+---@param display PagleDisplay
+---@return string
+local function frameKind(display)
+	if display.form == "toast" and display.announcement.headline.partyToast then
+		return "party"
+	end
+	return display.form
+end
 
 --- The toasts and Nods in the column, the newest first (ANN-R20).
 ---@type PagleAnnouncementFrame[]
@@ -2555,10 +2571,10 @@ function ns.AnnouncementFramesShowing()
 	return showing
 end
 
--- A frame of `form` not in use, made if none is. The column's take the pointer: on one, its clock stands still, and a
--- click sends it away, then runs its headline's `onClick` if it has one (ANN-R20), under securecallfunction so a
--- Module's failure is reported, not raised; a Shift-drag moves the column instead, which the pointer on one says until
--- the column has been moved (ANN-R98).
+-- A frame of `form` (or the party style's, frameKind) not in use, made if none is. The column's take the pointer: on
+-- one, its clock stands still, and a click sends it away, then runs its headline's `onClick` if it has one (ANN-R20),
+-- under securecallfunction so a Module's failure is reported, not raised; a Shift-drag moves the column instead, which
+-- the pointer on one says until the column has been moved (ANN-R98).
 ---@param form PagleAnnouncementForm
 ---@return PagleAnnouncementFrame
 local function acquire(form)
@@ -2567,9 +2583,9 @@ local function acquire(form)
 			return frame
 		end
 	end
-	local frame = BUILD[form]()
+	local frame = form == "party" and ns.NewPartyToastFrame() or BUILD[form]()
 	frame.lanes = true
-	if form == "toast" or form == "nod" then
+	if form == "toast" or form == "nod" or form == "party" then
 		frame:EnableMouse(true)
 		frame:SetScript("OnEnter", function(self)
 			if self.display then
@@ -2685,17 +2701,23 @@ LEAVING.nod = LEAVING.toast
 -- The lanes' show: a frame of its form, drawn and on screen; a toast or Nod at the column's foot, the others moving up.
 ---@param display PagleDisplay
 local function show(display)
-	local form = display.form
-	local frame = acquire(form)
+	local form, kind = display.form, frameKind(display)
+	local frame = acquire(kind)
 	frame.inUse, frame.display = true, display
-	ns.announcementFrames[form] = frame
+	ns.announcementFrames[kind] = frame
+	local headline = display.announcement.headline
+	-- The party style's frame is shorter than the toast page the lanes made room for: the column stacks it at its
+	-- own height (ANN-R107).
+	if kind == "party" then
+		display.height = ns.PARTY_TOAST_HEIGHT + ns.COLUMN_GAP
+	end
 	frame:SetAlpha(1)
 	frame:SetScale(1)
 	if form == "banner" then
 		frame:SetPoint("TOP", UIParent, "TOP", 0, -BANNER_TOP)
 	end
 	if form == "toast" or form == "nod" then
-		local page = form == "toast" and ns.ToastPage(display.announcement)
+		local page = kind == "toast" and ns.ToastPage(display.announcement)
 		frame.ribbon = page and page.high and ns.RIBBON_HEIGHT or 0
 		frame.slot = nil
 		table.insert(ns.columnFrames, 1, frame)
@@ -2703,6 +2725,16 @@ local function show(display)
 	end
 	ns.DrawAnnouncement(frame, display)
 	frame:Show()
+	-- A party toast and a cheer's Nod play the party's own sounds, and get no Margin note (ANN-R106, ANN-R108).
+	if kind == "party" then
+		ns.PlayPartySound("arrive")
+		return
+	elseif headline.partyCheer or headline.partyToast then
+		if headline.partyCheer then
+			ns.PlayPartySound("cheered")
+		end
+		return
+	end
 	-- ONB-R52, ONB-R53: Core's first-moment notes, adapter/MarginNotes.lua's, looked up when called.
 	if ns.NoteAnnouncement then
 		securecallfunction(ns.NoteAnnouncement, display, frame)
@@ -2713,7 +2745,7 @@ end
 ---@param display PagleDisplay
 ---@return PagleAnnouncementFrame?
 local function frameOf(display)
-	for _, frame in ipairs(made[display.form]) do
+	for _, frame in ipairs(made[frameKind(display)]) do
 		if frame.display == display then
 			return frame
 		end
@@ -2807,6 +2839,8 @@ ns.lanes = ns.NewLanes({
 	-- Both lanes freed with nothing waiting: a card may show (ANN-R21). adapter/Cards.lua's, looked up when called.
 	empty = function()
 		ns.cards:Next()
+		-- Then what waits behind the player's own: the party toasts (ANN-R106), adapter/Party.lua's.
+		ns.PumpPartyToasts()
 	end,
 })
 

@@ -81,14 +81,18 @@ describe("The Announcements page", function()
 		function()
 			local loaded = login(core())
 
+			-- Core's own rows end at Toast position; the Party block follows (SET-R36, spec/Pagle/adapter/Party_spec.lua).
 			local names = {}
 			for i, initializer in ipairs(page(loaded).layout.initializers) do
-				names[i] = initializer:GetName()
+				if i <= 9 then
+					names[i] = initializer:GetName()
+				end
 			end
 			assert.are.same(
 				{ COZY, BUDGET, COUNT, WINDOW, EVERY_CATCH, MOTION, TOAST_STYLE, SOUND_SET, TOAST_POSITION },
 				names
 			)
+			assert.are.equal("Party", page(loaded).layout.initializers[10]:GetName())
 		end
 	)
 
@@ -188,7 +192,8 @@ describe("The Announcements page", function()
 
 		setCombat(loaded, false)
 
-		assert.are.equal(9, #page(loaded).layout.initializers)
+		-- Core's nine rows, then the Party block's header and ten rows (SET-R36).
+		assert.are.equal(20, #page(loaded).layout.initializers)
 	end)
 end)
 
@@ -255,6 +260,9 @@ describe("Core's Announcements rows", function()
 			-- A native row's value, or a slot dropdown's selected good (Core's own row, SET-R51).
 			local values = {}
 			for i, shown in ipairs(loaded.client.settings.show(page(loaded))) do
+				if i > 8 then
+					break -- the Toast position button, then the Party block (SET-R36, spec/Pagle/adapter/Party_spec.lua)
+				end
 				values[i] = shown.frame.value
 				for _, child in ipairs(shown.frame.children) do
 					if child.kind == "DropdownButton" then

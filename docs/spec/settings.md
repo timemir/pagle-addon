@@ -41,7 +41,8 @@ Fishing                                                    (QoL only)
                             ↳ Button position
 Announcements
                             Cozy mode;  Interruption budget  ↳ Interruptions  ↳ Per;  Show every catch;  Animations;  Toast style;  Sound set
-  [Party]                   Party Hunts;  #640's party toast rows               (from 1.6)
+  [Party]                   Party Hunts (from 1.6);  Share my moments with my party;  Show my party's moments
+                            ↳ one switch per kind;  Cheers sounds   (the party toast rows from 1.5.2)
   [The Morning Tide]        Show news at login  ↳ First reported  ↳ Legends  ↳ Prestige  ↳ Ledger completed
                             ↳ Rare varieties  ↳ Hunt gold  ↳ Zone Master  ↳ Monster records  ↳ Region headlines;
                             Mute the sign;  News sign                          (from 1.6)
@@ -191,16 +192,32 @@ The rules below are authoritative; this sketch only summarises them.
   | | Remind me about the Pagle companion | checkbox | on (HNT-R170, HNT-R171, `PagleHuntsDB.profile.companionHint`) | "A line on the Hunts board, and a Nod once a week, while the Pagle companion isn't bringing you new wagers." |
 
   Neither is greyed out in Cozy mode: the Nod then goes to the Session summary (ANN-R40), as moments do. The second row is registered only while Hunts' companion hint switch is on (HNT-R172), which it is at 1.0, so 1.0's section has both rows. *Default chosen while building (#305): hunts.md › Settings put it on a "Hunts" page, which Settings doesn't have (SET-R1); it governs a reminder and its Nod, so it sits here after the window row. Dismissing the hint on the board turns it off; turning it on brings the hint and the Nod back.* No other Module adds rows to Announcements: the Ledger has no rows, Stats raises no moments (STA-R2), and the Tackle Board's and QoL's sections are on other pages.
-- **SET-R33** The Announcements page's Defaults button restores every row of SET-R30, SET-R32 and (from 1.6) SET-R35 to its default, the two looks included (SET-R60), and so the companion row, while it is registered, to on. It leaves the Toast position button alone (SET-R34).
+- **SET-R33** The Announcements page's Defaults button restores every row of SET-R30, SET-R32, (from 1.5.2) SET-R36 and (from 1.6) SET-R35 to its default, the two looks included (SET-R60), and so the companion row, while it is registered, to on. It leaves the Toast position button alone (SET-R34).
 - **SET-R34** The Announcements page ends Core's rows with "Toast position", a button "Reset" that clears the saved foot and puts the Toast column back at the bottom of the screen (ANN-R98), and, from 1.2.1, clears the card's saved point and puts it back centre-screen (ANN-R102). Tooltip: "Shift-drag a toast to move the toasts and Nods, or the Session summary to move it. This puts them all back where they started." It is never greyed out; pressed while restricted, it does nothing, since neither moves then (ANN-R98, ANN-R102). It is a button, not a value row, so Defaults leaves it (SET-R60).
-- **SET-R35** *From 1.6 (pagle-2026j).* The Announcements page gains a **Party** section, Core's, after Core's rows and before the Modules' sections (SET-R3). #640's party toast rows (its master switch and one row per kind) belong in it too; this rule assumes they come after the first row, since #640's spec isn't written yet ([#640](https://github.com/timemir/pagle-addon/issues/640)):
+- **SET-R35** *From 1.6 (pagle-2026j).* The Announcements page gains a **Party** section, Core's, after Core's rows and before the Modules' sections (SET-R3). SET-R36's party toast rows (from 1.5.2, [#640](https://github.com/timemir/pagle-addon/issues/640)) are already in it, under its **Party** header: Party Hunts comes first, above them:
 
   | Header | Row | Kind | Values · default | Greyed out when | Tooltip |
   |---|---|---|---|---|---|
   | Party | Party Hunts | checkbox | on (LOG-R121, `PagleDB.profile.partyHunts`) | | "In a party, your groupmates' catches count toward your Hunts and Pagle Wagers while you fish the same zone, and yours count toward theirs. Off, Pagle neither shares your catches nor counts theirs." |
-  | | #640's party toast rows, with one kind row "Completed for the party" (ANN-R111) | | | | |
+  | | SET-R36's party toast rows, with one more kind row under Show my party's moments, "Completed for the party" (ANN-R111) | | | | |
 
-  Party Hunts isn't greyed out by Cozy mode, and #640's master switch doesn't grey it: it governs what counts and what is shared, not what pops up. The page's Defaults button sets it back to on (SET-R33, SET-R60). It is the one switch for party-wide Hunts: there is none to share without counting, or the other way round.
+  Party Hunts isn't greyed out by Cozy mode, and Show my party's moments (SET-R36) doesn't grey it: it governs what counts and what is shared, not what pops up. The page's Defaults button sets it back to on (SET-R33, SET-R60). It is the one switch for party-wide Hunts: there is none to share without counting, or the other way round.
+- **SET-R36** *From 1.5.2 ([#640](https://github.com/timemir/pagle-addon/issues/640)).* After Core's rows (Toast position last, SET-R34) and before any Module's section, the Announcements page has Core's **Party** section for party toasts and cheers (announcements.md ANN-R103–R109), under its own header, built by `adapter/PartySettings.lua` from one call at the end of Core's rows:
+
+  | Header | Row | Kind | Values · default | Greyed out when | Tooltip |
+  |---|---|---|---|---|---|
+  | Party | Share my moments with my party | checkbox | on (ANN-R104, `share`) | | "When you catch a Legend, set a Monster-size record and the like, groupmates who run Pagle get a small toast of it. Only the moment is sent, never where you are. Not in a raid." |
+  | | Show my party's moments | checkbox | on (ANN-R106, `show`) | Cozy mode is on | "A small toast when a groupmate who runs Pagle has a moment, with a mug you can raise to cheer them. It waits behind your own toasts and keeps to your interruption budget. Greyed out in Cozy mode, which shows nothing." |
+  | | ↳ Legends | checkbox | on (`kinds.legend`) | Cozy mode is on, or Show my party's moments is off | |
+  | | ↳ Rare colours | checkbox | on (`kinds.colour`) | as above | |
+  | | ↳ Monster-size records | checkbox | on (`kinds.monster`) | as above | |
+  | | ↳ Gold tier in a Hunt | checkbox | on (`kinds.gold`) | as above | |
+  | | ↳ Zone Master | checkbox | on (`kinds.zone`) | as above | |
+  | | ↳ Prestige | checkbox | on (`kinds.prestige`) | as above | |
+  | | ↳ Ledger 100% | checkbox | on (`kinds.ledger`) | as above | |
+  | | Cheers sounds | checkbox | on (ANN-R108, `sounds`) | Cozy mode is on | "A clink when a groupmate's toast arrives, when you raise a mug, and when someone raises one to you." |
+
+  Values are stored in `PagleDB.profile.party` (announcements.md › Data), nil meaning the default: `logic/` holds Core's defaults and is a hashed file, which a 1.5.2 patch can't change, so the rows' getters apply the default themselves. Every row is a native checkbox (SET-R5, SET-R6), the kind rows indented under Show my party's moments (`SetParentInitializer`). The page's Defaults button turns them all back on (SET-R33, SET-R60). From 1.6 the section starts with Party Hunts (SET-R35) above these rows, and Show my party's moments gains the kind row "Completed for the party" (ANN-R111).
 
 ### Trackers
 
@@ -314,6 +331,7 @@ This file adds no data. Each row's value lives with its owner:
 | The Morning Tide (from 1.6) | `PagleDB.global.newsSign.show`, `.kinds`, `.headlines`, `.mute` ([news-sign.md](core/news-sign.md#data)) |
 | Tracker position, Show trackers only while fishing | `PagleDB.profile.dock.point`, and from 1.3 `PagleDB.profile.dock.onlyWhileFishing` (Core README Data) |
 | Toast position | `PagleDB.profile.announcements.point` (ANN-R98) and `PagleDB.profile.cards.point` (ANN-R102) |
+| Party toasts (from 1.5.2) | `PagleDB.profile.party` (SET-R36) |
 | Fishing | `PagleQoLDB` (qol.md Data), the fishing set per character in `global.gear[guid]` |
 | Hunts' rows | `PagleHuntsDB.profile.tracker.shown`, `profile.windowMoments`, `profile.companionHint` (only while its switch is on, HNT-R172) |
 | Stats' rows | `PagleStatsDB.profile.tracker`, `profile.watched` |
