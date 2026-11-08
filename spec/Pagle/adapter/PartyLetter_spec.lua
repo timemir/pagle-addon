@@ -467,6 +467,20 @@ describe("the party letter's buttons (ANN-R115)", function()
 		assert.is_false(shows(later))
 	end)
 
+	it("sign_r40 holds a news sign asked for while the letter shows, and drops it once No thanks answers (ONB-R17)", function()
+		local loaded = asked()
+
+		loaded.ns.DropNewsSign(nil, loaded.ns.NewsSignSample("legend"))
+		loaded.client.advance(1)
+		assert.is_nil(loaded.ns.NewsSignState())
+		press(loaded, "No thanks")
+		loaded.client.advance(0)
+		loaded.client.advance(0)
+
+		assert.is_false(letterOf(loaded):IsShown())
+		assert.is_not_nil(loaded.ns.NewsSignState())
+	end)
+
 	it("ann_r115 keeps every switch in Settings after any answer", function()
 		local loaded = asked()
 		press(loaded, "No thanks")
