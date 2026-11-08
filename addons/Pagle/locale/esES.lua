@@ -434,6 +434,12 @@ ns.Locale("esES", function(L)
 	L.SETTINGS_MINIMAP_DETACH_TOOLTIP = "Te deja arrastrar el botón de Pagle a cualquier parte de la pantalla, lejos del borde del minimapa. Desmárcalo para devolver el botón al borde."
 	L.SETTINGS_MINIMAP_ICON = "Mostrar el icono del minimapa"
 	L.SETTINGS_MINIMAP_ICON_TOOLTIP = "Un botón redondo de Pagle en el borde del minimapa que abre el menú de Pagle. El menú también está en el botón de accesorios junto al minimapa."
+	L.SETTINGS_MINIMAP_SIZE = "Tamaño del botón del minimapa"
+	L.SETTINGS_MINIMAP_SIZE_TOOLTIP = "Qué tamaño tiene el botón de Pagle, en el borde del minimapa o separado de él."
+	L.SETTINGS_MINIMAP_SIZE_VALUE = "{value:0}%"
+	L.SETTINGS_MINIMAP_STYLE = "Estilo del botón del minimapa"
+	L.SETTINGS_MINIMAP_STYLES = { bobber = "Flotador", classic = "Clásico", ledger = "Libro de registro" }
+	L.SETTINGS_MINIMAP_STYLE_TOOLTIP = "Cómo se ve el botón de Pagle. Clásico es el botón redondo del propio juego con la P de Pagle. Libro de registro es un libro encuadernado en cuero, y Flotador un flotador de pesca sobre agua nocturna."
 	L.SETTINGS_MODULES = "Módulos"
 	L.SETTINGS_MODULES_NOTE = "Activa o desactiva Módulos en la lista de accesorios."
 	L.SETTINGS_MORE_LOOKS = "Más aspectos"

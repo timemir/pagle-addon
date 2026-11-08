@@ -31,21 +31,15 @@ describe("The compartment entry", function()
 		end
 	end)
 
-	it("shows Pagle's icon, the website's favicon, not the minimap icon's Ledger (CORE-R50, CORE-R53)", function()
-		local loaded = loadCore()
-		loaded.client.fire("PLAYER_LOGIN")
+	it("shows Pagle's icon, the website's favicon, whatever the minimap icon's style (CORE-R50, CORE-R53)", function()
+		for _, style in ipairs({ "classic", "ledger", "bobber" }) do
+			local loaded = loadCore(foreverWith({ PagleDB = { global = { minimap = { style = style } } } }))
+			loaded.client.fire("PLAYER_LOGIN")
 
-		local icon = loaded.client.compartment[1].icon
-		assert.are.equal("Interface\\AddOns\\Pagle\\media\\minimap\\Pagle", icon)
-		assert.are.equal(loaded.ns.PAGLE_ICON, icon)
-		-- The minimap icon draws the Ledger in its own textures, and the favicon in none of them.
-		local drawn = {}
-		for _, child in ipairs(loaded.env.PagleMinimapButton.children) do
-			if child.kind == "Texture" and child.texture then
-				drawn[#drawn + 1] = child.texture:match("[^\\]+$")
-			end
+			local icon = loaded.client.compartment[1].icon
+			assert.are.equal("Interface\\AddOns\\Pagle\\media\\minimap\\Pagle", icon)
+			assert.are.equal(loaded.ns.PAGLE_ICON, icon)
 		end
-		assert.are.same({ "Ledger-Frame", "Ledger-Book", "Ledger-Glow" }, drawn)
 	end)
 
 	it("opens its menu on the next frame, once the compartment's own menu has closed (CORE-R50)", function()

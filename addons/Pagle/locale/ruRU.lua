@@ -433,6 +433,12 @@ ns.Locale("ruRU", function(L)
 	L.SETTINGS_MINIMAP_DETACH_TOOLTIP = "Кнопку Pagle можно перетащить в любое место экрана, подальше от края миникарты. Снимите флажок, чтобы вернуть её на край."
 	L.SETTINGS_MINIMAP_ICON = "Показывать значок у миникарты"
 	L.SETTINGS_MINIMAP_ICON_TOOLTIP = "Круглая кнопка Pagle на краю миникарты, открывающая меню Pagle. Меню есть и в отсеке модификаций у миникарты."
+	L.SETTINGS_MINIMAP_SIZE = "Размер кнопки у миникарты"
+	L.SETTINGS_MINIMAP_SIZE_TOOLTIP = "Размер кнопки Pagle — на краю миникарты или отдельно от неё."
+	L.SETTINGS_MINIMAP_SIZE_VALUE = "{value:0}%"
+	L.SETTINGS_MINIMAP_STYLE = "Стиль кнопки у миникарты"
+	L.SETTINGS_MINIMAP_STYLES = { bobber = "Поплавок", classic = "Классический", ledger = "Реестр" }
+	L.SETTINGS_MINIMAP_STYLE_TOOLTIP = "Как выглядит кнопка Pagle. «Классический» — круглая кнопка самой игры с буквой P. «Реестр» — книга в кожаном переплёте, «Поплавок» — рыболовный поплавок на ночной воде."
 	L.SETTINGS_MODULES = "Модули"
 	L.SETTINGS_MODULES_NOTE = "Модули включаются и выключаются в списке модификаций."
 	L.SETTINGS_MORE_LOOKS = "Другие облики"

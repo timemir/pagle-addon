@@ -453,12 +453,13 @@ local function unitsSection(category, layout)
 	ns.LanguageRow(category)
 end
 
--- The Pagle menu section (CORE-R40, SET-R10 rows 10 and 10a): Show the minimap icon, on unless
--- PagleDB.global.minimap.hide (CORE-R56), and under it, from 1.5, its child Detach from the minimap
--- (PagleDB.global.minimap.detached, CORE-R53), greyed while the icon is hidden as the Announcements page greys a row
--- whose parent is off (SET-R31), keeping its value. Neither has a default, so the root's Defaults button leaves them,
--- restoring only the reminder and the length unit (SET-R13): where the icon is, and whether it shows, are the player's
--- account-wide choices, not a profile's.
+-- The Pagle menu section (CORE-R40, SET-R10 rows 10–10c): Show the minimap icon, on unless
+-- PagleDB.global.minimap.hide (CORE-R56), and under it its children: from 1.5, Detach from the minimap
+-- (PagleDB.global.minimap.detached, CORE-R53), and from 1.5.1 the button's style and size (`style` and `scale`), each
+-- greyed while the icon is hidden as the Announcements page greys a row whose parent is off (SET-R31), keeping its
+-- value. None has a default, so the root's Defaults button leaves them, restoring only the reminder, the length unit
+-- and the Clock (SET-R13): where the icon is, whether it shows and how it looks are the player's account-wide
+-- choices, not a profile's.
 ---@param category SettingsCategory
 ---@param layout SettingsLayout
 local function pagleMenuSection(category, layout)
@@ -483,9 +484,44 @@ local function pagleMenuSection(category, layout)
 		ns.SetMinimapIconDetached
 	)
 	local detachRow = Settings.CreateCheckbox(category, detached, L.SETTINGS_MINIMAP_DETACH_TOOLTIP)
-	detachRow:SetParentInitializer(shownRow)
-	detachRow:AddModifyPredicate(ns.IsMinimapIconShown)
-	detachRow:AddEvaluateStateCVar("Pagle_Core_minimapIcon")
+	-- From 1.5.1, the button's style and its size (CORE-R53), its last two children: a dropdown of the styles and a
+	-- native slider showing its value on the right, as Game › Sound's do (SET-R5).
+	local style = Settings.RegisterProxySetting(
+		category,
+		"Pagle_Core_minimapStyle",
+		Settings.VarType.String,
+		L.SETTINGS_MINIMAP_STYLE,
+		nil,
+		ns.MinimapIconStyle,
+		ns.SetMinimapIconStyle
+	)
+	local styleRow = Settings.CreateDropdown(category, style, function()
+		local container = Settings.CreateControlTextContainer()
+		for _, choice in ipairs(ns.MINIMAP_ICON_STYLES) do
+			container:Add(choice, L.SETTINGS_MINIMAP_STYLES[choice])
+		end
+		return container:GetData()
+	end, L.SETTINGS_MINIMAP_STYLE_TOOLTIP)
+	local size = Settings.RegisterProxySetting(
+		category,
+		"Pagle_Core_minimapSize",
+		Settings.VarType.Number,
+		L.SETTINGS_MINIMAP_SIZE,
+		nil,
+		ns.MinimapIconSize,
+		ns.SetMinimapIconSize
+	)
+	local sizeOptions =
+		Settings.CreateSliderOptions(ns.MINIMAP_ICON_SIZE_MIN, ns.MINIMAP_ICON_SIZE_MAX, ns.MINIMAP_ICON_SIZE_STEP)
+	sizeOptions:SetLabelFormatter(MinimalSliderWithSteppersMixin.Label.Right, function(value)
+		return ns.RenderText(L.SETTINGS_MINIMAP_SIZE_VALUE, { value = value })
+	end)
+	local sizeRow = Settings.CreateSlider(category, size, sizeOptions, L.SETTINGS_MINIMAP_SIZE_TOOLTIP)
+	for _, row in ipairs({ detachRow, styleRow, sizeRow }) do
+		row:SetParentInitializer(shownRow)
+		row:AddModifyPredicate(ns.IsMinimapIconShown)
+		row:AddEvaluateStateCVar("Pagle_Core_minimapIcon")
+	end
 end
 
 -- The Pagle website section (SET-R10 row 11, VIEW-R30): Show other Anglers on player tooltips, bound to

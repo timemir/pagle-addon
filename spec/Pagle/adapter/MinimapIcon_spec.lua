@@ -3,11 +3,17 @@
 -- settings.md SET-R10 row 10; onboarding.md ONB-R13, ONB-R52, ONB-R108). The compartment's menu itself:
 -- Menu_spec.lua; the icon's angles: spec/Pagle/logic/MinimapIcon_spec.lua.
 
--- The textures the icon is drawn with, the Ledger's (CORE-R53): the frame (the water and the gilt ring), the book, and
--- the glow while the mouse is over it.
-local FRAME = "Interface\\AddOns\\Pagle\\media\\minimap\\Ledger-Frame"
-local BOOK = "Interface\\AddOns\\Pagle\\media\\minimap\\Ledger-Book"
-local GLOW = "Interface\\AddOns\\Pagle\\media\\minimap\\Ledger-Glow"
+-- The textures each of the icon's styles draws it with (CORE-R53). Classic, 1.5.0's look: the favicon, and the
+-- client's own minimap-button parts, each listed in build 70338's ManifestInterfaceData (CORE-R9).
+local MEDIA = "Interface\\AddOns\\Pagle\\media\\minimap\\"
+local ICON = MEDIA .. "Pagle"
+local MASK = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
+local RING = "Interface\\Minimap\\MiniMap-TrackingBorder"
+local BACKGROUND = "Interface\\Minimap\\UI-Minimap-Background"
+local HIGHLIGHT = "Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight"
+-- The Ledger's and the Bobber's, Pagle's own art, three each: the frame, what a press pushes in, and the glow.
+local LEDGER = { frame = MEDIA .. "Ledger-Frame", pressed = MEDIA .. "Ledger-Book", glow = MEDIA .. "Ledger-Glow" }
+local BOBBER = { frame = MEDIA .. "Bobber-Frame", pressed = MEDIA .. "Bobber-Emblem", glow = MEDIA .. "Bobber-Glow" }
 
 -- How far the icon's centre sits from the minimap's: half the fake minimap's 198 units, and 5 more.
 local RADIUS = 104
@@ -36,27 +42,50 @@ local function loggedIn(saved)
 	return loaded, loaded.env.PagleMinimapButton
 end
 
--- The Pagle menu section's header and its two checkboxes, found by the header's label, then the row after them: the
--- Pagle website section's header (spec/Pagle/adapter/AnglersInGame_spec.lua).
+-- The Pagle menu section's header and its four rows, found by the header's label: Show the minimap icon, then its
+-- children Detach from the minimap, the style and the size; then the row after them, the Pagle website section's
+-- header (spec/Pagle/adapter/AnglersInGame_spec.lua).
 local function menuRows(loaded)
 	local initializers = loaded.client.settings.category("Pagle").layout.initializers
 	for n, initializer in ipairs(initializers) do
 		if initializer:GetName() == "Pagle menu" then
-			return initializer, initializers[n + 1], initializers[n + 2], initializers[n + 3]
+			return initializer,
+				initializers[n + 1],
+				initializers[n + 2],
+				initializers[n + 3],
+				initializers[n + 4],
+				initializers[n + 5]
 		end
 	end
 	error("no Pagle menu header on the root")
 end
 
--- The icon's textures, by the file each shows.
+-- The icon's textures that show, by the file each shows: a style's (CORE-R53), not those of a style it had before.
 local function texturesOf(button)
 	local byFile = {}
 	for _, child in ipairs(button.children) do
-		if child.kind == "Texture" and child.texture then
+		if child.kind == "Texture" and child.texture and child.shown then
 			byFile[child.texture] = child
 		end
 	end
 	return byFile
+end
+
+-- The files of the icon's textures that show, sorted.
+local function filesOf(button)
+	local files = {}
+	for file in pairs(texturesOf(button)) do
+		files[#files + 1] = file
+	end
+	table.sort(files)
+	return files
+end
+
+-- `files`, sorted.
+local function sorted(files)
+	local copy = { unpack(files) }
+	table.sort(copy)
+	return copy
 end
 
 -- `value` rounded to 0.001.
@@ -141,61 +170,6 @@ describe("The minimap icon", function()
 		assert.are.same({ "Button", loaded.env.Minimap }, { button.kind, button:GetParent() })
 		assert.is_nil(loaded.env.LibStub("LibDBIcon-1.0", true))
 	end)
-
-	it(
-		"draws the Ledger: the gilt ring over night water, the book on it, the glow under the mouse (CORE-R53)",
-		function()
-			local _, button = loggedIn()
-
-			local textures = texturesOf(button)
-			local frame, book, glow = assert(textures[FRAME]), assert(textures[BOOK]), assert(textures[GLOW])
-			assert.are.same({ "BACKGROUND", "ARTWORK", "HIGHLIGHT" }, { frame.layer, book.layer, glow.layer })
-			assert.are.equal("ADD", glow.blendMode)
-			for _, texture in ipairs({ frame, book, glow }) do
-				assert.are.same({ 34, 34 }, { texture.width, texture.height })
-				assert.are.same({ { "CENTER", button, "CENTER", 0, 0 } }, texture.points)
-				assert.are.same({}, texture.masks or {})
-			end
-			assert.is_nil(button.highlightTexture)
-			assert.are.same({ "LeftButton" }, button.dragButtons)
-		end
-	)
-
-	it(
-		"draws it from BLPs in Pagle's media/minimap: the frame and the book 128 x 128, the glow 64 x 64 (CORE-R53)",
-		function()
-			for name, size in pairs({ ["Ledger-Frame"] = 128, ["Ledger-Book"] = 128, ["Ledger-Glow"] = 64 }) do
-				---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
-				local file = assert(io.open("addons/Pagle/media/minimap/" .. name .. ".blp", "rb"))
-				local header = file:read(20)
-				file:close()
-				-- BLP2's magic, type, four encoding bytes, then its width and height.
-				assert.are.equal("BLP2", header:sub(1, 4))
-				local function u32(offset)
-					local a, b, c, d = header:byte(offset, offset + 3)
-					return a + b * 256 + c * 65536 + d * 16777216
-				end
-				assert.are.same({ name, size, size }, { name, u32(13), u32(17) })
-			end
-		end
-	)
-
-	it(
-		"presses the book in a unit while the mouse is down, and lets it up on release or as a drag ends (CORE-R53)",
-		function()
-			local loaded, button = loggedIn()
-			local book = assert(texturesOf(button)[BOOK])
-
-			button:GetScript("OnMouseDown")(button, "LeftButton")
-			assert.are.same({ { "CENTER", button, "CENTER", 1, -1 } }, book.points)
-			button:GetScript("OnMouseUp")(button, "LeftButton")
-			assert.are.same({ { "CENTER", button, "CENTER", 0, 0 } }, book.points)
-
-			button:GetScript("OnMouseDown")(button, "LeftButton")
-			drag(loaded, button, { 1700, 1000 })
-			assert.are.same({ { "CENTER", button, "CENTER", 0, 0 } }, book.points)
-		end
-	)
 
 	it("is shown by default at the minimap's bottom left, 225 degrees round (CORE-R53, CORE-R56)", function()
 		local loaded, button = loggedIn()
@@ -407,7 +381,7 @@ describe("Show the minimap icon", function()
 		function()
 			local loaded = loggedIn()
 
-			local header, row, _, website = menuRows(loaded)
+			local header, row, _, _, _, website = menuRows(loaded)
 
 			assert.are.equal("Pagle website", website:GetName())
 			assert.are.same(
@@ -563,7 +537,7 @@ describe("Detach from the minimap", function()
 		function()
 			local loaded = loggedIn()
 
-			local _, shown, row, website = menuRows(loaded)
+			local _, shown, row, _, _, website = menuRows(loaded)
 
 			assert.are.same(
 				{ "Detach from the minimap", "SettingsCheckboxControlTemplate" },
@@ -859,5 +833,421 @@ describe("The detached minimap icon", function()
 
 		shownSetting(loaded):SetValue(true)
 		assert.are.same({ true, onScreenAt(225) }, { button:IsShown(), screenPlaceOf(loaded, button) })
+	end)
+end)
+
+-- From 1.5.1, the icon's style and size (CORE-R53; SET-R10 rows 10b and 10c): Classic, 1.5.0's look and the default,
+-- the Ledger or the Bobber, at 80% to 150%.
+
+-- The style row's setting.
+local function styleSetting(loaded)
+	return select(4, menuRows(loaded)):GetSetting()
+end
+
+-- The size row's setting.
+local function sizeSetting(loaded)
+	return select(5, menuRows(loaded)):GetSetting()
+end
+
+-- A texture's size, rounded, as { width, height }.
+local function sizeOf(region)
+	return { round(region.width), round(region.height) }
+end
+
+-- Asserts that `button` is drawn in Classic at `scale`, exactly as 1.5.0 drew it at 1: the dark disc, the favicon
+-- through the round mask over it, the client's tracking-border ring hanging from the button's top left, and the
+-- client's glow over the whole button while the mouse is over it, added on as SetHighlightTexture adds it.
+local function assertClassic(button, scale)
+	local textures = texturesOf(button)
+	assert.are.same(sorted({ BACKGROUND, ICON, RING, HIGHLIGHT }), filesOf(button))
+	local background, icon, ring, glow = textures[BACKGROUND], textures[ICON], textures[RING], textures[HIGHLIGHT]
+	assert.are.same(
+		{ "BACKGROUND", "ARTWORK", "OVERLAY", "HIGHLIGHT" },
+		{ background.layer, icon.layer, ring.layer, glow.layer }
+	)
+	assert.are.same(sizeOf({ width = 31 * scale, height = 31 * scale }), sizeOf(button))
+	assert.are.same(sizeOf({ width = 24 * scale, height = 24 * scale }), sizeOf(background))
+	assert.are.same(sizeOf({ width = 18 * scale, height = 18 * scale }), sizeOf(icon))
+	assert.are.same(sizeOf({ width = 50 * scale, height = 50 * scale }), sizeOf(ring))
+	assert.are.same({ { "CENTER", button, "CENTER", 0, 0 } }, background.points)
+	assert.are.same({ { "CENTER", button, "CENTER", 0, 0 } }, icon.points)
+	assert.are.same({ { "TOPLEFT", button, "TOPLEFT", 0, 0 } }, ring.points)
+	assert.are.equal(1, #icon.masks)
+	assert.are.equal(MASK, icon.masks[1].texture)
+	assert.are.same(
+		{ { "TOPLEFT", icon, "TOPLEFT", 0, 0 }, { "BOTTOMRIGHT", icon, "BOTTOMRIGHT", 0, 0 } },
+		icon.masks[1].points
+	)
+	assert.are.same(
+		{ { "TOPLEFT", button, "TOPLEFT", 0, 0 }, { "BOTTOMRIGHT", button, "BOTTOMRIGHT", 0, 0 } },
+		glow.points
+	)
+	assert.are.equal("ADD", glow.blendMode)
+	assert.is_nil(button.highlightTexture)
+end
+
+-- Asserts that `button` is drawn in `art` (LEDGER or BOBBER) at `scale`: the frame in BACKGROUND, what a press pushes
+-- in over it in ARTWORK and the glow in HIGHLIGHT, added on, each the art's 34-unit square at `scale`, centred on the
+-- 31-unit button at `scale`, with no mask.
+local function assertArt(button, art, scale)
+	local textures = texturesOf(button)
+	assert.are.same(sorted({ art.frame, art.pressed, art.glow }), filesOf(button))
+	local frame, pressed, glow = textures[art.frame], textures[art.pressed], textures[art.glow]
+	assert.are.same({ "BACKGROUND", "ARTWORK", "HIGHLIGHT" }, { frame.layer, pressed.layer, glow.layer })
+	assert.are.equal("ADD", glow.blendMode)
+	assert.are.same(sizeOf({ width = 31 * scale, height = 31 * scale }), sizeOf(button))
+	for _, texture in ipairs({ frame, pressed, glow }) do
+		assert.are.same(sizeOf({ width = 34 * scale, height = 34 * scale }), sizeOf(texture))
+		assert.are.same({ { "CENTER", button, "CENTER", 0, 0 } }, texture.points)
+		assert.are.same({}, texture.masks or {})
+	end
+	assert.is_nil(button.highlightTexture)
+end
+
+describe("The minimap icon's style", function()
+	it("is Classic by default, exactly 1.5.0's look, storing nothing (CORE-R53, CORE-R9)", function()
+		local loaded, button = loggedIn()
+
+		assertClassic(button, 1)
+		assert.are.same({ "LeftButton" }, button.dragButtons)
+		assert.are.same({ nil, nil }, { loaded.ns.db.global.minimap.style, loaded.ns.db.global.minimap.scale })
+	end)
+
+	it("keeps its default in one constant, ns.MINIMAP_ICON_STYLE_DEFAULT, which is Classic (CORE-R53)", function()
+		local loaded = loggedIn()
+
+		assert.are.equal("classic", loaded.ns.MINIMAP_ICON_STYLE_DEFAULT)
+		assert.are.equal("classic", styleSetting(loaded):GetValue())
+	end)
+
+	it("draws the Ledger: the frame, the book on it and the glow under the mouse (CORE-R53)", function()
+		local _, button = loggedIn({ global = { minimap = { style = "ledger" } } })
+
+		assertArt(button, LEDGER, 1)
+	end)
+
+	it("draws the Bobber: the frame, the bobber on it and the glow under the mouse (CORE-R53)", function()
+		local _, button = loggedIn({ global = { minimap = { style = "bobber" } } })
+
+		assertArt(button, BOBBER, 1)
+	end)
+
+	it(
+		"draws the Ledger and the Bobber from BLPs in Pagle's media/minimap: frames and art 128, glows 64 (CORE-R53)",
+		function()
+			local sizes = {
+				["Ledger-Frame"] = 128,
+				["Ledger-Book"] = 128,
+				["Ledger-Glow"] = 64,
+				["Bobber-Frame"] = 128,
+				["Bobber-Emblem"] = 128,
+				["Bobber-Glow"] = 64,
+			}
+			for name, size in pairs(sizes) do
+				---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
+				local file = assert(io.open("addons/Pagle/media/minimap/" .. name .. ".blp", "rb"))
+				local header = file:read(20)
+				file:close()
+				-- BLP2's magic, type, then its encoding (3, uncompressed BGRA), alpha depth, alpha encoding and
+				-- whether it has mipmaps, then its width and height.
+				local function u32(offset)
+					local a, b, c, d = header:byte(offset, offset + 3)
+					return a + b * 256 + c * 65536 + d * 16777216
+				end
+				assert.are.same(
+					{ name, "BLP2", 3, 8, 1, size, size },
+					{ name, header:sub(1, 4), header:byte(9), header:byte(10), header:byte(12), u32(13), u32(17) }
+				)
+			end
+		end
+	)
+
+	it("shows the favicon from a 64 x 64 BLP in Pagle's media/minimap, in Classic (CORE-R53)", function()
+		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
+		local file = assert(io.open("addons/Pagle/media/minimap/Pagle.blp", "rb"))
+		local header = file:read(20)
+		file:close()
+		assert.are.equal("BLP2", header:sub(1, 4))
+		local function u32(offset)
+			local a, b, c, d = header:byte(offset, offset + 3)
+			return a + b * 256 + c * 65536 + d * 16777216
+		end
+		assert.are.same({ 64, 64 }, { u32(13), u32(17) })
+	end)
+
+	it("switches at once, without a /reload, keeping nothing of the style before (CORE-R53)", function()
+		local loaded, button = loggedIn()
+
+		styleSetting(loaded):SetValue("ledger")
+		assertArt(button, LEDGER, 1)
+		assert.are.equal("ledger", loaded.ns.db.global.minimap.style)
+
+		styleSetting(loaded):SetValue("bobber")
+		assertArt(button, BOBBER, 1)
+		assert.are.equal("bobber", loaded.ns.db.global.minimap.style)
+
+		styleSetting(loaded):SetValue("classic")
+		assertClassic(button, 1)
+		assert.are.same(
+			{ "classic", "classic" },
+			{ loaded.ns.db.global.minimap.style, styleSetting(loaded):GetValue() }
+		)
+
+		styleSetting(loaded):SetValue("ledger")
+		assertArt(button, LEDGER, 1)
+		assert.are.same(at(225), placeOf(loaded, button))
+	end)
+
+	it("switches while detached, staying where it is on the screen (CORE-R53)", function()
+		local loaded, button = detached()
+
+		styleSetting(loaded):SetValue("bobber")
+		assertArt(button, BOBBER, 1)
+		assert.are.same({ loaded.env.UIParent, onScreenAt(225) }, { button:GetParent(), screenPlaceOf(loaded, button) })
+
+		styleSetting(loaded):SetValue("classic")
+		assertClassic(button, 1)
+		assert.are.same(onScreenAt(225), screenPlaceOf(loaded, button))
+	end)
+
+	it("switches while restricted too, as it only changes how the icon looks (CORE-R53, CORE-R30)", function()
+		local loaded, button = loggedIn()
+		setCombat(loaded, true)
+
+		styleSetting(loaded):SetValue("ledger")
+
+		assertArt(button, LEDGER, 1)
+		assert.are.same(at(225), placeOf(loaded, button))
+	end)
+
+	it("comes back after a /reload in the style it had, at its size (CORE-R53)", function()
+		local _, button = loggedIn({ global = { minimap = { style = "bobber", scale = 1.2 } } })
+
+		assertArt(button, BOBBER, 1.2)
+	end)
+
+	it("reads as Classic at 100% from a style or size it can't use (CORE-R53)", function()
+		for _, minimap in ipairs({
+			{ style = "sparkly", scale = "big" },
+			{ style = 3, scale = 2 },
+			{ style = false, scale = 0.5 },
+			{ scale = 0 / 0 },
+		}) do
+			local loaded, button = loggedIn({ global = { minimap = minimap } })
+
+			assertClassic(button, 1)
+			assert.are.same({ "classic", 100 }, { styleSetting(loaded):GetValue(), sizeSetting(loaded):GetValue() })
+		end
+	end)
+end)
+
+describe("A press on the minimap icon", function()
+	for _, case in ipairs({ { "ledger", LEDGER, "book" }, { "bobber", BOBBER, "bobber" } }) do
+		local style, art, what = case[1], case[2], case[3]
+		it(
+			"pushes the "
+				.. what
+				.. " in a unit right and down while the mouse is down, and lets it up on release or as a drag ends"
+				.. " (CORE-R53)",
+			function()
+				local loaded, button = loggedIn({ global = { minimap = { style = style } } })
+				local pressed = assert(texturesOf(button)[art.pressed])
+
+				button:GetScript("OnMouseDown")(button, "LeftButton")
+				assert.are.same({ { "CENTER", button, "CENTER", 1, -1 } }, pressed.points)
+				assert.are.same({ { "CENTER", button, "CENTER", 0, 0 } }, texturesOf(button)[art.frame].points)
+				button:GetScript("OnMouseUp")(button, "LeftButton")
+				assert.are.same({ { "CENTER", button, "CENTER", 0, 0 } }, pressed.points)
+
+				button:GetScript("OnMouseDown")(button, "LeftButton")
+				drag(loaded, button, { 1700, 1000 })
+				assert.are.same({ { "CENTER", button, "CENTER", 0, 0 } }, pressed.points)
+			end
+		)
+	end
+
+	it("moves nothing in Classic, as 1.5.0 didn't (CORE-R53)", function()
+		local _, button = loggedIn()
+
+		button:GetScript("OnMouseDown")(button, "LeftButton")
+
+		assertClassic(button, 1)
+	end)
+
+	it("lets the art up when the style changes under the mouse, so the next style isn't left pushed in", function()
+		local loaded, button = loggedIn({ global = { minimap = { style = "ledger" } } })
+		button:GetScript("OnMouseDown")(button, "LeftButton")
+
+		styleSetting(loaded):SetValue("bobber")
+		styleSetting(loaded):SetValue("ledger")
+
+		assertArt(button, LEDGER, 1)
+	end)
+end)
+
+describe("The minimap icon's size", function()
+	it("sizes the button and its art at once, its centre staying on the minimap's circle (CORE-R53)", function()
+		local loaded, button = loggedIn()
+
+		sizeSetting(loaded):SetValue(150)
+		assertClassic(button, 1.5)
+		assert.are.same({ at(225), 1.5 }, { placeOf(loaded, button), loaded.ns.db.global.minimap.scale })
+
+		sizeSetting(loaded):SetValue(80)
+		assertClassic(button, 0.8)
+		assert.are.same(at(225), placeOf(loaded, button))
+
+		styleSetting(loaded):SetValue("ledger")
+		assertArt(button, LEDGER, 0.8)
+		styleSetting(loaded):SetValue("bobber")
+		sizeSetting(loaded):SetValue(120)
+		assertArt(button, BOBBER, 1.2)
+		assert.are.same({ at(225), 120 }, { placeOf(loaded, button), sizeSetting(loaded):GetValue() })
+	end)
+
+	it("stays on the minimap's circle while dragged round it at any size (CORE-R53)", function()
+		local loaded, button = loggedIn({ global = { minimap = { scale = 1.5 } } })
+
+		drag(loaded, button, { 1700, 1000 })
+
+		assert.are.same(at(90), placeOf(loaded, button))
+	end)
+
+	it("sizes the detached button where it is, keeping the whole of it on the screen (CORE-R53)", function()
+		local loaded, button = detached()
+
+		sizeSetting(loaded):SetValue(130)
+		assertClassic(button, 1.3)
+		assert.are.same(onScreenAt(225), screenPlaceOf(loaded, button))
+
+		-- Dragged far past the screen's top left, its centre stays half the bigger button from each edge.
+		sizeSetting(loaded):SetValue(150)
+		dragFrom(loaded, button, onScreenAt(225), { -500, 5000 })
+		assert.are.same({ 23.25, 1056.75 }, screenPlaceOf(loaded, button))
+
+		-- Made smaller there, it stays where it is, still whole on the screen.
+		sizeSetting(loaded):SetValue(80)
+		assert.are.same({ 23.25, 1056.75 }, screenPlaceOf(loaded, button))
+		dragFrom(loaded, button, { 23.25, 1056.75 }, { -500, 5000 })
+		assert.are.same({ 12.4, 1067.6 }, screenPlaceOf(loaded, button))
+
+		-- Made bigger by the screen's edge, it comes in far enough to stay whole on it.
+		sizeSetting(loaded):SetValue(140)
+		assert.are.same({ 21.7, 1058.3 }, screenPlaceOf(loaded, button))
+	end)
+
+	it("comes back after a /reload at its size, detached at its spot, kept whole on the screen (CORE-R53)", function()
+		local loaded, button = loggedInOnScreen({
+			global = { minimap = { detached = true, point = { x = 0, y = 1 }, scale = 1.5, style = "ledger" } },
+		})
+
+		assertArt(button, LEDGER, 1.5)
+		assert.are.same({ 23.25, 1056.75 }, screenPlaceOf(loaded, button))
+	end)
+
+	it(
+		"keeps a size picked while restricted at once, and sizes the button once restriction ends (CORE-R53, CORE-R32)",
+		function()
+			local loaded, button = loggedIn()
+			setCombat(loaded, true)
+
+			sizeSetting(loaded):SetValue(150)
+			assert.are.same({ 1.5, 150 }, { loaded.ns.db.global.minimap.scale, sizeSetting(loaded):GetValue() })
+			assertClassic(button, 1)
+
+			setCombat(loaded, false)
+			assertClassic(button, 1.5)
+		end
+	)
+end)
+
+describe("Minimap button style and Minimap button size", function()
+	it(
+		"are a dropdown and a slider right under Detach from the minimap, children of Show the minimap icon, with"
+			.. " their tooltips and no shown predicate (SET-R10 rows 10b and 10c, SET-R6)",
+		function()
+			local loaded = loggedIn()
+
+			local _, shown, _, style, size, website = menuRows(loaded)
+
+			assert.are.same(
+				{ "Minimap button style", "SettingsDropdownControlTemplate", shown, {} },
+				{ style:GetName(), style.template, style:GetParentInitializer(), style.shownPredicates }
+			)
+			assert.are.equal(
+				"How the Pagle button looks. Classic is the game's own round button with the Pagle P. Ledger is a"
+					.. " leather-bound book, and Bobber a fishing bobber on night water.",
+				style.data.tooltip
+			)
+			local labels = {}
+			for _, option in ipairs(style.data.options()) do
+				labels[#labels + 1] = { option.value, option.label }
+			end
+			assert.are.same({ { "classic", "Classic" }, { "ledger", "Ledger" }, { "bobber", "Bobber" } }, labels)
+
+			assert.are.same(
+				{ "Minimap button size", "SettingsSliderControlTemplate", shown, {} },
+				{ size:GetName(), size.template, size:GetParentInitializer(), size.shownPredicates }
+			)
+			assert.are.equal(
+				"How big the Pagle button is, on the minimap's edge or detached from it.",
+				size.data.tooltip
+			)
+			local options = size.data.options
+			assert.are.same({ 80, 150, 7 }, { options.minValue, options.maxValue, options.steps })
+			assert.are.same({ "80%", "120%", "150%" }, {
+				options.formatters[2](80),
+				options.formatters[2](120),
+				options.formatters[2](150),
+			})
+			assert.are.equal("Pagle website", website:GetName())
+		end
+	)
+
+	it("have no default for the root's Defaults button to restore, as Detach from the minimap (SET-R13)", function()
+		local loaded = loggedIn()
+
+		assert.are.same({ nil, nil }, { styleSetting(loaded):GetDefaultValue(), sizeSetting(loaded):GetDefaultValue() })
+		assert.are.same({ "classic", 100 }, { styleSetting(loaded):GetValue(), sizeSetting(loaded):GetValue() })
+	end)
+
+	it(
+		"grey while the icon is hidden, keeping their values, as Detach from the minimap does (SET-R10, SET-R31)",
+		function()
+			local loaded = loggedIn()
+			local _, _, _, style, size = menuRows(loaded)
+			styleSetting(loaded):SetValue("bobber")
+			sizeSetting(loaded):SetValue(120)
+			local shown = loaded.client.settings.show(assert(loaded.client.settings.category("Pagle")))
+			local function live(row)
+				for _, drawn in ipairs(shown) do
+					if drawn.initializer == row then
+						return drawn.frame.enabled
+					end
+				end
+				error("the row isn't shown")
+			end
+			assert.are.same({ true, true }, { live(style), live(size) })
+
+			shownSetting(loaded):SetValue(false)
+			assert.are.same({ false, false }, { live(style), live(size) })
+			assert.are.same({ "bobber", 120 }, { styleSetting(loaded):GetValue(), sizeSetting(loaded):GetValue() })
+
+			shownSetting(loaded):SetValue(true)
+			assert.are.same({ true, true }, { live(style), live(size) })
+			assert.are.same({ "Pagle_Core_minimapIcon" }, style.evaluateStateVariables)
+			assert.are.same({ "Pagle_Core_minimapIcon" }, size.evaluateStateVariables)
+		end
+	)
+
+	it("change the icon while it is hidden too, which then shows in them (CORE-R53, CORE-R56)", function()
+		local loaded, button = loggedIn({ global = { minimap = { hide = true } } })
+
+		styleSetting(loaded):SetValue("ledger")
+		sizeSetting(loaded):SetValue(110)
+		shownSetting(loaded):SetValue(true)
+
+		assert.is_true(button:IsShown())
+		assertArt(button, LEDGER, 1.1)
 	end)
 end)

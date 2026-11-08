@@ -433,6 +433,12 @@ ns.Locale("deDE", function(L)
 	L.SETTINGS_MINIMAP_DETACH_TOOLTIP = "Damit kannst du den Pagle-Knopf überallhin auf dem Bildschirm ziehen, weg vom Rand der Minikarte. Nicht angehakt, sitzt er wieder am Rand."
 	L.SETTINGS_MINIMAP_ICON = "Minikartensymbol anzeigen"
 	L.SETTINGS_MINIMAP_ICON_TOOLTIP = "Ein runder Pagle-Knopf am Rand der Minikarte, der das Pagle-Menü öffnet. Das Menü steckt auch im AddOns-Knopf an der Minikarte."
+	L.SETTINGS_MINIMAP_SIZE = "Größe des Minikartenknopfs"
+	L.SETTINGS_MINIMAP_SIZE_TOOLTIP = "Wie groß der Pagle-Knopf ist, am Rand der Minikarte oder von ihr gelöst."
+	L.SETTINGS_MINIMAP_SIZE_VALUE = "{value:0}%"
+	L.SETTINGS_MINIMAP_STYLE = "Stil des Minikartenknopfs"
+	L.SETTINGS_MINIMAP_STYLES = { bobber = "Schwimmer", classic = "Klassisch", ledger = "Anglerbuch" }
+	L.SETTINGS_MINIMAP_STYLE_TOOLTIP = "Wie der Pagle-Knopf aussieht. Klassisch ist der runde Knopf des Spiels mit dem Pagle-P. Anglerbuch ist ein ledergebundenes Buch, Schwimmer ein Angelschwimmer auf nächtlichem Wasser."
 	L.SETTINGS_MODULES = "Module"
 	L.SETTINGS_MODULES_NOTE = "Schalte Module in der AddOns-Liste ein oder aus."
 	L.SETTINGS_MORE_LOOKS = "Weitere Optiken"

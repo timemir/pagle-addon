@@ -177,6 +177,16 @@ SETTINGS_MINIMAP_ICON_TOOLTIP = "A round Pagle button on the minimap's edge that
 # Detach from the minimap (SET-R10 row 10a, CORE-R53, from 1.5): its label and the tooltip.
 SETTINGS_MINIMAP_DETACH = "Detach from the minimap"
 SETTINGS_MINIMAP_DETACH_TOOLTIP = "Lets you drag the Pagle button anywhere on the screen, away from the minimap's edge. Untick it to put the button back on the edge."
+# The button's style and size (SET-R10 rows 10b and 10c, CORE-R53, from 1.5.1): the dropdown's label, tooltip and
+# choices, and the slider's label, tooltip and value, a percentage.
+SETTINGS_MINIMAP_STYLE = "Minimap button style"
+SETTINGS_MINIMAP_STYLE_TOOLTIP = "How the Pagle button looks. Classic is the game's own round button with the Pagle P. Ledger is a leather-bound book, and Bobber a fishing bobber on night water."
+SETTINGS_MINIMAP_STYLES.bobber = "Bobber"
+SETTINGS_MINIMAP_STYLES.classic = "Classic"
+SETTINGS_MINIMAP_STYLES.ledger = "Ledger"
+SETTINGS_MINIMAP_SIZE = "Minimap button size"
+SETTINGS_MINIMAP_SIZE_TOOLTIP = "How big the Pagle button is, on the minimap's edge or detached from it."
+SETTINGS_MINIMAP_SIZE_VALUE = "{value:0}%"
 # The root's Pagle website section (SET-R10 row 11, VIEW-R30).
 SETTINGS_PAGLE_WEBSITE = "Pagle website"
 SETTINGS_ANGLER_TOOLTIPS = "Show other Anglers on player tooltips"

@@ -19,7 +19,7 @@ clear texel's colour doesn't darken the edge of what is beside it, and its clear
 blocks are the size they should be, and level 0 is read back as above.
 
 --raw is for small art with fine detail that DXT5's 4x4 blocks smear, drawn well below its own size: the favicon
-(CORE-R50), 64 x 64 and shown at 16 px, and the minimap icon's Ledger (CORE-R53), 128 x 128 and shown at 34. Its texels are stored as they are (BLP2's uncompressed BGRA, colour
+(CORE-R50), 64 x 64 and shown at 16 px, and the minimap icon's Ledger and Bobber (CORE-R53), 128 x 128 and shown at 34. Its texels are stored as they are (BLP2's uncompressed BGRA, colour
 encoding 3), with a mipmap chain down to 1 x 1 so the client draws it small without aliasing. Pillow can't decode
 that encoding, so each level is read back from the file's bytes and must equal its source exactly.
 """

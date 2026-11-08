@@ -2,11 +2,16 @@
 
 ## 1.5.1 (unreleased)
 
-A new look for the Pagle button.
+Pick how the Pagle button looks, and how big it is.
 
-### Changed
+### Added
 
-- The Pagle button on the minimap is now drawn as the Ledger: a leather-bound book with a gilt P, on night water inside a gilt ring. It lights up when your mouse is over it, and the book presses in when you click it. Pagle's entry in the game's add-on button keeps the small P.
+- Settings › Pagle › "Minimap button style" picks the Pagle button's look: Classic, the round button you know; Ledger, a leather-bound book with a gilt P; or Bobber, a red and cream fishing bobber on night water. Ledger and Bobber light up when your mouse is over them and press in when you click. Classic stays the default, so nothing changes until you pick another.
+- Settings › Pagle › "Minimap button size" makes the button smaller or bigger, from 80% to 150%, on the minimap's edge or wherever you've put it.
+
+### TRANSLATORS
+
+- Español: fmartingr
 
 ## 1.5.0 (2026-11-08)
 
