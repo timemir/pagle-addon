@@ -149,7 +149,7 @@ Before step 1, Core applies the player's Language (CORE-R8, SET-R10): it reads `
 - **LOG-R118** **A Party Catch is no Catch of the Angler's.** It is never a Cast, never in a Session (LOG-R60, LOG-R98), never counted among the earlier Catches of a Simulated Size (LOG-R65, LOG-R100: those count `C1` items only), never in the diagnostics buffer or the Field report (LOG-R81), and never a Catch for a Module that doesn't take Party Catches (LOG-R117).
 - **LOG-R119** **Additive kind.** `G1`, like `K1` (LOG-R37), changes no earlier entry, so `PagleLog.format` stays 4 (LOG-R17) and no log is started over. A Core from before 1.6 skips a `G1` as an entry it can't decode (LOG-R16). Pagle's backend refuses a Catch log it can't admit, so the backend reads `G1` before 1.6 is released (pagle-backend's record contract).
 - **LOG-R120** **Privacy.** The party catch message carries the catcher's GUID, the Cast's zone, subzone, skill, lure, events, auras and items, and nothing else, to the party only, never further. The receiver's log keeps the groupmate's GUID in its `G1` entries, and its Party Catch IDs are the receiver's own, so no Module state holds the groupmate's GUID (HNT-R181). Pagle's website never names a groupmate (pagle-backend's angler-page.md). A groupmate's name shows only in game, in the receiver's own moments (ANN-R110).
-- **LOG-R121** **The Party Hunts setting** (`PagleDB.profile.partyHunts`, on by default; [settings.md](../settings.md), SET-R35) turns both sides off at once: off, Core sends no party catch message and logs none it receives. It changes nothing already logged.
+- **LOG-R121** **The Party Hunts setting** (`PagleDB.profile.partyHunts`, on by default; [settings.md](../settings.md), SET-R35) turns both sides off at once: off, Core sends no party catch message and logs none it receives. It changes nothing already logged. *Decided by the dev (2026-11-08): one switch for both sides, on by default, independent of #640's party toast switches.*
 
 ### Reading the log back
 
@@ -589,7 +589,7 @@ The first two sit on the Settings root, in its Saving and Units sections (CORE-R
 | Realm UTC offset rounding | 15 min | LOG-R49 |
 | A Legend's size multipliers of the typical length at each band edge (the ends frozen) | 0.55 / 0.75 / 1.10 / 1.30 / 1.55 / 1.80 | LOG-R67 |
 | `Pagle.SIZE_RULES_VERSION` before 1.0 | 2 | LOG-R68 |
-| Party window: how long before a groupmate's Catch the receiver's latest Cast may be, in the same zone | 300 s | LOG-R113 |
+| Party window: how long before a groupmate's Catch the receiver's latest Cast may be, in the same zone | 300 s (5 minutes; decided by the dev, 2026-11-08) | LOG-R113 |
 | Max party delay: how old a groupmate's Cast may be when its message is received or sent | 60 s | LOG-R112, LOG-R113 |
 | Clock slack: how far after the receiver's clock a groupmate's Cast time may be | 30 s | LOG-R113 |
 | Party send queue: burst, then rate | 5, then 1 message a second, shared with #640's party toasts and cheers | LOG-R112 |
