@@ -457,15 +457,15 @@ en = "Raise a mug"
 value = "Alzaste una jarra"
 en = "You raised a mug"
 
-[PARTY_CHEER_ONE]
+[PARTY_CHEER_NAME]
 value = "{name} alzó una jarra"
 en = "{name} raised a mug"
 
-[PARTY_CHEER_TWO]
+[PARTY_CHEER_NAMES]
 value = "{name} y {other} alzaron una jarra"
 en = "{name} and {other} raised a mug"
 
-[PARTY_CHEER_MANY]
+[PARTY_CHEER_COUNT]
 value.many = "{count} alzaron una jarra"
 value.one = "{count} alzó una jarra"
 value.other = "{count} alzaron una jarra"

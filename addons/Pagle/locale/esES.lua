@@ -311,9 +311,9 @@ ns.Locale("esES", function(L)
 	L.NOTE_WELCOME = "Bienvenido de nuevo. */pagle guide* te lo enseña todo, si quieres el recorrido."
 	L.NOT_FOREVER = "Pagle: esto no es World of Warcraft: Forever, así que Pagle se queda desactivado."
 	L.OPEN_VIEW = "Abrir {label}"
-	L.PARTY_CHEER_MANY = { many = "{count} alzaron una jarra", one = "{count} alzó una jarra", other = "{count} alzaron una jarra" }
-	L.PARTY_CHEER_ONE = "{name} alzó una jarra"
-	L.PARTY_CHEER_TWO = "{name} y {other} alzaron una jarra"
+	L.PARTY_CHEER_COUNT = { many = "{count} alzaron una jarra", one = "{count} alzó una jarra", other = "{count} alzaron una jarra" }
+	L.PARTY_CHEER_NAME = "{name} alzó una jarra"
+	L.PARTY_CHEER_NAMES = "{name} y {other} alzaron una jarra"
 	L.PARTY_DETAIL = "{what} · {detail}"
 	L.PARTY_LINES = { epic = "Pescó un color épico", gold = "Alcanzó el Nivel de Oro en una caza", ledger = "Libro de registro al 100 %", legend = "Pescó una Leyenda", monster = "Récord de tamaño Monstruo", rare = "Pescó un color raro", zone = "Maestro de zona" }
 	L.PARTY_MUG = "Alzar una jarra"

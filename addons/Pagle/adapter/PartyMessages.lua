@@ -373,9 +373,9 @@ end
 function ns.PartyCheerTitle(names)
 	local L = ns.L
 	if #names == 1 then
-		return ns.RenderText(L.PARTY_CHEER_ONE, { name = names[1] })
+		return ns.RenderText(L.PARTY_CHEER_NAME, { name = names[1] })
 	elseif #names == 2 then
-		return ns.RenderText(L.PARTY_CHEER_TWO, { name = names[1], other = names[2] })
+		return ns.RenderText(L.PARTY_CHEER_NAMES, { name = names[1], other = names[2] })
 	end
-	return ns.RenderText(L.PARTY_CHEER_MANY, { count = #names })
+	return ns.RenderText(L.PARTY_CHEER_COUNT, { count = #names })
 end

@@ -310,9 +310,9 @@ ns.Locale("ruRU", function(L)
 	L.NOTE_WELCOME = "С возвращением. */pagle guide* покажет, что здесь к чему, если хотите экскурсию."
 	L.NOT_FOREVER = "Pagle: это не World of Warcraft: Forever, поэтому Pagle не включается."
 	L.OPEN_VIEW = "Открыть «{label}»"
-	L.PARTY_CHEER_MANY = { few = "{count} поднимают кружки", many = "{count} поднимают кружки", one = "{count} поднимает кружку", other = "{count} поднимают кружки" }
-	L.PARTY_CHEER_ONE = "{name} поднимает кружку"
-	L.PARTY_CHEER_TWO = "{name} и {other} поднимают кружки"
+	L.PARTY_CHEER_COUNT = { few = "{count} поднимают кружки", many = "{count} поднимают кружки", one = "{count} поднимает кружку", other = "{count} поднимают кружки" }
+	L.PARTY_CHEER_NAME = "{name} поднимает кружку"
+	L.PARTY_CHEER_NAMES = "{name} и {other} поднимают кружки"
 	L.PARTY_DETAIL = "{what} • {detail}"
 	L.PARTY_LINES = { epic = "Поймал(а) эпическую окраску", gold = "Достиг(ла) золотой ступени в охоте", ledger = "Реестр на 100%", legend = "Поймал(а) легенду", monster = "Рекорд размера «Чудовище»", rare = "Поймал(а) редкую окраску", zone = "Мастер зоны" }
 	L.PARTY_MUG = "Поднять кружку"

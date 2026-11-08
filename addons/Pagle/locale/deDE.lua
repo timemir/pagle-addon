@@ -310,9 +310,9 @@ ns.Locale("deDE", function(L)
 	L.NOTE_WELCOME = "Willkommen zurück. */pagle guide* führt dich herum, wenn du die Tour möchtest."
 	L.NOT_FOREVER = "Pagle: Das ist nicht World of Warcraft: Forever, also bleibt Pagle aus."
 	L.OPEN_VIEW = "{label} öffnen"
-	L.PARTY_CHEER_MANY = { one = "{count} hebt einen Krug", other = "{count} heben einen Krug" }
-	L.PARTY_CHEER_ONE = "{name} hebt einen Krug"
-	L.PARTY_CHEER_TWO = "{name} und {other} heben einen Krug"
+	L.PARTY_CHEER_COUNT = { one = "{count} hebt einen Krug", other = "{count} heben einen Krug" }
+	L.PARTY_CHEER_NAME = "{name} hebt einen Krug"
+	L.PARTY_CHEER_NAMES = "{name} und {other} heben einen Krug"
 	L.PARTY_DETAIL = "{what} · {detail}"
 	L.PARTY_LINES = { epic = "Hat eine epische Variante gefangen", gold = "Hat in einer Jagd den Goldrang erreicht", ledger = "Anglerbuch 100 %", legend = "Hat eine Legende gefangen", monster = "Rekord in Monstergröße", rare = "Hat eine seltene Variante gefangen", zone = "Gebietsmeister" }
 	L.PARTY_MUG = "Krug heben"

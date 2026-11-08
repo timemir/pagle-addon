@@ -795,15 +795,15 @@ en = "Raise a mug"
 value = "Du hast einen Krug gehoben"
 en = "You raised a mug"
 
-[PARTY_CHEER_ONE]
+[PARTY_CHEER_NAME]
 value = "{name} hebt einen Krug"
 en = "{name} raised a mug"
 
-[PARTY_CHEER_TWO]
+[PARTY_CHEER_NAMES]
 value = "{name} und {other} heben einen Krug"
 en = "{name} and {other} raised a mug"
 
-[PARTY_CHEER_MANY]
+[PARTY_CHEER_COUNT]
 value.one = "{count} hebt einen Krug"
 value.other = "{count} heben einen Krug"
 en.one = "{count} raised a mug"

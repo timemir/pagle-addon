@@ -287,10 +287,10 @@ PARTY_RECORD = "{item} · {length}"
 PARTY_MUG = "Raise a mug"
 PARTY_MUG_RAISED = "You raised a mug"
 # A cheer's Nod (ANN-R108): one groupmate, two, or a count from three.
-PARTY_CHEER_ONE = "{name} raised a mug"
-PARTY_CHEER_TWO = "{name} and {other} raised a mug"
-PARTY_CHEER_MANY.one = "{count} raised a mug"
-PARTY_CHEER_MANY.other = "{count} raised a mug"
+PARTY_CHEER_NAME = "{name} raised a mug"
+PARTY_CHEER_NAMES = "{name} and {other} raised a mug"
+PARTY_CHEER_COUNT.one = "{count} raised a mug"
+PARTY_CHEER_COUNT.other = "{count} raised a mug"
 # A toast style's sample on the Curio Shop's preview stage (wallet-and-shop.md › UI, ANN-R80): its headline, its
 # one stamp, and the button that shows it through the lanes.
 TOAST_SAMPLE_TITLE = "New Species"
