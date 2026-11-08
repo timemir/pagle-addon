@@ -233,12 +233,16 @@ local function show(content)
 	})
 end
 
--- Off screen at once, left at rest for its next showing.
+-- Off screen at once, left at rest for its next showing. A news sign waiting for the letter to go drops now
+-- (SIGN-R40, adapter/NewsSign.lua).
 local function hide()
 	local frame = ns.letterFrame
 	if frame then
 		settle(frame)
 		frame:Hide()
+	end
+	if ns.NewsSignLetterGone then
+		ns.NewsSignLetterGone()
 	end
 end
 

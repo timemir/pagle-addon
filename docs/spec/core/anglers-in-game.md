@@ -88,7 +88,7 @@ Nothing else from the data files is stored (VIEW-R4).
 | `Pagle.NewsWords(item)` → `PagleNewsSignNews` without `more` (from 1.6) | VIEW-R45 |
 | `def.news(id?)`, a Module's (from 1.6) | VIEW-R46 |
 
-Core-internal, from 1.6 (logic/Wiring.lua's `ns.WireAnglerViews`): `ns.SetNewsFloor()` sets the floor to `GetServerTime()` (SIGN-R18), for "Show news at login" turned on and a Defaults that turns it back on (SET-R37); `ns.anglerViews:NewsSeen(id)` tells whether an item is marked seen now, for the sign's decision (SIGN-R15); `ns.OpenNews(id?)` calls the first On Module's `def.news` (VIEW-R46) and returns whether one did, for the sign's left click (SIGN-R42).
+Core-internal, from 1.6 (logic/Wiring.lua's `ns.WireAnglerViews`): `ns.SetNewsFloor()` sets the floor to `GetServerTime()` (SIGN-R18), for the sign's first decision with `ok` news and no floor (SIGN-R14), "Show news at login" turned on and a Defaults that turns it back on (SET-R37); `ns.anglerViews:NewsSeen(id)` tells whether an item is marked seen now, for the sign's decision (SIGN-R15); `ns.OpenNews(id?)` calls the first On Module's `def.news` (VIEW-R46) and returns whether one did, for the sign's left click (SIGN-R42).
 
 `PagleFollowingData` and `PagleAnglersData` are read as [IGV Contracts › The addon folders](https://github.com/timemir/pagle-backend/blob/main/docs/spec/in-game-views.md#the-addon-folders) gives them: `Pagle_Following`'s plain tables, and `Pagle_Anglers`' packed strings, binary-searched by the 13-character search key formed from the unit's GUID.
 
