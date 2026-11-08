@@ -131,6 +131,8 @@ ns.L = {
 	NEEDS_SKILL = "needs skill {need:0}",
 	NO_HUNTS = "No Hunts yet.",
 	OUT_OF_SEASON = "out of season",
+	PARTY_A_GROUPMATE = "a groupmate",
+	PARTY_WITH = "{text} · with {name}",
 	PAY_AMOUNT = "+{xpRun:0} XP · {coins:0} Coins",
 	PAY_PAID_OUT = "paid out",
 	PAY_REFRESH = { one = "+{count} Refresh", other = "+{count} Refreshes" },

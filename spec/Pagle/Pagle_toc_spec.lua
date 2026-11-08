@@ -32,6 +32,56 @@ describe("Pagle.toc", function()
 		assert.are.equal("qGZA7bKd", fields["X-Wago-ID"])
 	end)
 
+	it(
+		"sign_toc: loads the news sign's files from TOC lines of their own, once each, after Settings (news-sign.md Contracts)",
+		function()
+			local at, count = {}, {}
+			for index, file in ipairs(addonFiles("Pagle")) do
+				at[file] = at[file] or index
+				count[file] = (count[file] or 0) + 1
+			end
+			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
+			local tocFile = assert(io.open("addons/Pagle/Pagle.toc", "r"))
+			local toc = tocFile:read("*a")
+			tocFile:close()
+			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
+			local xmlFile = assert(io.open("addons/Pagle/adapter/Settings.xml", "r"))
+			local xml = xmlFile:read("*a")
+			xmlFile:close()
+
+			local files = {
+				"data/NewsSignArt.lua",
+				"adapter/NewsSign.lua",
+				"adapter/NewsSignLooks.lua",
+				"adapter/NewsSignDev.lua",
+				"adapter/NewsSignDrop.lua",
+			}
+			for i, file in ipairs(files) do
+				assert.are.equal(1, count[file], file)
+				assert(toc:find((file:gsub("/", "\\")), 1, true), file .. " has a TOC line")
+				assert(not xml:find(file:match("[^/]+$"), 1, true), file .. " left Settings.xml")
+				if i > 1 then
+					assert(at[file] > at[files[i - 1]], file)
+				end
+			end
+			-- after the files they use: the art, the motion driver, the fonts, Settings, the letters and the pick
+			for _, used in ipairs({
+				"data/LegendCrestArt.lua",
+				"data/VarietyArt.lua",
+				"data/NewsSignArt.lua",
+				"logic/NewsSign.lua",
+				"adapter/Restriction.lua",
+				"adapter/Fonts.lua",
+				"adapter/Settings.lua",
+				"adapter/Motion.lua",
+				"adapter/Slash.lua",
+				"adapter/Letter.lua",
+			}) do
+				assert(at[used] < at["adapter/NewsSign.lua"], used)
+			end
+		end
+	)
+
 	it("lists its generated Lore.lua right after locale/enUS.lua, the file that creates ns.L (DATA-R75)", function()
 		local at = {}
 		for index, file in ipairs(addonFiles("Pagle")) do

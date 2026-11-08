@@ -192,9 +192,10 @@ describe("The Announcements page", function()
 
 		setCombat(loaded, false)
 
-		-- Core's nine rows, then the Party block's header, Party Hunts (SET-R35) and ten rows (SET-R36), then The
-		-- Morning Tide's header and eleven rows, no slot for its look yet (SET-R37).
-		assert.are.equal(33, #page(loaded).layout.initializers)
+		-- Core's nine rows, then the Party block's header, Party Hunts (SET-R35) and ten rows (SET-R36), and from 1.6
+		-- Completed for the party's (ANN-R111); then The Morning Tide's header and eleven rows, no slot for its look yet
+		-- (SET-R37).
+		assert.are.equal(34, #page(loaded).layout.initializers)
 	end)
 end)
 

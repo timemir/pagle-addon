@@ -13,7 +13,8 @@ local Pagle = Pagle
 -- where login step 2 reads it once (adapter/Login.lua); Pagle_Anglers is load-on-demand (IGV-R43), loaded at the first
 -- player hover outside restriction with the tooltip setting on (VIEW-R3). Core never writes either global or folder,
 -- and Pagle's zip never holds them (VIEW-R4). Then the Pagle block on a player's tooltip (VIEW-R20–R22); its Settings
--- row is the root's (adapter/Settings.lua, VIEW-R30).
+-- row is the root's (adapter/Settings.lua, VIEW-R30). From 1.6, the news: Pagle.GetNews, Pagle.MarkNewsSeen and
+-- Pagle.NewsWords over the client (VIEW-R42–R45).
 
 -- The Companion's data addons, by folder name (IGV Contracts › The addon folders).
 local FOLLOWING_ADDON, ANGLERS_ADDON = ns.FOLLOWING_ADDON, ns.ANGLERS_ADDON
@@ -110,4 +111,84 @@ end)
 ---@return PagleFollowedAnglers
 function Pagle.GetFollowedAnglers()
 	return ns.anglerViews:FollowedAnglers()
+end
+
+--- The news (VIEW-R42): `{ state, items }`, state "ok", "none" (Pagle_Following is live with no news block: its
+--- Companion predates the news), "expired" or "absent" as GetFollowedAnglers says. `items` is a fresh array, empty
+--- unless "ok", of every news item in the file's order, each a copy with the news line's fields and `new`: true when, at
+--- the session's first read of the news, its id wasn't seen and its time was at or after the floor; it stays new for the
+--- session after it is marked. Read at the call, so an expiry mid-session shows at the next call.
+---@return PagleNews
+function Pagle.GetNews()
+	return ns.anglerViews:News()
+end
+
+--- Marks news items seen (VIEW-R43): each id in `ids` with its item's time, or with no argument every item of
+--- Pagle.GetNews(). Does nothing while the news isn't "ok". Only the news sign and the Fish Journal's news list call it.
+---@param ids string[]?
+function Pagle.MarkNewsSeen(ids)
+	if ids ~= nil and type(ids) ~= "table" then
+		error("Pagle.MarkNewsSeen: ids is a list of news item ids, or nil for every item", 2)
+	end
+	ns.anglerViews:MarkNewsSeen(ids)
+end
+
+-- The Species Core has a fish crest for (VAR-R12): those with varieties, read from the catalogue when first asked.
+---@type table<integer, true>?
+local fishCrests
+
+-- What Pagle.NewsWords reads (VIEW-R45, SIGN-R19), from the client and Core at the call. An item name the client
+-- hasn't loaded yet is asked for, so GET_ITEM_INFO_RECEIVED fires once it has it.
+---@type PagleNewsLookups
+local lookups = {
+	itemName = function(itemID)
+		local name = ns.UnlessSecret(issecretvalue, (C_Item.GetItemNameByID(itemID)))
+		if name == nil then
+			C_Item.RequestLoadItemDataByID(itemID)
+		end
+		return name
+	end,
+	varieties = function(species)
+		return Pagle.GetVarieties(species)
+	end,
+	caught = function(species)
+		return Pagle.GetVarietiesCaught(species)
+	end,
+	areaName = function(areaID)
+		return ns.UnlessSecret(issecretvalue, (C_Map.GetAreaInfo(areaID)))
+	end,
+	formatLength = function(mm)
+		return ns.FormatLength(mm, ns.LengthUnit())
+	end,
+	ledgerOn = function()
+		for _, module in ipairs(ns.Modules:Modules()) do
+			if module.def.name == "Ledger" then
+				return true
+			end
+		end
+		return false
+	end,
+	fishCrest = function(species)
+		if not fishCrests then
+			fishCrests = {}
+			for _, id in ipairs(ns.Catalogue and ns.Catalogue.GetVarietySpecies() or {}) do
+				fishCrests[id] = true
+			end
+		end
+		return fishCrests[species] == true
+	end,
+}
+
+--- A news item's words and emblem as the sign draws them (VIEW-R45, SIGN-R19): `{ kind, kicker, head, detail, emblem }`,
+--- without the sign's more line, in the player's language. An item name the client hasn't loaded yet reads "a fish"
+--- (SIGN_ITEM_UNKNOWN) at the call; drawn again once GET_ITEM_INFO_RECEIVED fires, it has its name. `item` is one of
+--- Pagle.GetNews()'s items.
+---@param item PagleNewsItem
+---@return PagleNewsSignNews
+function Pagle.NewsWords(item)
+	if type(item) ~= "table" or type(item.kind) ~= "string" or not ns.L.SIGN_HEAD[item.kind] then
+		error("Pagle.NewsWords: item is one of Pagle.GetNews()'s items", 2)
+	end
+	lookups.dropPrefix = GetLocale() == "enUS" and ns.L.FISH_CREST_DROP_PREFIX or nil
+	return ns.NewsWords(item, lookups)
 end

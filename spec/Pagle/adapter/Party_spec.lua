@@ -608,6 +608,7 @@ describe("the Party block (SET-R36)", function()
 		"Zone Master",
 		"Prestige",
 		"Ledger 100%",
+		"Completed for the party",
 		"Cheers sounds",
 	}
 
@@ -644,7 +645,7 @@ describe("the Party block (SET-R36)", function()
 		end
 		assert.are.same(expected, names)
 		local show = row(loaded, "Show my party's moments")
-		for i = 3, 9 do
+		for i = 3, 10 do
 			assert.are.equal(show, row(loaded, LABELS[i]):GetParentInitializer())
 		end
 		assert.is_nil(row(loaded, "Cheers sounds"):GetParentInitializer())

@@ -213,6 +213,8 @@ local EXPECTED = {
 			{ "checkbox", "Zone Master", under = true },
 			{ "checkbox", "Prestige", under = true },
 			{ "checkbox", "Ledger 100%", under = true },
+			-- From 1.6, "Completed for the party" (SET-R35, ANN-R111).
+			{ "checkbox", "Completed for the party", under = true },
 			{ "checkbox", "Cheers sounds", tip = TIPS.partySounds },
 			-- The Morning Tide (SET-R37, from 1.6). Its last row, the News sign slot dropdown, comes with Core's
 			-- `core.newssign` slot (SHOP-R60, #660), as Toast style and Sound set came with theirs (SET-R30).
@@ -808,6 +810,7 @@ describe("Greying in the Settings tree", function()
 			"Zone Master",
 			"Prestige",
 			"Ledger 100%",
+			"Completed for the party",
 			"Cheers sounds",
 			-- The Morning Tide's master and the rows under it, but not Mute the sign (SET-R37).
 			"Show news at login",
@@ -1005,6 +1008,7 @@ describe("Each page's Defaults button", function()
 				"Animations",
 				"Announce open Hunt windows",
 				"Cheers sounds",
+				"Completed for the party",
 				"Cozy mode",
 				"First reported", -- The Morning Tide's, from 1.6 (SET-R37)
 				"Gold tier in a Hunt",
@@ -1209,6 +1213,7 @@ describe("Each page's Defaults button", function()
 			["Zone Master"] = true,
 			["Prestige"] = true,
 			["Ledger 100%"] = true,
+			["Completed for the party"] = true,
 			["Cheers sounds"] = true,
 			-- SET-R37's: every switch on, the sign unmuted. Legends, Prestige and Zone Master are both blocks' labels.
 			["Show news at login"] = true,

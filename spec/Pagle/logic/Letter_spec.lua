@@ -773,6 +773,50 @@ describe("one letter at a time, the onboarding Letter first (ONB-R17)", function
 	end)
 end)
 
+describe("the letters and the news sign, one at a time (ONB-R17, SIGN-R40)", function()
+	it("onb_r17: a letter due while the sign shows waits until it has gone up, then LETTER_DELAY more", function()
+		local letter, seen = letterWith("waiting")
+		letter:EnteredWorld()
+		letter:SetSignShowing(true)
+		seen.clock(ns.LETTER_DELAY + 10)
+		assert.are.equal(0, seen.shown)
+
+		letter:SetSignShowing(false)
+		seen.clock(ns.LETTER_DELAY - 0.1)
+		assert.are.equal(0, seen.shown)
+		seen.clock(0.1)
+
+		assert.are.equal(ns.ONBOARDING_LETTER, letter:Showing())
+	end)
+
+	it("onb_r17: a Module's letter sent while the sign shows waits for it too, every letter alike", function()
+		local letter, seen = letterWith("opened")
+		register(letter, seen, "ledger.prestige")
+		letter:EnteredWorld()
+		seen.clock(ns.LETTER_DELAY)
+		letter:SetSignShowing(true)
+
+		letter:Send("ledger.prestige")
+		letter:Check()
+		assert.is_false(letter:IsShowing())
+		letter:SetSignShowing(false)
+		seen.clock(ns.LETTER_DELAY)
+
+		assert.are.equal("ledger.prestige", letter:Showing())
+	end)
+
+	it("onb_r17: the sign going up when no sign showed changes nothing", function()
+		local letter, seen = arrived("waiting")
+		assert.are.equal(1, seen.shown)
+
+		letter:SetSignShowing(false)
+		seen.clock(ns.LETTER_DELAY)
+
+		assert.are.equal(1, seen.shown)
+		assert.are.equal(0, seen.hidden)
+	end)
+end)
+
 describe("a Module's letter from /pagle dev onboarding letter and the tour (ONB-R83, ONB-R84)", function()
 	it("ShowNow(id) shows it at once, whatever its state and the conditions, its buttons acting (ONB-R83)", function()
 		local letter, seen = letterWith("opened")

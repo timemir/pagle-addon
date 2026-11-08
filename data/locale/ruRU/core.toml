@@ -384,6 +384,7 @@ en = "A small toast when a groupmate who runs Pagle has a moment, with a mug you
 [SETTINGS_PARTY_KINDS]
 value.colour = "Редкие окраски"
 value.gold = "Золотая ступень в охоте"
+value.hp = "Выполнено для группы"
 value.ledger = "Реестр на 100%"
 value.legend = "Легенды"
 value.monster = "Рекорды размера «Чудовище»"
@@ -391,6 +392,7 @@ value.prestige = "Престиж"
 value.zone = "Мастер зоны"
 en.colour = "Rare colours"
 en.gold = "Gold tier in a Hunt"
+en.hp = "Completed for the party"
 en.ledger = "Ledger 100%"
 en.legend = "Legends"
 en.monster = "Monster-size records"
@@ -876,6 +878,42 @@ value.one = "{count} поднимает кружку"
 value.other = "{count} поднимают кружки"
 en.one = "{count} raised a mug"
 en.other = "{count} raised a mug"
+
+[PARTY_HP_MINE]
+value = "Твой улов"
+en = "Your catch"
+
+[PARTY_HP_PARTY]
+value = "Выполнено для группы"
+en = "Completed for the party"
+
+[PARTY_HP_HUNT]
+value = "{hunt} • для: {senders}"
+en = "{hunt} · for {senders}"
+
+[PARTY_HP_RUN]
+value = "Выиграно для {senders}: {event}"
+en = "{event} settled · for {senders}"
+
+[PARTY_HP_SOME_HUNT]
+value = "охота"
+en = "a Hunt"
+
+[PARTY_HP_SOME_RUN]
+value = "пари Пэгла"
+en = "a Pagle Wager"
+
+[PARTY_HP_SENDERS_TWO]
+value = "{name} и {other}"
+en = "{name} and {other}"
+
+[PARTY_HP_SENDERS_MORE]
+value.few = "{name}, {other} и ещё {count}"
+value.many = "{name}, {other} и ещё {count}"
+value.one = "{name}, {other} и ещё {count}"
+value.other = "{name}, {other} и ещё {count}"
+en.one = "{name}, {other} and {count} more"
+en.other = "{name}, {other} and {count} more"
 
 [TOAST_SAMPLE_TITLE]
 value = "Новый вид"
@@ -1698,6 +1736,11 @@ en = "Pagle dev: Pagle_Anglers has loaded this login."
 [DEV_VIEWS_NOT_LOADED]
 value = "Pagle dev: Pagle_Anglers за этот вход в игру не загружался."
 en = "Pagle dev: Pagle_Anglers hasn't loaded this login."
+
+# Machine-drafted (Claude) for the news reader (#656); awaits a native speaker's review.
+[DEV_VIEWS_NEWS]
+value = "Pagle dev: новости {state}: строк использовано {used}, пропущено {skipped}; просмотрено {seen}, порог {floor}."
+en = "Pagle dev: news {state}: lines used {used}, skipped {skipped}; seen {seen}, floor {floor}."
 
 [DEV_VIEWS_NONE]
 value = "нет"
@@ -2694,6 +2737,23 @@ en = "{variety} {species}"
 [SIGN_DETAIL_MONSTER]
 value = "{species}, {length}"
 en = "{species}, {length}"
+
+# Machine-drafted (Claude) for the news reader (#656); awaits a native speaker's review.
+[SIGN_DETAIL_COLOUR_HIDDEN]
+value = "{species} ({rarity})"
+en = "{rarity} {species}"
+
+[SIGN_HEAD_MASTER_PRESTIGE]
+value = "{name}: достигнут Престиж мастера {master:0}"
+en = "{name} reached Master Prestige {master:0}"
+
+[SIGN_ITEM_UNKNOWN]
+value = "рыба"
+en = "a fish"
+
+[SIGN_ZONE_UNKNOWN]
+value = "Зона {zone}"
+en = "Zone {zone}"
 
 [SIGN_MORE]
 value.one = "+{count:0} от ваших рыболовов"
