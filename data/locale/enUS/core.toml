@@ -134,6 +134,9 @@ SETTINGS_TOAST_RESET_TOOLTIP = "Shift-drag a toast to move the toasts and Nods, 
 # The Party block on the Announcements page (SET-R36, ANN-R103–R108, from 1.5.2): its header, its rows' labels and
 # tooltips, and each kind's switch.
 SETTINGS_PARTY = "Party"
+# Its first row, from 1.6 (SET-R35, LOG-R121): one switch for sharing the player's catches and counting the party's.
+SETTINGS_PARTY_HUNTS = "Party Hunts"
+SETTINGS_PARTY_HUNTS_TOOLTIP = "In a party, your groupmates' catches count toward your Hunts and Pagle Wagers while you fish the same zone, and yours count toward theirs. Off, Pagle neither shares your catches nor counts theirs."
 SETTINGS_PARTY_SHARE = "Share my moments with my party"
 SETTINGS_PARTY_SHARE_TOOLTIP = "When you catch a Legend, set a Monster-size record and the like, groupmates who run Pagle get a small toast of it. Only the moment is sent, never where you are. Not in a raid."
 SETTINGS_PARTY_SHOW = "Show my party's moments"

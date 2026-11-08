@@ -357,6 +357,14 @@ en = "Shift-drag a toast to move the toasts and Nods, or the Session summary to 
 value = "Gruppe"
 en = "Party"
 
+[SETTINGS_PARTY_HUNTS]
+value = "Gruppenjagden"
+en = "Party Hunts"
+
+[SETTINGS_PARTY_HUNTS_TOOLTIP]
+value = "In einer Gruppe zählen die Fänge deiner Gruppenmitglieder für deine Jagden und Pagles Wetten, solange ihr in derselben Zone angelt, und deine für ihre. Aus: Pagle teilt deine Fänge nicht und zählt ihre nicht."
+en = "In a party, your groupmates' catches count toward your Hunts and Pagle Wagers while you fish the same zone, and yours count toward theirs. Off, Pagle neither shares your catches nor counts theirs."
+
 [SETTINGS_PARTY_SHARE]
 value = "Meine Momente mit der Gruppe teilen"
 en = "Share my moments with my party"
