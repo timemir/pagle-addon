@@ -247,7 +247,7 @@ function ns.NewsSignPreview(stage, lookKey)
 		---@cast panel PagleNewsSignPanel
 		panel.sign = CreateFrame("Frame", nil, panel)
 		panel.show = ns.PanelButton(panel, L.TOAST_SHOW_ON_SCREEN, 140, nil, function()
-			ns.DropNewsSign(panel.look, ns.NewsSignSample("legend"), { sample = true })
+			ns.DropNewsSign(panel.look, ns.NewsSignSample("legend"))
 		end)
 		panel.show:SetPoint("TOP", panel, "TOP", 0, -(WELL_H + UNDER_WELL))
 	end) --[[@as PagleNewsSignPanel]]

@@ -222,6 +222,9 @@ describe("The look the sign wears (SIGN-R57)", function()
 
 		run(loaded, 12)
 		assert.is_nil(ns.NewsSignState())
+		-- this new Angler's Letter, due while the sign showed, follows it (ONB-R17); the next drop waits for it (SIGN-R40)
+		assert.is_true(ns.letter:IsShowing())
+		ns.letter:Later()
 		ns.DropNewsSign(nil, ns.NewsSignSample("legend"))
 		run(loaded, 0.5)
 		assert.are.equal("lantern", ns.NewsSignState().look)
@@ -332,9 +335,11 @@ describe("The news sign's preview (SHOP-R61)", function()
 
 	it("opens nothing on a left click, and goes up (SIGN-R42)", function()
 		local loaded, stage = stageOf()
+		-- the sample has no item id, so the click calls no Module's def.news (ns.OpenNews, VIEW-R46)
 		local opened = 0
-		loaded.ns.OpenNewsSignNews = function()
+		loaded.ns.OpenNews = function()
 			opened = opened + 1
+			return true
 		end
 		loaded.ns.goods:Good("core.newssign.coral").preview(stage)
 		buttonOn(stage, "Show on screen"):Click()
