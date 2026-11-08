@@ -192,8 +192,9 @@ describe("The Announcements page", function()
 
 		setCombat(loaded, false)
 
-		-- Core's nine rows, then the Party block's header and ten rows (SET-R36).
-		assert.are.equal(20, #page(loaded).layout.initializers)
+		-- Core's nine rows, then the Party block's header and ten rows (SET-R36), then The Morning Tide's header and
+		-- eleven rows, no slot for its look yet (SET-R37).
+		assert.are.equal(32, #page(loaded).layout.initializers)
 	end)
 end)
 

@@ -397,6 +397,52 @@ en = "Cheers sounds"
 value = "Ein Klirren, wenn die Einblendung eines Gruppenmitglieds kommt, wenn du einen Krug hebst und wenn jemand dir einen hebt."
 en = "A clink when a groupmate's toast arrives, when you raise a mug, and when someone raises one to you."
 
+[SETTINGS_NEWS]
+value = "Die Morgenflut"
+en = "The Morning Tide"
+
+[SETTINGS_NEWS_SHOW]
+value = "Neuigkeiten beim Einloggen zeigen"
+en = "Show news at login"
+
+[SETTINGS_NEWS_SHOW_TOOLTIP]
+value = "Beim Einloggen oder nach /reload fällt ein Schild herab, mit der besten Neuigkeit über die Angler, denen du auf der Pagle-Website folgst. Braucht den Pagle-Begleiter. Ein Linksklick öffnet den Rest im Fischjournal."
+en = "At login or /reload, a sign drops in with the best news about the Anglers you follow on the Pagle website. Needs the Pagle Companion. A left click opens the rest in the Fish Journal."
+
+[SETTINGS_NEWS_KINDS]
+value.colour = "Seltene Varianten"
+value.first = "Erstmeldungen"
+value.hunt = "Jagdgold"
+value.ledger = "Anglerbuch vollendet"
+value.legend = "Legenden"
+value.monster = "Monsterrekorde"
+value.prestige = "Prestige"
+value.zone = "Gebietsmeister"
+en.colour = "Rare varieties"
+en.first = "First reported"
+en.hunt = "Hunt gold"
+en.ledger = "Ledger completed"
+en.legend = "Legends"
+en.monster = "Monster records"
+en.prestige = "Prestige"
+en.zone = "Zone Master"
+
+[SETTINGS_NEWS_HEADLINES]
+value = "Schlagzeilen der Region"
+en = "Region headlines"
+
+[SETTINGS_NEWS_HEADLINES_TOOLTIP]
+value = "Wer diesen Monat in deiner Region als Erstes eine Legende gelandet hat, ob du ihm folgst oder nicht."
+en = "Who was first in your region this month to land a Legend, whether you follow them or not."
+
+[SETTINGS_NEWS_MUTE]
+value = "Schild stummschalten"
+en = "Mute the sign"
+
+[SETTINGS_NEWS_MUTE_TOOLTIP]
+value = "Das Schild fällt ohne seine Klänge herab. Die Toneinstellungen des Spiels gelten weiterhin."
+en = "The sign drops without its sounds. The game's sound settings still apply."
+
 [SETTINGS_NO_MODULE]
 value = "Deine Fänge werden aufgezeichnet. Aktiviere ein Modul, um sie zu sehen."
 en = "Recording your Catches. Enable a Module to see them."

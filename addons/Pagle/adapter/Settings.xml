@@ -35,4 +35,7 @@
 	<Script file="Party.lua"/>
 	<Script file="PartyToast.lua"/>
 	<Script file="PartySettings.lua"/>
+	<!-- The Morning Tide's section on the Announcements page (settings.md SET-R37, from 1.6), after the Party block's,
+	which adapter/AnnouncementSettings.lua calls before it. -->
+	<Script file="NewsSignSettings.lua"/>
 </Ui>

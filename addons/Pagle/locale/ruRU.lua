@@ -462,6 +462,14 @@ ns.Locale("ruRU", function(L)
 	L.SETTINGS_MORE_LOOKS = "Другие облики"
 	L.SETTINGS_MOTION = "Анимация"
 	L.SETTINGS_MOTION_TOOLTIP = "Плашки выезжают и ставят штамп, баннеры опускают печать, а лучи за баннером или легендой вращаются. Если выключено, всё появляется сразу в итоговом виде."
+	L.SETTINGS_NEWS = "Утренний прилив"
+	L.SETTINGS_NEWS_HEADLINES = "Новости региона"
+	L.SETTINGS_NEWS_HEADLINES_TOOLTIP = "Кто первым в вашем регионе в этом месяце выловил легенду, следите вы за ним или нет."
+	L.SETTINGS_NEWS_KINDS = { colour = "Редкие разновидности", first = "Первые вести", hunt = "Золото охоты", ledger = "Реестр заполнен", legend = "Легенды", monster = "Рекорды «Чудовищ»", prestige = "Престиж", zone = "Мастер зоны" }
+	L.SETTINGS_NEWS_MUTE = "Выключить звук вывески"
+	L.SETTINGS_NEWS_MUTE_TOOLTIP = "Вывеска опускается без своих звуков. Настройки звука игры по-прежнему действуют."
+	L.SETTINGS_NEWS_SHOW = "Показывать новости при входе"
+	L.SETTINGS_NEWS_SHOW_TOOLTIP = "При входе в игру или после /reload опускается вывеска с лучшей новостью о рыболовах, за которыми вы следите на сайте Pagle. Нужен компаньон Pagle. Щелчок левой кнопкой открывает остальное в Рыбацком журнале."
 	L.SETTINGS_NO_MODULE = "Ваши уловы записываются. Включите модуль, чтобы их увидеть."
 	L.SETTINGS_PAGES = { announcements = "Оповещения", fishing = "Рыбалка", look = "Внешний вид", trackers = "Трекеры" }
 	L.SETTINGS_PAGLE_MENU = "Меню Pagle"
