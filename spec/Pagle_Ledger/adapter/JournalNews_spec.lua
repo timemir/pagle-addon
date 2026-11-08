@@ -416,18 +416,19 @@ describe("the news list's right page (LED-R176)", function()
 	it(
 		"keeps a variety the player hasn't caught unnamed: only NewsWords' words and its silhouette (LED-R176, VAR-R27)",
 		function()
-			local colour = line("c0c0c0c0c0c0c0c0", "colour", HOUR, { item = 4603, key = "allgold", new = true })
+			local colour = line("c0c0c0c0c0c0c0c0", "colour", HOUR, { item = 4603, key = "all-gold", new = true })
 			local fake, loaded = newsJournal({ state = "ok", items = { colour } }, { id = "news" })
 			local journal = loaded.ns.journal
 			local right = journal.pages.right
 			local words = said(fake, colour.id)
 
 			assert.is_true(words.emblem.variety.silhouette)
+			assert.are.equal("Rare Spotted Yellowtail", words.detail)
 			assert.are.same(words.emblem, right[1].emblem)
 			assert.are.equal(words.detail, right[4].text)
-			local words = pageWords(loaded)
-			assert.is_nil(words:find("All-gold", 1, true))
-			assert.is_nil(words:find("allgold", 1, true))
+			local drawn = pageWords(loaded)
+			assert.is_nil(drawn:find("All-gold", 1, true))
+			assert.is_nil(drawn:find("all-gold", 1, true))
 		end
 	)
 
