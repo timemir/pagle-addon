@@ -165,14 +165,66 @@ function ns.ClientBandName(size)
 	return ns.BandName(size, Pagle.SIZE_BANDS)
 end
 
+-- The Size band a Monster-size record names on its ruler (Pagle.SIZE_BANDS' "monster"), nil without one.
+---@return string?
+local function monsterBandName()
+	local bands = Pagle.SIZE_BANDS
+	for i = 1, 10 do
+		local band = bands and bands[i]
+		if not band then
+			return nil
+		elseif band.key == "monster" then
+			return band.name
+		end
+	end
+	return nil
+end
+
+--- The party kind of a Ledger moment (announcements.md ANN-R104, from 1.5.2, #640), which Core shares with the
+--- player's party, or nil: a Legend's first Catch (`legend`), a Rare or Epic variety's (`colour`), a size record in
+--- the Monster band (`monster`, its ruler labelled with that band's name, LED-R82), a Zone Master (`zone`), a
+--- Prestige (`prestige`) and the `complete.ledger` title's moment (`ledger`, its text that title's name, LED-R75).
+--- Read from what the moment already holds, so what the Ledger computes is unchanged; it is here, not in logic/, as
+--- a 1.5.2 patch changes no hashed file.
+---@param moment PagleMoment
+---@return ("legend"|"colour"|"monster"|"zone"|"prestige"|"ledger")?
+function ns.PartyKind(moment)
+	local kind = moment.kind
+	if kind == "legend" then
+		return "legend"
+	elseif kind == "rareVariety" or kind == "epicVariety" then
+		return "colour"
+	elseif kind == "zoneMaster" then
+		return "zone"
+	elseif kind == "prestige" then
+		return "prestige"
+	elseif kind == "sizeRecord" then
+		local monster = monsterBandName()
+		return monster and moment.ruler and moment.ruler.label == monster and "monster" or nil
+	elseif kind == "completeTitle" then
+		local ledger = ns.TitleName("title:complete.ledger", ns.NewLoreText(ns.ClientNames.AreaName))
+		return ledger and moment.text == ledger and "ledger" or nil
+	end
+	return nil
+end
+
 --- Where the Ledger's moments, Write-up sections, Coins and summary line go, and what they read: the client's names
 --- and numbers, the Angler's logId, the goods' refresh, Core's size text and band names, a zone's crest, a variety's
 --- name and art and a fish crest's name and icon (LED-R81, LED-R89, LED-R90, LED-R93–R95, LED-R97, LED-R111, VAR-R25).
 ---@param module PagleModuleHandle
 ---@return LedgerOutlets
 function ns.Outlets(module)
+	-- Each zone name the moments looked up, back to its areaID: a Zone Master's moment names its zone in its text
+	-- (LED-R97), and its party mark carries the areaID, so a groupmate reads the name in their own language
+	-- (ANN-R104).
+	local areaOf = {}
 	return {
 		RaiseMoment = function(moment)
+			-- Marked for the player's party, if it is a kind Core shares (ANN-R104).
+			moment.party = ns.PartyKind(moment)
+			if moment.party == "zone" then
+				moment.partyArea = areaOf[moment.text]
+			end
 			module:RaiseMoment(moment)
 		end,
 		ReportCoinsEarned = function(total)
@@ -182,7 +234,13 @@ function ns.Outlets(module)
 			module:SetSummaryLine("ledger", text)
 		end,
 		ItemName = ns.ClientNames.ItemName,
-		AreaName = ns.ClientNames.AreaName,
+		AreaName = function(areaID)
+			local name = ns.ClientNames.AreaName(areaID)
+			if name then
+				areaOf[name] = areaID
+			end
+			return name
+		end,
 		RaiseWriteUp = function(section)
 			module:RaiseWriteUp(section)
 		end,

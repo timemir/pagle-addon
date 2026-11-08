@@ -13,6 +13,9 @@ end
 --- Core's one collector, as ns.moments, with M:RaiseMoment on every Module handle. Each Announcement goes to the
 --- lanes adapter/Announcements.lua makes (ANN-R20), and every moment Core keeps to ns.summary (ANN-R25).
 ns.WireMoments(ns.host, function(announcement)
+	-- The moments a Module marked for the party go to it first, live ones only (ANN-R104, adapter/Party.lua); a
+	-- failure there is reported, and the Announcement shows all the same.
+	securecallfunction(ns.SharePartyMoments, announcement)
 	ns.lanes:Push(announcement)
 end)
 

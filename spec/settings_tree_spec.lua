@@ -87,6 +87,12 @@ local TIPS = {
 	trackerPosition = "Shift-drag any Pagle tracker to move them all. This puts them back under the minimap.",
 	whileFishing = "Shows the trackers while a fishing pole is in hand. Once you put it away, they stay up for a minute "
 		.. "after your last Cast, then hide.",
+	partyShare = "When you catch a Legend, set a Monster-size record and the like, groupmates who run Pagle get a "
+		.. "small toast of it. Only the moment is sent, never where you are. Not in a raid.",
+	partyShow = "A small toast when a groupmate who runs Pagle has a moment, with a mug you can raise to cheer them. It "
+		.. "waits behind your own toasts and keeps to your interruption budget. Greyed out in Cozy mode, which shows "
+		.. "nothing.",
+	partySounds = "A clink when a groupmate's toast arrives, when you raise a mug, and when someone raises one to you.",
 	toastPosition = "Shift-drag a toast to move the toasts and Nods, or the Session summary to move it. This puts them all"
 		.. " back where they started.",
 	huntsTracker = "A small tracker under the minimap with the Hunts you've pinned on the board.",
@@ -189,6 +195,18 @@ local EXPECTED = {
 			{ "slot", "Toast style" },
 			{ "slot", "Sound set" },
 			{ "button", "Toast position", caption = "Reset", tip = TIPS.toastPosition },
+			-- The Party block (SET-R36, from 1.5.2).
+			{ "header", "Party" },
+			{ "checkbox", "Share my moments with my party", tip = TIPS.partyShare },
+			{ "checkbox", "Show my party's moments", tip = TIPS.partyShow },
+			{ "checkbox", "Legends", under = true },
+			{ "checkbox", "Rare colours", under = true },
+			{ "checkbox", "Monster-size records", under = true },
+			{ "checkbox", "Gold tier in a Hunt", under = true },
+			{ "checkbox", "Zone Master", under = true },
+			{ "checkbox", "Prestige", under = true },
+			{ "checkbox", "Ledger 100%", under = true },
+			{ "checkbox", "Cheers sounds", tip = TIPS.partySounds },
 			{ "header", "Hunts", of = "Hunts" },
 			{ "checkbox", "Announce open Hunt windows", tip = TIPS.windowMoments, of = "Hunts" },
 			{ "checkbox", "Remind me about the Pagle companion", tip = TIPS.companionHint, of = "Hunts" },
@@ -755,10 +773,22 @@ describe("Greying in the Settings tree", function()
 		local loaded = ready()
 
 		setRow(loaded, "Announcements", "Cozy mode", true)
-		assert.are.same(
-			{ "Interruption budget", "Interruptions", "Per", "Show every catch" },
-			greyedOn(loaded, "Announcements")
-		)
+		assert.are.same({
+			"Interruption budget",
+			"Interruptions",
+			"Per",
+			"Show every catch",
+			-- The Party block's, but Share (SET-R36).
+			"Show my party's moments",
+			"Legends",
+			"Rare colours",
+			"Monster-size records",
+			"Gold tier in a Hunt",
+			"Zone Master",
+			"Prestige",
+			"Ledger 100%",
+			"Cheers sounds",
+		}, greyedOn(loaded, "Announcements"))
 
 		setRow(loaded, "Announcements", "Cozy mode", false)
 		assert.are.same({}, greyedOn(loaded, "Announcements"))
@@ -927,14 +957,24 @@ describe("Each page's Defaults button", function()
 			assert.are.same({
 				"Animations",
 				"Announce open Hunt windows",
+				"Cheers sounds",
 				"Cozy mode",
+				"Gold tier in a Hunt",
 				"Interruption budget",
 				"Interruptions",
+				"Ledger 100%",
+				"Legends",
+				"Monster-size records",
 				"Per",
+				"Prestige",
+				"Rare colours",
 				"Remind me about the Pagle companion",
+				"Share my moments with my party",
 				"Show every catch",
+				"Show my party's moments",
 				"Sound set",
 				"Toast style",
+				"Zone Master",
 			}, restoredOn(loaded, "Announcements"))
 			assert.are.same({
 				"Hunts tracker frame",
@@ -1074,6 +1114,9 @@ describe("Each page's Defaults button", function()
 			["Animations"] = false,
 			["Announce open Hunt windows"] = true,
 			["Remind me about the Pagle companion"] = false,
+			["Share my moments with my party"] = false,
+			["Zone Master"] = false,
+			["Cheers sounds"] = false,
 		}) do
 			setRow(loaded, "Announcements", label, value)
 		end
@@ -1091,6 +1134,17 @@ describe("Each page's Defaults button", function()
 			["Animations"] = true,
 			["Announce open Hunt windows"] = false,
 			["Remind me about the Pagle companion"] = true,
+			-- SET-R36's: every one on.
+			["Share my moments with my party"] = true,
+			["Show my party's moments"] = true,
+			["Legends"] = true,
+			["Rare colours"] = true,
+			["Monster-size records"] = true,
+			["Gold tier in a Hunt"] = true,
+			["Zone Master"] = true,
+			["Prestige"] = true,
+			["Ledger 100%"] = true,
+			["Cheers sounds"] = true,
 		}, valuesOn(loaded, "Announcements"))
 		assert.are.equal(300, loaded.namespaces.Pagle.db.profile.announcements.budget.window) -- stored in seconds
 		assert.are.same({
@@ -1412,7 +1466,8 @@ local AVOIDED = {
 ---@return string[]
 local function avoidedIn(text)
 	local said = {}
-	local lower = text:lower():gsub("curio shop", ""):gsub("field report", "")
+	-- A Hunt's Gold tier (its trim, HNT-R18) is a tier, not money (SET-R36).
+	local lower = text:lower():gsub("curio shop", ""):gsub("field report", ""):gsub("gold tier", "")
 	for _, word in ipairs(AVOIDED) do
 		if lower:find("%f[%w]" .. word .. "%f[^%w]") then
 			said[#said + 1] = word
@@ -1438,6 +1493,8 @@ local NAMES = {
 	Hunts = true,
 	["I'm"] = true,
 	Journal = true,
+	-- A Zone Mastery rank (CONTEXT.md), as in Zone Master (SET-R36).
+	Master = true,
 	Modules = true,
 	Pagle = true,
 	QoL = true,

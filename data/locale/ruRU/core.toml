@@ -353,6 +353,50 @@ en = "Reset"
 value = "Перетащите плашку с Shift, чтобы сдвинуть плашки и кивки, или итоги сессии, чтобы сдвинуть их. Эта кнопка вернёт всё на свои места."
 en = "Shift-drag a toast to move the toasts and Nods, or the Session summary to move it. This puts them all back where they started."
 
+[SETTINGS_PARTY]
+value = "Группа"
+en = "Party"
+
+[SETTINGS_PARTY_SHARE]
+value = "Делиться моими моментами с группой"
+en = "Share my moments with my party"
+
+[SETTINGS_PARTY_SHARE_TOOLTIP]
+value = "Когда вы ловите легенду, ставите рекорд размера «Чудовище» и тому подобное, участники группы с Pagle видят небольшую плашку. Отправляется только сам момент, а не то, где вы находитесь. Не в рейде."
+en = "When you catch a Legend, set a Monster-size record and the like, groupmates who run Pagle get a small toast of it. Only the moment is sent, never where you are. Not in a raid."
+
+[SETTINGS_PARTY_SHOW]
+value = "Показывать моменты моей группы"
+en = "Show my party's moments"
+
+[SETTINGS_PARTY_SHOW_TOOLTIP]
+value = "Небольшая плашка, когда у участника группы с Pagle случается момент, с кружкой, которую можно поднять в его честь. Она ждёт за вашими плашками и соблюдает лимит прерываний. Недоступно в Уютном режиме, где ничего не показывается."
+en = "A small toast when a groupmate who runs Pagle has a moment, with a mug you can raise to cheer them. It waits behind your own toasts and keeps to your interruption budget. Greyed out in Cozy mode, which shows nothing."
+
+[SETTINGS_PARTY_KINDS]
+value.colour = "Редкие окраски"
+value.gold = "Золотая ступень в охоте"
+value.ledger = "Реестр на 100%"
+value.legend = "Легенды"
+value.monster = "Рекорды размера «Чудовище»"
+value.prestige = "Престиж"
+value.zone = "Мастер зоны"
+en.colour = "Rare colours"
+en.gold = "Gold tier in a Hunt"
+en.ledger = "Ledger 100%"
+en.legend = "Legends"
+en.monster = "Monster-size records"
+en.prestige = "Prestige"
+en.zone = "Zone Master"
+
+[SETTINGS_PARTY_SOUNDS]
+value = "Звуки тостов"
+en = "Cheers sounds"
+
+[SETTINGS_PARTY_SOUNDS_TOOLTIP]
+value = "Звон, когда приходит плашка участника группы, когда вы поднимаете кружку и когда кто-то поднимает кружку за вас."
+en = "A clink when a groupmate's toast arrives, when you raise a mug, and when someone raises one to you."
+
 [SETTINGS_NO_MODULE]
 value = "Ваши уловы записываются. Включите модуль, чтобы их увидеть."
 en = "Recording your Catches. Enable a Module to see them."
@@ -714,6 +758,70 @@ en = "Close"
 [SHIFT_DRAG_HINT]
 value = "Перетащите с Shift, чтобы сдвинуть"
 en = "Shift-drag to move"
+
+[PARTY_LINES]
+value.epic = "Поймал(а) эпическую окраску"
+value.gold = "Взял(а) золото в охоте"
+value.ledger = "Реестр на 100%"
+value.legend = "Поймал(а) легенду"
+value.monster = "Рекорд размера «Чудовище»"
+value.rare = "Поймал(а) редкую окраску"
+value.zone = "Мастер зоны"
+en.epic = "Caught an epic colour"
+en.gold = "Took gold in a Hunt"
+en.ledger = "Ledger 100%"
+en.legend = "Caught a Legend"
+en.monster = "Monster-size record"
+en.rare = "Caught a rare colour"
+en.zone = "Zone Master"
+
+[PARTY_PRESTIGE]
+value = "Престиж {rank:0}"
+en = "Prestige {rank:0}"
+
+[PARTY_ZONE]
+value = "Стал(а) мастером зоны {zone}"
+en = "Became Master of {zone}"
+
+[PARTY_GOLD]
+value = "Взял(а) золото в охоте «{hunt}»"
+en = "Took gold in {hunt}"
+
+[PARTY_FULL_NAME]
+value = "{name} {surname}"
+en = "{name} {surname}"
+
+[PARTY_DETAIL]
+value = "{what} • {detail}"
+en = "{what} · {detail}"
+
+[PARTY_RECORD]
+value = "{item} • {length}"
+en = "{item} · {length}"
+
+[PARTY_MUG]
+value = "Поднять кружку"
+en = "Raise a mug"
+
+[PARTY_MUG_RAISED]
+value = "Вы подняли кружку"
+en = "You raised a mug"
+
+[PARTY_CHEER_NAME]
+value = "{name} поднимает кружку"
+en = "{name} raised a mug"
+
+[PARTY_CHEER_NAMES]
+value = "{name} и {other} поднимают кружки"
+en = "{name} and {other} raised a mug"
+
+[PARTY_CHEER_COUNT]
+value.few = "{count} поднимают кружки"
+value.many = "{count} поднимают кружки"
+value.one = "{count} поднимает кружку"
+value.other = "{count} поднимают кружки"
+en.one = "{count} raised a mug"
+en.other = "{count} raised a mug"
 
 [TOAST_SAMPLE_TITLE]
 value = "Новый вид"
@@ -1308,6 +1416,18 @@ en = "Pagle dev: dev commands are off; /pagle dev on turns them on."
 [DEV_USAGE]
 value = "Pagle dev: /pagle dev on | off | endsession | preview <тип> | stage <число> | glyphs | tour [модуль | list | stop] | probe | fonts | pseudo on | off | onboarding <команда> | content | views | pastetest <КБ> | sign <вид> [тип] [more]"
 en = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | stage <count> | glyphs | tour [module | list | stop] | probe | fonts | pseudo on | off | onboarding <command> | content | views | pastetest <KB> | sign <look> [kind] [more]"
+
+[DEV_PARTY_USAGE]
+value = "Pagle dev: /pagle dev party <kind | all | cheer [1-4]>, где kind — одно из {kinds}"
+en = "Pagle dev: /pagle dev party <kind | all | cheer [1-4]>, where kind is one of {kinds}"
+
+[DEV_PARTY_QUEUED]
+value = "Pagle dev: плашка группы от {name} в очереди: {kind}."
+en = "Pagle dev: a party toast from {name} is queued: {kind}."
+
+[DEV_PARTY_CHEERED]
+value = "Pagle dev: {count:0} тостов за ваш момент уже в пути."
+en = "Pagle dev: {count:0} cheers for a moment of yours are on their way."
 
 [DEV_PSEUDO_USAGE]
 value = "Pagle dev: /pagle dev pseudo on | off"

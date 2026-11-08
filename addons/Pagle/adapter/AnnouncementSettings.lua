@@ -147,4 +147,7 @@ ns.CoreSettingsRows.announcements = function(page, layout)
 		ns.ResetToastColumn()
 		ns.ResetCard()
 	end, L.SETTINGS_TOAST_RESET_TOOLTIP, true))
+
+	-- The Party block after Core's rows (SET-R36, from 1.5.2): adapter/PartySettings.lua's.
+	ns.PartySettingsRows(page, layout)
 end
