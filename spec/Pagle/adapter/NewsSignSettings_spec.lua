@@ -104,32 +104,35 @@ local function set(loaded, label, to)
 end
 
 describe("The Morning Tide's section (SET-R37)", function()
-	it("follows the Party block under its header: the master, its nine rows indented, Mute the sign, then the look", function()
-		local loaded = loggedIn()
+	it(
+		"follows the Party block under its header: the master, its nine rows indented, Mute the sign, then the look",
+		function()
+			local loaded = loggedIn()
 
-		local names = sectionNames(loaded)
+			local names = sectionNames(loaded)
 
-		local expected = { "The Morning Tide", MASTER }
-		for _, label in ipairs(UNDER) do
-			expected[#expected + 1] = label
-		end
-		expected[#expected + 1] = MUTE
-		expected[#expected + 1] = LOOK
-		assert.are.same(expected, names)
-		local master = row(loaded, MASTER)
-		for _, label in ipairs(UNDER) do
-			assert.are.equal(master, row(loaded, label):GetParentInitializer(), label)
-		end
-		assert.is_nil(master:GetParentInitializer())
-		assert.is_nil(row(loaded, MUTE):GetParentInitializer())
-		-- The Party block's last row comes just before it (SET-R36).
-		local initializers = page(loaded).layout.initializers
-		for i, initializer in ipairs(initializers) do
-			if initializer:GetName() == "The Morning Tide" then
-				assert.are.equal("Cheers sounds", initializers[i - 1]:GetName())
+			local expected = { "The Morning Tide", MASTER }
+			for _, label in ipairs(UNDER) do
+				expected[#expected + 1] = label
+			end
+			expected[#expected + 1] = MUTE
+			expected[#expected + 1] = LOOK
+			assert.are.same(expected, names)
+			local master = row(loaded, MASTER)
+			for _, label in ipairs(UNDER) do
+				assert.are.equal(master, row(loaded, label):GetParentInitializer(), label)
+			end
+			assert.is_nil(master:GetParentInitializer())
+			assert.is_nil(row(loaded, MUTE):GetParentInitializer())
+			-- The Party block's last row comes just before it (SET-R36).
+			local initializers = page(loaded).layout.initializers
+			for i, initializer in ipairs(initializers) do
+				if initializer:GetName() == "The Morning Tide" then
+					assert.are.equal("Cheers sounds", initializers[i - 1]:GetName())
+				end
 			end
 		end
-	end)
+	)
 
 	it("gives the master, Region headlines and Mute the sign their tooltips", function()
 		local loaded = loggedIn()
