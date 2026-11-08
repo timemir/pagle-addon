@@ -1,5 +1,11 @@
 # Pagle
 
+## 1.5.3 (unreleased)
+
+### Fixed
+
+- Changing Blizzard's own settings (such as Nameplates) after opening Pagle's settings no longer causes nameplate errors until a /reload.
+
 ## 1.5.2 (2026-11-08)
 
 Cheer your party's best catches.

@@ -18,6 +18,40 @@
 	<Frame name="PagleSettingsKeyRowTemplate" mixin="PagleSettingsKeyRowMixin" virtual="true">
 		<Size x="280" y="26"/>
 	</Frame>
+	<!-- From 1.5.3 (SET-R7): Pagle's native rows, each on a template of Pagle's own that inherits Blizzard's control
+	whole (Blizzard_Settings_Shared/Blizzard_SettingControls.xml), so it looks and behaves as Blizzard's and keeps
+	Blizzard's search, Defaults, greying and tooltips, but draws in frames from its own pool. The list pools its frames by
+	template name (Pools.lua's GetPoolKey), and a pooled frame keeps the taint of the row it last drew: a Blizzard row
+	reusing a frame Pagle's row drew in, such as Nameplates' "Nameplate style", ran as Pagle's and set its CVar so, and
+	every nameplate then errored until /reload. adapter/SettingsControls.lua builds the initializers. -->
+	<Frame name="PagleSettingsListSectionHeaderTemplate" inherits="SettingsListSectionHeaderTemplate" virtual="true">
+		<Size y="45"/>
+	</Frame>
+	<Frame name="PagleSettingsCheckboxControlTemplate" inherits="SettingsCheckboxControlTemplate" virtual="true">
+		<Size x="280" y="26"/>
+	</Frame>
+	<Frame name="PagleSettingsSliderControlTemplate" inherits="SettingsSliderControlTemplate" virtual="true">
+		<Size x="280" y="26"/>
+	</Frame>
+	<Frame name="PagleSettingsCheckboxSliderControlTemplate" inherits="SettingsCheckboxSliderControlTemplate" virtual="true">
+		<Size x="280" y="26"/>
+	</Frame>
+	<Frame name="PagleSettingButtonControlTemplate" inherits="SettingButtonControlTemplate" virtual="true">
+		<Size x="280" y="26"/>
+	</Frame>
+	<!-- The dropdown's mixin adds one method to Blizzard's, which the client applies after the inherited template's (as
+	Blizzard's own SettingsDropdownControlMixin overrides SettingsListElementMixin's Init): it draws the options in
+	Blizzard's menu on PagleMenuDropdownHighlightButtonTemplate below, so they never draw in the element frames every
+	other dropdown in the game reuses. -->
+	<Frame name="PagleSettingsDropdownControlTemplate" inherits="SettingsDropdownControlTemplate" mixin="PagleSettingsDropdownControlMixin" virtual="true">
+		<Size x="280" y="26"/>
+	</Frame>
+	<!-- A Pagle dropdown option in Blizzard's menu: Blizzard's own option button (Blizzard_Menu/MenuTemplates.xml), in a
+	pool of its own in the menu's element factory. -->
+	<Button name="PagleMenuDropdownHighlightButtonTemplate" inherits="WowMenuDropdownHighlightButtonTemplate" virtual="true">
+		<Size x="1" y="20"/>
+	</Button>
+	<Script file="SettingsControls.lua"/>
 	<!-- Party toasts and cheers (announcements.md ANN-R103–R109, ANN-R112, settings.md SET-R36; from 1.5.2, #640) load here, after
 	adapter/Settings.lua: a patch can't add a file to the TOC, whose file list is hashed, and every file in logic/ is
 	hashed too. Their messages' pure Lua first, then the client's side, the party toast's frame and the Party block.

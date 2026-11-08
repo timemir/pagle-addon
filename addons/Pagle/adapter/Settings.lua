@@ -429,7 +429,7 @@ end
 ---@param category SettingsCategory
 ---@param layout SettingsLayout
 local function unitsSection(category, layout)
-	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_UNITS))
+	layout:AddInitializer(ns.CreateSettingsListSectionHeaderInitializer(L.SETTINGS_UNITS))
 	local regionUnit = ns.LengthUnitOf(nil, ns.host.region())
 	local lengthUnit = Settings.RegisterProxySetting(
 		category,
@@ -442,15 +442,15 @@ local function unitsSection(category, layout)
 			ns.db.profile.lengthUnit = value ~= regionUnit and value or nil
 		end
 	)
-	Settings.CreateDropdown(category, lengthUnit, function()
+	ns.CreateDropdown(layout, lengthUnit, function()
 		local container = Settings.CreateControlTextContainer()
 		for _, unit in ipairs(ns.LENGTH_UNITS) do
 			container:Add(unit, L.SETTINGS_LENGTH_UNITS[unit])
 		end
 		return container:GetData()
 	end, L.SETTINGS_LENGTH_UNIT_TOOLTIP)
-	ns.ClockRow(category)
-	ns.LanguageRow(category)
+	ns.ClockRow(category, layout)
+	ns.LanguageRow(category, layout)
 end
 
 -- The Pagle menu section (CORE-R40, SET-R10 rows 10–10c): Show the minimap icon, on unless
@@ -463,7 +463,7 @@ end
 ---@param category SettingsCategory
 ---@param layout SettingsLayout
 local function pagleMenuSection(category, layout)
-	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_PAGLE_MENU))
+	layout:AddInitializer(ns.CreateSettingsListSectionHeaderInitializer(L.SETTINGS_PAGLE_MENU))
 	local shown = Settings.RegisterProxySetting(
 		category,
 		"Pagle_Core_minimapIcon",
@@ -473,7 +473,7 @@ local function pagleMenuSection(category, layout)
 		ns.IsMinimapIconShown,
 		ns.SetMinimapIconShown
 	)
-	local shownRow = Settings.CreateCheckbox(category, shown, L.SETTINGS_MINIMAP_ICON_TOOLTIP)
+	local shownRow = ns.CreateCheckbox(layout, shown, L.SETTINGS_MINIMAP_ICON_TOOLTIP)
 	local detached = Settings.RegisterProxySetting(
 		category,
 		"Pagle_Core_minimapDetach",
@@ -483,7 +483,7 @@ local function pagleMenuSection(category, layout)
 		ns.IsMinimapIconDetached,
 		ns.SetMinimapIconDetached
 	)
-	local detachRow = Settings.CreateCheckbox(category, detached, L.SETTINGS_MINIMAP_DETACH_TOOLTIP)
+	local detachRow = ns.CreateCheckbox(layout, detached, L.SETTINGS_MINIMAP_DETACH_TOOLTIP)
 	-- From 1.5.1, the button's style and its size (CORE-R53), its last two children: a dropdown of the styles and a
 	-- native slider showing its value on the right, as Game › Sound's do (SET-R5).
 	local style = Settings.RegisterProxySetting(
@@ -495,7 +495,7 @@ local function pagleMenuSection(category, layout)
 		ns.MinimapIconStyle,
 		ns.SetMinimapIconStyle
 	)
-	local styleRow = Settings.CreateDropdown(category, style, function()
+	local styleRow = ns.CreateDropdown(layout, style, function()
 		local container = Settings.CreateControlTextContainer()
 		for _, choice in ipairs(ns.MINIMAP_ICON_STYLES) do
 			container:Add(choice, L.SETTINGS_MINIMAP_STYLES[choice])
@@ -516,7 +516,7 @@ local function pagleMenuSection(category, layout)
 	sizeOptions:SetLabelFormatter(MinimalSliderWithSteppersMixin.Label.Right, function(value)
 		return ns.RenderText(L.SETTINGS_MINIMAP_SIZE_VALUE, { value = value })
 	end)
-	local sizeRow = Settings.CreateSlider(category, size, sizeOptions, L.SETTINGS_MINIMAP_SIZE_TOOLTIP)
+	local sizeRow = ns.CreateSlider(layout, size, sizeOptions, L.SETTINGS_MINIMAP_SIZE_TOOLTIP)
 	for _, row in ipairs({ detachRow, styleRow, sizeRow }) do
 		row:SetParentInitializer(shownRow)
 		row:AddModifyPredicate(ns.IsMinimapIconShown)
@@ -532,7 +532,7 @@ end
 ---@param category SettingsCategory
 ---@param layout SettingsLayout
 local function pagleWebsiteSection(category, layout)
-	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_PAGLE_WEBSITE))
+	layout:AddInitializer(ns.CreateSettingsListSectionHeaderInitializer(L.SETTINGS_PAGLE_WEBSITE))
 	local tooltips = Settings.RegisterProxySetting(
 		category,
 		"Pagle_Core_anglerTooltips",
@@ -546,7 +546,7 @@ local function pagleWebsiteSection(category, layout)
 			ns.db.profile.anglerTooltips = value
 		end
 	)
-	Settings.CreateCheckbox(category, tooltips, L.SETTINGS_ANGLER_TOOLTIPS_TOOLTIP)
+	ns.CreateCheckbox(layout, tooltips, L.SETTINGS_ANGLER_TOOLTIPS_TOOLTIP)
 	-- SET-R10 row 12 (PST-R50): "Catch log" with the button "Copy for the website", which opens the export window,
 	-- drawn by Core (buttonRow, #606). Pressing it closes the panel first, since the window would open behind it;
 	-- while restricted Pagle.OpenPasteExport then prints its line (SET-R12).
@@ -575,7 +575,7 @@ end
 -- list finish meanwhile. None registers a setting, so the root's Defaults button leaves them (SET-R13).
 ---@param layout SettingsLayout
 local function gettingStarted(layout)
-	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_GETTING_STARTED))
+	layout:AddInitializer(ns.CreateSettingsListSectionHeaderInitializer(L.SETTINGS_GETTING_STARTED))
 	layout:AddInitializer(customRow(function(frame)
 		local own = widgets(frame)
 		local buttonLeft = rowButton(own, L.SETTINGS_SHOW_ME_AROUND, function()
@@ -643,15 +643,15 @@ local function buildRoot(category, layout, anyModuleOn)
 	if not anyModuleOn then
 		layout:AddInitializer(textRow(L.SETTINGS_NO_MODULE))
 	end
-	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_MODULES))
+	layout:AddInitializer(ns.CreateSettingsListSectionHeaderInitializer(L.SETTINGS_MODULES))
 	for _, line in ipairs(statusList()) do
 		layout:AddInitializer(line)
 	end
 	layout:AddInitializer(textRow(L.SETTINGS_MODULES_NOTE))
 	gettingStarted(layout)
-	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.HELP_CHART))
+	layout:AddInitializer(ns.CreateSettingsListSectionHeaderInitializer(L.HELP_CHART))
 	layout:AddInitializer(fieldReportRow())
-	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_SAVING))
+	layout:AddInitializer(ns.CreateSettingsListSectionHeaderInitializer(L.SETTINGS_SAVING))
 	local reminder = Settings.RegisterProxySetting(
 		category,
 		"Pagle_Core_reloadReminder",
@@ -665,8 +665,8 @@ local function buildRoot(category, layout, anyModuleOn)
 			ns.db.profile.reloadReminder = value
 		end
 	)
-	Settings.CreateCheckbox(
-		category,
+	ns.CreateCheckbox(
+		layout,
 		reminder,
 		ns.RenderText(L.SETTINGS_RELOAD_REMINDER_TOOLTIP, { reloadReminderStep = ns.RELOAD_REMINDER_STEP })
 	)
@@ -779,14 +779,14 @@ end
 local function moduleRow(page, layout, setting, variable, indented)
 	local kind = setting.kind
 	if kind == "checkbox" then
-		return Settings.CreateCheckbox(
-			page,
+		return ns.CreateCheckbox(
+			layout,
 			valueSetting(page, variable, Settings.VarType.Boolean, setting),
 			setting.tooltip
 		)
 	elseif kind == "slider" then
-		return Settings.CreateSlider(
-			page,
+		return ns.CreateSlider(
+			layout,
 			valueSetting(page, variable, Settings.VarType.Number, setting),
 			sliderOptions(setting),
 			setting.tooltip
@@ -802,7 +802,7 @@ local function moduleRow(page, layout, setting, variable, indented)
 			get = slider.get,
 			set = slider.set,
 		})
-		local initializer = CreateSettingsCheckboxSliderInitializer(
+		local initializer = ns.CreateSettingsCheckboxSliderInitializer(
 			valueSetting(page, variable, Settings.VarType.Boolean, setting),
 			setting.label,
 			setting.tooltip,
@@ -818,8 +818,8 @@ local function moduleRow(page, layout, setting, variable, indented)
 		if value == nil then
 			value = setting.get()
 		end
-		return Settings.CreateDropdown(
-			page,
+		return ns.CreateDropdown(
+			layout,
 			valueSetting(page, variable, type(value), setting),
 			dropdownOptions(setting),
 			setting.tooltip
@@ -827,14 +827,14 @@ local function moduleRow(page, layout, setting, variable, indented)
 	end
 	local initializer
 	if kind == "header" then
-		initializer = CreateSettingsListSectionHeaderInitializer(setting.label, setting.tooltip)
+		initializer = ns.CreateSettingsListSectionHeaderInitializer(setting.label, setting.tooltip)
 	elseif kind == "button" then
 		-- A button row's label sits beside the button and its caption is on it. Without a caption, the label is the
 		-- caption and the row has no label (SET-R2).
 		local onClick = thenRedrawKeys(setting.onClick)
 		if setting.caption then
 			initializer =
-				CreateSettingsButtonInitializer(setting.label, setting.caption, onClick, setting.tooltip, true)
+				ns.CreateSettingsButtonInitializer(setting.label, setting.caption, onClick, setting.tooltip, true)
 		else
 			initializer = labelButtonRow(setting, onClick)
 		end

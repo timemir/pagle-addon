@@ -8,6 +8,7 @@
 --   loaded.client.settings.page("Trackers")             -- category(name), or an error
 --   loaded.client.settings.rowNamed(rows, "Toast style") -- a shown row by label; dropdownOf(row), optionValues(row)
 --                                                          and notesOf(row) read a slot dropdown row
+--   loaded.client.settings.menuTemplatesOf(row)         -- the element templates a native dropdown's options draw on
 
 ---@class FakeClient
 ---@field settings FakeSettings The Settings panel.
@@ -40,6 +41,8 @@
 ---@field valueChanged fun(setting: table) What the panel does when a setting's value changes.
 ---@field textsOf fun(frame: table): string[] The text of every shown widget in a row's frame, depth first.
 ---@field buttonsOf fun(frame: table): table[] The shown buttons in a row's frame, depth first.
+---@field menuTemplatesOf fun(row: { initializer: table, frame: table }): string[] The element templates a shown
+--- native dropdown row's options draw on when its menu opens, in order.
 ---@field statusList fun(): string[], table[] Shows the Settings root ("Pagle") and returns the texts and the shown
 --- buttons of its status list, a row per roster Module, in order (SET-R11).
 ---@field page fun(name: string): table The registered category named `name`, as category reads it; an error if none.
@@ -69,13 +72,28 @@ local GREYING_TEMPLATES = {
 	SettingButtonControlTemplate = true,
 }
 
+-- The Blizzard template `template` is, or inherits from through the loaded addons' XML (a Pagle control template
+-- inherits Blizzard's whole, SET-R7): what its frames do is that template's. Set by the returned function below,
+-- once the client is known.
+---@type fun(template: string?): string?
+local nativeOf = function(template)
+	return template
+end
+
 -- A Settings list row initializer, as Blizzard_Settings_Shared's SettingsListElementInitializer behaves for what
--- Core calls. Its default InitFrame reads the row's setting value, as a control does when shown.
+-- Core calls. Its default InitFrame reads the row's setting value, as a control does when shown. `native` is the
+-- Blizzard template its frames behave as (nativeOf).
 ---@param template string
 ---@param data table?
 local function newInitializer(template, data)
-	local initializer =
-		{ template = template, data = data or {}, searchTags = {}, modifyPredicates = {}, shownPredicates = {} }
+	local initializer = {
+		template = template,
+		native = nativeOf(template),
+		data = data or {},
+		searchTags = {},
+		modifyPredicates = {},
+		shownPredicates = {},
+	}
 	function initializer:GetData()
 		return self.data
 	end
@@ -177,8 +195,20 @@ local function newInitializer(template, data)
 			frame.valueLabel = formatter and formatter(frame.sliderValue) or nil
 			frame.sliderEnabled = frame.value == true
 		end
-		if GREYING_TEMPLATES[self.template] then
+		if GREYING_TEMPLATES[self.native] then
 			frame.enabled = self:EvaluateModifyPredicates()
+		end
+		if self.native == "SettingButtonControlTemplate" then
+			-- As SettingButtonControlMixin:Init draws the row: its label (`name`, "" for none) in Text, through
+			-- SettingsListElementMixin:Init, and `buttonText` on a button that runs `buttonClick`; a function
+			-- `buttonText` is called each time the row is drawn (EvaluateName) (Blizzard_Settings_Shared/
+			-- Blizzard_SettingControls.lua at the forever 1.60.1 commit).
+			frame.Text = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+			frame.Text:SetText(self.data.name)
+			frame.Button = newWidget("Button", frame)
+			local caption = self.data.buttonText
+			frame.Button:SetText(type(caption) == "function" and caption() or caption)
+			frame.Button:SetScript("OnClick", self.data.buttonClick)
 		end
 		if frame.Init then
 			frame:Init(self)
@@ -213,6 +243,14 @@ end
 ---@param client FakeClient
 ---@param stubs table<string, any> The fake client's stubs, which this adds to.
 return function(client, stubs)
+	nativeOf = function(template)
+		local seen = 0
+		while client.templates[template] and client.templates[template].inherits and seen < 10 do
+			template = client.templates[template].inherits
+			seen = seen + 1
+		end
+		return template
+	end
 	local settings = { categories = {}, addOnCategories = {}, opened = {}, variables = {}, shown = {} }
 	client.settings = settings
 	settings.panel = newWidget("Frame")
@@ -339,6 +377,41 @@ return function(client, stubs)
 			return container
 		end,
 		CreateElementInitializer = newInitializer,
+		-- Settings.CreateSettingInitializer: SettingsInbound's initializer, tagged for search with its setting's name.
+		CreateSettingInitializer = function(template, data)
+			local initializer = newInitializer(template, data)
+			if data.setting then
+				initializer:AddSearchTags(data.setting:GetName())
+			end
+			return initializer
+		end,
+		-- Settings.CreateControlInitializer: CreateSettingInitializerData's data on `template`, not added to a layout.
+		CreateControlInitializer = function(template, setting, options, tooltip)
+			return stubs.Settings.CreateSettingInitializer(
+				template,
+				{ setting = setting, name = setting:GetName(), options = options or {}, tooltip = tooltip }
+			)
+		end,
+		-- Settings.CreateDropdownOptionInserter: a highlight radio per option, on Blizzard's shared element template
+		-- (MenuTemplates.CreateHighlightRadio), each picking its value through the setting (SetSelected).
+		CreateDropdownOptionInserter = function(setting, optionsFunc)
+			return function(_, rootDescription)
+				for _, option in ipairs(optionsFunc()) do
+					rootDescription:CreateHighlightRadio(option.label, function(data)
+						return setting:GetValue() == data.value
+					end, function(data)
+						setting:SetValue(data.value)
+					end, option)
+				end
+			end
+		end,
+		-- Settings.InitDropdown: the dropdown's menu generator, which lays the menu out and inserts the options.
+		InitDropdown = function(dropdown, setting, elementInserter)
+			dropdown.menuGenerator = function(_, rootDescription)
+				rootDescription:SetGridMode(1)
+				elementInserter(setting, rootDescription)
+			end
+		end,
 	}
 	stubs.CreateSettingsListSectionHeaderInitializer = function(name, tooltip)
 		return newInitializer("SettingsListSectionHeaderTemplate", { name = name, tooltip = tooltip })
@@ -352,21 +425,6 @@ return function(client, stubs)
 		if addSearchTags then
 			initializer:AddSearchTags(name, buttonText)
 		end
-		-- As SettingButtonControlMixin:Init draws the row: its label (`name`, "" for none) in Text, through
-		-- SettingsListElementMixin:Init, and `buttonText` on a button that runs `buttonClick`; a function `buttonText`
-		-- is called each time the row is drawn (EvaluateName) (Blizzard_Settings_Shared/Blizzard_SettingControls.lua at
-		-- the forever 1.60.1 commit). Blizzard's own template does this, so the fake sets it raw, past the guard
-		-- against Pagle's writes.
-		local initFrame = initializer.InitFrame
-		rawset(initializer, "InitFrame", function(self, frame)
-			initFrame(self, frame)
-			frame.Text = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-			frame.Text:SetText(self.data.name)
-			frame.Button = newWidget("Button", frame)
-			local caption = self.data.buttonText
-			frame.Button:SetText(type(caption) == "function" and caption() or caption)
-			frame.Button:SetScript("OnClick", self.data.buttonClick)
-		end)
 		return initializer
 	end
 	-- CreateSettingsCheckboxSliderInitializer (Blizzard_SettingControls.lua at the forever 1.60.1 commit): the data
@@ -503,7 +561,7 @@ return function(client, stubs)
 			if data.cbSetting == setting or data.sliderSetting == setting then
 				initializer:InitFrame(frame)
 			end
-			if watched and GREYING_TEMPLATES[initializer.template] then
+			if watched and GREYING_TEMPLATES[initializer.native] then
 				frame.enabled = initializer:EvaluateModifyPredicates()
 			end
 		end
@@ -548,6 +606,60 @@ return function(client, stubs)
 			end
 		end
 		return texts, buttons
+	end
+
+	-- A root menu description as Blizzard_Menu's, as far as a Settings dropdown's options use one: each highlight
+	-- radio's element factory draws it on Blizzard's shared option template until one is set (MenuTemplates.lua's
+	-- CreateMenuElementDescription and CreateHighlightRadio; Menu.lua's SetElementFactory and
+	-- EnumerateElementDescriptions).
+	local function newRootDescription()
+		local root = { elements = {} }
+		function root.SetGridMode() end
+		function root:CreateHighlightRadio(text, isSelected, setSelected, data)
+			local element = { text = text, isSelected = isSelected, setSelected = setSelected, data = data }
+			local factory = function(make)
+				make("WowMenuDropdownHighlightButtonTemplate")
+			end
+			function element.SetElementFactory(_, elementFactory)
+				factory = elementFactory
+			end
+			function element.CallFactory(_, make)
+				factory(make)
+			end
+			self.elements[#self.elements + 1] = element
+			return element
+		end
+		function root:EnumerateElementDescriptions()
+			return ipairs(self.elements)
+		end
+		return root
+	end
+
+	-- SettingsDropdownControlMixin:SetupDropdownMenu, which a template's own mixin may replace.
+	local function setupDropdownMenu(_, dropdown, setting, options, initTooltip, initializer)
+		local inserter = stubs.Settings.CreateDropdownOptionInserter(setting, options, initializer)
+		stubs.Settings.InitDropdown(dropdown, setting, inserter, initTooltip, initializer)
+	end
+
+	--- The element templates a shown native dropdown row's options draw on when its menu opens, in order, as
+	--- SettingsDropdownControlMixin:InitDropdown sets up its dropdown (through the frame's own SetupDropdownMenu when
+	--- its template's mixin gives one) and Blizzard_Menu's MenuMixin:SetMenuDescription calls each element's factory.
+	---@param row { initializer: table, frame: table }
+	---@return string[]
+	function settings.menuTemplatesOf(row)
+		local frame, initializer = row.frame, row.initializer
+		local dropdown = newWidget("Frame", frame)
+		local setup = frame.SetupDropdownMenu or setupDropdownMenu
+		setup(frame, dropdown, initializer:GetSetting(), initializer:GetOptions(), function() end, initializer)
+		local root = newRootDescription()
+		dropdown.menuGenerator(dropdown, root)
+		local templates = {}
+		for _, element in root:EnumerateElementDescriptions() do
+			element:CallFactory(function(template)
+				templates[#templates + 1] = template
+			end)
+		end
+		return templates
 	end
 
 	function settings.page(name)

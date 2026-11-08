@@ -173,10 +173,15 @@ function loadAddon(name, globals, options)
 				end
 				local text = xml:read("*a"):gsub("<!%-%-.-%-%->", "")
 				xml:close()
-				for attributes in text:gmatch("<Frame%s([^>]*)>") do
-					local template = attributes:match('name="([^"]+)"')
-					if template and attributes:match('virtual="true"') then
-						client.templates[template] = { mixin = attributes:match('mixin="([^"]+)"') }
+				for _, tag in ipairs({ "Frame", "Button" }) do
+					for attributes in text:gmatch("<" .. tag .. "%s([^>]*)>") do
+						local template = attributes:match('name="([^"]+)"')
+						if template and attributes:match('virtual="true"') then
+							client.templates[template] = {
+								mixin = attributes:match('mixin="([^"]+)"'),
+								inherits = attributes:match('inherits="([^"]+)"'),
+							}
+						end
 					end
 				end
 				local folder = published:match("^(.*)/[^/]*$")

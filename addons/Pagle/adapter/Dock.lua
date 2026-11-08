@@ -150,7 +150,7 @@ end)
 ---@param layout SettingsLayout
 ns.CoreSettingsRows.trackers = function(category, layout)
 	layout:AddInitializer(
-		CreateSettingsButtonInitializer(L.SETTINGS_TRACKER_POSITION, L.SETTINGS_TRACKER_RESET, function()
+		ns.CreateSettingsButtonInitializer(L.SETTINGS_TRACKER_POSITION, L.SETTINGS_TRACKER_RESET, function()
 			ns.dock:Reset()
 		end, L.SETTINGS_TRACKER_RESET_TOOLTIP, true)
 	)
@@ -167,5 +167,5 @@ ns.CoreSettingsRows.trackers = function(category, layout)
 			ns.dock:SetOnlyWhileFishing(value)
 		end
 	)
-	Settings.CreateCheckbox(category, whileFishing, L.SETTINGS_TRACKERS_WHILE_FISHING_TOOLTIP)
+	ns.CreateCheckbox(layout, whileFishing, L.SETTINGS_TRACKERS_WHILE_FISHING_TOOLTIP)
 end

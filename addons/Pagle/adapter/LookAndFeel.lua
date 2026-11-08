@@ -227,12 +227,12 @@ end
 function ns.BuildLookAndFeel(page, layout)
 	layout:AddInitializer(ns.SettingsTextRow(L.SETTINGS_LOOK_PARAGRAPH))
 	for _, section in ipairs(ns.LookAndFeelSections(ns.goods)) do
-		layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SHOP_CATEGORIES[section.category]))
+		layout:AddInitializer(ns.CreateSettingsListSectionHeaderInitializer(L.SHOP_CATEGORIES[section.category]))
 		for _, slot in ipairs(section.slots) do
 			ns.SlotDropdown(page, layout, slot, "look")
 		end
 	end
-	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_MORE_LOOKS))
+	layout:AddInitializer(ns.CreateSettingsListSectionHeaderInitializer(L.SETTINGS_MORE_LOOKS))
 	if ns.CollectionOffered() then
 		layout:AddInitializer(collectionRow())
 	end
