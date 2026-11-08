@@ -40,21 +40,16 @@ local function run(line)
 		ns.RunTrailer(rest)
 		return
 	end
-	-- `/pagle dev sign` (SIGN-R60) and `/pagle dev party` (ANN-R109, from 1.5.2) run here rather than in logic/Dev.lua's
-	-- table, which pagle-backend's ranked policy hashes (PRJ-R64). `sign` does nothing but say so while dev mode is off;
-	-- `party` is adapter/Party.lua's, which keeps the dev switch itself.
+	-- `/pagle dev sign` (SIGN-R60) runs here rather than in logic/Dev.lua's table, which pagle-backend's ranked policy
+	-- hashes (PRJ-R64); like every dev command it does nothing but say so while dev mode is off.
 	if name == "dev" then
-		local sub, subArgs = ns.ParseSlash(rest)
+		local sub, signArgs = ns.ParseSlash(rest)
 		if sub == "sign" then
 			if ns.db.global.dev then
-				ns.RunNewsSignDev(subArgs)
+				ns.RunNewsSignDev(signArgs)
 			else
 				print(ns.L.DEV_IS_OFF)
 			end
-			return
-		end
-		if sub == "party" then
-			ns.RunPartyDev(subArgs)
 			return
 		end
 	end
