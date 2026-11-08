@@ -37,6 +37,7 @@ local PAGLEDB_KEYS = {
 		"dock",
 		"books", -- core/book.md › Data (BOOK-R5)
 		"anglerTooltips", -- anglers-in-game.md › Data (VIEW-R30), from Track V
+		"partyHunts", -- the Party Hunts setting (LOG-R121, SET-R35), from 1.6
 	},
 }
 

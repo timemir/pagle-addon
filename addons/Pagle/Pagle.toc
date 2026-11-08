@@ -67,6 +67,7 @@ logic\Fonts.lua
 logic\Clock.lua
 logic\CatchLog.lua
 logic\Projections.lua
+logic\PartyCatches.lua
 logic\MinimapIcon.lua
 logic\Migrations.lua
 logic\Catalogue.lua
@@ -150,6 +151,7 @@ adapter\Sessions.lua
 adapter\Onboarding.lua
 adapter\Settings.lua
 adapter\Settings.xml
+adapter\PartyCatches.lua
 adapter\KeyCapture.lua
 adapter\KeyBindingRow.lua
 adapter\AnnouncementSettings.lua

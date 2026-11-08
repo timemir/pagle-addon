@@ -634,7 +634,8 @@ describe("the Party block (SET-R36)", function()
 			end
 			after = after or initializer:GetName() == "Toast position"
 		end
-		local expected = { "Party" }
+		-- From 1.6, Party Hunts heads the block (SET-R35).
+		local expected = { "Party", "Party Hunts" }
 		for _, label in ipairs(LABELS) do
 			expected[#expected + 1] = label
 		end
