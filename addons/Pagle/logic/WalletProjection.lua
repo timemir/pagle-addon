@@ -105,19 +105,21 @@ end
 -- Counts one record (SHOP-R10, SHOP-R11): the first U1 for a good adds the price it stores, the price paid, to
 -- `spent` and the good to `purchased`; a later one for the same good is ignored, so nothing costs twice. Each crate's
 -- U1 counts and opens it (SHOP-R50). The first Companion entry marks the companion linked (SHOP-R29). A build entry
--- sets the rule set the crates after it are drawn under (SHOP-R53, LOG-R36), and changes no balance, so it doesn't
--- count. Every other kind, Casts and their Uncharted Catches too, concerns no wallet (SHOP-R96). Returns whether it
--- counted.
+-- sets the rule set the crates after it are drawn under (SHOP-R53, LOG-R36) and changes no balance; one that changes
+-- the rule set counts, so a live one hands it over at once and the shop shows and rolls the next crate under the rule
+-- set the projection draws it under. Every other kind, Casts and their Uncharted Catches too, concerns no wallet
+-- (SHOP-R96). Returns whether it counted: whether the snapshot changed.
 ---@param state PagleWalletState
 ---@param record PagleRecord
 ---@return boolean
 local function count(state, record)
 	if record.kind == "build" then
 		---@cast record PagleBuild
-		if type(record.rules) == "string" then
-			state.rules = record.rules
+		if type(record.rules) ~= "string" or record.rules == state.rules then
+			return false
 		end
-		return false
+		state.rules = record.rules
+		return true
 	elseif record.kind == "companion" then
 		if state.companion then
 			return false
