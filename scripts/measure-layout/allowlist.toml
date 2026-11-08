@@ -327,6 +327,14 @@ Russian's takes 140 of the 272. Accepted by the dev for 1.3.5."""
 [[allow]]
 kind = "cut"
 text = "*"
+stop = "ledger.journal.news"
+detail = "wider than its box: * wide in 3[0-3]?*"
+reason = """The news list's rows set each headline on one line, cut with the client's "…" at the row's width \
+(LED-R176); the chosen item's page has it whole. Measured on the tour's sample news (#658)."""
+
+[[allow]]
+kind = "cut"
+text = "*"
 stop = "core.announce.hp"
 reason = """"Completed for the party" (ANN-R111, #646): the tour's sample is the worst case, a run with a long event \
 name settled for four groupmates, and its line shrinks to its floor (0.6, adapter/PartyToast.lua) and is then cut \

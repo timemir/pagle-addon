@@ -553,6 +553,14 @@ part(function(fake, Pagle, ns)
 	end
 end)
 
+-- A news item's emblem drawn into a frame (Pagle.DrawNewsEmblem, core/news-sign.md › Contracts, from 1.6): the host
+-- keeps what Core's kit would draw as `newsEmblem`, { emblem, size }, or nil once cleared; drawing again replaces it.
+part(function(_, Pagle)
+	function Pagle.DrawNewsEmblem(host, emblem, size)
+		host.newsEmblem = emblem and { emblem = emblem, size = size } or nil
+	end
+end)
+
 -- Fitting a big window to the screen (core/README.md › Contracts), on Core's real logic/Fit.lua and the UIParent of
 -- the client fake.load gave the Module. It fits again on UI_SCALE_CHANGED and DISPLAY_SIZE_CHANGED, registered
 -- through Pagle.RegisterEvent at the first fit as Core's are, so the Module's client.fireGameEvent reaches them.

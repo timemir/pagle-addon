@@ -200,6 +200,8 @@ ns.Locale("esES", function(L)
 	L.FOLLOWING_LEGENDS = "Leyendas"
 	L.FOLLOWING_LEGENDS_COUNT = "{following_legends_count_1} de {following_legends_count_2}"
 	L.FOLLOWING_MORE = { many = "y {count:n} personajes más", one = "y {count:n} personaje más", other = "y {count:n} personajes más" }
+	L.FOLLOWING_NEWS = "Noticias »"
+	L.FOLLOWING_NEWS_NEW = { many = "Noticias: {count:n} nuevas »", one = "Noticias: {count:n} nueva »", other = "Noticias: {count:n} nuevas »" }
 	L.FOLLOWING_NO_COMPANION = "sin Companion"
 	L.FOLLOWING_ROW = "Nv {level:0} · {emblem} · {ledger:0}%"
 	L.FOLLOWING_ROW_NO_PRESTIGE = "Nv {level:0} · {ledger:0}%"
@@ -283,6 +285,17 @@ ns.Locale("esES", function(L)
 	L.MONTHS = { "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre" }
 	L.MONTHS_SHORT = { "ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic" }
 	L.NAME_UNKNOWN = "..."
+	L.NEWS_AGE_DAYS = "{days:0} d"
+	L.NEWS_AGE_HOURS = "{hours:0} h"
+	L.NEWS_CARD = "Ver la ficha de {name} »"
+	L.NEWS_EMPTY = {
+		none = { "Las noticias llegan con el Companion.", "Actualiza el Pagle Companion para traer noticias de los Pescadores que sigues.", "Sus fichas siguen en la página de Siguiendo." },
+		ok = { "No hay noticias este mes.", "Cuando un Pescador al que sigues pesca una Leyenda, alcanza un Prestigio o completa el Libro, aparece aquí, y en el cartel en tu próximo inicio de sesión." },
+	}
+	L.NEWS_FOLLOW = "Síguelo desde su página en la web de Pagle."
+	L.NEWS_KICKER = "La marea matinal"
+	L.NEWS_LINE = "De los Pescadores que sigues, y los primeros de tu región este mes. Lo que muestra el cartel se elige en Ajustes."
+	L.NEWS_TITLE = "Noticias"
 	L.NEW_CURIO_STAMP = "¡Nueva!"
 	L.NEW_CURIO_TITLE = "Nueva curiosidad"
 	L.NEW_IN_ZONE_STAMP = "Nuevo aquí"
@@ -346,6 +359,7 @@ ns.Locale("esES", function(L)
 	L.TOUR_FISH = "el Diario de peces: la Especie más capturada"
 	L.TOUR_HOME = "el Diario de peces: Inicio"
 	L.TOUR_LEGENDS = "el Diario de peces: Leyendas, en una capturada"
+	L.TOUR_NEWS = "el Diario de peces: las noticias, con noticias de ejemplo"
 	L.TOUR_SEARCH = "el Diario de peces: resultados de búsqueda del nombre de la Especie más capturada"
 	L.TOUR_TROPHY = "el Diario de peces: la Sala de trofeos, en una familia cobrada"
 	L.TOUR_ZONE = "el Diario de peces: la zona más pescada, con su Especie más capturada abierta"

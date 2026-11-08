@@ -188,59 +188,94 @@ describe("The news sign", function()
 		assert.is_nil(loaded.ns.NewsSignState())
 	end)
 
-	it("goes up at once on a right click, and opens the Journal and goes up on a left click (SIGN-R42)", function()
-		local loaded = devOn()
-		pagle(loaded, "dev sign astro legend")
-		run(loaded, 3)
-		local frame = loaded.ns.NewsSignFrame()
+	it(
+		"goes up at once on a right click, and on a left click, opening nothing for the dev command's sign (SIGN-R42)",
+		function()
+			local loaded = loadCore({ BUILD_ENTRY })
+			loaded.client.addons.Pagle_Ledger = { metadata = { ["X-Pagle-API"] = "1" } }
+			local opened = {}
+			loaded.env.Pagle.RegisterModule({
+				name = "Ledger",
+				title = "Ledger",
+				order = 10,
+				news = function(...)
+					opened[#opened + 1] = { ... }
+				end,
+			})
+			enterWorld(loaded)
+			pagle(loaded, "dev on")
+			assert.is_function(loaded.ns.NewsOffered and loaded.ns.NewsOffered())
+			pagle(loaded, "dev sign astro legend")
+			run(loaded, 3)
+			local frame = loaded.ns.NewsSignFrame()
 
-		frame:GetScript("OnMouseDown")(frame, "RightButton")
-		frame:GetScript("OnClick")(frame, "RightButton")
+			frame:GetScript("OnMouseDown")(frame, "RightButton")
+			frame:GetScript("OnClick")(frame, "RightButton")
+			assert.is_true(loaded.ns.NewsSignState().exiting)
+			run(loaded, 1.2)
+			assert.is_nil(loaded.ns.NewsSignState())
+
+			pagle(loaded, "dev sign coral zone")
+			run(loaded, 3)
+			frame:GetScript("OnMouseDown")(frame, "LeftButton")
+			frame:GetScript("OnClick")(frame, "LeftButton")
+			assert.are.same({}, opened)
+			assert.is_true(loaded.ns.NewsSignState().exiting)
+		end
+	)
+
+	-- Core in the world with a Ledger registered whose def.news is `news` (none when nil), then a sign dropped with a
+	-- news item's words and its id, as the decision drops one (SIGN-R14, SIGN-R19).
+	local function itemDropped(news)
+		local loaded = loadCore({ BUILD_ENTRY })
+		loaded.client.addons.Pagle_Ledger = { metadata = { ["X-Pagle-API"] = "1" } }
+		loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10, news = news })
+		enterWorld(loaded)
+		local item = loaded.ns.NewsSignSample("legend")
+		item.id = "3f9a0c1d2e4b5a69"
+		loaded.ns.DropNewsSign("wood", item)
+		run(loaded, 3)
+		return loaded, loaded.ns.NewsSignFrame()
+	end
+
+	it(
+		"opens the Fish Journal's news list on the item shown, through def.news, and goes up on a left click (SIGN-R42, VIEW-R46)",
+		function()
+			local opened = {}
+			local loaded, frame = itemDropped(function(...)
+				opened[#opened + 1] = { ... }
+			end)
+
+			frame:GetScript("OnMouseDown")(frame, "LeftButton")
+			frame:GetScript("OnClick")(frame, "LeftButton")
+
+			assert.are.same({ { "3f9a0c1d2e4b5a69" } }, opened)
+			assert.is_true(loaded.ns.NewsSignState().exiting)
+		end
+	)
+
+	it("only goes up on a left click when no On Module offers def.news: the Ledger off (SIGN-R42, VIEW-R46)", function()
+		local loaded, frame = itemDropped(nil)
+
+		frame:GetScript("OnMouseDown")(frame, "LeftButton")
+		frame:GetScript("OnClick")(frame, "LeftButton")
+
 		assert.is_true(loaded.ns.NewsSignState().exiting)
 		run(loaded, 1.2)
 		assert.is_nil(loaded.ns.NewsSignState())
-
-		local opened = 0
-		loaded.ns.OpenNewsSignNews = function()
-			opened = opened + 1
-		end
-		pagle(loaded, "dev sign coral zone")
-		run(loaded, 3)
-		frame:GetScript("OnMouseDown")(frame, "LeftButton")
-		frame:GetScript("OnClick")(frame, "LeftButton")
-		assert.are.equal(1, opened)
-		assert.is_true(loaded.ns.NewsSignState().exiting)
 	end)
 
-	it("opens the Fish Journal through the Ledger's journal view on a left click (SIGN-R42)", function()
-		local loaded = loadCore({ BUILD_ENTRY })
-		loaded.client.addons.Pagle_Ledger = { metadata = { ["X-Pagle-API"] = "1" } }
-		local opened = 0
-		loaded.env.Pagle.RegisterModule({
-			name = "Ledger",
-			title = "Ledger",
-			order = 10,
-			views = {
-				{
-					id = "journal",
-					label = "Fish Journal",
-					open = function()
-						opened = opened + 1
-					end,
-				},
-			},
-		})
-		enterWorld(loaded)
-		pagle(loaded, "dev on")
-		pagle(loaded, "dev sign wood legend")
-		run(loaded, 3)
-		local frame = loaded.ns.NewsSignFrame()
+	it("reports a def.news that raises, and still goes up (SIGN-R42, VIEW-R46)", function()
+		local loaded, frame = itemDropped(function()
+			error("News broke")
+		end)
 
 		frame:GetScript("OnMouseDown")(frame, "LeftButton")
 		frame:GetScript("OnClick")(frame, "LeftButton")
 
-		assert.are.equal(1, opened)
 		assert.is_true(loaded.ns.NewsSignState().exiting)
+		assert.are.equal(1, #loaded.client.errors)
+		assert.matches("News broke", loaded.client.errors[1])
 	end)
 
 	it("keeps where it's dragged to as fractions of the screen (SIGN-R20)", function()
@@ -328,4 +363,46 @@ describe("The news sign's art", function()
 			end
 		end
 	end)
+end)
+
+describe("Pagle.DrawNewsEmblem", function()
+	-- The files of the textures shown on `frame` and its children.
+	local function shownFiles(frame)
+		local files = {}
+		local function walk(region)
+			for _, child in ipairs(region.children or {}) do
+				if child.kind == "Texture" and child.shown ~= false and child.texture then
+					files[#files + 1] = child.texture
+				end
+				if child.shown ~= false then
+					walk(child)
+				end
+			end
+		end
+		walk(frame)
+		return files
+	end
+
+	it(
+		"draws an item's emblem into any frame, as the sign's slot draws it, for the Journal's list (LED-R176, SIGN-R13)",
+		function()
+			local loaded = enterWorld(loadCore({ BUILD_ENTRY }))
+			local frame = loaded.env.CreateFrame("Frame", nil, loaded.env.UIParent)
+
+			loaded.env.Pagle.DrawNewsEmblem(frame, { sign = "laurel" }, 96)
+			assert.are.same({ "Interface\\AddOns\\Pagle\\media\\sign\\SignCommon" }, shownFiles(frame))
+
+			-- drawn again, the new emblem replaces the old
+			loaded.env.Pagle.DrawNewsEmblem(
+				frame,
+				{ file = "Interface\\AddOns\\Pagle\\media\\crests\\fish\\13422", fill = 0.92 },
+				96
+			)
+			assert.are.same({ "Interface\\AddOns\\Pagle\\media\\crests\\fish\\13422" }, shownFiles(frame))
+
+			-- and none clears it
+			loaded.env.Pagle.DrawNewsEmblem(frame, nil, 96)
+			assert.are.same({}, shownFiles(frame))
+		end
+	)
 end)
