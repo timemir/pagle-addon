@@ -263,6 +263,7 @@ Grouped by topic; the rules live in the linked file.
 | `Pagle.GetCompanionState()`, `Pagle.GetPushedContent(kind)` | state string, items | [pushed-content.md](pushed-content.md#contracts) |
 | `Pagle.GetFollowedAnglers()` | `{ state, anglers }` | [anglers-in-game.md](anglers-in-game.md#contracts) |
 | `Pagle.GetNews()`, `MarkNewsSeen(ids?)`, `NewsWords(item)` (from 1.6) | `{ state, items }`; nothing; `PagleNewsSignNews` without `more` | [anglers-in-game.md](anglers-in-game.md#contracts) |
+| `Pagle.DrawNewsEmblem(host, emblem?, size)` (from 1.6) | nothing; draws a `NewsWords` emblem into `host`, `size` across, as the Wood look's slot does (SIGN-R13), nil clearing it | [news-sign.md](news-sign.md#contracts) |
 | `Pagle.Animate(owner, animations, onDone?)`, `Cue(owner, seconds, fn)`, `StopMotion(owner)`, `EASE`, `Bezier(x1, y1, x2, y2)` | Core's one motion driver | announcements.md |
 | `Pagle.WheelScroll(scroll, delta, options?)` | a mouse wheel notch: a third of the view, gliding | [announcements.md](announcements.md#paglewheelscrollscroll-delta-options) |
 | `Pagle.NewPrestigeFrame(parent)`, `GetPrestigeFrame(rank)`, `SetPrestigeEmblem(texture, rank, size)`, `PrestigeEmblemMarkup(rank, size)` | a Prestige frame, with `SetRank`, `GetWell`, `GetPin`, `Play` and `Stop`; a rank's frame `{ key, moving }`; its emblem on a texture or in a line | [here](#paglenewprestigeframeparent) |

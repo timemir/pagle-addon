@@ -88,7 +88,7 @@ end
 -- its red wax dot when new, its kicker, its headline and its age, choosing it; the chosen one marked.
 ---@param context LedgerSpreadContext
 ---@param sorted PagleNewsItem[]
----@param words PagleNewsWords[]
+---@param words PagleNewsSignNews[]
 ---@param chosen integer
 ---@return LedgerBlock[]
 local function list(context, sorted, words, chosen)
@@ -115,7 +115,7 @@ end
 -- `name`, never a character (SIGN-R11).
 ---@param context LedgerSpreadContext
 ---@param item PagleNewsItem
----@param words PagleNewsWords
+---@param words PagleNewsSignNews
 ---@return LedgerBlock[]
 local function card(context, item, words)
 	local L = ns.L

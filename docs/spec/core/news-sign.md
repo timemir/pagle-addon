@@ -99,6 +99,9 @@ ns.NewsSignState()               -- nil, or { look, exiting, static } for a spec
 ns.NewsSignFrame()               -- PagleNewsSign, once made
 ns.NewsSignSample(kind, more?)   -- SIGN-R60's sample news
 ns.DecideNewsSign()              -- from 1.6: SIGN-R14's decision, run once a session after the drop delay
+ns.OpenNewsSignNews(id?)         -- from 1.6: the left click (SIGN-R42): ns.OpenNews(id) (VIEW-R46); a sample (no id) opens nothing
+Pagle.DrawNewsEmblem(host, emblem?, size) -- from 1.6: an emblem as the Wood look's slot draws it (SIGN-R13), size units
+                                 -- across, into `host`; the Fish Journal's news list draws it at 96 (LED-R176)
 
 ---@class PagleNewsSignNews
 ---@field kind string     -- SIGN-R10

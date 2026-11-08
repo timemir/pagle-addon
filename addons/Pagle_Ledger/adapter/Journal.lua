@@ -128,12 +128,6 @@ function ns.JournalGoods()
 	}
 end
 
--- The news on a Core without the news reader (before #656's Pagle.GetNews, VIEW-R42): none, as with no Companion.
----@return PagleNews
-local function noNews()
-	return { state = "absent", items = {} }
-end
-
 -- Does nothing: what the news list marks seen while it shows the tour's sample (CORE-R68).
 local function markNothing() end
 
@@ -144,9 +138,6 @@ function Journal:Context() -- luacheck: no self
 	local state = ns.StateNow()
 	-- the one Journal's, so a caller that reads it without the book (Titles' specs) reads it too
 	local sample = ns.journal and ns.journal.newsSample
-	-- the news calls are the news reader's (VIEW-R42–R45), read as a table's so this builds on a Core before them
-	local core = Pagle --[[@as table]]
-	local newsWords = core.NewsWords
 	if not state then
 		return { updating = true, now = GetServerTime(), formatNumber = ns.FormatCount, text = ns.journalText }
 	end
@@ -183,12 +174,12 @@ function Journal:Context() -- luacheck: no self
 		-- Home's Following line and the Following spread read the Followed Anglers as they draw (LED-R163)
 		followedAnglers = Pagle.GetFollowedAnglers,
 		-- the Following spread's News link and the news list read the news as they draw (LED-R163, LED-R176–R179)
-		-- (with no words to draw them in, a Core before the news reader, there is no news to read)
-		news = not newsWords and noNews or sample and function()
+		-- (VIEW-R42–R45), or the tour's sample in place of the player's news, marking nothing (CORE-R68)
+		news = sample and function()
 			return sample
-		end or core.GetNews,
-		newsWords = newsWords,
-		markNewsSeen = sample and markNothing or core.MarkNewsSeen,
+		end or Pagle.GetNews,
+		newsWords = Pagle.NewsWords,
+		markNewsSeen = sample and markNothing or Pagle.MarkNewsSeen,
 	}
 end
 

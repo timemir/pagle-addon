@@ -230,32 +230,34 @@ describe("the Fish Journal's tour stops (CORE-R65, CORE-R68)", function()
 				itemNames = NAMES,
 				areaNames = ZONES,
 				id = false,
-				-- the news API (VIEW-R42–R45), stubbed until #656 lands on FakePagle: the player's own news is one item
+				-- the player's own news (VIEW-R42–R45): one new Legend of Ada Brook's, in the news example's file
+				following = (function()
+					local data = anglerFileExamples().news
+					data.generatedAt = SERVER_TIME - 600
+					data.news = {
+						{
+							id = "3f9a0c1d2e4b5a69",
+							kind = "legend",
+							time = SERVER_TIME - 60,
+							angler = 1,
+							name = "Ada Brook",
+							region = "",
+							item = 19805,
+							rank = 0,
+							key = "",
+							text = "",
+							zone = 0,
+							length = 0,
+						},
+					}
+					return data
+				end)(),
 				modules = function(f)
-					f.Pagle.GetNews = function()
-						return {
-							state = "ok",
-							items = {
-								{
-									id = "3f9a0c1d2e4b5a69",
-									kind = "legend",
-									time = SERVER_TIME,
-									angler = 1,
-									name = "Ada",
-								},
-							},
-						}
-					end
-					f.Pagle.NewsWords = function(item)
-						return {
-							kind = item.kind,
-							kicker = item.kind,
-							head = item.name .. " · " .. item.kind,
-							emblem = {},
-						}
-					end
+					f.global.news = { since = SERVER_TIME - 86400, seen = {} }
+					local markNewsSeen = f.Pagle.MarkNewsSeen
 					f.Pagle.MarkNewsSeen = function(ids)
 						marked[#marked + 1] = ids or "all"
+						return markNewsSeen(ids)
 					end
 				end,
 			})
@@ -272,23 +274,20 @@ describe("the Fish Journal's tour stops (CORE-R65, CORE-R68)", function()
 					heads[#heads + 1] = block.text
 				end
 			end
-			assert.are.same({
-				"Kukli Emnabi · first",
-				"Kukli Emnabi · legend",
-				"Kukli Emnabi · prestige",
-				"Kukli Emnabi · ledger",
-				"Kukli Emnabi · colour",
-				"Kukli Emnabi · hunt",
-				"Kukli Emnabi · zone",
-				"Kukli Emnabi · monster",
-				"Grimtusk · region",
-			}, heads)
+			-- the sample's every kind, in Core's words (Pagle.NewsWords), newest first
+			local sample = {}
+			for i, item in ipairs(loaded.ns.TourNewsSample(SERVER_TIME).items) do
+				sample[i] = fake.Pagle.NewsWords(item).head
+			end
+			assert.are.equal(9, #heads)
+			assert.are.same(sample, heads)
 
 			fake.wait(60)
 			assert.are.same({}, marked)
 			assert.is_nil(journal.newsSample)
 			journal:Open("news")
-			assert.are.equal("Ada · legend", blockOfKind(journal.pages.right, "title").text)
+			local own = fake.Pagle.GetNews().items[1]
+			assert.are.equal(fake.Pagle.NewsWords(own).head, blockOfKind(journal.pages.right, "title").text)
 			assert.are.same({ "all" }, marked)
 		end
 	)

@@ -50,31 +50,8 @@ local ns = select(2, ...)
 ---                                     -- (LED-R171); never nil on a Journal context once the Collection has noted
 ---@field news? fun(): PagleNews       -- Pagle.GetNews (VIEW-R42), called at each drawing of the Following spread and
 ---                                     -- the news list (LED-R163, LED-R176)
----@field newsWords? fun(item: PagleNewsItem): PagleNewsWords -- Pagle.NewsWords (VIEW-R45): an item's words and emblem
+---@field newsWords? fun(item: PagleNewsItem): PagleNewsSignNews -- Pagle.NewsWords (VIEW-R45): an item's words and emblem
 ---@field markNewsSeen? fun()           -- Pagle.MarkNewsSeen() (VIEW-R43): marks every item seen (LED-R177)
-
---- The news as Core hands it out (VIEW-R42): its state and its items in the file's order, fresh copies.
----@class PagleNews
----@field state "ok"|"none"|"absent"|"expired"
----@field items PagleNewsItem[]
-
---- A news item (VIEW-R41, VIEW-R42): a used line of the news block, IGV Contracts' `news-line`, with `new`.
----@class PagleNewsItem
----@field id string
----@field kind string
----@field time integer
----@field angler integer  -- the followed Angler's place in GetFollowedAnglers' order, 0 for none (a region headline's)
----@field name string     -- the Angler's name, never a character's (SIGN-R11)
----@field new boolean
-
---- An item's words and emblem as the sign draws them (VIEW-R45, SIGN-R12, SIGN-R13): PagleNewsSignNews without its
---- more line.
----@class PagleNewsWords
----@field kind string
----@field kicker string?
----@field head string
----@field detail string?
----@field emblem table
 
 --- A Species' fish crest, as the varieties spread's foot shows it (VAR-R12, VAR-R24): its icon, and its name once Core
 --- has registered the crest's good (none before).
@@ -118,7 +95,7 @@ local ns = select(2, ...)
 ---@field prestigeSources? LedgerPrestigeSources     -- PagleLedgerDB.global.prestigeSources (LED-R150)
 ---@field collection LedgerCollectionDB              -- PagleLedgerDB.global.collection (LED-R171)
 ---@field news fun(): PagleNews                    -- Pagle.GetNews (VIEW-R42, LED-R163, LED-R176)
----@field newsWords fun(item: PagleNewsItem): PagleNewsWords -- Pagle.NewsWords (VIEW-R45, LED-R176)
+---@field newsWords fun(item: PagleNewsItem): PagleNewsSignNews -- Pagle.NewsWords (VIEW-R45, LED-R176)
 ---@field markNewsSeen fun()                         -- Pagle.MarkNewsSeen() (VIEW-R43, LED-R177)
 
 --- One thing drawn on a page, top to bottom, as data; adapter/JournalWidgets.lua draws each kind:

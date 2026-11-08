@@ -87,17 +87,14 @@ end)
 ---@field art Frame
 
 -- The chosen item's emblem (LED-R176): at 96 units, centred across the page, drawn by Core as the Wood look's slot
--- draws it (SIGN-R13), a variety the player hasn't caught as its silhouette. On a Core without the drawing (before
--- 1.6's news) the room stays empty.
+-- draws it (SIGN-R13), a variety the player hasn't caught as its silhouette.
 ns.RegisterJournalWidget("newsEmblem", function(parent)
 	local widget = ns.NewJournalWidget(parent) --[[@as LedgerNewsEmblemWidget]]
 	widget.art = CreateFrame("Frame", nil, widget)
 	widget.art:SetSize(EMBLEM, EMBLEM)
 	function widget.Fill(self, block, width)
 		ns.JournalAt(self.art, self, (width - EMBLEM) / 2, 0)
-		if Pagle.DrawNewsEmblem then
-			Pagle.DrawNewsEmblem(self.art, block.emblem, EMBLEM)
-		end
+		Pagle.DrawNewsEmblem(self.art, block.emblem, EMBLEM)
 		return EMBLEM + 4
 	end
 	return widget

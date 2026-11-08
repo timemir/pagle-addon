@@ -3,52 +3,38 @@
 -- marking, and the ways in: def.news(id), which the sign's left click calls (SIGN-R42, VIEW-R46), and the Following
 -- spread's link.
 --
--- The news API is #656's (Pagle.GetNews, Pagle.NewsWords, Pagle.MarkNewsSeen: VIEW-R42, VIEW-R43, VIEW-R45). Until it
--- lands on FakePagle, each spec stubs it on fake.Pagle (newsJournal below): GetNews hands out the items given, in the
--- file's order, and NewsWords words each item as the sign would. So these specs hold what the Ledger draws from those
--- calls; what Core words, and what it keeps from naming (VAR-R27), are Core's own specs'. The lines are IGV Contracts'
+-- The news is FakePagle's, over Core's real reader and words (VIEW-R42, VIEW-R43, VIEW-R45): each spec's lines ride
+-- in Pagle_Following's news block (newsJournal below), the floor and the seen items in fake.global.news (VIEW-R44), and
+-- each item is worded by Pagle.NewsWords (said below). So these specs hold what the Ledger draws from those calls; how
+-- Core words an item, and what it keeps from naming (VAR-R27), are Core's own specs'. The lines are IGV Contracts'
 -- `news-line` shape (pagle-backend's IGV-R60–R66), the Angler of `angler` 1 being Ada, Following.txt's.
 
 local HOUR, DAY = 3600, 24 * 3600
 
--- The sign's kickers in English (SIGN_KICKER, SIGN-R12), as the stub's words read them.
-local KICKERS = {
-	first = "First in the region",
-	legend = "A Legend",
-	prestige = "Prestige",
-	ledger = "The Ledger",
-	colour = "A rare colour",
-	hunt = "Hunt gold",
-	zone = "Zone Master",
-	monster = "A monster",
-	region = "Region headline",
+-- The names the fake client gives the fish the lines name (SIGN-R19).
+local ITEM_NAMES = {
+	[4603] = "Spotted Yellowtail",
+	[6291] = "Raw Brilliant Smallfish",
+	[6358] = "Oily Blackmouth",
+	[19805] = "Keefer's Angelfish",
 }
 
--- Pagle.NewsWords' stand-in (VIEW-R45): the kind's kicker, a headline naming the Angler, a detail for some kinds, and
--- an emblem. A variety is worded as Core words one the player hasn't caught (SIGN-R19, VAR-R27): its rarity and
--- species, never its name, on its silhouette.
----@param item table
----@return table
-local function newsWords(item)
-	local words = {
-		kind = item.kind,
-		kicker = KICKERS[item.kind],
-		head = item.name .. " · " .. item.kind,
-		emblem = { sign = "laurel" },
-	}
-	if item.kind == "colour" then
-		words.detail = "Epic Spotted Yellowtail"
-		words.emblem = { variety = { species = 4603, position = 8, silhouette = true } }
-	elseif item.kind == "hunt" then
-		words.detail = item.text
-		words.emblem = { sign = "medal" }
-	elseif item.kind == "region" then
-		words.detail = item.name
+-- Core's words for the item `id` of the news now (Pagle.NewsWords, VIEW-R45), as the sign and the list draw them.
+---@param fake FakePagle
+---@param id string
+---@return PagleNewsSignNews
+local function said(fake, id)
+	for _, item in ipairs(fake.Pagle.GetNews().items) do
+		if item.id == id then
+			return fake.Pagle.NewsWords(item)
+		end
 	end
-	return words
+	error("no news item " .. id)
 end
 
--- A news line (IGV Contracts' `news-line`), about Ada (`angler` 1) unless `fields` say otherwise, `age` seconds old.
+-- A news line (IGV Contracts' `news-line`), about Ada (`angler` 1) unless `fields` say otherwise, `age` seconds old;
+-- `new` is the spec's own mark, not the line's: newsJournal marks every item without it seen (VIEW-R44), so GetNews
+-- calls only those with it new (VIEW-R42).
 ---@param id string
 ---@param kind string
 ---@param age integer
@@ -102,10 +88,11 @@ local function file(age)
 	return data
 end
 
--- A Ledger on a fake whose Pagle_Following is `options.following` (file() by default; `false` for none) and whose
--- news is `news` ({ state, items }), with the news API stubbed (see the top), logged in, in the world, with the Journal
--- open on `options.id` with `options.args` (Home by default; `false` leaves it closed). Returns the fake, the loaded
--- Ledger, and each MarkNewsSeen call's argument ("all" for none).
+-- A Ledger on a fake whose news is `news` ({ state, items }), logged in, in the world, with the Journal open on
+-- `options.id` with `options.args` (Home by default; `false` leaves it closed). Pagle_Following is Ada's file()
+-- carrying `items` as its news block while `ok`; with none for `none`, written a day ago for `expired` and not
+-- installed for `absent`. The floor is 30 days back and every item not marked `new` is seen (VIEW-R44). Returns the
+-- fake, the loaded Ledger, and each Pagle.MarkNewsSeen call's argument ("all" for none), each still Core's own.
 ---@param news { state: string, items: table[]? }
 ---@param options table?
 ---@return FakePagle fake
@@ -114,29 +101,40 @@ end
 local function newsJournal(news, options)
 	options = options or {}
 	local marked = {}
-	local following = options.following
-	if following == nil then
-		following = file()
+	local following
+	if news.state ~= "absent" then
+		following = file(news.state == "expired" and DAY or nil)
+		if news.state ~= "none" then
+			following.news = {}
+			for i, item in ipairs(news.items or {}) do
+				local copy = {}
+				for key, value in pairs(item) do
+					copy[key] = value
+				end
+				copy.new = nil
+				following.news[i] = copy
+			end
+		end
 	end
 	local fake, loaded = openJournal({
 		globals = { BreakUpLargeNumbers = breakUpLargeNumbers },
 		characters = { { guid = PLAYER_GUID, name = "Kukli" } },
-		following = following or nil,
+		following = following,
 		modules = function(fake)
-			fake.Pagle.GetNews = function()
-				local items = {}
-				for i, item in ipairs(news.state == "ok" and news.items or {}) do
-					local copy = {}
-					for key, value in pairs(item) do
-						copy[key] = value
-					end
-					items[i] = copy
+			local seen = {}
+			for _, item in ipairs(news.items or {}) do
+				if not item.new then
+					seen[item.id] = item.time
 				end
-				return { state = news.state, items = items }
 			end
-			fake.Pagle.NewsWords = newsWords
+			fake.global.news = { since = SERVER_TIME - 30 * DAY, seen = seen }
+			for id, name in pairs(ITEM_NAMES) do
+				fake.itemNames[id] = name
+			end
+			local markNewsSeen = fake.Pagle.MarkNewsSeen
 			fake.Pagle.MarkNewsSeen = function(ids)
 				marked[#marked + 1] = ids or "all"
+				return markNewsSeen(ids)
 			end
 		end,
 		id = options.id,
@@ -191,7 +189,7 @@ describe("getting to the news list (LED-R178, LED-R176, LED-R125)", function()
 			assert.are.same({ id = "following" }, journal.pages.crumbs[2].place)
 			assert.are.same({ id = "following" }, journal.pages.back)
 			assert.is_true(journal.frame.back:IsShown())
-			assert.are.equal("Ada · hunt", blockOfKind(journal.pages.right, "title").text)
+			assert.are.equal(said(fake, "a01b2c3d4e5f6071").head, blockOfKind(journal.pages.right, "title").text)
 		end
 	)
 
@@ -201,11 +199,12 @@ describe("getting to the news list (LED-R178, LED-R176, LED-R125)", function()
 			local fake, loaded = newsJournal({ state = "ok", items = four() }, { id = false })
 			local journal = loaded.ns.journal
 
+			local monster = said(fake, "3f9a0c1d2e4b5a69").head
 			fake.ns.OpenNews()
-			assert.are.equal("Ada · monster", blockOfKind(journal.pages.right, "title").text)
+			assert.are.equal(monster, blockOfKind(journal.pages.right, "title").text)
 
 			fake.ns.OpenNews("ffffffffffffffff")
-			assert.are.equal("Ada · monster", blockOfKind(journal.pages.right, "title").text)
+			assert.are.equal(monster, blockOfKind(journal.pages.right, "title").text)
 		end
 	)
 
@@ -251,12 +250,12 @@ describe("getting to the news list (LED-R178, LED-R176, LED-R125)", function()
 	it('reads "News »" with nothing new, and shows in every state but absent (LED-R163)', function()
 		local seen = {}
 		for _, case in ipairs({
-			{ "ok", { state = "ok", items = { line("3f9a0c1d2e4b5a69", "legend", HOUR) } }, file() },
-			{ "none", { state = "none" }, file() },
-			{ "expired", { state = "expired" }, file(DAY) },
-			{ "absent", { state = "absent" }, false },
+			{ "ok", { state = "ok", items = { line("3f9a0c1d2e4b5a69", "legend", HOUR) } } },
+			{ "none", { state = "none" } },
+			{ "expired", { state = "expired" } },
+			{ "absent", { state = "absent" } },
 		}) do
-			local _, loaded = newsJournal(case[2], { id = "following", following = case[3] })
+			local _, loaded = newsJournal(case[2], { id = "following" })
 			local link = blockOfKind(loaded.ns.journal.pages.left, "link")
 			seen[case[1]] = link and link.text or false
 		end
@@ -269,8 +268,12 @@ describe("the news list's left page (LED-R176)", function()
 	it(
 		"reads its kicker, title and line, then a row per item, newest first, ties in the file's order (LED-R176)",
 		function()
-			local _, loaded = newsJournal({ state = "ok", items = four() }, { id = "news" })
+			local fake, loaded = newsJournal({ state = "ok", items = four() }, { id = "news" })
 			local left = loaded.ns.journal.pages.left
+			local function row(new, id, age)
+				local words = said(fake, id)
+				return { new, words.kicker, words.head, age }
+			end
 
 			assert.are.same({ kind = "kicker", text = "The Morning Tide" }, left[1])
 			assert.are.same({ kind = "title", text = "News" }, left[2])
@@ -279,10 +282,10 @@ describe("the news list's left page (LED-R176)", function()
 				text = "From the Anglers you follow, and your region's firsts this month. What the sign shows is set in Settings.",
 			}, left[3])
 			assert.are.same({
-				{ true, "A monster", "Ada · monster", "1 h" },
-				{ false, "A Legend", "Ada · legend", "1 h" },
-				{ true, "Hunt gold", "Ada · hunt", "3 h" },
-				{ false, "Region headline", "Grimtusk · region", "2 d" },
+				row(true, "3f9a0c1d2e4b5a69", "1 h"),
+				row(false, "0123456789abcdef", "1 h"),
+				row(true, "a01b2c3d4e5f6071", "3 h"),
+				row(false, "77c0e1f2a3b4c5d6", "2 d"),
 			}, rows(left))
 		end
 	)
@@ -313,17 +316,19 @@ describe("the news list's left page (LED-R176)", function()
 			for i, kind in ipairs(kinds) do
 				items[i] = line(("%016x"):format(i), kind, i * 60, { angler = kind == "region" and 0 or 1 })
 			end
-			local _, loaded = newsJournal({ state = "ok", items = items }, { id = "news" })
+			local fake, loaded = newsJournal({ state = "ok", items = items }, { id = "news" })
 			local journal = loaded.ns.journal
 
 			local drawn = rows(journal.pages.left)
 			assert.are.equal(9, #drawn)
-			for i, kind in ipairs(kinds) do
-				assert.are.same({ false, KICKERS[kind], "Ada · " .. kind, "0 h" }, drawn[i])
+			for i in ipairs(kinds) do
+				local words = said(fake, items[i].id)
+				assert.are.same({ false, words.kicker, words.head, "0 h" }, drawn[i])
 			end
 			-- each row as drawn: its kicker, its headline and its age, the headline on one line
 			local row = journal.shown.left.drawn.newsRow[9]
-			assert.are.same({ "Region headline", "Ada · region", "0 h" }, shownTexts(row))
+			local region = said(fake, items[9].id)
+			assert.are.same({ region.kicker, region.head, "0 h" }, shownTexts(row))
 			assert.is_false(row.head:CanWordWrap())
 		end
 	)
@@ -341,7 +346,7 @@ describe("the news list's left page (LED-R176)", function()
 	end)
 
 	it("chooses an item when its row is clicked, keeping the list's scroll (LED-R176, LED-R129)", function()
-		local _, loaded = newsJournal({ state = "ok", items = four() }, { id = "news" })
+		local fake, loaded = newsJournal({ state = "ok", items = four() }, { id = "news" })
 		local journal = loaded.ns.journal
 		assert.is_true(journal.pages.left[4].selected)
 
@@ -350,7 +355,7 @@ describe("the news list's left page (LED-R176)", function()
 		assert.are.same({ id = "news", args = { id = "77c0e1f2a3b4c5d6" } }, journal.router:Place())
 		assert.is_nil(journal.pages.left[4].selected)
 		assert.is_true(journal.pages.left[7].selected)
-		assert.are.equal("Grimtusk · region", blockOfKind(journal.pages.right, "title").text)
+		assert.are.equal(said(fake, "77c0e1f2a3b4c5d6").head, blockOfKind(journal.pages.right, "title").text)
 		assert.are.equal("news", journal.pages.subjects.left)
 	end)
 end)
@@ -359,23 +364,25 @@ describe("the news list's right page (LED-R176)", function()
 	it(
 		"shows the chosen item: its emblem at 96, kicker, headline, detail and date, and a followed Angler's card link (LED-R176, LED-R126)",
 		function()
-			local _, loaded = newsJournal(
+			local fake, loaded = newsJournal(
 				{ state = "ok", items = four() },
 				{ id = "news", args = { id = "a01b2c3d4e5f6071" } }
 			)
 			local journal = loaded.ns.journal
 			local right = journal.pages.right
+			local words = said(fake, "a01b2c3d4e5f6071")
 
 			assert.are.same({
-				{ kind = "newsEmblem", emblem = { sign = "medal" } },
-				{ kind = "kicker", text = "Hunt gold" },
-				{ kind = "title", text = "Ada · hunt" },
+				{ kind = "newsEmblem", emblem = words.emblem },
+				{ kind = "kicker", text = words.kicker },
+				{ kind = "title", text = words.head },
 				{ kind = "text", style = "italic", text = "The Night Run" },
 				{ kind = "text", color = "faded", text = "11 Oct" },
 				{ kind = "link", text = "See Ada's card »", place = { id = "following", args = { angler = 1 } } },
 			}, right)
 			local emblem = journal.shown.right.drawn.newsEmblem[1]
 			assert.are.same({ 96, 96 }, { emblem.art:GetSize() })
+			assert.are.same({ emblem = words.emblem, size = 96 }, emblem.art.newsEmblem) -- Core draws it (SIGN-R13)
 		end
 	)
 
@@ -410,12 +417,14 @@ describe("the news list's right page (LED-R176)", function()
 		"keeps a variety the player hasn't caught unnamed: only NewsWords' words and its silhouette (LED-R176, VAR-R27)",
 		function()
 			local colour = line("c0c0c0c0c0c0c0c0", "colour", HOUR, { item = 4603, key = "allgold", new = true })
-			local _, loaded = newsJournal({ state = "ok", items = { colour } }, { id = "news" })
+			local fake, loaded = newsJournal({ state = "ok", items = { colour } }, { id = "news" })
 			local journal = loaded.ns.journal
 			local right = journal.pages.right
+			local words = said(fake, colour.id)
 
-			assert.are.same({ variety = { species = 4603, position = 8, silhouette = true } }, right[1].emblem)
-			assert.are.equal("Epic Spotted Yellowtail", right[4].text)
+			assert.is_true(words.emblem.variety.silhouette)
+			assert.are.same(words.emblem, right[1].emblem)
+			assert.are.equal(words.detail, right[4].text)
 			local words = pageWords(loaded)
 			assert.is_nil(words:find("All-gold", 1, true))
 			assert.is_nil(words:find("allgold", 1, true))
@@ -437,7 +446,6 @@ describe("the news list's empty states (LED-R179)", function()
 		{
 			"absent, with no Companion",
 			{ state = "absent" },
-			false,
 			{
 				"The Companion keeps this page.",
 				"Anglers you follow on the Pagle website are brought into the game by the Pagle Companion.",
@@ -447,7 +455,6 @@ describe("the news list's empty states (LED-R179)", function()
 		{
 			"expired",
 			{ state = "expired" },
-			file(DAY),
 			{
 				"These pages are more than a day old.",
 				"Pagle has set them aside until the Companion brings fresh ones.",
@@ -457,7 +464,6 @@ describe("the news list's empty states (LED-R179)", function()
 		{
 			"none, a Companion that brings no news",
 			{ state = "none" },
-			file(),
 			{
 				"The news comes with the Companion.",
 				"Update the Pagle Companion to bring news of the Anglers you follow.",
@@ -467,7 +473,6 @@ describe("the news list's empty states (LED-R179)", function()
 		{
 			"ok with no item",
 			{ state = "ok", items = {} },
-			file(),
 			{
 				"No news this month.",
 				"When an Angler you follow lands a Legend, takes a Prestige or completes the Ledger, it shows here, and on the sign at your next login.",
@@ -475,11 +480,11 @@ describe("the news list's empty states (LED-R179)", function()
 		},
 	}) do
 		it(("keeps its kicker and title with %s, the right page blank (LED-R179)"):format(case[1]), function()
-			local _, loaded, marked = newsJournal(case[2], { id = "news", following = case[3] })
+			local _, loaded, marked = newsJournal(case[2], { id = "news" })
 			local pages = loaded.ns.journal.pages
 
 			local expected = { "The Morning Tide", "News" }
-			for _, text in ipairs(case[4]) do
+			for _, text in ipairs(case[3]) do
 				expected[#expected + 1] = text
 			end
 			assert.are.same(expected, blockTexts(pages.left))
