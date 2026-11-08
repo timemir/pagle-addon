@@ -295,7 +295,7 @@ A stored moment keeps: `module`, `moduleTitle`, `moduleOrder`, `kind`, `rung`, `
 ---@field expiresAt? integer     -- server time (ANN-R45)
 ---@field pastText? string       -- shown in the summary if it expired
 ---@field summaryOnly? boolean   -- ANN-R63
----@field partyCatch? string    -- from 1.6: the groupmate's source Catch ID of a Party Catch that completed a Hunt or settled a run (HNT-R185); Core sends ANN-R111's party toast. Never stored
+---@field partyCatch? string    -- from 1.6: the groupmate's source Catch ID, from the live Party Catch record (LOG-R116), of a Party Catch that completed a Hunt or settled a run (HNT-R185); Core sends ANN-R111's party toast. Never stored
 ---@field firstNote? string      -- the Margin note shown the first time a moment of this Module and kind shows (ONB-R53)
 ---@field seal? integer|"waves"|"book"|"quill"|"frame"|"crest" -- a banner's wax seal (UI); default "waves"
 ---@field frameRank? integer    -- with seal "frame": the prestige rank whose Prestige frame to show (ANN-R83)
