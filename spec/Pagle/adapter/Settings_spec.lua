@@ -135,12 +135,14 @@ describe("The Settings root with no Module On", function()
 				"Pagle menu",
 				"Show the minimap icon",
 				"Detach from the minimap",
+				"Minimap button style",
+				"Minimap button size",
 				"Pagle website",
 				"Show other Anglers on player tooltips",
 				"Catch log",
 				"Copy for the website",
 				"Translations: Español by fmartingr",
-			}, { unpack(texts, #texts - 25) })
+			}, { unpack(texts, #texts - 27) })
 			for _, name in ipairs({ "Ledger", "Hunts", "Stats", "Tackle Board", "QoL" }) do
 				assert.is_true(contains(texts, name))
 			end

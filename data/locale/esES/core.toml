@@ -2005,6 +2005,34 @@ en = "Detach from the minimap"
 value = "Te deja arrastrar el botón de Pagle a cualquier parte de la pantalla, lejos del borde del minimapa. Desmárcalo para devolver el botón al borde."
 en = "Lets you drag the Pagle button anywhere on the screen, away from the minimap's edge. Untick it to put the button back on the edge."
 
+[SETTINGS_MINIMAP_STYLE]
+value = "Estilo del botón del minimapa"
+en = "Minimap button style"
+
+[SETTINGS_MINIMAP_STYLE_TOOLTIP]
+value = "Cómo se ve el botón de Pagle. Clásico es el botón redondo del propio juego con la P de Pagle. Libro de registro es un libro encuadernado en cuero, y Flotador un flotador de pesca sobre agua nocturna."
+en = "How the Pagle button looks. Classic is the game's own round button with the Pagle P. Ledger is a leather-bound book, and Bobber a fishing bobber on night water."
+
+[SETTINGS_MINIMAP_STYLES]
+value.bobber = "Flotador"
+value.classic = "Clásico"
+value.ledger = "Libro de registro"
+en.bobber = "Bobber"
+en.classic = "Classic"
+en.ledger = "Ledger"
+
+[SETTINGS_MINIMAP_SIZE]
+value = "Tamaño del botón del minimapa"
+en = "Minimap button size"
+
+[SETTINGS_MINIMAP_SIZE_TOOLTIP]
+value = "Qué tamaño tiene el botón de Pagle, en el borde del minimapa o separado de él."
+en = "How big the Pagle button is, on the minimap's edge or detached from it."
+
+[SETTINGS_MINIMAP_SIZE_VALUE]
+value = "{value:0}%"
+en = "{value:0}%"
+
 [SETTINGS_ANGLER_TOOLTIPS_TOOLTIP]
 value = "Añade un bloque de Pagle al tooltip de los jugadores cuyo Pescador está en la web de Pagle. Necesita Pagle Companion."
 en = "Adds a Pagle block to the tooltip of players whose Angler is on the Pagle website. Needs the Pagle Companion."

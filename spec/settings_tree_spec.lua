@@ -78,6 +78,9 @@ local TIPS = {
 		.. "button by the minimap.",
 	minimapDetach = "Lets you drag the Pagle button anywhere on the screen, away from the minimap's edge. Untick it to "
 		.. "put the button back on the edge.",
+	minimapStyle = "How the Pagle button looks. Classic is the game's own round button with the Pagle P. Ledger is a "
+		.. "leather-bound book, and Bobber a fishing bobber on night water.",
+	minimapSize = "How big the Pagle button is, on the minimap's edge or detached from it.",
 	anglerTooltips = "Adds a Pagle block to the tooltip of players whose Angler is on the Pagle website. Needs the Pagle "
 		.. "Companion.",
 	pasteExport = "Copy your Catch log as a Paste string, to paste on the Pagle website without the Companion.",
@@ -137,6 +140,8 @@ local EXPECTED = {
 			{ "header", "Pagle menu" },
 			{ "checkbox", "Show the minimap icon", tip = TIPS.minimapIcon },
 			{ "checkbox", "Detach from the minimap", under = true, tip = TIPS.minimapDetach },
+			{ "dropdown", "Minimap button style", under = true, tip = TIPS.minimapStyle },
+			{ "slider", "Minimap button size", under = true, tip = TIPS.minimapSize, range = { 80, 150, 10 } },
 			{ "header", "Pagle website" },
 			{ "checkbox", "Show other Anglers on player tooltips", tip = TIPS.anglerTooltips },
 			{ "button", "Catch log", caption = "Copy for the website", tip = TIPS.pasteExport },
@@ -618,15 +623,22 @@ describe("Greying in the Settings tree", function()
 		assert.are.same({}, greyedOn(loaded, "Look and Feel"))
 	end)
 
-	it("greys Detach from the minimap while the minimap icon is hidden (SET-R10 row 10a, CORE-R56)", function()
-		local loaded = ready()
+	it(
+		"greys Detach from the minimap, the button's style and its size while the minimap icon is hidden (SET-R10 rows"
+			.. " 10a–10c, CORE-R56)",
+		function()
+			local loaded = ready()
 
-		setRow(loaded, "Pagle", "Show the minimap icon", false)
-		assert.are.same({ "Detach from the minimap" }, greyedOn(loaded, "Pagle"))
+			setRow(loaded, "Pagle", "Show the minimap icon", false)
+			assert.are.same(
+				{ "Detach from the minimap", "Minimap button style", "Minimap button size" },
+				greyedOn(loaded, "Pagle")
+			)
 
-		setRow(loaded, "Pagle", "Show the minimap icon", true)
-		assert.are.same({}, greyedOn(loaded, "Pagle"))
-	end)
+			setRow(loaded, "Pagle", "Show the minimap icon", true)
+			assert.are.same({}, greyedOn(loaded, "Pagle"))
+		end
+	)
 
 	it("greys the Fishing key under Double right-click, and not under the other two (SET-R20)", function()
 		local loaded = ready()
@@ -947,8 +959,8 @@ describe("Each page's Defaults button", function()
 
 	it(
 		"on the root restores the reminder to off, the length unit to the region's and the Clock to the game's,"
-			.. " leaving the Language, Show the minimap icon, Detach from the minimap and Show other Anglers on player"
-			.. " tooltips (SET-R13, LOG-R69, CORE-R87, CORE-R56, CORE-R53, VIEW-R30)",
+			.. " leaving the Language, Show the minimap icon, Detach from the minimap, the button's style and size and Show"
+			.. " other Anglers on player tooltips (SET-R13, LOG-R69, CORE-R87, CORE-R56, CORE-R53, VIEW-R30)",
 		function()
 			local loaded = ready()
 			setRow(loaded, "Pagle", "Remind me to /reload when Casts are unsaved", true)
@@ -957,6 +969,8 @@ describe("Each page's Defaults button", function()
 			setRow(loaded, "Pagle", "Language", "enUS")
 			setRow(loaded, "Pagle", "Show the minimap icon", false)
 			setRow(loaded, "Pagle", "Detach from the minimap", true)
+			setRow(loaded, "Pagle", "Minimap button style", "bobber")
+			setRow(loaded, "Pagle", "Minimap button size", 130)
 			setRow(loaded, "Pagle", "Show other Anglers on player tooltips", false)
 
 			loaded.client.settings.defaults(loaded.client.settings.page("Pagle"))
@@ -968,6 +982,8 @@ describe("Each page's Defaults button", function()
 				["Language"] = "enUS", -- no default: a Defaults click never asks for a reload (SET-R13)
 				["Show the minimap icon"] = false,
 				["Detach from the minimap"] = true,
+				["Minimap button style"] = "bobber",
+				["Minimap button size"] = 130,
 				["Show other Anglers on player tooltips"] = false,
 			}, valuesOn(loaded, "Pagle"))
 			assert.is_nil(loaded.namespaces.Pagle.db.profile.lengthUnit) -- following the region (SET-R13)

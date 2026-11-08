@@ -495,6 +495,34 @@ en = "Detach from the minimap"
 value = "Damit kannst du den Pagle-Knopf überallhin auf dem Bildschirm ziehen, weg vom Rand der Minikarte. Nicht angehakt, sitzt er wieder am Rand."
 en = "Lets you drag the Pagle button anywhere on the screen, away from the minimap's edge. Untick it to put the button back on the edge."
 
+[SETTINGS_MINIMAP_STYLE]
+value = "Stil des Minikartenknopfs"
+en = "Minimap button style"
+
+[SETTINGS_MINIMAP_STYLE_TOOLTIP]
+value = "Wie der Pagle-Knopf aussieht. Klassisch ist der runde Knopf des Spiels mit dem Pagle-P. Anglerbuch ist ein ledergebundenes Buch, Schwimmer ein Angelschwimmer auf nächtlichem Wasser."
+en = "How the Pagle button looks. Classic is the game's own round button with the Pagle P. Ledger is a leather-bound book, and Bobber a fishing bobber on night water."
+
+[SETTINGS_MINIMAP_STYLES]
+value.bobber = "Schwimmer"
+value.classic = "Klassisch"
+value.ledger = "Anglerbuch"
+en.bobber = "Bobber"
+en.classic = "Classic"
+en.ledger = "Ledger"
+
+[SETTINGS_MINIMAP_SIZE]
+value = "Größe des Minikartenknopfs"
+en = "Minimap button size"
+
+[SETTINGS_MINIMAP_SIZE_TOOLTIP]
+value = "Wie groß der Pagle-Knopf ist, am Rand der Minikarte oder von ihr gelöst."
+en = "How big the Pagle button is, on the minimap's edge or detached from it."
+
+[SETTINGS_MINIMAP_SIZE_VALUE]
+value = "{value:0}%"
+en = "{value:0}%"
+
 [SETTINGS_PAGLE_WEBSITE]
 value = "Pagle-Website"
 en = "Pagle website"
