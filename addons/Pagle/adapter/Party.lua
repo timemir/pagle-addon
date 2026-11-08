@@ -721,7 +721,7 @@ function ns.RunPartyDev(args)
 		return
 	elseif word == ns.PARTY_HUNT_KIND then
 		-- From 1.6, "Completed for the party" from Kukli (ANN-R111), through the hp receiving path.
-		ns.DevPartyHunt(DEV_NAMES[1])
+		ns.DevPartyHunt((DEV_NAMES[1]:match("^%S+")))
 		print(ns.RenderText(L.DEV_PARTY_QUEUED, { name = DEV_NAMES[1], kind = word }))
 		return
 	elseif word == "cheer" then

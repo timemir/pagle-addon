@@ -48,6 +48,9 @@ ns.PARTY_TOAST_WIDTH, ns.PARTY_TOAST_HEIGHT = 380, 50
 
 -- The layout: the medallion's left, the words' left, the mug's size and its inset from the right edge.
 local MEDALLION_X, WORDS_X, MUG_SIZE, MUG_INSET = 9, 52, 28, 10
+-- The smallest "Completed for the party"'s line shrinks to, as a share of its size (ANN-R111, from 1.6): a run's
+-- name and two groupmates fit in every language at it.
+local HP_LINE_FLOOR = 0.6
 -- A raised mug's look: greyed and dimmed.
 local RAISED_ALPHA = 0.55
 -- The fade it shows with (UI › Motion: a Nod's).
@@ -145,7 +148,9 @@ function ns.DrawPartyToast(frame, display)
 	frame.kicker:SetText(ns.Capitals(headline.title))
 	ns.ShrinkToFit(frame.kicker, "NodWhat", room)
 	frame.line:SetText(headline.text or "")
-	ns.ShrinkToFit(frame.line, "NodName", room)
+	-- "Completed for the party" names a Hunt or a run and every groupmate it was for (ANN-R111), so its line may
+	-- shrink further than the 1.5.2 toasts' before it is cut.
+	ns.ShrinkToFit(frame.line, "NodName", room, not hasMug(headline.partyToast) and HP_LINE_FLOOR or nil)
 	paintMug(frame)
 	if frame.moved ~= display and frame.lanes then
 		frame.moved = display

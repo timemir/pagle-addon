@@ -846,7 +846,7 @@ value = "{hunt} • для: {senders}"
 en = "{hunt} · for {senders}"
 
 [PARTY_HP_RUN]
-value = "Выиграно: {event} • для: {senders}"
+value = "Выиграно для {senders}: {event}"
 en = "{event} settled · for {senders}"
 
 [PARTY_HP_SOME_HUNT]

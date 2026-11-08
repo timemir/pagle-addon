@@ -74,7 +74,7 @@ do
 			id = "darkshore_moonlight",
 			source = "Player-4701-0A1B2C3D-1791731700-0:1",
 			catcher = "Player-4701-0A1B2C3D",
-		}, { "Kukli Emnabi", "Arwen Tull", "Dela Marsh", "Bram" }, GetServerTime() + 120)
+		}, { "Kukli", "Arwen", "Dela", "Bram" }, GetServerTime() + 120)
 		ns.lanes:Push(sample)
 	end, function()
 		if sample then

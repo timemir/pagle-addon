@@ -322,7 +322,7 @@ ns.Locale("ruRU", function(L)
 	L.PARTY_HP_HUNT = "{hunt} • для: {senders}"
 	L.PARTY_HP_MINE = "Твой улов"
 	L.PARTY_HP_PARTY = "Выполнено для группы"
-	L.PARTY_HP_RUN = "Выиграно: {event} • для: {senders}"
+	L.PARTY_HP_RUN = "Выиграно для {senders}: {event}"
 	L.PARTY_HP_SENDERS_MORE = { few = "{name}, {other} и ещё {count}", many = "{name}, {other} и ещё {count}", one = "{name}, {other} и ещё {count}", other = "{name}, {other} и ещё {count}" }
 	L.PARTY_HP_SENDERS_TWO = "{name} и {other}"
 	L.PARTY_HP_SOME_HUNT = "охота"

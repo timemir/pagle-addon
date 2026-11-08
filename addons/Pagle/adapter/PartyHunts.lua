@@ -96,7 +96,7 @@ local gathering = {}
 --- are on (SET-R35, SET-R36). The first of one Catch and Hunt waits the merge window for the others, each groupmate
 --- once, then goes to the party queue as one toast, expiring from its arrival.
 ---@param message PaglePartyHunt
----@param name string the groupmate's name (ANN-R105)
+---@param name string the groupmate's first name, as ANN-R111's lines name them ("for Kukli and Bram")
 ---@param key string the groupmate's key
 function ns.ReceivePartyHunt(message, name, key)
 	if not ns.PartyHuntsOn() or not ns.PartyOption("show") or not ns.PartyKindOn(ns.PARTY_HUNT_KIND) then
@@ -147,7 +147,7 @@ Pagle.RegisterEvent(OWNER, "CHAT_MSG_ADDON", function(_, prefix, text, channel, 
 		limits[member.key] = limit
 	end
 	if limit:Take(GetTime()) then
-		ns.ReceivePartyHunt(message, member.name, member.key)
+		ns.ReceivePartyHunt(message, member.first, member.key)
 	end
 end)
 
