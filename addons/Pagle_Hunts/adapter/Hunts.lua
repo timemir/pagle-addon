@@ -64,6 +64,12 @@ function ns.Hunts.OnInitialize()
 	--- redraws reach them (logic/Moments.lua).
 	ns.moments = ns.NewHuntsMoments(ns.db.global, {
 		RaiseMoment = function(moment)
+			-- A Hunt's gold tier is marked for the player's party (announcements.md ANN-R104, from 1.5.x, #640): its
+			-- huntTier moment stamped with the gold trim (HNT-R86), read from what the moment holds, here and not in
+			-- logic/, as a 1.5.x patch changes no hashed file.
+			if moment.kind == "huntTier" and moment.stamp == ns.L.TRIMS.gold then
+				moment.party = "gold"
+			end
 			ns.Module:RaiseMoment(moment)
 		end,
 		RaiseWriteUp = function(section)

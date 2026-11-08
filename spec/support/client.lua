@@ -31,6 +31,18 @@
 ---@field cursor number[]? The cursor's position in screen pixels, { x, y } from the bottom left, as
 --- GetCursorPosition returns it; { 0, 0 } while nil.
 ---@field loads string[] Each name C_AddOns.LoadAddOn was called with, in order.
+---@field group FakeGroup? The player's group, as IsInGroup, IsInRaid and UnitName("partyN") read it;
+--- nil, the default, when the player is alone.
+---@field addonMessages { prefix: string, text: string, chatType: string, target: string? }[] Each
+--- C_ChatInfo.SendAddonMessage call, in order (party toasts, ANN-R103).
+---@field prefixes table<string, true> The add-on message prefixes registered (C_ChatInfo.RegisterAddonMessagePrefix).
+---@field chatLockdown boolean? What C_ChatInfo.InChatMessagingLockdown() answers. Default false.
+
+--- The player's group (party toasts, ANN-R103): its groupmates, in party1, party2, … order, each by first name with
+--- Forever's surname (UnitName's second return), and whether it is a raid.
+---@class FakeGroup
+---@field members { name: string, surname: string? }[]
+---@field raid boolean?
 
 --- The loot window the loot API reads: whether it's fishing loot (`IsFishingLoot()`) and its slots, in order.
 --- Specs set both before firing LOOT_READY.
@@ -74,6 +86,8 @@ local function newClient()
 		areaNames = {},
 		mapNames = {},
 		loads = {},
+		addonMessages = {},
+		prefixes = {},
 	}
 	client.addError = watchErrors(client, "errors")
 
@@ -211,6 +225,21 @@ local function clientStubs(client)
 			AddOnRestrictionType = { Combat = 0, Encounter = 1, ChallengeMode = 2, PvPMatch = 3, Map = 4, Chat = 5 },
 			AddOnRestrictionState = { Inactive = 0, Activating = 1, Active = 2 },
 			AddOnEnableState = { None = 0, Some = 1, All = 2 },
+			SendAddonMessageResult = {
+				Success = 0,
+				InvalidPrefix = 1,
+				InvalidMessage = 2,
+				AddonMessageThrottle = 3,
+				InvalidChatType = 4,
+				NotInGroup = 5,
+				TargetRequired = 6,
+				InvalidChannel = 7,
+				ChannelThrottle = 8,
+				GeneralError = 9,
+				NotInGuild = 10,
+				AddOnMessageLockdown = 11,
+				TargetOffline = 12,
+			},
 		},
 		-- Areas and maps have the names in client.areaNames and client.mapNames: none by default, so the area index
 		-- Core builds at PLAYER_LOGIN is empty.
@@ -355,9 +384,44 @@ local function clientStubs(client)
 			return "Angler"
 		end,
 		-- Forever answers with the first name and the surname (probes/fishing-signals/results/2026-10-11-build70338-report.md).
-		UnitName = function()
+		-- A party unit ("party1" to "party4") is client.group's groupmate there, or nil for none.
+		UnitName = function(unit)
+			local index = type(unit) == "string" and tonumber(unit:match("^party(%d)$"))
+			if index then
+				local member = client.group and client.group.members[index]
+				if member then
+					return member.name, member.surname
+				end
+				return nil
+			end
 			return "Angler", "Tester"
 		end,
+		-- The group (party toasts, ANN-R103), from client.group: none by default.
+		IsInGroup = function()
+			return client.group ~= nil
+		end,
+		IsInRaid = function()
+			return client.group ~= nil and client.group.raid == true
+		end,
+		-- Add-on messages (party toasts, ANN-R103): sends are kept in client.addonMessages, and each answers Success,
+		-- or NotInGroup for PARTY with no group.
+		C_ChatInfo = {
+			RegisterAddonMessagePrefix = function(prefix)
+				client.prefixes[prefix] = true
+				return 0
+			end,
+			SendAddonMessage = function(prefix, text, chatType, target)
+				if chatType == "PARTY" and not client.group then
+					return 5
+				end
+				client.addonMessages[#client.addonMessages + 1] =
+					{ prefix = prefix, text = text, chatType = chatType, target = target }
+				return 0
+			end,
+			InChatMessagingLockdown = function()
+				return client.chatLockdown == true
+			end,
+		},
 		-- The probe's build, and a character whose one profession is Fishing (skill line 356) at 75/150.
 		GetBuildInfo = function()
 			return "1.60.1", "70338", "Oct  9 2026", 16001, "", " "

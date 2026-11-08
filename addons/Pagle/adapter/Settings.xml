@@ -18,4 +18,13 @@
 	<Frame name="PagleSettingsKeyRowTemplate" mixin="PagleSettingsKeyRowMixin" virtual="true">
 		<Size x="280" y="26"/>
 	</Frame>
+	<!-- Party toasts and cheers (announcements.md ANN-R103–R110, settings.md SET-R35; from 1.5.x, #640) load here, after
+	adapter/Settings.lua: a patch can't add a file to the TOC, whose file list is hashed, and every file in logic/ is
+	hashed too. Their messages' pure Lua first, then the client's side, the party toast's frame and the Party block.
+	Each looks up what it needs of files loaded later (the lanes, PagleDB) when it runs. Paths are relative to this
+	file. -->
+	<Script file="PartyMessages.lua"/>
+	<Script file="Party.lua"/>
+	<Script file="PartyToast.lua"/>
+	<Script file="PartySettings.lua"/>
 </Ui>

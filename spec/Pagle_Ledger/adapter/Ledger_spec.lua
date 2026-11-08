@@ -196,7 +196,8 @@ describe("Pagle_Ledger with Core", function()
 				look[i] = row.initializer:GetName()
 			end
 			assert.are.same({ "Pagle", "Announcements", "Look and Feel" }, names)
-			assert.are.equal(9, #settings.category("Announcements").layout.initializers) -- Core's own (SET-R30)
+			-- Core's own: SET-R30's nine and, from 1.5.x, SET-R35's Party block (its header and ten rows).
+			assert.are.equal(20, #settings.category("Announcements").layout.initializers)
 			assert.are.same({ "Books", "Book binding", "More looks" }, { look[7], look[8], look[9] })
 		end
 	)

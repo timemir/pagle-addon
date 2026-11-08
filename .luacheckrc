@@ -241,6 +241,12 @@ stds.wow = {
 		-- docked tracker moves it only with Shift held (IsShiftKeyDown, above). The pinned forever dump's Frames.lua
 		-- lists MinimapCluster.
 		"MinimapCluster",
+		-- Party toasts and cheers (announcements.md ANN-R103–R105, from 1.5.x): the add-on messages on the party channel,
+		-- their prefix, and whether chat messaging is locked down; and the group, a party being one that isn't a raid
+		-- (its groupmates by UnitName("partyN"), above). Each is in the forever dump's GlobalAPI.lua at BIR_COMMIT.
+		C_ChatInfo = { fields = { "RegisterAddonMessagePrefix", "SendAddonMessage", "InChatMessagingLockdown" } },
+		"IsInGroup",
+		"IsInRaid",
 	},
 }
 
