@@ -40,6 +40,19 @@ local function run(line)
 		ns.RunTrailer(rest)
 		return
 	end
+	-- `/pagle dev sign` (SIGN-R60) runs here rather than in logic/Dev.lua's table, which pagle-backend's ranked policy
+	-- hashes (PRJ-R64); like every dev command it does nothing but say so while dev mode is off.
+	if name == "dev" then
+		local sub, signArgs = ns.ParseSlash(rest)
+		if sub == "sign" then
+			if ns.db.global.dev then
+				ns.RunNewsSignDev(signArgs)
+			else
+				print(ns.L.DEV_IS_OFF)
+			end
+			return
+		end
+	end
 	commands:Run(line, ns.coreSubcommands, securecallfunction, print)
 end
 
