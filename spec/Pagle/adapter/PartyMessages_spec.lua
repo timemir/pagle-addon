@@ -343,7 +343,7 @@ describe("party messages", function()
 			})
 			assert.is_not_nil(longest)
 			---@cast longest string
-			assert.is_true(#longest <= 64, #longest)
+			assert.is_true(#longest <= 64)
 			assert.is_nil(longest:find("[^0-9A-Za-z:]"))
 			-- Past 64 bytes it isn't written at all, as 1.5.2's moments aren't.
 			assert.is_nil(n.PartyHuntText({
@@ -370,6 +370,7 @@ describe("party messages", function()
 			local n = ns()
 			assert.are.same({
 				type = "hunt",
+				kind = "hp",
 				what = "hunt",
 				id = "mackerel_run",
 				catch = SOURCE_TEXT,
@@ -377,6 +378,7 @@ describe("party messages", function()
 			}, n.ParsePartyText("1:hp:h:mackerelZrun:" .. SOURCE_TEXT))
 			assert.are.same({
 				type = "hunt",
+				kind = "hp",
 				what = "run",
 				id = "darkshore_moonlight",
 				catch = SOURCE_TEXT,
@@ -399,7 +401,7 @@ describe("party messages", function()
 				"1:hp:h:mackerelZrun:4701::tnyao0:0:1",
 				"1:HP:h:mackerelZrun:" .. SOURCE_TEXT,
 			}) do
-				assert.is_nil(n.ParsePartyText(text), text)
+				assert.is_nil(n.ParsePartyText(text))
 			end
 		end)
 

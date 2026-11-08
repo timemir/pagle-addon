@@ -112,6 +112,7 @@ end
 function ns.DevPartyHunt(name)
 	ns.ReceivePartyHunt({
 		type = "hunt",
+		kind = ns.PARTY_HUNT_KIND,
 		what = "hunt",
 		id = "mackerel_run",
 		catch = "4701:0a1b2c3d:tmr110:0:1",

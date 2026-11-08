@@ -69,11 +69,14 @@ do
 	add("announce.hp", function()
 		return ns.RenderText(ns.L.DEV_TOUR_ANNOUNCE, { kind = "hp" })
 	end, function()
-		sample = ns.PartyHuntToastOf(
-			{ type = "hunt", what = "run", id = "darkshore_moonlight", catch = "tour", catcher = "tour" },
-			{ "Kukli Emnabi", "Arwen Tull", "Dela Marsh", "Bram" },
-			GetServerTime() + 120
-		)
+		sample = ns.PartyHuntToastOf({
+			type = "hunt",
+			kind = ns.PARTY_HUNT_KIND,
+			what = "run",
+			id = "darkshore_moonlight",
+			catch = "tour",
+			catcher = "tour",
+		}, { "Kukli Emnabi", "Arwen Tull", "Dela Marsh", "Bram" }, GetServerTime() + 120)
 		ns.lanes:Push(sample)
 	end, function()
 		if sample then

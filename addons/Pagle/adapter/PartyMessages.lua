@@ -262,6 +262,7 @@ local function readHuntFields(fields)
 	---@cast id string
 	return {
 		type = "hunt",
+		kind = ns.PARTY_HUNT_KIND,
 		what = what,
 		id = id,
 		catch = table.concat(fields, ":", 5, 9),
@@ -576,11 +577,16 @@ function ns.PartySendersText(names)
 	return ns.RenderText(L.PARTY_HP_SENDERS_MORE, { name = names[1], other = names[2], count = #names - 2 })
 end
 
+--- What an hp toast's line names the Hunt or the event with (ANN-R111): the player's Hunts, through its def.
+---@class PaglePartyHuntLookups
+---@field huntName fun(huntID: string): string?
+---@field eventName (fun(eventID: string): string?)?
+
 --- An hp toast's line (ANN-R111): "{Hunt} · for {groupmates}" or "{event} settled · for {groupmates}", named from the
 --- player's own lore, "a Hunt" or "a Pagle Wager" for one it doesn't know.
 ---@param message PaglePartyMessage
 ---@param senders string[]
----@param lookups { huntName: fun(id: string): string?, eventName: (fun(id: string): string?)? }
+---@param lookups PaglePartyHuntLookups|PaglePartyLookups
 ---@return string
 function ns.PartyHuntLine(message, senders, lookups)
 	local L = ns.L
