@@ -76,6 +76,7 @@ ns.Locale("esES", function(L)
 	L.DEV_ONBOARDING_RESET = "Pagle dev: la introducción vuelve a ser la de un Pescador nuevo, con la Carta esperando; haz /reload para empezar desde ahí."
 	L.DEV_ONBOARDING_USAGE = "Pagle dev: /pagle dev onboarding {usages}"
 	L.DEV_PARTY_CHEERED = "Pagle dev: {count:0} brindis por un momento tuyo van en camino."
+	L.DEV_PARTY_HUNT_OFF = "Pagle dev: no se muestra nada mientras Cazas en grupo, Mostrar los momentos de mi grupo o Completado para el grupo estén desactivados."
 	L.DEV_PARTY_LETTER = "Pagle dev: la carta del grupo está en pantalla, como si {name} pescara a tu lado."
 	L.DEV_PARTY_LETTER_RESET = "Pagle dev: se ha olvidado la respuesta a la carta del grupo; compartir con el grupo queda desactivado hasta que se responda."
 	L.DEV_PARTY_QUEUED = "Pagle dev: un aviso de grupo de {name} está en cola: {kind}."
@@ -334,6 +335,7 @@ ns.Locale("esES", function(L)
 	L.PARTY_LETTER_KICKER = "Una carta, pasada por la orilla"
 	L.PARTY_LETTER_LATER = "Ahora no"
 	L.PARTY_LETTER_LINE = "{name} está pescando en {zone} contigo y también usa Pagle. Pescad juntos: comparte tus mejores capturas, brinda por las suyas y que las capturas de cada uno cuenten para las Cazas del otro."
+	L.PARTY_LETTER_LINE_NO_ZONE = "{name} también usa Pagle y está en tu grupo. Pescad juntos: comparte tus mejores capturas, brinda por las suyas y que las capturas de cada uno cuenten para las Cazas del otro."
 	L.PARTY_LETTER_NO = "No, gracias"
 	L.PARTY_LETTER_YES = "Pescar juntos"
 	L.PARTY_LINES = { epic = "Pescó un color épico", gold = "Consiguió oro en una caza", ledger = "Libro de registro al 100 %", legend = "Pescó una Leyenda", monster = "Récord de tamaño Monstruo", rare = "Pescó un color raro", zone = "Maestro de zona" }

@@ -39,10 +39,10 @@ describe("Pagle_QoL.toc", function()
 	end)
 
 	it(
-		"depends on Pagle, declares X-Pagle-API 2 (it calls Pagle.GetLanguage, CORE-R8) and loads normally, not on demand (CORE-R3, QOL-R1)",
+		"depends on Pagle, declares X-Pagle-API 3 (1.6's, CORE-R15; it calls Pagle.GetLanguage, CORE-R8) and loads normally, not on demand (CORE-R3, QOL-R1)",
 		function()
 			assert.are.equal("Pagle", fields.Dependencies)
-			assert.are.equal("2", fields["X-Pagle-API"])
+			assert.are.equal("3", fields["X-Pagle-API"])
 			assert.is_nil(fields.LoadOnDemand)
 		end
 	)

@@ -326,7 +326,7 @@ describe("Pagle_Stats with FakePagle", function()
 
 	it("stops after RegisterModule returns nil, with no SavedVariables touched (CORE-R13)", function()
 		local fake = newFakePagle()
-		fake.addons.Pagle_Stats.metadata["X-Pagle-API"] = "3"
+		fake.addons.Pagle_Stats.metadata["X-Pagle-API"] = "4"
 
 		local loaded = stats.load(fake)
 

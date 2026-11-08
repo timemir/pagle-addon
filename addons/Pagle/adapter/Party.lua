@@ -15,7 +15,7 @@ local Pagle = Pagle
 -- adapter/PartyMessages.lua; the party toast's frame is adapter/PartyToast.lua's and its rows adapter/PartySettings.lua's.
 -- From 1.5.3 (#655) sharing and showing are off until the party letter is answered (ANN-R113, adapter/PartyLetter.lua),
 -- which reads here who in the party runs Pagle and is in the player's zone (ns.PartyGroupmateHere).
--- Loaded by adapter/Settings.xml, before the lanes exist: everything it reaches of them (ns.lanes, ns.db) it looks up
+-- Loaded from the TOC, after adapter/PartyMessages.lua and before the lanes exist: everything it reaches of them (ns.lanes, ns.db) it looks up
 -- when it runs. Its own owner on Core's bus.
 local OWNER = "Pagle party"
 
@@ -195,6 +195,13 @@ end
 -- The group (ANN-R103): a party is a group that isn't a raid.
 local function inParty()
 	return IsInGroup() and not IsInRaid()
+end
+
+--- A party for party-wide Hunts (LOG-R110, ANN-R111): a home group of up to 5, never a raid, an instance group or a
+--- battleground. adapter/PartyCatches.lua and adapter/PartyHunts.lua read it.
+---@return boolean
+function ns.InHomeParty()
+	return IsInGroup(LE_PARTY_CATEGORY_HOME) and not IsInRaid()
 end
 
 --- A groupmate as Core keeps them (ANN-R105): `key`, their GUID (their first name only where the client gives none),
@@ -710,7 +717,8 @@ end)
 
 --- The Pagle groupmate the party letter names (ANN-R114): the first of party1 to party4 who sent a valid message (a
 --- Pagle groupmate, ANN-R103) and whom the client places on the player's own map (`C_Map.GetBestMapForUnit`), with that
---- map's ID; nil out of a party, with no Pagle groupmate, or none the client places beside the player.
+--- map's ID; else the first such groupmate where the client places them or the player nowhere (nil), with no map, as
+--- an unknown zone isn't another one; nil out of a party, with no Pagle groupmate, or only ones placed elsewhere.
 ---@return PagleGroupmate?
 ---@return integer? map
 function ns.PartyGroupmateHere()
@@ -718,17 +726,23 @@ function ns.PartyGroupmateHere()
 		return nil
 	end
 	local here = unsecret((C_Map.GetBestMapForUnit("player")))
-	if type(here) ~= "number" then
-		return nil
-	end
+	here = type(here) == "number" and here or nil
+	local unplaced
 	for i = 1, 4 do
 		local unit = "party" .. i
 		local member = memberAt(unit)
-		if member and state.peers[member.key] and unsecret((C_Map.GetBestMapForUnit(unit))) == here then
-			return member, here
+		if member and state.peers[member.key] then
+			local map = unsecret((C_Map.GetBestMapForUnit(unit)))
+			map = type(map) == "number" and map or nil
+			if here and map == here then
+				return member, here
+			elseif not here or not map then
+				-- Where the client places one of the two nowhere, the zone is unknown, not another (ANN-R114).
+				unplaced = unplaced or member
+			end
 		end
 	end
-	return nil
+	return unplaced, nil
 end
 
 --- Shares the moments of `announcement` a Module marked with `party` (ANN-R104), each once, while Share is on, in a
@@ -820,7 +834,12 @@ function ns.RunPartyDev(args)
 		devToast(word)
 		return
 	elseif word == ns.PARTY_HUNT_KIND then
-		-- From 1.6, "Completed for the party" from Kukli (ANN-R111), through the hp receiving path.
+		-- From 1.6, "Completed for the party" from Kukli (ANN-R111), through the hp receiving path, which drops it while
+		-- Party Hunts, Show or its kind is off: then it says so rather than that it is queued.
+		if not ns.PartyHuntShows() then
+			print(L.DEV_PARTY_HUNT_OFF)
+			return
+		end
 		ns.DevPartyHunt((DEV_NAMES[1]:match("^%S+")))
 		print(ns.RenderText(L.DEV_PARTY_QUEUED, { name = DEV_NAMES[1], kind = word }))
 		return

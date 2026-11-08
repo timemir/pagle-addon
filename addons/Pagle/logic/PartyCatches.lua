@@ -18,6 +18,12 @@ ns.PARTY_CATCH_VERSION = "1"
 ns.PARTY_WINDOW = 300
 ns.PARTY_MAX_DELAY = 60
 ns.PARTY_CLOCK_SLACK = 30
+--- The party catch cap (Tunables, LOG-R113 item 10): the most Party Catches the receiver logs from one groupmate in the
+--- party catch cap window, in seconds of its own clock. A Cast takes a cast, a wait for a bite, a reel and a loot, about
+--- 10 s at the usual pace (LOG-R112), so a minute holds some 6 Catches; 10 is a Catch every 6 s for a whole minute,
+--- past any real fisher's pace, while a client that makes its messages up could otherwise send one a second.
+ns.PARTY_CATCH_CAP = 10
+ns.PARTY_CATCH_CAP_WINDOW = 60
 --- The most bytes the client sends in one add-on message (LOG-R111, Tunables).
 ns.ADDON_MESSAGE_LIMIT = 255
 
@@ -143,18 +149,21 @@ end
 ---@field append fun(copy: string, name: string, sourceId: string): PagleRecord? -- appends the G1 and hands it on
 ---@field send fun(text: string, castTime: integer)    -- puts a message in the party send queue (LOG-R112)
 
---- Core's party catches for one login: the receiver's memory of the Party Catches it logged lately (LOG-R113 item 8).
+--- Core's party catches for one login: the receiver's memory of the Party Catches it logged lately (LOG-R113 item 8),
+--- and of each groupmate's, by GUID, for this login only (items 9 and 10).
 ---@class PaglePartyCatches
 ---@field package deps PaglePartyCatchesDeps
 ---@field package recent { copy: string, at: integer }[]? the Party Catches appended lately, oldest first
 ---@field package recentLog table? the PagleLog `recent` was read from
+---@field package byGroupmate table<string, { time: integer, at: integer }[]> each groupmate's Party Catches appended
+--- lately this login, by GUID, oldest first: the copied `<time>` and when it was appended
 local PartyCatches = {}
 PartyCatches.__index = PartyCatches
 
 ---@param deps PaglePartyCatchesDeps
 ---@return PaglePartyCatches
 function ns.NewPartyCatches(deps)
-	return setmetatable({ deps = deps }, PartyCatches)
+	return setmetatable({ deps = deps, byGroupmate = {} }, PartyCatches)
 end
 
 --- Sends the party catch message for `cast`, one of the Angler's own Casts just appended (LOG-R111): while the Party
@@ -197,6 +206,23 @@ local function recent(self, now)
 		self.recent, self.recentLog = list, data
 	end
 	local list = self.recent --[[@as table]]
+	while list[1] and list[1].at < since do
+		table.remove(list, 1)
+	end
+	return list
+end
+
+-- The Party Catches appended from groupmate `guid` this login, in the last max party delay and clock slack together
+-- (LOG-R113 items 9 and 10): as long as a message of the same second can still arrive in time. Live only, as the entry
+-- keeps no GUID (LOG-R115): a /reload forgets them.
+---@param self PaglePartyCatches
+---@param guid string
+---@param now integer
+---@return { time: integer, at: integer }[]
+local function fromGroupmate(self, guid, now)
+	local list = self.byGroupmate[guid] or {}
+	self.byGroupmate[guid] = list
+	local since = now - ns.PARTY_MAX_DELAY - ns.PARTY_CLOCK_SLACK
 	while list[1] and list[1].at < since do
 		table.remove(list, 1)
 	end
@@ -264,16 +290,32 @@ function PartyCatches:Receive(text, sender)
 			return nil, 8
 		end
 	end
-	-- 9. Worth logging: the Hunts filter takes the record the entry would make.
+	-- 9. One a second from each groupmate: none of theirs logged lately has the same `<time>`, whatever its tie.
+	local mine = fromGroupmate(self, message.guid, now)
+	local lastMinute = 0
+	for _, logged in ipairs(mine) do
+		if logged.time == message.time then
+			return nil, 9
+		end
+		if logged.at > now - ns.PARTY_CATCH_CAP_WINDOW then
+			lastMinute = lastMinute + 1
+		end
+	end
+	-- 10. At most the party catch cap from each groupmate in its window.
+	if lastMinute >= ns.PARTY_CATCH_CAP then
+		return nil, 10
+	end
+	-- 11. Worth logging: the Hunts filter takes the record the entry would make.
 	local draft = catchLog:Draft({ kind = "party", char = char, time = now, copy = message.copy })
 	if
 		not deps.wants(draft --[[@as PaglePartyCatch]])
 	then
-		return nil, 9
+		return nil, 11
 	end
 	local record = deps.append(message.copy, member.name, message.sourceId)
 	if record then
 		seen[#seen + 1] = { copy = message.copy, at = now }
+		mine[#mine + 1] = { time = message.time, at = now }
 	end
 	return record
 end

@@ -323,6 +323,8 @@ PARTY_CHEER_COUNT.other = "{count} raised a mug"
 # now asks again a day later at the soonest; No thanks never asks again.
 PARTY_LETTER_KICKER = "A letter, passed along the bank"
 PARTY_LETTER_LINE = "{name} is fishing {zone} with you, and they run Pagle too. Fish together: share your best catches, cheer theirs, and count each other’s catches toward your Hunts."
+# ANN-R114: the same, when the client can't place the groupmate or the player on the map, so no zone is named.
+PARTY_LETTER_LINE_NO_ZONE = "{name} runs Pagle too and is in your party. Fish together: share your best catches, cheer theirs, and count each other’s catches toward your Hunts."
 PARTY_LETTER_YES = "Fish together"
 PARTY_LETTER_LATER = "Not now"
 PARTY_LETTER_NO = "No thanks"
@@ -565,6 +567,7 @@ DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | stag
 # /pagle dev party (ANN-R109, from 1.5.2): its usage, and what it queued.
 DEV_PARTY_USAGE = "Pagle dev: /pagle dev party <kind | all | cheer [1-4] | letter [reset]>, where kind is one of {kinds}"
 DEV_PARTY_QUEUED = "Pagle dev: a party toast from {name} is queued: {kind}."
+DEV_PARTY_HUNT_OFF = "Pagle dev: nothing shows while Party Hunts, Show my party's moments or Completed for the party is off."
 DEV_PARTY_CHEERED = "Pagle dev: {count:0} cheers for a moment of yours are on their way."
 # /pagle dev party letter [reset] (ANN-R116, from 1.5.3): the party letter shown, and its answer forgotten.
 DEV_PARTY_LETTER = "Pagle dev: the party letter is on screen, as if {name} were fishing beside you."

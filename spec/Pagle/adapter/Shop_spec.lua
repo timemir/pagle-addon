@@ -2311,6 +2311,41 @@ describe("The Curio crate in the window", function()
 			assert.is_true(shopFrame(loaded).bill.useNow:IsShown())
 		end
 	)
+
+	it(
+		"opens the first crate after a login whose build entry brings a new rule set on what the log records for it:"
+			.. " the shown roll is the projection's (SHOP-R51, SHOP-R53, LOG-R36)",
+		function()
+			-- The log's last build entry is an older rule set's, so login appends this client's live (LOG-R36).
+			local entries = history(2)
+			entries[#entries] = ("B1|1|%d|0|70337|1.60.0|pagle-2026h"):format(SERVER_TIME - 5000)
+			local loaded, handles = shopCore(nil, { entries = entries })
+			local ns = loaded.ns
+			assert.are.equal(ns.RULE_SET_ID, ns.walletSnapshot.rules)
+			handles.Ledger:ReportCoinsEarned(3500)
+			-- A tier-1 good that joins with this client's rule set, and one for sale under any, so the crate is for sale
+			-- under both; every crate rolls tier 1.
+			local late = "core.toaststyle.storm"
+			ns.CRATE_POOL = {
+				{ id = late, tier = 1, kind = "toaststyle", since = ns.RULE_SET_ID },
+				{ id = "core.toaststyle.ripple", tier = 2, kind = "toaststyle" },
+			}
+			ns.SizeHash = function()
+				return 0
+			end
+			local buy, rolled = ns.shop.Buy, nil
+			ns.shop.Buy = function(...)
+				local bought, result = buy(...)
+				rolled = result
+				return bought, result
+			end
+
+			askToBuy(loaded, "core.crate").buy:Click()
+
+			assert.are.same({ late }, ns.walletSnapshot.crates)
+			assert.are.same({ tier = 1, good = late }, rolled)
+		end
+	)
 end)
 
 describe("The Curio crate opening (SHOP-R55, wallet-and-shop.md › UI: Motion and sound)", function()

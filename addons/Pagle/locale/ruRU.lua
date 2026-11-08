@@ -75,6 +75,7 @@ ns.Locale("ruRU", function(L)
 	L.DEV_ONBOARDING_RESET = "Pagle dev: знакомство сброшено как для нового рыболова, письмо ждёт; /reload, чтобы начать с этого места."
 	L.DEV_ONBOARDING_USAGE = "Pagle dev: /pagle dev onboarding {usages}"
 	L.DEV_PARTY_CHEERED = "Pagle dev: {count:0} тостов за ваш момент уже в пути."
+	L.DEV_PARTY_HUNT_OFF = "Pagle dev: ничего не появится, пока выключены Групповые охоты, Показывать моменты моей группы или Выполнено для группы."
 	L.DEV_PARTY_LETTER = "Pagle dev: письмо группы на экране, будто {name} рыбачит рядом с вами."
 	L.DEV_PARTY_LETTER_RESET = "Pagle dev: ответ на письмо группы забыт; обмен с группой выключен, пока на него не ответят."
 	L.DEV_PARTY_QUEUED = "Pagle dev: плашка группы от {name} в очереди: {kind}."
@@ -323,9 +324,9 @@ ns.Locale("ruRU", function(L)
 	L.PARTY_FULL_NAME = "{name} {surname}"
 	L.PARTY_GOLD = "Взял(а) золото в охоте «{hunt}»"
 	L.PARTY_HP_HUNT = "{hunt} • для: {senders}"
-	L.PARTY_HP_MINE = "Твой улов"
+	L.PARTY_HP_MINE = "Ваш улов"
 	L.PARTY_HP_PARTY = "Выполнено для группы"
-	L.PARTY_HP_RUN = "Выиграно для {senders}: {event}"
+	L.PARTY_HP_RUN = "{event}: рассчитано • для: {senders}"
 	L.PARTY_HP_SENDERS_MORE = { few = "{name}, {other} и ещё {count}", many = "{name}, {other} и ещё {count}", one = "{name}, {other} и ещё {count}", other = "{name}, {other} и ещё {count}" }
 	L.PARTY_HP_SENDERS_TWO = "{name} и {other}"
 	L.PARTY_HP_SOME_HUNT = "охота"
@@ -333,6 +334,7 @@ ns.Locale("ruRU", function(L)
 	L.PARTY_LETTER_KICKER = "Письмо, переданное по берегу"
 	L.PARTY_LETTER_LATER = "Не сейчас"
 	L.PARTY_LETTER_LINE = "{name} рыбачит с вами в зоне {zone} и тоже пользуется Pagle. Рыбачьте вместе: делитесь лучшими уловами, поднимайте кружку за чужие, и ваш улов будет засчитываться в Охоты друг друга."
+	L.PARTY_LETTER_LINE_NO_ZONE = "{name} тоже пользуется Pagle и состоит в вашей группе. Рыбачьте вместе: делитесь лучшими уловами, поднимайте кружку за чужие, и ваш улов будет засчитываться в Охоты друг друга."
 	L.PARTY_LETTER_NO = "Нет, спасибо"
 	L.PARTY_LETTER_YES = "Рыбачить вместе"
 	L.PARTY_LINES = { epic = "Поймал(а) эпическую окраску", gold = "Взял(а) золото в охоте", ledger = "Реестр на 100%", legend = "Поймал(а) легенду", monster = "Рекорд размера «Чудовище»", rare = "Поймал(а) редкую окраску", zone = "Мастер зоны" }
@@ -582,7 +584,7 @@ ns.Locale("ruRU", function(L)
 	L.SIGN_DETAIL_COLOUR = "{species}, {variety}"
 	L.SIGN_DETAIL_COLOUR_HIDDEN = "{species} ({rarity})"
 	L.SIGN_DETAIL_MONSTER = "{species}, {length}"
-	L.SIGN_HEAD = { colour = "{name}: пойман редкий цвет", first = "Впервые в {region}: выловлен {fish}", hunt = "{name}: золото охоты", ledger = "{name}: Реестр заполнен", legend = "{name}: выловлена Легенда", monster = "{name}: выловлено Чудовище", prestige = "{name}: достигнут Престиж {rank}", region = "Впервые в {region} в этом месяце: выловлен {fish}", zone = "{name}: Мастер зоны {zone}" }
+	L.SIGN_HEAD = { colour = "{name}: пойман редкий цвет", first = "Впервые в {region}: {fish}", hunt = "{name}: золото охоты", ledger = "{name}: Реестр заполнен", legend = "{name}: выловлена Легенда", monster = "{name}: выловлено Чудовище", prestige = "{name}: достигнут Престиж {rank}", region = "Впервые в {region} в этом месяце: {fish}", zone = "{name}: Мастер зоны {zone}" }
 	L.SIGN_HEAD_MASTER_PRESTIGE = "{name}: достигнут Престиж мастера {master:0}"
 	L.SIGN_ITEM_UNKNOWN = "рыба"
 	L.SIGN_KICKER = { colour = "Редкий цвет", first = "Первая весть", hunt = "Золото охоты", ledger = "Реестр", legend = "Легенда", monster = "Чудовище", prestige = "Престиж", region = "Новости региона • {region}", zone = "Мастер зоны" }

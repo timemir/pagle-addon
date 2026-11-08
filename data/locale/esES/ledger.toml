@@ -1352,7 +1352,7 @@ value = "Noticias"
 en = "News"
 
 [NEWS_KICKER]
-value = "La marea matinal"
+value = "La Marea Matinal"
 en = "The Morning Tide"
 
 [NEWS_LINE]
@@ -1663,10 +1663,12 @@ en = "Put away"
 [COLLECTION_SLOT_NAMES]
 value."core.binding" = ["Encuadernación", "Encuadernaciones"]
 value."core.crest" = ["Blasón de ex libris", "Blasones de ex libris"]
+value."core.newssign" = ["Cartel de noticias", "Carteles de noticias"]
 value."core.soundset" = ["Juego de sonidos", "Juegos de sonidos"]
 value."core.toaststyle" = ["Estilo de aviso emergente", "Estilos de aviso emergente"]
 en."core.binding" = ["Binding", "Bindings"]
 en."core.crest" = ["Bookplate crest", "Bookplate crests"]
+en."core.newssign" = ["News sign", "News signs"]
 en."core.soundset" = ["Sound set", "Sound sets"]
 en."core.toaststyle" = ["Toast style", "Toast styles"]
 

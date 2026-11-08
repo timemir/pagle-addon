@@ -82,6 +82,49 @@ describe("Pagle.toc", function()
 		end
 	)
 
+	it(
+		"party_toc: loads the party files and the news sign's Settings section from TOC lines of their own, once each, in"
+			.. " their order, between Settings and the party catches and Announcements (ANN-R103, SET-R37)",
+		function()
+			local at, count = {}, {}
+			for index, file in ipairs(addonFiles("Pagle")) do
+				at[file] = at[file] or index
+				count[file] = (count[file] or 0) + 1
+			end
+			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
+			local tocFile = assert(io.open("addons/Pagle/Pagle.toc", "r"))
+			local toc = tocFile:read("*a")
+			tocFile:close()
+			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
+			local xmlFile = assert(io.open("addons/Pagle/adapter/Settings.xml", "r"))
+			local xml = xmlFile:read("*a")
+			xmlFile:close()
+			assert(not xml:find("<Script", 1, true), "Settings.xml loads no file, only its templates")
+
+			local files = {
+				"adapter/PartyMessages.lua",
+				"adapter/Party.lua",
+				"adapter/PartyToast.lua",
+				"adapter/PartySettings.lua",
+				"adapter/PartyLetter.lua",
+				"adapter/PartyHunts.lua",
+				"adapter/NewsSignSettings.lua",
+			}
+			for i, file in ipairs(files) do
+				assert.are.equal(1, count[file], file)
+				assert(toc:find((file:gsub("/", "\\")), 1, true), file .. " has a TOC line")
+				assert(at[file] > (i > 1 and at[files[i - 1]] or at["adapter/Settings.lua"]), file)
+			end
+			for _, later in ipairs({
+				"adapter/PartyCatches.lua",
+				"adapter/Letter.lua",
+				"adapter/AnnouncementSettings.lua",
+			}) do
+				assert(at[later] > at["adapter/NewsSignSettings.lua"], later)
+			end
+		end
+	)
+
 	it("lists its generated Lore.lua right after locale/enUS.lua, the file that creates ns.L (DATA-R75)", function()
 		local at = {}
 		for index, file in ipairs(addonFiles("Pagle")) do

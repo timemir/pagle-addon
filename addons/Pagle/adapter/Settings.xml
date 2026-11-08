@@ -18,19 +18,4 @@
 	<Frame name="PagleSettingsKeyRowTemplate" mixin="PagleSettingsKeyRowMixin" virtual="true">
 		<Size x="280" y="26"/>
 	</Frame>
-	<!-- Party toasts and cheers (announcements.md ANN-R103–R109, ANN-R112, settings.md SET-R36; from 1.5.2, #640) load here, after
-	adapter/Settings.lua: a patch can't add a file to the TOC, whose file list is hashed, and every file in logic/ is
-	hashed too. Their messages' pure Lua first, then the client's side, the party toast's frame and the Party block,
-	then (from 1.5.3, #655) the party letter (ANN-R113–R116). Each looks up what it needs of files loaded later (the
-	lanes, the letter service, PagleDB) when it runs. Paths are relative to this file. -->
-	<Script file="PartyMessages.lua"/>
-	<Script file="Party.lua"/>
-	<Script file="PartyToast.lua"/>
-	<Script file="PartySettings.lua"/>
-	<Script file="PartyLetter.lua"/>
-	<!-- "Completed for the party" (announcements.md ANN-R111; from 1.6, #646), over the party toasts' files above. -->
-	<Script file="PartyHunts.lua"/>
-	<!-- The Morning Tide's section on the Announcements page (settings.md SET-R37, from 1.6), after the Party block's,
-	which adapter/AnnouncementSettings.lua calls before it. -->
-	<Script file="NewsSignSettings.lua"/>
 </Ui>

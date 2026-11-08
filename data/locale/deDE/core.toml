@@ -885,6 +885,10 @@ en = "A letter, passed along the bank"
 value = "{name} angelt mit dir in {zone} und nutzt auch Pagle. Angelt zusammen: Teile deine besten Fänge, stoß auf ihre an, und eure Fänge zählen gegenseitig für eure Jagden."
 en = "{name} is fishing {zone} with you, and they run Pagle too. Fish together: share your best catches, cheer theirs, and count each other’s catches toward your Hunts."
 
+[PARTY_LETTER_LINE_NO_ZONE]
+value = "{name} nutzt auch Pagle und ist in deiner Gruppe. Angelt zusammen: Teile deine besten Fänge, stoß auf ihre an, und eure Fänge zählen gegenseitig für eure Jagden."
+en = "{name} runs Pagle too and is in your party. Fish together: share your best catches, cheer theirs, and count each other’s catches toward your Hunts."
+
 [PARTY_LETTER_YES]
 value = "Zusammen angeln"
 en = "Fish together"
@@ -1532,6 +1536,10 @@ en = "Pagle dev: /pagle dev party <kind | all | cheer [1-4] | letter [reset]>, w
 [DEV_PARTY_QUEUED]
 value = "Pagle dev: eine Gruppeneinblendung von {name} steht an: {kind}."
 en = "Pagle dev: a party toast from {name} is queued: {kind}."
+
+[DEV_PARTY_HUNT_OFF]
+value = "Pagle dev: Nichts erscheint, solange Gruppenjagden, Momente meiner Gruppe zeigen oder Für die Gruppe geschafft aus ist."
+en = "Pagle dev: nothing shows while Party Hunts, Show my party's moments or Completed for the party is off."
 
 [DEV_PARTY_CHEERED]
 value = "Pagle dev: {count:0} Krüge für einen deiner Momente sind unterwegs."
@@ -2730,7 +2738,7 @@ en.monster = "Monster"
 en.region = "Region news · {region}"
 
 [SIGN_HEAD]
-value.first = "Als Erste in {region}: {fish} gelandet"
+value.first = "Zuerst in {region} gelandet: {fish}"
 value.legend = "{name} hat eine Legende gelandet"
 value.prestige = "{name} hat Prestige {rank} erreicht"
 value.ledger = "{name} hat das Anglerbuch vollendet"
@@ -2738,7 +2746,7 @@ value.colour = "{name} hat eine seltene Farbe gefangen"
 value.hunt = "{name} holt Gold"
 value.zone = "{name} ist Gebietsmeister von {zone}"
 value.monster = "{name} hat ein Monster gelandet"
-value.region = "Diesen Monat als Erste in {region}: {fish} gelandet"
+value.region = "Diesen Monat zuerst in {region} gelandet: {fish}"
 en.first = "First in {region} to land {fish}"
 en.legend = "{name} landed a Legend"
 en.prestige = "{name} reached Prestige {rank}"

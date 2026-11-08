@@ -1,14 +1,14 @@
 -- Party toasts' messages, pure (announcements.md › Party toasts and cheers, › Contracts › Party messages; ANN-R103–R105,
 -- ANN-R108, from 1.5.2, #640): adapter/PartyMessages.lua's format, its strict reading of what arrives, the limits on
 -- what is taken, a shared moment as sent, and the lines a party toast and a cheer's Nod read. Loaded through the real
--- TOC, where adapter/Settings.xml's <Script> lines load it, since a patch can't add to the TOC.
+-- TOC, which lists it from 1.6 (adapter/Settings.xml's <Script> lines loaded it in 1.5.2 and 1.5.3).
 
 local function ns()
 	return loadAddon("Pagle", FOREVER_GLOBALS).ns
 end
 
 describe("party messages", function()
-	it("register the prefix Pagle at load and load through adapter/Settings.xml (ANN-R103)", function()
+	it("register the prefix Pagle at load and load through the TOC (ANN-R103)", function()
 		local loaded = loadAddon("Pagle", FOREVER_GLOBALS)
 		assert.is_true(loaded.client.prefixes.Pagle)
 		local files = addonFiles("Pagle")

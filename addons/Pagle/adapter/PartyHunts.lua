@@ -14,7 +14,7 @@ local Pagle = Pagle
 -- It rides the party catch prefix, PagleCatch (catch-log.md LOG-R110), through the party toasts' one send queue
 -- (adapter/Party.lua's ns.SendPartyMessage, LOG-R112). Live only, as every party toast: nothing here reaches PagleLog,
 -- a projection or the Session summary. Over adapter/PartyMessages.lua (the message and its line) and
--- adapter/Party.lua (the queue, the groupmates, the party queue, the mug). Loaded by adapter/Settings.xml after them,
+-- adapter/Party.lua (the queue, the groupmates, the party queue, the mug). Loaded from the TOC after them,
 -- before the lanes exist: what it reaches of them it looks up when it runs. Its own owner on Core's bus.
 local OWNER = "Pagle party hunts"
 
@@ -32,11 +32,6 @@ local function unsecret(value)
 	return ns.UnlessSecret(issecretvalue, value)
 end
 
--- A party here (LOG-R110): a home group of up to 5, never a raid.
-local function inHomeParty()
-	return IsInGroup(LE_PARTY_CATEGORY_HOME) and not IsInRaid()
-end
-
 --- Sends "Completed for the party" for each moment of `announcement` that carries partyCatch (ANN-R111), once, on the
 --- prefix PagleCatch, while Party Hunts (adapter/Party.lua's ns.PartyHuntsOn: from 1.6 off until the party letter is
 --- accepted, ANN-R113) and Share my moments with my party are on, in a party. adapter/Moments.lua
@@ -44,7 +39,7 @@ end
 --- a rebuild's.
 ---@param announcement PagleAnnouncement
 function ns.SharePartyHunts(announcement)
-	if not ns.PartyHuntsOn() or not ns.PartyOption("share") or not inHomeParty() then
+	if not ns.PartyHuntsOn() or not ns.PartyOption("share") or not ns.InHomeParty() then
 		return
 	end
 	for _, moment in ipairs(announcement.moments) do
@@ -87,14 +82,21 @@ end
 ---@type table<string, { message: PaglePartyHunt, names: string[], from: table<string, true>, at: number }>
 local gathering = {}
 
---- A groupmate's hp (ANN-R111), already checked: taken while Party Hunts, Show my party's moments and its kind's switch
---- are on (SET-R35, SET-R36). The first of one Catch and Hunt waits the merge window for the others, each groupmate
---- once, then goes to the party queue as one toast, expiring from its arrival.
+--- Whether a groupmate's hp would show now: Party Hunts, Show my party's moments and its kind's switch are on (SET-R35,
+--- SET-R36).
+---@return boolean
+function ns.PartyHuntShows()
+	return ns.PartyHuntsOn() and ns.PartyOption("show") and ns.PartyKindOn(ns.PARTY_HUNT_KIND)
+end
+
+--- A groupmate's hp (ANN-R111), already checked: taken while it would show (ns.PartyHuntShows). The first of one Catch
+--- and Hunt waits the merge window for the others, each groupmate once, then goes to the party queue as one toast,
+--- expiring from its arrival.
 ---@param message PaglePartyHunt
 ---@param name string the groupmate's first name, as ANN-R111's lines name them ("for Kukli and Bram")
 ---@param key string the groupmate's key
 function ns.ReceivePartyHunt(message, name, key)
-	if not ns.PartyHuntsOn() or not ns.PartyOption("show") or not ns.PartyKindOn(ns.PARTY_HUNT_KIND) then
+	if not ns.PartyHuntShows() then
 		return
 	end
 	local merge = table.concat({ message.what, message.id, message.source }, "|")
@@ -128,7 +130,7 @@ Pagle.RegisterEvent(OWNER, "CHAT_MSG_ADDON", function(_, prefix, text, channel, 
 	if unsecret(prefix) ~= ns.PARTY_CATCH_PREFIX or unsecret(channel) ~= "PARTY" or type(text) ~= "string" then
 		return
 	end
-	if text:match("^[^|]*") ~= ns.PARTY_HUNT_KIND or not ns.PartyHuntsOn() or not inHomeParty() then
+	if text:match("^[^|]*") ~= ns.PARTY_HUNT_KIND or not ns.PartyHuntsOn() or not ns.InHomeParty() then
 		return
 	end
 	local member = ns.PartyGroupmate(unsecret(sender))

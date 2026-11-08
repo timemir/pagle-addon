@@ -15,7 +15,7 @@ local Pagle = Pagle
 -- time. It is sent mid-session, whenever its reason holds: a Pagle groupmate in the player's zone while the player
 -- fishes (ANN-R114). Its three buttons, Fish together, Not now and No thanks (ANN-R115), its words written as it shows
 -- and its asking again a day after Not now are the service's own (ONB-R15, ONB-R16), which keeps its answer
--- account-wide. Loaded by adapter/Settings.xml, after adapter/Party.lua and before adapter/Letter.lua: it reaches
+-- account-wide. Loaded from the TOC, after adapter/Party.lua and before adapter/Letter.lua: it reaches
 -- ns.letter and ns.onboarding only when it runs.
 local OWNER = "Pagle party letter"
 
@@ -61,8 +61,9 @@ local function setByHand()
 end
 
 --- Whether the party letter's reason holds now (ANN-R114): no party switch set by hand, the player cast in the last
---- 300 s, and a Pagle groupmate is in the player's party and zone. Whether it was answered, and when Not now lets it
---- ask again, is the letter service's (ONB-R16). The service asks it again as the letter is about to show (`isDue`,
+--- 300 s, and a Pagle groupmate is in the player's party and zone, or in the party where the client can't place them
+--- or the player (ns.PartyGroupmateHere): an unknown zone isn't another one. Whether it was answered, and when Not now
+--- lets it ask again, is the letter service's (ONB-R16). The service asks it again as the letter is about to show (`isDue`,
 --- ONB-R17), so a reason that passed while the letter waited (combat, another letter) shows nothing.
 ---@return boolean
 function ns.PartyLetterIsDue()
@@ -90,12 +91,25 @@ Pagle.RegisterEvent(OWNER, "ZONE_CHANGED_NEW_AREA", function()
 	ns.CheckPartyLetter()
 end)
 
+-- Whether the letter shows as the dev command's sample (`/pagle dev party letter`), while ns.letter:ShowNow writes it.
+local devShowing = false
+
 --- The party letter's words as it shows (ANN-R116): the Pagle groupmate in the player's zone and that zone, or, for the
---- tour's sample and the dev command, the made-up Kukli Emnabi in the player's zone (Elwynn Forest where the client
---- can't name it).
+--- tour's sample and the dev command, always the made-up Kukli Emnabi in the player's zone (Elwynn Forest where the
+--- client can't name it), never a real groupmate.
 ---@return PagleLetterWords
 function ns.PartyLetterWords()
-	local member, map = ns.PartyGroupmateHere()
+	-- The tour's sample is the letter service's preview while it is written (logic/Letter.lua's TourShow, ONB-R84).
+	---@diagnostic disable-next-line: invisible -- read only: the service names no accessor for its preview alone
+	local sample = devShowing or ns.letter.preview == ID
+	local member, map
+	if not sample then
+		member, map = ns.PartyGroupmateHere()
+	end
+	if member and not map then
+		-- The client placed one of the two nowhere: the words name no zone (ANN-R114).
+		return { text = ns.RenderText(ns.L.PARTY_LETTER_LINE_NO_ZONE, { name = member.name }) }
+	end
 	local zone = mapName(map) or mapName(unsecret((C_Map.GetBestMapForUnit("player")))) or SAMPLE_ZONE
 	return {
 		text = ns.RenderText(
@@ -161,6 +175,11 @@ function ns.RunPartyLetterDev(args)
 		print(L.DEV_PARTY_LETTER_RESET)
 		return
 	end
-	ns.letter:ShowNow(ID)
+	devShowing = true
+	local ok, problem = pcall(ns.letter.ShowNow, ns.letter, ID)
+	devShowing = false
+	if not ok then
+		error(problem, 0)
+	end
 	print(ns.RenderText(L.DEV_PARTY_LETTER, { name = ns.PARTY_DEV_NAME }))
 end

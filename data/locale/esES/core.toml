@@ -492,6 +492,10 @@ en = "A letter, passed along the bank"
 value = "{name} está pescando en {zone} contigo y también usa Pagle. Pescad juntos: comparte tus mejores capturas, brinda por las suyas y que las capturas de cada uno cuenten para las Cazas del otro."
 en = "{name} is fishing {zone} with you, and they run Pagle too. Fish together: share your best catches, cheer theirs, and count each other’s catches toward your Hunts."
 
+[PARTY_LETTER_LINE_NO_ZONE]
+value = "{name} también usa Pagle y está en tu grupo. Pescad juntos: comparte tus mejores capturas, brinda por las suyas y que las capturas de cada uno cuenten para las Cazas del otro."
+en = "{name} runs Pagle too and is in your party. Fish together: share your best catches, cheer theirs, and count each other’s catches toward your Hunts."
+
 [PARTY_LETTER_YES]
 value = "Pescar juntos"
 en = "Fish together"
@@ -1069,6 +1073,10 @@ en = "Pagle dev: /pagle dev party <kind | all | cheer [1-4] | letter [reset]>, w
 [DEV_PARTY_QUEUED]
 value = "Pagle dev: un aviso de grupo de {name} está en cola: {kind}."
 en = "Pagle dev: a party toast from {name} is queued: {kind}."
+
+[DEV_PARTY_HUNT_OFF]
+value = "Pagle dev: no se muestra nada mientras Cazas en grupo, Mostrar los momentos de mi grupo o Completado para el grupo estén desactivados."
+en = "Pagle dev: nothing shows while Party Hunts, Show my party's moments or Completed for the party is off."
 
 [DEV_PARTY_CHEERED]
 value = "Pagle dev: {count:0} brindis por un momento tuyo van en camino."

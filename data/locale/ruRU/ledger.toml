@@ -1930,10 +1930,12 @@ en.other = "{label}s"
 [COLLECTION_SLOT_NAMES]
 value."core.binding" = ["Переплёт", "Переплёты"]
 value."core.crest" = ["Герб экслибриса", "Гербы экслибриса"]
+value."core.newssign" = ["Табличка новостей", "Таблички новостей"]
 value."core.soundset" = ["Набор звуков", "Наборы звуков"]
 value."core.toaststyle" = ["Стиль плашек", "Стили плашек"]
 en."core.binding" = ["Binding", "Bindings"]
 en."core.crest" = ["Bookplate crest", "Bookplate crests"]
+en."core.newssign" = ["News sign", "News signs"]
 en."core.soundset" = ["Sound set", "Sound sets"]
 en."core.toaststyle" = ["Toast style", "Toast styles"]
 

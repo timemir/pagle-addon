@@ -11,7 +11,7 @@ end
 -- settings over PagleDB.global.newsSign, nil meaning the default, as the Party block's rows read theirs
 -- (adapter/PartySettings.lua), then the look's slot dropdown. They read the switches through adapter/NewsSign.lua's
 -- ns.NewsOption, ns.NewsKindOn and ns.NewsSignMuted, as the sign's decision does, and write them here. adapter/AnnouncementSettings.lua calls it after the Party
--- block. Loaded by adapter/Settings.xml.
+-- block. Loaded from the TOC, before adapter/AnnouncementSettings.lua.
 local L = ns.L
 
 -- The proxy setting variables: Core's Cozy mode (adapter/AnnouncementSettings.lua's), then the section's own.

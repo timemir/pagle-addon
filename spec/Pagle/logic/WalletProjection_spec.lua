@@ -478,6 +478,25 @@ describe("The wallet projection's Curio crates", function()
 	)
 
 	it(
+		"hands the new rule set over at once when a live build entry changes it, so the next crate is shown under the"
+			.. " rule set it is drawn under; a build entry of the same rule set hands nothing over (SHOP-R53, LOG-R36)",
+		function()
+			local world = newWorld({ ("B1|1|%d|0|70338|1.60.1|pagle-2026i"):format(SERVER_TIME - 90000) })
+			world.enterWorld()
+			assert.are.equal("pagle-2026i", world.snapshots[#world.snapshots].rules)
+			local before = #world.snapshots
+
+			world.live({ kind = "build", build = 70339, version = "1.60.2", rules = "pagle-2026i" })
+			assert.are.equal(before, #world.snapshots)
+
+			world.live({ kind = "build", build = 70339, version = "1.60.2", rules = "pagle-2026j" })
+			assert.are.equal(before + 1, #world.snapshots)
+			assert.are.equal("pagle-2026j", world.snapshots[#world.snapshots].rules)
+			assert.are.equal("pagle-2026j", world.db.projection.rules)
+		end
+	)
+
+	it(
 		"notes the time of the crate that gave a good, never of a payback, and hands the goods crates gave over as"
 			.. " fromCrate, purchased staying false for them (SHOP-R36, SHOP-R50)",
 		function()

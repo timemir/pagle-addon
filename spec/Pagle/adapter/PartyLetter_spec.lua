@@ -298,17 +298,58 @@ describe("when the party letter shows (ANN-R114)", function()
 		assert.is_false(shows(loaded))
 	end)
 
-	it("ann_r114 never shows while the Pagle groupmate is in another zone, or the client can't place them", function()
+	it("ann_r114 never shows while the client places the Pagle groupmate in another zone", function()
 		local loaded = loggedIn(party(DUROTAR))
 		hello(loaded)
 		cast(loaded)
 		assert.is_false(shows(loaded))
-
-		local unplaced = loggedIn({ members = { { name = "Kukli", surname = "Stonebrew" } } })
-		hello(unplaced)
-		cast(unplaced)
-		assert.is_false(shows(unplaced))
 	end)
+
+	it(
+		"ann_r114 shows, naming no zone, when the client can't place the Pagle groupmate: unknown isn't another",
+		function()
+			local unplaced = loggedIn({ members = { { name = "Kukli", surname = "Stonebrew" } } })
+			hello(unplaced)
+			cast(unplaced)
+			assert.is_true(letterOf(unplaced):IsShown())
+			assert.are.equal(
+				"Kukli Stonebrew runs Pagle too and is in your party. Fish together: share your best catches, cheer"
+					.. " theirs, and count each other’s catches toward your Hunts.",
+				letterOf(unplaced).line.text
+			)
+
+			-- nor the player
+			local lost = loggedIn(party())
+			lost.client.playerMap = nil
+			hello(lost)
+			cast(lost)
+			assert.is_true(letterOf(lost):IsShown())
+			assert.matches("^Kukli Stonebrew runs Pagle too and is in your party%.", letterOf(lost).line.text)
+		end
+	)
+
+	it("ann_r114 names the groupmate the client places in the player's zone before one it can't place", function()
+		local loaded =
+			loggedIn({ members = { { name = "Kukli", surname = "Stonebrew" }, { name = "Arwen", map = ELWYNN } } })
+		hello(loaded)
+		hello(loaded, "Arwen-Testrealm")
+		cast(loaded)
+		assert.matches("^Arwen is fishing Elwynn Forest with you", letterOf(loaded).line.text)
+	end)
+
+	it(
+		"ann_r114 sends nothing more for a groupmate it can't place: the letter shows on what already arrived",
+		function()
+			local loaded = loggedIn({ members = { { name = "Kukli", surname = "Stonebrew" } } })
+			hello(loaded)
+			sent(loaded)
+			sent(loaded, "PagleCatch")
+			cast(loaded)
+			assert.is_true(letterOf(loaded):IsShown())
+			assert.are.same({}, sent(loaded))
+			assert.are.same({}, sent(loaded, "PagleCatch"))
+		end
+	)
 
 	it("ann_r114 names the Pagle groupmate in the player's zone, not another who isn't", function()
 		local loaded = loggedIn(party(DUROTAR))
@@ -584,6 +625,30 @@ describe("the party letter's tour stop and dev command (ANN-R116)", function()
 			assert.is_false(loaded.ns.PartyOption("share"))
 			assert.is_false(loaded.ns.PartyHuntsOn())
 			assert.is_nil((letterState(loaded)))
+		end
+	)
+
+	it(
+		"ann_r116 names the made-up groupmate in the sample and the dev command, never a real one in the zone",
+		function()
+			-- Arwen, a Pagle groupmate, fishes the player's zone: the real letter would name her.
+			local loaded = loggedIn(party(DUROTAR))
+			hello(loaded, "Arwen-Testrealm")
+			local stop
+			for _, listed in ipairs(loaded.ns.tourStops:List(loaded.ns.Modules:Modules(), "core")) do
+				if listed.name == "core.onboarding.letter.core.party" then
+					stop = listed
+				end
+			end
+
+			assert(stop, "no tour stop for the party letter").show()
+			assert.matches("^Kukli Emnabi is fishing Elwynn Forest", letterOf(loaded).line.text)
+			stop.hide()
+
+			slash(loaded, "dev on")
+			slash(loaded, "dev party letter")
+			assert.matches("^Kukli Emnabi is fishing Elwynn Forest", letterOf(loaded).line.text)
+			press(loaded, "Not now")
 		end
 	)
 end)

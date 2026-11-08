@@ -319,8 +319,13 @@ describe("what the receiver checks, in order", function()
 		it("logs two Casts that differ in any field, the tie included", function()
 			local world = receiver()
 			world.receive(MESSAGE)
-			assert.is_nil(select(2, world.receive("PC|1|" .. KUKLI .. "|1791731748|1|494|148|453|120|0||||6358x1")))
-			assert.is_nil(select(2, world.receive("PC|1|" .. KUKLI .. "|1791731748|0|494|148|453|120|0||||6358x2")))
+			-- From two other groupmates, as one groupmate has one Party Catch a second (check 9).
+			world.members["Arwen-Testrealm"] = { guid = "Player-4618-0C00000C", name = "Arwen" }
+			world.members["Bram-Testrealm"] = { guid = "Player-4618-0D00000D", name = "Bram" }
+			local tie = "PC|1|Player-4618-0C00000C|1791731748|1|494|148|453|120|0||||6358x1"
+			local items = "PC|1|Player-4618-0D00000D|1791731748|0|494|148|453|120|0||||6358x2"
+			assert.is_nil(select(2, world.receive(tie, "Arwen-Testrealm")))
+			assert.is_nil(select(2, world.receive(items, "Bram-Testrealm")))
 			assert.are.equal(3, #world.appended)
 		end)
 
@@ -331,13 +336,78 @@ describe("what the receiver checks, in order", function()
 		end)
 	end)
 
+	-- Kukli's Cast at `time`, tie `tie`, as a message: the copy differs from COPY's in time and tie only.
+	local function kukliAt(time, tie)
+		return ("PC|1|%s|%d|%d|494|148|453|120|0||||6358x1"):format(KUKLI, time, tie or 0)
+	end
+
+	describe("9. one Party Catch a second from each groupmate (LOG-R113 item 9)", function()
+		it("drops a second Cast of one groupmate's in the same second, whatever its tie", function()
+			local world = receiver()
+			assert.is_nil(select(2, world.receive(kukliAt(NOW - 12, 0))))
+			for tie = 1, 5 do
+				local _, failed = world.receive(kukliAt(NOW - 12, tie))
+				assert.are.equal(9, failed)
+			end
+			-- the next second, and another groupmate's in the same second, are taken
+			assert.is_nil(select(2, world.receive(kukliAt(NOW - 11, 1))))
+			world.members["Arwen-Testrealm"] = { guid = "Player-4618-0C00000C", name = "Arwen" }
+			local arwen = "PC|1|Player-4618-0C00000C|" .. (NOW - 12) .. "|3|494|148|453|120|0||||6358x1"
+			assert.is_nil(select(2, world.receive(arwen, "Arwen-Testrealm")))
+			assert.are.equal(3, #world.appended)
+		end)
+
+		it("remembers each second as long as a message of it can arrive", function()
+			local world = receiver()
+			world.receive(kukliAt(NOW + 30))
+			-- 90 s on, the Cast is at the max party delay: still in time, and still a second already taken.
+			world.now = NOW + 90
+			local _, failed = world.receive(kukliAt(NOW + 30, 1))
+			assert.are.equal(9, failed)
+		end)
+
+		it("counts only what was logged: a Cast the Hunts filter refused leaves its second free", function()
+			local world = receiver()
+			world.wants = false
+			world.receive(kukliAt(NOW - 12, 0))
+			world.wants = true
+			assert.is_nil(select(2, world.receive(kukliAt(NOW - 12, 1))))
+		end)
+	end)
+
+	describe("10. at most the party catch cap from each groupmate a minute (LOG-R113 item 10, Tunables)", function()
+		it(
+			"drops a groupmate's eleventh Party Catch in 60 s, and takes one again once the first is a minute old",
+			function()
+				local world = receiver()
+				assert.are.same({ 10, 60 }, { ns.PARTY_CATCH_CAP, ns.PARTY_CATCH_CAP_WINDOW })
+				for i = 1, 10 do
+					world.now = NOW + (i - 1) * 3
+					assert(select(2, world.receive(kukliAt(world.now - 1))) == nil, "Catch " .. i)
+				end
+				world.now = NOW + 59
+				local _, failed = world.receive(kukliAt(NOW + 58))
+				assert.are.equal(10, failed)
+				-- another groupmate has a cap of their own
+				world.members["Arwen-Testrealm"] = { guid = "Player-4618-0C00000C", name = "Arwen" }
+				local arwen = "PC|1|Player-4618-0C00000C|" .. (NOW + 58) .. "|0|494|148|453|120|0||||6358x1"
+				assert.is_nil(select(2, world.receive(arwen, "Arwen-Testrealm")))
+				-- the first, received at NOW, leaves the window at NOW + 60
+				world.now = NOW + 60
+				assert.is_nil(select(2, world.receive(kukliAt(NOW + 59))))
+				assert.are.equal(12, #world.appended)
+			end
+		)
+	end)
+
 	it(
-		"9. logs nothing the Hunts filter refuses, asking with the record the entry would make (LOG-R113 item 9, LOG-R114)",
+		"11. logs nothing the Hunts filter refuses, asking with the record the entry would make (LOG-R113 item 11,"
+			.. " LOG-R114)",
 		function()
 			local world = receiver()
 			world.wants = false
 			local _, failed = world.receive(MESSAGE)
-			assert.are.equal(9, failed)
+			assert.are.equal(11, failed)
 			assert.are.same({}, world.appended)
 			assert.are.equal(1, world.catchLog:Count())
 			local asked = world.asked[1]

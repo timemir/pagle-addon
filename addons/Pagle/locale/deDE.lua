@@ -75,6 +75,7 @@ ns.Locale("deDE", function(L)
 	L.DEV_ONBOARDING_RESET = "Pagle dev: Das Onboarding steht wieder wie bei einem neuen Angler, der Brief wartet; /reload, um dort zu beginnen."
 	L.DEV_ONBOARDING_USAGE = "Pagle dev: /pagle dev onboarding {usages}"
 	L.DEV_PARTY_CHEERED = "Pagle dev: {count:0} Krüge für einen deiner Momente sind unterwegs."
+	L.DEV_PARTY_HUNT_OFF = "Pagle dev: Nichts erscheint, solange Gruppenjagden, Momente meiner Gruppe zeigen oder Für die Gruppe geschafft aus ist."
 	L.DEV_PARTY_LETTER = "Pagle dev: Der Gruppenbrief ist zu sehen, als ob {name} neben dir angelt."
 	L.DEV_PARTY_LETTER_RESET = "Pagle dev: Die Antwort auf den Gruppenbrief ist vergessen; das Teilen mit der Gruppe ist aus, bis er beantwortet wird."
 	L.DEV_PARTY_QUEUED = "Pagle dev: eine Gruppeneinblendung von {name} steht an: {kind}."
@@ -333,6 +334,7 @@ ns.Locale("deDE", function(L)
 	L.PARTY_LETTER_KICKER = "Ein Brief, am Ufer weitergereicht"
 	L.PARTY_LETTER_LATER = "Jetzt nicht"
 	L.PARTY_LETTER_LINE = "{name} angelt mit dir in {zone} und nutzt auch Pagle. Angelt zusammen: Teile deine besten Fänge, stoß auf ihre an, und eure Fänge zählen gegenseitig für eure Jagden."
+	L.PARTY_LETTER_LINE_NO_ZONE = "{name} nutzt auch Pagle und ist in deiner Gruppe. Angelt zusammen: Teile deine besten Fänge, stoß auf ihre an, und eure Fänge zählen gegenseitig für eure Jagden."
 	L.PARTY_LETTER_NO = "Nein danke"
 	L.PARTY_LETTER_YES = "Zusammen angeln"
 	L.PARTY_LINES = { epic = "Hat eine epische Variante gefangen", gold = "Hat in einer Jagd Gold geholt", ledger = "Anglerbuch 100 %", legend = "Hat eine Legende gefangen", monster = "Rekord in Monstergröße", rare = "Hat eine seltene Variante gefangen", zone = "Gebietsmeister" }
@@ -582,7 +584,7 @@ ns.Locale("deDE", function(L)
 	L.SIGN_DETAIL_COLOUR = "{variety} {species}"
 	L.SIGN_DETAIL_COLOUR_HIDDEN = "{species} ({rarity})"
 	L.SIGN_DETAIL_MONSTER = "{species}, {length}"
-	L.SIGN_HEAD = { colour = "{name} hat eine seltene Farbe gefangen", first = "Als Erste in {region}: {fish} gelandet", hunt = "{name} holt Gold", ledger = "{name} hat das Anglerbuch vollendet", legend = "{name} hat eine Legende gelandet", monster = "{name} hat ein Monster gelandet", prestige = "{name} hat Prestige {rank} erreicht", region = "Diesen Monat als Erste in {region}: {fish} gelandet", zone = "{name} ist Gebietsmeister von {zone}" }
+	L.SIGN_HEAD = { colour = "{name} hat eine seltene Farbe gefangen", first = "Zuerst in {region} gelandet: {fish}", hunt = "{name} holt Gold", ledger = "{name} hat das Anglerbuch vollendet", legend = "{name} hat eine Legende gelandet", monster = "{name} hat ein Monster gelandet", prestige = "{name} hat Prestige {rank} erreicht", region = "Diesen Monat zuerst in {region} gelandet: {fish}", zone = "{name} ist Gebietsmeister von {zone}" }
 	L.SIGN_HEAD_MASTER_PRESTIGE = "{name} hat Meisterprestige {master:0} erreicht"
 	L.SIGN_ITEM_UNKNOWN = "ein Fisch"
 	L.SIGN_KICKER = { colour = "Seltene Farbe", first = "Erstmeldung", hunt = "Jagdgold", ledger = "Das Anglerbuch", legend = "Legende", monster = "Monster", prestige = "Prestige", region = "Regionsnachricht · {region}", zone = "Gebietsmeister" }

@@ -153,6 +153,13 @@ adapter\Sessions.lua
 adapter\Onboarding.lua
 adapter\Settings.lua
 adapter\Settings.xml
+adapter\PartyMessages.lua
+adapter\Party.lua
+adapter\PartyToast.lua
+adapter\PartySettings.lua
+adapter\PartyLetter.lua
+adapter\PartyHunts.lua
+adapter\NewsSignSettings.lua
 adapter\PartyCatches.lua
 adapter\KeyCapture.lua
 adapter\KeyBindingRow.lua

@@ -12,7 +12,7 @@ local Pagle = Pagle
 -- catch message sent for each of the Angler's own caught Casts, and the groupmates' received, checked and logged, over
 -- logic/PartyCatches.lua. The message rides its own prefix (ns.PARTY_CATCH_PREFIX) and the party toasts' send queue
 -- (adapter/Party.lua's ns.SendPartyMessage, LOG-R112), and the receiver matches its sender as the party toasts do
--- (ns.PartyGroupmate). Loaded after adapter/Settings.xml, whose <Script> lines load Party.lua. Its own owner on Core's
+-- (ns.PartyGroupmate). Loaded from the TOC after adapter/Party.lua. Its own owner on Core's
 -- bus.
 local OWNER = "Pagle party catches"
 
@@ -30,11 +30,6 @@ C_ChatInfo.RegisterAddonMessagePrefix(ns.PARTY_CATCH_PREFIX)
 -- `value`, or nil if it is a secret (CORE-R31).
 local function unsecret(value)
 	return ns.UnlessSecret(issecretvalue, value)
-end
-
--- A party here (LOG-R110): a home group of up to 5, never a raid, an instance group or a battleground.
-local function inHomeParty()
-	return IsInGroup(LE_PARTY_CATEGORY_HOME) and not IsInRaid()
 end
 
 -- Whether `sender` is the player, the client's echo of their own message (LOG-R113 item 1): by GUID where the client
@@ -58,7 +53,9 @@ local partyCatches = ns.NewPartyCatches({
 	on = function()
 		return ns.PartyHuntsOn()
 	end,
-	inParty = inHomeParty,
+	inParty = function()
+		return ns.InHomeParty()
+	end,
 	groupmate = function(sender)
 		return ns.PartyGroupmate(sender)
 	end,
