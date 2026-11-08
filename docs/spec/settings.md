@@ -43,6 +43,9 @@ Announcements
                             Cozy mode;  Interruption budget  ↳ Interruptions  ↳ Per;  Show every catch;  Animations;  Toast style;  Sound set
   [Party]                   Party Hunts (from 1.6);  Share my moments with my party;  Show my party's moments
                             ↳ one switch per kind;  Cheers sounds   (the party toast rows from 1.5.2)
+  [The Morning Tide]        Show news at login  ↳ First reported  ↳ Legends  ↳ Prestige  ↳ Ledger completed
+                            ↳ Rare varieties  ↳ Hunt gold  ↳ Zone Master  ↳ Monster records  ↳ Region headlines;
+                            Mute the sign;  News sign                          (from 1.6)
   [Hunts]                   Announce open Hunt windows;  Remind me about the Pagle companion
                             (while Hunts' companion hint switch is on, as at 1.0: HNT-R172)
 Trackers
@@ -51,7 +54,7 @@ Trackers
   [Stats]                   Show the live tracker  ↳ Watched Dry spells;  Stats tracker frame
   [Tackle Board]            Show goals workable here;  Tackle Board tracker frame
 Look and Feel
-  [Announcements]           Toast style;  Sound set
+  [Announcements]           Toast style;  Sound set;  News sign                (News sign from 1.6)
   [Crests]                  Crests
   [Books]                   Book binding
   [Trackers]                Hunts tracker frame;  Stats tracker frame;  Tackle Board tracker frame
@@ -252,6 +255,25 @@ The rules below are authoritative; this sketch only summarises them.
 
   It shows or hides the whole dock at once (CORE-R88) and leaves the tracker Modules' own Show rows as they are: a tracker shows only while its own row and the dock both let it. It is never greyed out, whatever trackers are on.
 
+- **SET-R37** *From 1.6 (pagle-2026j).* The Announcements page gains a section **The Morning Tide**, Core's, for the news sign ([core/news-sign.md](core/news-sign.md)), after the Party section (SET-R35, and #640's rows, SET-R36) and before the Modules' sections (SET-R3):
+
+  | Header | Row | Kind | Values · default | Greyed out when | Tooltip |
+  |---|---|---|---|---|---|
+  | The Morning Tide | Show news at login | checkbox | on (SIGN-R14, `PagleDB.global.newsSign.show`) | Cozy mode is on | "At login or /reload, a sign drops in with the best news about the Anglers you follow on the Pagle website. Needs the Pagle Companion. A left click opens the rest in the Fish Journal." |
+  | | ↳ First reported | checkbox | on (`newsSign.kinds.first`) | Cozy mode is on, or the sign is off | |
+  | | ↳ Legends | checkbox | on (`newsSign.kinds.legend`) | as above | |
+  | | ↳ Prestige | checkbox | on (`newsSign.kinds.prestige`) | as above | |
+  | | ↳ Ledger completed | checkbox | on (`newsSign.kinds.ledger`) | as above | |
+  | | ↳ Rare varieties | checkbox | on (`newsSign.kinds.colour`) | as above | |
+  | | ↳ Hunt gold | checkbox | on (`newsSign.kinds.hunt`) | as above | |
+  | | ↳ Zone Master | checkbox | on (`newsSign.kinds.zone`) | as above | |
+  | | ↳ Monster records | checkbox | on (`newsSign.kinds.monster`) | as above | |
+  | | ↳ Region headlines | checkbox | on (`newsSign.headlines`) | as above | "Who was first in your region this month to land a Legend, whether you follow them or not." |
+  | | Mute the sign | checkbox | off (SIGN-R31, `newsSign.mute`) | | "The sign drops without its sounds. The game's sound settings still apply." |
+  | | News sign | slot dropdown, `core.newssign` (SET-R51) | owned looks · `core.newssign.wood` (SHOP-R60) | | |
+
+  The kind rows are in the sign's rank (SIGN-R10) and only choose what the sign shows (SIGN-R15): the Fish Journal's news list keeps every kind (LED-R176). Turning "Show news at login" on sets the sign's floor (SIGN-R18), so it never brings the backlog that came while it was off. Mute the sign and the look aren't greyed: they are kept for when the sign shows. The rows bind to `PagleDB.global` like the sign's spot, since the Anglers followed are the Player's, not a character's; the look is a slot's, in `PagleDB.profile.appearance` (SHOP-R32). The page's Defaults button restores every row of this section to its default, the look to Wood, as SET-R33 restores the page's other rows; a Defaults that turns the sign back on sets the floor too.
+
 ### Look and Feel
 
 - **SET-R50** Core builds Look and Feel from the goods registry; Modules add no rows to it (CORE-R42, wallet-and-shop.md UI). It shows, in order:
@@ -263,7 +285,7 @@ The rules below are authoritative; this sketch only summarises them.
 
   | Category | Slot (label) | Owner | Rule |
   |---|---|---|---|
-  | Announcements | `core.toaststyle` (Toast style), `core.soundset` (Sound set) | Core | SHOP-R25 |
+  | Announcements | `core.toaststyle` (Toast style), `core.soundset` (Sound set); *from 1.6* `core.newssign` (News sign) | Core | SHOP-R25, SHOP-R60 |
   | Crests | `core.crest` (Crests), shown whatever Modules are On; its dropdown and the Collection's Bookplate crests shelf are where the earned zone and fish crests are equipped, as the Curio Shop doesn't list them (SHOP-R24) | Core | SHOP-R25 |
   | Books | `core.binding` (Book binding), the one binding every book wears, shown whatever Modules are On; the Ledger's and Hunts' earned bindings are among its options while their Module is On (ADR 0015) | Core | SHOP-R25, LED-R110, HNT-R122 |
   | Trackers | `hunts.trackerframe` (Hunts tracker frame), `stats.trackerframe` (Stats tracker frame), `tackleboard.trackerframe` (Tackle Board tracker frame) | Hunts, Stats, Tackle Board | HNT-R120, STA-R88, TKB-R125 |
@@ -306,6 +328,7 @@ This file adds no data. Each row's value lives with its owner:
 | Saving, Units | `PagleDB.profile.reloadReminder`, `PagleDB.profile.lengthUnit` ([catch-log.md](core/catch-log.md#data)), `PagleDB.profile.clockFormat` ([core/README.md](core/README.md#data)), `PagleDB.global.language` (catch-log.md, from 1.1) |
 | Cozy mode, the budget, Show every catch, Animations | `PagleDB.profile.announcements` |
 | Every slot dropdown | `PagleDB.profile.appearance[slot]` (SHOP-R32) |
+| The Morning Tide (from 1.6) | `PagleDB.global.newsSign.show`, `.kinds`, `.headlines`, `.mute` ([news-sign.md](core/news-sign.md#data)) |
 | Tracker position, Show trackers only while fishing | `PagleDB.profile.dock.point`, and from 1.3 `PagleDB.profile.dock.onlyWhileFishing` (Core README Data) |
 | Toast position | `PagleDB.profile.announcements.point` (ANN-R98) and `PagleDB.profile.cards.point` (ANN-R102) |
 | Party toasts (from 1.5.2) | `PagleDB.profile.party` (SET-R36) |

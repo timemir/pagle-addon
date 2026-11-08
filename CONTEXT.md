@@ -228,6 +228,10 @@ _Avoid_: catch-up toast, backfill, welcome screen
 The sign that drops in from the top of the screen at login with the best news about the Anglers the player follows, or a region headline, hangs a few seconds and goes back up; a left click opens the rest. It comes in six looks: Wood, free and the default, and five that are Curio Shop goods. Its internal name, in the spec and code, is the news sign.
 _Avoid_: news popup, ticker
 
+**Region headline**:
+News on The Morning Tide about whoever was first in the player's region this month to land a Legend, followed or not. It is not First reported, which is all-time and an award; it is shown only in game.
+_Avoid_: region first, monthly First reported
+
 ### Onboarding
 
 **Letter**:
