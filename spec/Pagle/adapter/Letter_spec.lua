@@ -668,7 +668,8 @@ describe("a Module's letter on the same frame (ONB-R15, ONB-R16, ONB-R17)", func
 			pagle(loaded, "dev onboarding letter ledger.nothing")
 
 			assert.are.same(
-				{ "Pagle dev: no letter ledger.nothing; the letters are core.onboarding, ledger.prestige." },
+				-- core.party is Core's own party letter (announcements.md ANN-R113–R116, from 1.5.3).
+				{ "Pagle dev: no letter ledger.nothing; the letters are core.onboarding, core.party, ledger.prestige." },
 				{ unpack(loaded.printed, before + 1) }
 			)
 		end
