@@ -36,6 +36,13 @@ function ns.Hunts.OnInitialize()
 		local name = ns.hunts and ns.hunts:HuntName(huntID)
 		return name ~= huntID and name or nil
 	end
+	-- From 1.6, a groupmate's "Completed for the party" for a run names its event the same way (ANN-R111): a pooled or
+	-- logged pushed event's name, or nil for one this Hunts doesn't know.
+	def.partyEventName = function(eventID)
+		local event = ns.events and ns.KnownEvent(ns.State(), eventID)
+		local name = event and ns.events:EventName(event)
+		return name ~= eventID and name or nil
+	end
 	ns.Module = Pagle.RegisterModule(def)
 	-- An inert Module must stop (CORE-R13).
 	if not ns.Module then

@@ -61,6 +61,27 @@ do
 	end)
 end
 
+-- "Completed for the party" (ANN-R111, from 1.6): a settled run's, for four made-up groupmates, its longest line, so the
+-- layout harness measures the hp toast with no mug.
+do
+	---@type PagleAnnouncement?
+	local sample
+	add("announce.hp", function()
+		return ns.RenderText(ns.L.DEV_TOUR_ANNOUNCE, { kind = "hp" })
+	end, function()
+		sample = ns.PartyHuntToastOf(
+			{ type = "hunt", what = "run", id = "darkshore_moonlight", catch = "tour", catcher = "tour" },
+			{ "Kukli Emnabi", "Arwen Tull", "Dela Marsh", "Bram" },
+			GetServerTime() + 120
+		)
+		ns.lanes:Push(sample)
+	end, function()
+		if sample then
+			ns.lanes:Withdraw(sample)
+		end
+	end)
+end
+
 -- Each card, in the card frame: a Session summary card and a Write-up, closed as the player would. Closing a sample
 -- removes nothing stored, and a card it replaced shows again (ns.cards:Close).
 ---@param kind string "session" or "writeup"

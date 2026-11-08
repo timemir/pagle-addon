@@ -441,6 +441,10 @@ en = "{trim} mark"
 value = "Apuesta liquidada"
 en = "Wager settled"
 
+[PARTY_WITH]
+value = "{text} · con {name}"
+en = "{text} · with {name}"
+
 [WAGER_SETTLED_STAMP]
 value = "Liquidada"
 en = "Settled"

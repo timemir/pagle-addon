@@ -148,6 +148,8 @@ SETTINGS_PARTY_KINDS.gold = "Gold tier in a Hunt"
 SETTINGS_PARTY_KINDS.zone = "Zone Master"
 SETTINGS_PARTY_KINDS.prestige = "Prestige"
 SETTINGS_PARTY_KINDS.ledger = "Ledger 100%"
+# From 1.6 (SET-R35, ANN-R111): the hp toast's switch, after the moment kinds.
+SETTINGS_PARTY_KINDS.hp = "Completed for the party"
 SETTINGS_PARTY_SOUNDS = "Cheers sounds"
 SETTINGS_PARTY_SOUNDS_TOOLTIP = "A clink when a groupmate's toast arrives, when you raise a mug, and when someone raises one to you."
 SETTINGS_NO_MODULE = "Recording your Catches. Enable a Module to see them."
@@ -299,6 +301,18 @@ PARTY_CHEER_NAME = "{name} raised a mug"
 PARTY_CHEER_NAMES = "{name} and {other} raised a mug"
 PARTY_CHEER_COUNT.one = "{count} raised a mug"
 PARTY_CHEER_COUNT.other = "{count} raised a mug"
+# "Completed for the party" (ANN-R111, from 1.6): the kicker the catcher sees, and every other groupmate; the line, a
+# Hunt or a run and the groupmates it was for; a Hunt or an event the player's Hunts can't name; and the groupmates,
+# two, or from three the first two and a count.
+PARTY_HP_MINE = "Your catch"
+PARTY_HP_PARTY = "Completed for the party"
+PARTY_HP_HUNT = "{hunt} · for {senders}"
+PARTY_HP_RUN = "{event} settled · for {senders}"
+PARTY_HP_SOME_HUNT = "a Hunt"
+PARTY_HP_SOME_RUN = "a Pagle Wager"
+PARTY_HP_SENDERS_TWO = "{name} and {other}"
+PARTY_HP_SENDERS_MORE.one = "{name}, {other} and {count} more"
+PARTY_HP_SENDERS_MORE.other = "{name}, {other} and {count} more"
 # A toast style's sample on the Curio Shop's preview stage (wallet-and-shop.md › UI, ANN-R80): its headline, its
 # one stamp, and the button that shows it through the lanes.
 TOAST_SAMPLE_TITLE = "New Species"

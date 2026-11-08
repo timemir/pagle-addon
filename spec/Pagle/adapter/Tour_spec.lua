@@ -82,13 +82,14 @@ describe("Core's own tour stops (CORE-R65, CORE-R68)", function()
 			pagle(loaded, "dev tour list core")
 
 			assert.are.same({
-				"Pagle dev: 22 tour stops:",
+				"Pagle dev: 23 tour stops:",
 				"  core.onboarding.letter: the Letter",
 				"  core.announce.toast: a sample toast",
 				"  core.announce.nod: a sample nod",
 				"  core.announce.banner: a sample banner",
 				"  core.announce.splash: a sample splash",
 				"  core.announce.party: a sample party",
+				"  core.announce.hp: a sample hp",
 				"  core.card.session: a sample session card",
 				"  core.card.writeup: a sample writeup card",
 				"  core.shop: the Curio Shop",

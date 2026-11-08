@@ -53,13 +53,21 @@ local RAISED_ALPHA = 0.55
 -- The fade it shows with (UI › Motion: a Nod's).
 local FADE_SECONDS = 0.3
 
--- Draws the mug as it is for `frame`'s toast: raised, or not yet.
+-- Whether `toast` has a mug: every party toast but "Completed for the party" (ANN-R111, from 1.6).
+---@param toast table?
+---@return boolean
+local function hasMug(toast)
+	return toast == nil or toast.kind ~= ns.PARTY_HUNT_KIND
+end
+
+-- Draws the mug as it is for `frame`'s toast: raised, or not yet; hidden on a toast that has none.
 ---@param frame table
 local function paintMug(frame)
 	local display = frame.display
 	local toast = display and display.announcement.headline.partyToast
 	local raised = toast ~= nil and toast.raised == true
 	local mug = frame.mug
+	mug:SetShown(hasMug(toast))
 	mug.icon:SetDesaturated(raised)
 	mug:SetAlpha(raised and RAISED_ALPHA or 1)
 	if GameTooltip:IsOwned(mug) then
@@ -129,7 +137,11 @@ end
 function ns.DrawPartyToast(frame, display)
 	local headline = display.announcement.headline
 	ns.SetBezel(frame.bezel, 34, ns.PARTY_ART.ring, ns.TextureOf(headline.icon))
-	local room = ns.PARTY_TOAST_WIDTH - WORDS_X - MUG_INSET - MUG_SIZE - 8
+	-- The words keep clear of the mug; with none (ANN-R111), they have its room too.
+	local room = ns.PARTY_TOAST_WIDTH - WORDS_X - MUG_INSET - 8
+	if hasMug(headline.partyToast) then
+		room = room - MUG_SIZE
+	end
 	frame.kicker:SetText(ns.Capitals(headline.title))
 	ns.ShrinkToFit(frame.kicker, "NodWhat", room)
 	frame.line:SetText(headline.text or "")
