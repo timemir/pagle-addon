@@ -197,8 +197,9 @@ describe("Pagle_Ledger with Core", function()
 			end
 			assert.are.same({ "Pagle", "Announcements", "Look and Feel" }, names)
 			-- Core's own: SET-R30's nine and, from 1.5.2, SET-R36's Party block (its header and ten rows), headed from 1.6 by
-			-- Party Hunts (SET-R35), and Completed for the party's row (ANN-R111).
-			assert.are.equal(22, #settings.category("Announcements").layout.initializers)
+			-- Party Hunts (SET-R35), and Completed for the party's row (ANN-R111); then from 1.6 SET-R37's The Morning
+			-- Tide (its header and eleven rows, no slot for its look yet).
+			assert.are.equal(34, #settings.category("Announcements").layout.initializers)
 			assert.are.same({ "Books", "Book binding", "More looks" }, { look[7], look[8], look[9] })
 		end
 	)
