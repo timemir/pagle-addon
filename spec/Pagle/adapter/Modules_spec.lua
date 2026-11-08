@@ -401,16 +401,16 @@ describe("The news Core opens (VIEW-R46)", function()
 		assert.is_false(none.ns.OpenNews("3f9a0c1d2e4b5a69"))
 	end)
 
-	it("reports a def.news that raises through the error handler (VIEW-R46)", function()
+	it("reports a def.news that raises through the error handler, and carries on (VIEW-R46)", function()
 		local loaded = withModules({
 			Ledger = function()
-				error("News broke")
+				error("the Journal broke")
 			end,
 		})
 
 		assert.is_true(loaded.ns.OpenNews("3f9a0c1d2e4b5a69"))
 
 		assert.are.equal(1, #loaded.client.errors)
-		assert.matches("News broke", loaded.client.errors[1])
+		assert.matches("the Journal broke", tostring(loaded.client.errors[1]))
 	end)
 end)

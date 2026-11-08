@@ -17,7 +17,8 @@ ns.MODULE_ROSTER = { "Ledger", "Hunts", "Stats", "TackleBoard", "QoL" }
 ---@field menu? { label: string|(fun():string), onClick: fun() }[]             -- extra compartment entries
 ---@field slash? { name: string, fn: fun(args: string), help: string }[]     -- /pagle <name>
 ---@field collection? fun(goodID?: string)  -- opens its view of every look (CORE-R45): the Ledger's Collection
----@field news? fun(id?: string)  -- from 1.6: opens its view of the news, on that item (VIEW-R46): the Ledger's news list
+---@field news? fun(id?: string)            -- from 1.6, opens its view of the news on item `id` (VIEW-R46): the Ledger's
+--- news list
 ---@field guideBlurb? string    -- its line on the Field guide's What's in the box page (ONB-R91)
 
 --- A roster entry's state, as the Settings status list shows it (CORE-R41).
