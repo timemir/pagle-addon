@@ -105,6 +105,9 @@ ns.EquippedNewsSignLook()        -- from 1.6: the look key SIGN-R57 wears, Wood 
 ns.NewsOption(key)               -- from 1.6: "show" or "headlines" on (SET-R37): true unless stored false (› Data)
 ns.NewsKindOn(kind)              -- from 1.6: a followed kind's switch on (SET-R37): true unless stored false
 ns.NewsSignMuted()               -- from 1.6: newsSign.mute stored true (SIGN-R31)
+ns.OpenNewsSignNews(id?)         -- from 1.6: the left click (SIGN-R42): ns.OpenNews(id) (VIEW-R46); a sample (no id) opens nothing
+Pagle.DrawNewsEmblem(host, emblem?, size) -- from 1.6: an emblem as the Wood look's slot draws it (SIGN-R13), size units
+                                 -- across, into `host`; the Fish Journal's news list draws it at 96 (LED-R176)
 
 ---@class PagleNewsSignNews
 ---@field kind string     -- SIGN-R10
