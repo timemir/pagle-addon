@@ -1645,6 +1645,11 @@ en = "Pagle dev: Pagle_Anglers has loaded this login."
 value = "Pagle dev: Pagle_Anglers за этот вход в игру не загружался."
 en = "Pagle dev: Pagle_Anglers hasn't loaded this login."
 
+# Machine-drafted (Claude) for the news reader (#656); awaits a native speaker's review.
+[DEV_VIEWS_NEWS]
+value = "Pagle dev: новости {state}: строк использовано {used}, пропущено {skipped}; просмотрено {seen}, порог {floor}."
+en = "Pagle dev: news {state}: lines used {used}, skipped {skipped}; seen {seen}, floor {floor}."
+
 [DEV_VIEWS_NONE]
 value = "нет"
 en = "none"
@@ -2640,6 +2645,23 @@ en = "{variety} {species}"
 [SIGN_DETAIL_MONSTER]
 value = "{species}, {length}"
 en = "{species}, {length}"
+
+# Machine-drafted (Claude) for the news reader (#656); awaits a native speaker's review.
+[SIGN_DETAIL_COLOUR_HIDDEN]
+value = "{species} ({rarity})"
+en = "{rarity} {species}"
+
+[SIGN_HEAD_MASTER_PRESTIGE]
+value = "{name}: достигнут Престиж мастера {master:0}"
+en = "{name} reached Master Prestige {master:0}"
+
+[SIGN_ITEM_UNKNOWN]
+value = "рыба"
+en = "a fish"
+
+[SIGN_ZONE_UNKNOWN]
+value = "Зона {zone}"
+en = "Zone {zone}"
 
 [SIGN_MORE]
 value.one = "+{count:0} от ваших рыболовов"

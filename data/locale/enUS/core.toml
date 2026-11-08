@@ -594,6 +594,9 @@ DEV_VIEWS_ANGLERS = "Pagle dev: Pagle_Anglers' generatedAt {generatedAt}, blocks
 DEV_VIEWS_LOADED = "Pagle dev: Pagle_Anglers has loaded this login."
 DEV_VIEWS_NOT_LOADED = "Pagle dev: Pagle_Anglers hasn't loaded this login."
 DEV_VIEWS_NONE = "none"
+# From 1.6, the news (VIEW-R12): its state (ok, none, expired or absent), the news lines used and skipped (VIEW-R41),
+# how many items are seen and the floor, a server time (VIEW-R44), each "none" when there is none.
+DEV_VIEWS_NEWS = "Pagle dev: news {state}: lines used {used}, skipped {skipped}; seen {seen}, floor {floor}."
 # Why a data file is absent (VIEW-R1, IGV-R44), the first that holds, as /pagle dev views names it: no file (by
 # folder name, with the client's reason a load failed, or the global's name), then IGV-R44's conditions in order.
 # A global's or field's name; v as read; count as read, the list's name and its length; a block's number, and its
@@ -977,6 +980,13 @@ SIGN_HEAD.monster = "{name} landed a Monster"
 SIGN_HEAD.region = "First in {region} this month to land {fish}"
 SIGN_DETAIL_COLOUR = "{variety} {species}"
 SIGN_DETAIL_MONSTER = "{species}, {length}"
+# From 1.6 (SIGN-R12, SIGN-R19): an uncaught variety's detail, its rarity's name (Epic) for its own (VAR-R27); a Master
+# Prestige's headline, {master} its rank above X; an item the client hasn't loaded yet; a zone the client has no name
+# for, {zone} its areaID.
+SIGN_DETAIL_COLOUR_HIDDEN = "{rarity} {species}"
+SIGN_HEAD_MASTER_PRESTIGE = "{name} reached Master Prestige {master:0}"
+SIGN_ITEM_UNKNOWN = "a fish"
+SIGN_ZONE_UNKNOWN = "Zone {zone}"
 SIGN_MORE.one = "+{count:0} more from your anglers"
 SIGN_MORE.other = "+{count:0} more from your anglers"
 # /pagle dev sign (SIGN-R60): drops the news sign with sample news; dev text stays English.

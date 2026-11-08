@@ -148,6 +148,7 @@ describe("the Companion's data addons", function()
 				"Pagle dev: Pagle_Anglers is absent: no file (Pagle_Anglers isn't installed).",
 				"Pagle dev: Pagle_Anglers' generatedAt none, blocks none.",
 				"Pagle dev: Pagle_Anglers hasn't loaded this login.",
+				"Pagle dev: news absent: lines used none, skipped none; seen 0, floor none.",
 			}, devViews(loaded))
 		end
 	)
@@ -162,7 +163,7 @@ describe("the Companion's data addons", function()
 					.. " isn't restricted, with the tooltip setting on).",
 				"Pagle dev: Pagle_Anglers' generatedAt none, blocks none.",
 				"Pagle dev: Pagle_Anglers hasn't loaded this login.",
-			}, { unpack(devViews(loaded), 3) })
+			}, { unpack(devViews(loaded), 3, 5) })
 
 			local card = hover(loaded, CARD_2)
 			hover(loaded, "Player-1-00000002")
@@ -176,6 +177,7 @@ describe("the Companion's data addons", function()
 				"Pagle dev: Pagle_Anglers is live.",
 				("Pagle dev: Pagle_Anglers' generatedAt %d, blocks 1."):format(WRITTEN),
 				"Pagle dev: Pagle_Anglers has loaded this login.",
+				"Pagle dev: news none: lines used none, skipped none; seen 0, floor none.",
 			}, devViews(loaded))
 		end)
 
@@ -242,7 +244,7 @@ describe("the Companion's data addons", function()
 				"Pagle dev: Pagle_Anglers is absent: no file (Pagle_Anglers didn't load: CORRUPT).",
 				"Pagle dev: Pagle_Anglers' generatedAt none, blocks none.",
 				"Pagle dev: Pagle_Anglers hasn't loaded this login.",
-			}, { unpack(devViews(loaded), 3) })
+			}, { unpack(devViews(loaded), 3, 5) })
 		end)
 
 		it("reads a loaded Pagle_Anglers that set no PagleAnglersData absent (VIEW-R1, IGV-R44)", function()
@@ -255,7 +257,7 @@ describe("the Companion's data addons", function()
 				"Pagle dev: Pagle_Anglers is absent: no file (Pagle_Anglers loaded but set no PagleAnglersData).",
 				"Pagle dev: Pagle_Anglers' generatedAt none, blocks none.",
 				"Pagle dev: Pagle_Anglers has loaded this login.",
-			}, { unpack(devViews(loaded), 3) })
+			}, { unpack(devViews(loaded), 3, 5) })
 		end)
 
 		it("expires mid-session at 24 h, like Pagle_Following (VIEW-R2)", function()
@@ -335,6 +337,157 @@ describe("the Companion's data addons", function()
 			end
 		end
 	)
+
+	-- From 1.6: the news block a news-aware Companion's Pagle_Following carries (IGV-R60–R66), IGV Contracts' second
+	-- example written at WRITTEN.
+	describe("the news", function()
+		-- Core as core() makes it, with Pagle_Following holding the news example; `saved` a saved PagleDB.
+		local function withNews(saved)
+			local loaded = core({ saved = saved })
+			local data = anglerFileExamples().news
+			data.generatedAt = WRITTEN
+			loaded.files.following = data
+			loaded.env.PagleFollowingData = data
+			return loaded
+		end
+
+		it(
+			"is read at PLAYER_LOGIN, and the first login's Pagle.GetNews sets the floor in PagleDB and calls nothing new (VIEW-R40, VIEW-R42, SIGN-R18)",
+			function()
+				local loaded = withNews()
+				local Pagle = loaded.env.Pagle
+				assert.are.same({ state = "absent", items = {} }, Pagle.GetNews())
+
+				enterWorld(loaded)
+
+				local news = Pagle.GetNews()
+				assert.are.same({ "ok", 3, false }, { news.state, #news.items, news.items[1].new })
+				assert.are.same({ "Ada Brook", "hunt", "Grimtusk" }, {
+					news.items[1].name,
+					news.items[2].kind,
+					news.items[3].name,
+				})
+				assert.are.same({ since = SERVER_TIME, seen = {} }, loaded.env.PagleDB.global.news)
+				assert.are.equal("ok", Pagle.GetFollowedAnglers().state)
+			end
+		)
+
+		it(
+			"calls what came since the floor new at a later login, and keeps what Pagle.MarkNewsSeen marks in PagleDB (VIEW-R42–R44)",
+			function()
+				local loaded = withNews({ global = { news = { since = 1791700000, seen = { a01b2c3d4e5f6071 = 1 } } } })
+				enterWorld(loaded)
+				local Pagle = loaded.env.Pagle
+
+				local items = Pagle.GetNews().items
+				Pagle.MarkNewsSeen()
+
+				assert.are.same({ true, false, false }, { items[1].new, items[2].new, items[3].new })
+				assert.are.same({
+					["3f9a0c1d2e4b5a69"] = 1791733000,
+					a01b2c3d4e5f6071 = 1791702000,
+					["77c0e1f2a3b4c5d6"] = 1791690000,
+				}, loaded.env.PagleDB.global.news.seen)
+				assert.is_true(Pagle.GetNews().items[1].new)
+				assert.has_error(function()
+					Pagle.MarkNewsSeen("3f9a0c1d2e4b5a69")
+				end)
+			end
+		)
+
+		it("is none with a Companion that predates the news, the Anglers as before (VIEW-R40, VIEW-R96)", function()
+			local loaded = core()
+			enterWorld(loaded)
+
+			assert.are.same({ state = "none", items = {} }, loaded.env.Pagle.GetNews())
+			assert.are.equal("Ada", loaded.env.Pagle.GetFollowedAnglers().anglers[1].name)
+			assert.is_nil(loaded.env.PagleDB.global.news)
+		end)
+
+		it("expires with Pagle_Following, mid-session (VIEW-R42, VIEW-R2)", function()
+			local loaded = withNews()
+			enterWorld(loaded)
+
+			at(loaded, WRITTEN + DAY)
+
+			assert.are.same({ state = "expired", items = {} }, loaded.env.Pagle.GetNews())
+		end)
+
+		it(
+			"words an item through the client: its item names less Raw on enUS, asking for one not loaded yet (VIEW-R45, SIGN-R19)",
+			function()
+				local loaded = withNews()
+				enterWorld(loaded)
+				local Pagle = loaded.env.Pagle
+				local items = Pagle.GetNews().items
+				local requests = #loaded.client.itemRequests
+
+				local region = Pagle.NewsWords(items[3])
+				assert.are.same({
+					kind = "region",
+					kicker = "Region news · EU",
+					head = "First in EU this month to land a fish",
+					detail = "Grimtusk",
+					emblem = { sign = "laurel" },
+				}, region)
+				assert.are.same({ 6358 }, { unpack(loaded.client.itemRequests, requests + 1) })
+
+				loaded.client.itemNames[6358] = "Raw Old Ironjaw"
+				assert.are.equal("First in EU this month to land Old Ironjaw", Pagle.NewsWords(items[3]).head)
+				assert.are.equal("The Night Run", Pagle.NewsWords(items[2]).detail)
+				assert.has_error(function()
+					Pagle.NewsWords({ kind = "weather" })
+				end)
+			end
+		)
+
+		it("prints the news state, lines, seen items and floor under /pagle dev views (VIEW-R12)", function()
+			local loaded = withNews()
+			enterWorld(loaded)
+			loaded.env.Pagle.MarkNewsSeen({ "a01b2c3d4e5f6071" })
+
+			local lines = devViews(loaded)
+
+			assert.are.equal(
+				("Pagle dev: news ok: lines used 3, skipped 0; seen 1, floor %d."):format(SERVER_TIME),
+				lines[#lines]
+			)
+		end)
+
+		it(
+			"keeps only ids, times and the floor: no name, kind, Hunt or region in the SavedVariables (VIEW-R4, VIEW-R44, IGV-R47)",
+			function()
+				local loaded = withNews()
+				enterWorld(loaded)
+				local Pagle = loaded.env.Pagle
+				for _, item in ipairs(Pagle.GetNews().items) do
+					Pagle.NewsWords(item)
+				end
+				Pagle.MarkNewsSeen()
+
+				local function holds(value, seen)
+					seen = seen or {}
+					if type(value) == "string" then
+						for _, text in ipairs({ "Ada Brook", "Grimtusk", "The Night Run", "night_run", "monster" }) do
+							if value:find(text, 1, true) then
+								return true
+							end
+						end
+					elseif type(value) == "table" and not seen[value] then
+						seen[value] = true
+						for key, field in pairs(value) do
+							if holds(key, seen) or holds(field, seen) then
+								return true
+							end
+						end
+					end
+					return false
+				end
+				assert.is_false(holds(loaded.env.PagleDB))
+				assert.is_false(holds(loaded.env.PagleLog))
+			end
+		)
+	end)
 
 	it("prints nothing with dev mode off (VIEW-R12)", function()
 		local loaded = core()

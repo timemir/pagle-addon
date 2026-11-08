@@ -91,6 +91,18 @@ describe("Pagle.RegisterModule", function()
 		assert.are.equal(collection, loaded.ns.Modules:Modules()[1].def.collection)
 	end)
 
+	it("takes an optional news function, and raises an error at the caller for any other (VIEW-R46)", function()
+		local loaded = loadWith({ QoL = {} })
+		local Pagle = loaded.env.Pagle
+
+		assert.matches("Modules_spec%.lua:%d+: .*def%.news", registerError(Pagle, qolDef({ news = "open" })))
+		assert.matches("Modules_spec%.lua:%d+: .*def%.news", registerError(Pagle, qolDef({ news = {} })))
+
+		local news = function() end
+		assert.is_table(Pagle.RegisterModule(qolDef({ news = news })))
+		assert.are.equal(news, loaded.ns.Modules:Modules()[1].def.news)
+	end)
+
 	it("raises an error at the caller for a second registration, keeping the first (CORE-R14)", function()
 		local Pagle = loadWith({ QoL = {} }).env.Pagle
 		Pagle.RegisterModule(qolDef())
@@ -340,5 +352,65 @@ describe("The Collection Core opens (CORE-R45)", function()
 
 		assert.are.equal(1, #loaded.client.errors)
 		assert.matches("Collection broke", loaded.client.errors[1])
+	end)
+end)
+
+describe("The news Core opens (VIEW-R46)", function()
+	-- Core with the Ledger (order 10) and Hunts (order 20) registered, each with `views`' function for its def.news if
+	-- given.
+	local function withModules(views)
+		local loaded = loadWith({ Ledger = {}, Hunts = {} })
+		local Pagle = loaded.env.Pagle
+		for _, def in ipairs({ { "Ledger", 10 }, { "Hunts", 20 } }) do
+			Pagle.RegisterModule({ name = def[1], title = def[1], order = def[2], news = views[def[1]] })
+		end
+		return loaded
+	end
+
+	it("calls the first On Module's def.news by def.order, with the item's id given (VIEW-R46)", function()
+		local calls = {}
+		local loaded = withModules({
+			Ledger = function(...)
+				calls[#calls + 1] = { "Ledger", ... }
+			end,
+			Hunts = function(...)
+				calls[#calls + 1] = { "Hunts", ... }
+			end,
+		})
+
+		assert.is_true(loaded.ns.OpenNews("3f9a0c1d2e4b5a69"))
+		assert.is_true(loaded.ns.OpenNews())
+
+		assert.are.same({ { "Ledger", "3f9a0c1d2e4b5a69" }, { "Ledger" } }, calls)
+	end)
+
+	it("skips a Module with none for the next, and opens nothing with none at all (VIEW-R46)", function()
+		local calls = {}
+		local loaded = withModules({
+			Hunts = function(id)
+				calls[#calls + 1] = id
+			end,
+		})
+
+		assert.is_true(loaded.ns.OpenNews("3f9a0c1d2e4b5a69"))
+		assert.are.same({ "3f9a0c1d2e4b5a69" }, calls)
+		assert.are.equal(loaded.ns.Modules:Modules()[2].def.news, loaded.ns.NewsOffered())
+
+		local none = withModules({})
+		assert.is_nil(none.ns.NewsOffered())
+		assert.is_false(none.ns.OpenNews("3f9a0c1d2e4b5a69"))
+	end)
+
+	it("reports a def.news that raises through the error handler, and carries on (VIEW-R46)", function()
+		local loaded = withModules({
+			Ledger = function()
+				error("the Journal broke")
+			end,
+		})
+
+		assert.is_true(loaded.ns.OpenNews("3f9a0c1d2e4b5a69"))
+
+		assert.are.equal(1, #loaded.client.errors)
+		assert.matches("the Journal broke", tostring(loaded.client.errors[1]))
 	end)
 end)

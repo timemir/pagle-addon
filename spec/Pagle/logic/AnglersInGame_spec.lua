@@ -743,4 +743,815 @@ describe("the Companion's data files", function()
 			}, ns.ANGLER_TIP_COLORS)
 		end)
 	end)
+
+	-- From 1.6: the news block of a news-aware Companion's Pagle_Following (IGV-R60–R66), over IGV Contracts' second
+	-- example (anglerFileExamples().news): Ada Brook's Monster record, her Hunt gold and Grimtusk's region headline.
+	describe("the news", function()
+		local MONSTER, HUNT, REGION = "3f9a0c1d2e4b5a69", "a01b2c3d4e5f6071", "77c0e1f2a3b4c5d6"
+		-- The example's three lines as Pagle.GetNews hands them out, field for field, with `new`.
+		local function lines(new)
+			new = new or {}
+			return {
+				{
+					id = MONSTER,
+					kind = "monster",
+					time = 1791733000,
+					angler = 1,
+					name = "Ada Brook",
+					region = "",
+					item = 6291,
+					rank = 0,
+					key = "",
+					text = "",
+					zone = 0,
+					length = 544,
+					new = new[MONSTER] == true,
+				},
+				{
+					id = HUNT,
+					kind = "hunt",
+					time = 1791702000,
+					angler = 1,
+					name = "Ada Brook",
+					region = "",
+					item = 0,
+					rank = 0,
+					key = "night_run",
+					text = "The Night Run",
+					zone = 0,
+					length = 0,
+					new = new[HUNT] == true,
+				},
+				{
+					id = REGION,
+					kind = "region",
+					time = 1791690000,
+					angler = 0,
+					name = "Grimtusk",
+					region = "eu",
+					item = 6358,
+					rank = 0,
+					key = "",
+					text = "",
+					zone = 0,
+					length = 0,
+					new = new[REGION] == true,
+				},
+			}
+		end
+		-- A time the example is live at.
+		local NOW = FOLLOWING_AT + 60
+
+		-- Core's reads over `data` as Pagle_Following's global, PagleDB.global `global` and a clock a spec moves
+		-- (`clock.now`), started as login step 2 starts them (VIEW-R1).
+		local function views(data, global, clock)
+			global, clock = global or {}, clock or { now = NOW }
+			local read = ns.NewAnglerViews({
+				following = function()
+					return data
+				end,
+				presence = function()
+					return { installed = data ~= nil, loaded = data ~= nil }
+				end,
+				load = function()
+					return false, "MISSING"
+				end,
+				anglers = function()
+					return nil
+				end,
+				serverTime = function()
+					return clock.now
+				end,
+				isRestricted = function()
+					return false
+				end,
+				tooltips = function()
+					return true
+				end,
+				isSecret = function()
+					return false
+				end,
+				global = function()
+					return global
+				end,
+			})
+			read:Start()
+			return read, global, clock
+		end
+
+		-- The ids of `items`, in order.
+		local function ids(items)
+			local out = {}
+			for i, item in ipairs(items) do
+				out[i] = item.id
+			end
+			return out
+		end
+
+		-- The keys of `set`, sorted.
+		local function sortedKeys(set)
+			local keys = {}
+			for key in pairs(set) do
+				keys[#keys + 1] = key
+			end
+			table.sort(keys)
+			return keys
+		end
+
+		-- A PagleDB.global whose floor is `since` and whose seen items are `seen`.
+		local function saved(since, seen)
+			return { news = { since = since, seen = seen or {} } }
+		end
+
+		describe("reading the block", function()
+			it(
+				"reads IGV Contracts' example: every line, in the file's order, with its fields (VIEW-R40–R42, IGV-R64)",
+				function()
+					local read = views(anglerFileExamples().news)
+
+					assert.are.same({ state = "ok", items = lines() }, read:News())
+				end
+			)
+
+			it(
+				"reads a file with no news block as before: the same Anglers and lookups, the news none, nothing kept (VIEW-R40, VIEW-R96, IGV-R65)",
+				function()
+					local old = ns.ReadFollowingFile(anglerFileExamples().following)
+					local read, global = views(anglerFileExamples().following)
+
+					assert.is_nil(old.news)
+					assert.are.same(
+						{ state = "ok", anglers = { anglerFileExamples().following.anglers[1] } },
+						read:FollowedAnglers()
+					)
+					assert.are.equal("Ada", read:HoverPlayer("Player-4618-0A1B2C3E").name)
+					assert.are.same({ state = "none", items = {} }, read:News())
+					read:MarkNewsSeen()
+					assert.are.same({}, global)
+				end
+			)
+
+			it("reads the news example's Anglers as the file without its block reads them (VIEW-R40)", function()
+				local withBlock = anglerFileExamples().news
+				local without = anglerFileExamples().news
+				without.news = nil
+
+				assert.are.same(
+					ns.FollowedAnglers(ns.ReadFollowingFile(without), NOW),
+					ns.FollowedAnglers(ns.ReadFollowingFile(withBlock), NOW)
+				)
+			end)
+
+			it("reads a news that isn't a table as no block, never an absent file (VIEW-R40)", function()
+				local data = anglerFileExamples().news
+				data.news = "news"
+
+				local read = views(data)
+
+				assert.are.same({ state = "none", items = {} }, read:News())
+				assert.are.equal("ok", read:FollowedAnglers().state)
+			end)
+
+			it("reads an empty block ok, with no items (VIEW-R42, IGV-R65)", function()
+				local data = anglerFileExamples().news
+				data.news = {}
+
+				assert.are.same({ state = "ok", items = {} }, views(data):News())
+			end)
+
+			-- VIEW-R41's checks, each breaking the first line alone: it is skipped, and the other two are used.
+			local NOT_USED = {
+				{ "a line that isn't a table", "line" },
+				{ "no id", { id = NONE } },
+				{ "an id in capitals", { id = "3F9A0C1D2E4B5A69" } },
+				{ "an id of 15 digits", { id = "3f9a0c1d2e4b5a6" } },
+				{ "an id of 17 digits", { id = "3f9a0c1d2e4b5a690" } },
+				{ "an id that isn't hexadecimal", { id = "3f9a0c1d2e4b5a6g" } },
+				{ "an id that is a number", { id = 3 } },
+				{ "a kind a later server sends", { kind = "weather" } },
+				{ "a kind in capitals", { kind = "Monster" } },
+				{ "no kind", { kind = NONE } },
+				{ "a name that isn't a string", { name = 7 } },
+				{ "no region", { region = NONE } },
+				{ "a key that isn't a string", { key = false } },
+				{ "no text", { text = NONE } },
+				{ "a time that is a string", { time = "1791733000" } },
+				{ "a time below 0", { time = -1 } },
+				{ "a time with a fraction", { time = 1791733000.5 } },
+				{ "an angler past the Anglers", { angler = 2 } },
+				{ "an angler below 0", { angler = -1 } },
+				{ "no item", { item = NONE } },
+				{ "a rank with a fraction", { rank = 0.5 } },
+				{ "an infinite zone", { zone = math.huge } },
+				{ "a length that isn't a number", { length = 0 / 0 } },
+			}
+			for _, case in ipairs(NOT_USED) do
+				local name, changes = case[1], case[2]
+				it(("skips a line with %s on its own, never the file (VIEW-R41, VIEW-R98)"):format(name), function()
+					local data = anglerFileExamples().news
+					data.news[1] = type(changes) == "table" and with(data.news[1], changes) or changes
+
+					local read = views(data)
+					local news = read:News()
+
+					assert.are.same({ "ok", { HUNT, REGION } }, { news.state, ids(news.items) })
+					assert.are.equal("ok", read:FollowedAnglers().state)
+					assert.are.same({ used = 2, skipped = 1 }, {
+						used = ns.ReadFollowingFile(data).news.used,
+						skipped = ns.ReadFollowingFile(data).news.skipped,
+					})
+				end)
+			end
+
+			it("uses every one of SIGN-R10's nine kinds (VIEW-R41)", function()
+				local data = anglerFileExamples().news
+				data.news = {}
+				for i, kind in ipairs(ns.NEWS_KINDS) do
+					data.news[i] = with(anglerFileExamples().news.news[1], { id = ("%016x"):format(i), kind = kind })
+				end
+
+				local news = views(data):News()
+
+				assert.are.equal(9, #news.items)
+				assert.are.same(
+					{ "first", "legend", "prestige", "ledger", "colour", "hunt", "zone", "monster", "region" },
+					ns.NEWS_KINDS
+				)
+			end)
+
+			it("skips a line repeating an earlier line's id, keeping the first (VIEW-R41)", function()
+				local data = anglerFileExamples().news
+				data.news[3].id = MONSTER
+
+				local file = ns.ReadFollowingFile(data)
+
+				assert.are.same({ MONSTER, HUNT }, ids(views(data):News().items))
+				assert.are.same({ 2, 1 }, { file.news.used, file.news.skipped })
+			end)
+
+			it("copies only news-line's fields, and allows a headline's Angler not followed (VIEW-R41)", function()
+				local data = anglerFileExamples().news
+				data.news[1].guid = "Player-4618-0A1B2C3D"
+				data.news[1].publicId = "ada"
+
+				local item = views(data):News().items[1]
+
+				assert.are.same(lines()[1], item)
+				assert.are.equal(0, views(data):News().items[3].angler)
+			end)
+
+			it(
+				"doubles every | in a name and a text, so the client draws them as written (VIEW-R41, VIEW-R13)",
+				function()
+					local data = anglerFileExamples().news
+					data.news[2].name = "A|cffff0000da"
+					data.news[2].text = "The |TInterface\\Icons\\X:0|t Run"
+
+					local item = views(data):News().items[2]
+
+					assert.are.same(
+						{ "A||cffff0000da", "The ||TInterface\\Icons\\X:0||t Run" },
+						{ item.name, item.text }
+					)
+				end
+			)
+
+			it("is expired from the file's 24th hour, read again at each call (VIEW-R42, VIEW-R2, IGV-R45)", function()
+				local read, _, clock = views(anglerFileExamples().news, saved(1791700000))
+
+				clock.now = FOLLOWING_AT + DAY - 1
+				assert.are.equal(3, #read:News().items)
+				clock.now = FOLLOWING_AT + DAY
+				assert.are.same({ state = "expired", items = {} }, read:News())
+			end)
+
+			it("is absent while Pagle_Following is, whatever its news (VIEW-R42, IGV-R44)", function()
+				local data = anglerFileExamples().news
+				data.ok = nil
+
+				assert.are.same({ state = "absent", items = {} }, views(data):News())
+				assert.are.same({ state = "absent", items = {} }, views(nil):News())
+			end)
+
+			it("hands out fresh copies, which the caller may keep and change (VIEW-R42)", function()
+				local data = anglerFileExamples().news
+				local read = views(data)
+
+				local first = read:News()
+				first.items[1].name = "Changed"
+				table.remove(first.items, 2)
+				data.news[1].length = 9999
+				local second = read:News()
+
+				assert.are_not.equal(first.items, second.items)
+				assert.are.same(lines(), second.items)
+			end)
+		end)
+
+		describe("seen and the floor", function()
+			it(
+				"sets the floor at the first read of ok news with none, and calls nothing new then (VIEW-R42, VIEW-R44, SIGN-R18)",
+				function()
+					local read, global = views(anglerFileExamples().news)
+
+					assert.are.same(lines(), read:News().items)
+					assert.are.same({ since = NOW, seen = {} }, global.news)
+				end
+			)
+
+			it("sets no floor, and keeps nothing, while the news isn't ok (SIGN-R14, VIEW-R44)", function()
+				local none = anglerFileExamples().news
+				none.news = nil
+				local absent = anglerFileExamples().news
+				absent.v = 2
+				for _, data in ipairs({ none, absent }) do
+					local read, global = views(data)
+					read:News()
+					assert.are.same({}, global)
+				end
+				local read, global, clock = views(anglerFileExamples().news)
+				clock.now = FOLLOWING_AT + DAY
+				read:News()
+				assert.are.same({}, global)
+			end)
+
+			it("keeps a floor once set: a later login sets none (SIGN-R18)", function()
+				local global = saved(1791700000)
+
+				views(anglerFileExamples().news, global):News()
+
+				assert.are.equal(1791700000, global.news.since)
+			end)
+
+			it(
+				"calls an item new while it wasn't seen and was timed at or after the floor, for the whole session (VIEW-R42)",
+				function()
+					local global = saved(1791702000, { [MONSTER] = 1791733000 })
+					local read = views(anglerFileExamples().news, global)
+
+					assert.are.same(lines({ [HUNT] = true }), read:News().items)
+					read:MarkNewsSeen()
+					assert.are.same(lines({ [HUNT] = true }), read:News().items)
+					-- The next login, the hunt is seen.
+					assert.are.same(lines(), views(anglerFileExamples().news, global):News().items)
+				end
+			)
+
+			it("never calls an item timed before the floor new, though it wasn't seen (SIGN-R18)", function()
+				local read = views(anglerFileExamples().news, saved(1791733001))
+
+				assert.are.same(lines(), read:News().items)
+			end)
+
+			it(
+				"sets the floor to the server time when the sign is turned on, over an older one, whatever the news (SET-R37, SIGN-R18)",
+				function()
+					local global = saved(1791600000, { [HUNT] = 1791702000 })
+					local read, _, clock = views(nil, global)
+					clock.now = NOW + 30
+
+					read:SetNewsFloor()
+
+					assert.are.same({ since = NOW + 30, seen = { [HUNT] = 1791702000 } }, global.news)
+					local fresh = {}
+					views(nil, fresh):SetNewsFloor()
+					assert.are.same({ since = NOW, seen = {} }, fresh.news)
+				end
+			)
+
+			it("leaves nothing new at the next login after the floor is set again (SIGN-R18)", function()
+				local global = saved(1791600000)
+				local read = views(anglerFileExamples().news, global)
+				read:SetNewsFloor()
+
+				assert.are.same(lines(), views(anglerFileExamples().news, global):News().items)
+			end)
+
+			it("marks each id given seen with its item's time, ignoring ids not in the block (VIEW-R43)", function()
+				local read, global = views(anglerFileExamples().news, saved(1791600000))
+
+				read:MarkNewsSeen({ HUNT, "0000000000000000", 7 })
+
+				assert.are.same({ [HUNT] = 1791702000 }, global.news.seen)
+				assert.is_true(read:NewsSeen(HUNT))
+				assert.is_false(read:NewsSeen(MONSTER))
+			end)
+
+			it(
+				"marks every item seen with no argument, whatever its kind's or the headlines' switch (VIEW-R43, SIGN-R17)",
+				function()
+					local global = saved(1791600000)
+					global.newsSign = { show = false, kinds = { monster = false, hunt = false }, headlines = false }
+					local read = views(anglerFileExamples().news, global)
+
+					read:MarkNewsSeen()
+
+					assert.are.same(
+						{ [MONSTER] = 1791733000, [HUNT] = 1791702000, [REGION] = 1791690000 },
+						global.news.seen
+					)
+				end
+			)
+
+			it("marks nothing while the news isn't ok: absent, expired or none (VIEW-R43)", function()
+				local none = anglerFileExamples().news
+				none.news = nil
+				for _, data in ipairs({ none, nil }) do
+					local global = saved(1791600000)
+					views(data, global):MarkNewsSeen()
+					assert.are.same(saved(1791600000), global)
+				end
+				local global = saved(1791600000)
+				local read, _, clock = views(anglerFileExamples().news, global)
+				clock.now = FOLLOWING_AT + DAY
+				read:MarkNewsSeen({ HUNT })
+				assert.are.same(saved(1791600000), global)
+			end)
+
+			it(
+				"drops seen entries older than the seen age at the session's first read, and only then (VIEW-R44)",
+				function()
+					local age = 31 * DAY
+					local global = saved(1791600000, {
+						old = NOW - age - 1,
+						edge = NOW - age,
+						recent = NOW - DAY,
+						broken = "x",
+						[HUNT] = 1791702000,
+					})
+					local read, _, clock = views(anglerFileExamples().news, global)
+
+					read:News()
+					assert.are.same({ edge = NOW - age, recent = NOW - DAY, [HUNT] = 1791702000 }, global.news.seen)
+					clock.now = NOW + 2 * DAY
+					read:News()
+					assert.are.same({ edge = NOW - age, recent = NOW - DAY, [HUNT] = 1791702000 }, global.news.seen)
+					assert.are.equal(age, ns.NEWS_SEEN_AGE)
+				end
+			)
+
+			it("prunes nothing while the news isn't ok (VIEW-R44)", function()
+				local global = saved(1791600000, { old = 1 })
+				local data = anglerFileExamples().news
+				data.news = nil
+
+				views(data, global):News()
+
+				assert.are.same({ old = 1 }, global.news.seen)
+			end)
+
+			it(
+				"keeps only the floor and each seen id with its time: no name, kind, Angler or text (VIEW-R4, VIEW-R44, IGV-R47)",
+				function()
+					local read, global = views(anglerFileExamples().news, saved(1791600000))
+
+					read:MarkNewsSeen()
+
+					assert.are.same({ "news" }, sortedKeys(global))
+					assert.are.same({ "seen", "since" }, sortedKeys(global.news))
+					for id, time in pairs(global.news.seen) do
+						assert.is_truthy(id:find("^%x+$") and #id == 16)
+						assert.are.equal("number", type(time))
+					end
+				end
+			)
+		end)
+
+		describe("the words", function()
+			-- The client and Core as Pagle.NewsWords reads them: an enUS client's item names, a Species' varieties
+			-- (Spotted Yellowtail's All-gold, position 8, Rare; its Wavecrest, position 10, Epic) and which are caught,
+			-- zone names, a length, whether the Ledger is on, and which Species have a fish crest. `changes` over them.
+			local function lookups(changes)
+				local names = {
+					[19805] = "Keefer's Angelfish",
+					[4603] = "Raw Spotted Yellowtail",
+					[13422] = "Stonescale Eel",
+				}
+				local base = {
+					itemName = function(itemID)
+						return names[itemID]
+					end,
+					dropPrefix = "Raw ",
+					varieties = function(species)
+						if species ~= 4603 then
+							return nil
+						end
+						local list = {}
+						for i = 1, 10 do
+							list[i] =
+								{ id = "4603.v" .. i, key = "v" .. i, index = i, rarity = "common", name = "V" .. i }
+						end
+						list[8] =
+							{ id = "4603.allgold", key = "allgold", index = 8, rarity = "rare", name = "All-gold" }
+						list[10] = { id = "4603.wave", key = "wave", index = 10, rarity = "epic", name = "Wavecrest" }
+						return list
+					end,
+					caught = function(species)
+						return species == 4603 and { [8] = true } or {}
+					end,
+					areaName = function(areaID)
+						return areaID == 12 and "Elwynn Forest" or nil
+					end,
+					formatLength = function(mm)
+						return ("%d mm"):format(mm)
+					end,
+					ledgerOn = function()
+						return true
+					end,
+					fishCrest = function(species)
+						return species == 13422
+					end,
+				}
+				for key, value in pairs(changes or {}) do
+					base[key] = value
+				end
+				return base
+			end
+
+			-- A news item of `kind` about Ada Brook, `fields` over it.
+			local function item(kind, fields)
+				local out = {
+					id = "0123456789abcdef",
+					kind = kind,
+					time = 1791733000,
+					angler = 1,
+					name = "Ada Brook",
+					region = "",
+					item = 0,
+					rank = 0,
+					key = "",
+					text = "",
+					zone = 0,
+					length = 0,
+					new = false,
+				}
+				for key, value in pairs(fields or {}) do
+					out[key] = value
+				end
+				return out
+			end
+
+			local LAUREL, MEDAL = { sign = "laurel" }, { sign = "medal" }
+			local WORDS = {
+				{
+					"first",
+					item("first", { region = "eu", item = 19805 }),
+					{
+						kind = "first",
+						kicker = "First report",
+						head = "First in EU to land Keefer's Angelfish",
+						detail = "Ada Brook",
+						emblem = LAUREL,
+					},
+				},
+				{
+					"legend",
+					item("legend", { item = 19805 }),
+					{
+						kind = "legend",
+						kicker = "Legend",
+						head = "Ada Brook landed a Legend",
+						detail = "Keefer's Angelfish",
+						emblem = { legend = "angelfish", item = 19805 },
+					},
+				},
+				{
+					"legend without a crest of its own",
+					item("legend", { item = 19807 }),
+					{
+						kind = "legend",
+						kicker = "Legend",
+						head = "Ada Brook landed a Legend",
+						detail = "a fish",
+						emblem = { legend = "unwritten", item = 19807 },
+					},
+				},
+				{
+					"prestige",
+					item("prestige", { rank = 3 }),
+					{
+						kind = "prestige",
+						kicker = "Prestige",
+						head = "Ada Brook reached Prestige III",
+						emblem = { atlas = "PrestigeEmblems", sprite = "emblem-iii" },
+					},
+				},
+				{
+					"Master Prestige",
+					item("prestige", { rank = 12 }),
+					{
+						kind = "prestige",
+						kicker = "Prestige",
+						head = "Ada Brook reached Master Prestige 2",
+						emblem = { atlas = "PrestigeEmblems", sprite = "emblem-master" },
+					},
+				},
+				{
+					"ledger",
+					item("ledger"),
+					{
+						kind = "ledger",
+						kicker = "The Ledger",
+						head = "Ada Brook completed the Ledger",
+						emblem = { file = "Interface\\AddOns\\Pagle\\media\\minimap\\Ledger-Book", fill = 1.25 },
+					},
+				},
+				{
+					"a caught rare colour",
+					item("colour", { item = 4603, key = "allgold", rank = 8 }),
+					{
+						kind = "colour",
+						kicker = "Rare colour",
+						head = "Ada Brook caught a rare colour",
+						detail = "All-gold Spotted Yellowtail",
+						emblem = { variety = { species = 4603, position = 8 } },
+					},
+				},
+				{
+					"an epic colour not caught",
+					item("colour", { item = 4603, key = "wave", rank = 10 }),
+					{
+						kind = "colour",
+						kicker = "Rare colour",
+						head = "Ada Brook caught a rare colour",
+						detail = "Epic Spotted Yellowtail",
+						emblem = { variety = { species = 4603, position = 10, silhouette = true } },
+					},
+				},
+				{
+					"a colour whose key the client doesn't know",
+					item("colour", { item = 4603, key = "later", rank = 9 }),
+					{
+						kind = "colour",
+						kicker = "Rare colour",
+						head = "Ada Brook caught a rare colour",
+						detail = "Rare Spotted Yellowtail",
+						emblem = { variety = { species = 4603, position = 9, silhouette = true } },
+					},
+				},
+				{
+					"hunt",
+					item("hunt", { key = "night_run", text = "The Night Run" }),
+					{
+						kind = "hunt",
+						kicker = "Hunt gold",
+						head = "Ada Brook took gold",
+						detail = "The Night Run",
+						emblem = MEDAL,
+					},
+				},
+				{
+					"zone",
+					item("zone", { zone = 12, key = "elwynn" }),
+					{
+						kind = "zone",
+						kicker = "Zone Master",
+						head = "Ada Brook became Master of Elwynn Forest",
+						emblem = { file = "Interface\\AddOns\\Pagle_Ledger\\media\\crests\\elwynn", fill = 0.92 },
+					},
+				},
+				{
+					"a zone with no crest, and a name the client hasn't",
+					item("zone", { zone = 9999, key = "" }),
+					{
+						kind = "zone",
+						kicker = "Zone Master",
+						head = "Ada Brook became Master of Zone 9999",
+						emblem = LAUREL,
+					},
+				},
+				{
+					"monster",
+					item("monster", { item = 13422, length = 544 }),
+					{
+						kind = "monster",
+						kicker = "Monster",
+						head = "Ada Brook landed a Monster",
+						detail = "Stonescale Eel, 544 mm",
+						emblem = {
+							file = "Interface\\AddOns\\Pagle\\media\\crests\\fish\\13422",
+							fill = 0.92,
+							tape = true,
+						},
+					},
+				},
+				{
+					"a Monster of a Species with no crest",
+					item("monster", { item = 6291, length = 120 }),
+					{
+						kind = "monster",
+						kicker = "Monster",
+						head = "Ada Brook landed a Monster",
+						detail = "a fish, 120 mm",
+						emblem = { sign = "laurel", tape = true },
+					},
+				},
+				{
+					"region",
+					item("region", { angler = 0, name = "Grimtusk", region = "eu", item = 19805 }),
+					{
+						kind = "region",
+						kicker = "Region news · EU",
+						head = "First in EU this month to land Keefer's Angelfish",
+						detail = "Grimtusk",
+						emblem = LAUREL,
+					},
+				},
+			}
+			for _, case in ipairs(WORDS) do
+				local name, news, words = case[1], case[2], case[3]
+				it(
+					("words %s as the sign draws it, with no more line (VIEW-R45, SIGN-R12, SIGN-R13, SIGN-R19)"):format(
+						name
+					),
+					function()
+						assert.are.same(words, ns.NewsWords(news, lookups()))
+					end
+				)
+			end
+
+			it("says a fish for an item the client hasn't loaded yet, and names it once it has (VIEW-R45)", function()
+				local names = {}
+				local look = lookups({
+					itemName = function(itemID)
+						return names[itemID]
+					end,
+				})
+				local legend = item("legend", { item = 19805 })
+
+				assert.are.equal("a fish", ns.NewsWords(legend, look).detail)
+				names[19805] = "Keefer's Angelfish"
+				assert.are.equal("Keefer's Angelfish", ns.NewsWords(legend, look).detail)
+			end)
+
+			it("draws the laurel for a zone while the Ledger is off, as its crests aren't there (SIGN-R13)", function()
+				local look = lookups({
+					ledgerOn = function()
+						return false
+					end,
+				})
+
+				assert.are.same(LAUREL, ns.NewsWords(item("zone", { zone = 12, key = "elwynn" }), look).emblem)
+			end)
+
+			it("keeps an enUS fish's Raw only on another client (SIGN-R19, VAR-R12)", function()
+				local colour = item("colour", { item = 4603, key = "allgold", rank = 8 })
+
+				assert.are.equal(
+					"All-gold Raw Spotted Yellowtail",
+					ns.NewsWords(colour, lookups({ dropPrefix = false })).detail
+				)
+			end)
+
+			it(
+				"names an item's Angler by its line's name, never its card's or a character's (SIGN-R11, VIEW-R41, IGV-R61)",
+				function()
+					local data = anglerFileExamples().news
+					data.anglers[1].name = "Kukli"
+					data.anglers[1].guids = { "Player-4618-0A1B2C3D" }
+
+					local news = views(data):News()
+					local words = ns.NewsWords(news.items[1], lookups())
+
+					assert.are.equal("Ada Brook", news.items[1].name)
+					assert.is_nil(news.items[1].guids)
+					assert.are.equal("Ada Brook landed a Monster", words.head)
+					for _, text in pairs({ words.kicker, words.head, words.detail }) do
+						assert.is_nil(text:find("Kukli", 1, true))
+						assert.is_nil(text:find("Player-", 1, true))
+					end
+				end
+			)
+
+			it("draws no glyph outside CORE-R9's set (VIEW-R45, CORE-R9)", function()
+				for _, case in ipairs(WORDS) do
+					local words = ns.NewsWords(case[2], lookups())
+					for _, text in pairs({ words.kicker, words.head, words.detail or "" }) do
+						assert.are.same({}, glyphsOutside(text))
+					end
+				end
+			end)
+		end)
+
+		it(
+			"reports the news state, the lines used and skipped, the seen items and the floor under /pagle dev views (VIEW-R12)",
+			function()
+				local data = anglerFileExamples().news
+				data.news[4] = { id = "bad" }
+				local read = views(data, saved(1791600000, { [HUNT] = 1791702000 }))
+
+				local report = read:Report()
+
+				assert.are.equal(
+					"Pagle dev: news ok: lines used 3, skipped 1; seen 1, floor 1791600000.",
+					report[#report]
+				)
+				local none = views(anglerFileExamples().following):Report()
+				assert.are.equal(
+					"Pagle dev: news none: lines used none, skipped none; seen 0, floor none.",
+					none[#none]
+				)
+			end
+		)
+	end)
 end)

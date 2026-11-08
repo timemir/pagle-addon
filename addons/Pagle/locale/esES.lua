@@ -147,6 +147,7 @@ ns.Locale("esES", function(L)
 	L.DEV_VIEWS_FOLLOWING = "Pagle dev: generatedAt de Pagle_Following {generatedAt}, Pescadores {dev_views_following_2}."
 	L.DEV_VIEWS_LIVE = "Pagle dev: {name} está activo."
 	L.DEV_VIEWS_LOADED = "Pagle dev: Pagle_Anglers se ha cargado en esta sesión."
+	L.DEV_VIEWS_NEWS = "Pagle dev: noticias {state}: líneas usadas {used}, omitidas {skipped}; vistas {seen}, umbral {floor}."
 	L.DEV_VIEWS_NONE = "ninguno"
 	L.DEV_VIEWS_NOT_LOADED = "Pagle dev: Pagle_Anglers no se ha cargado en esta sesión."
 	L.EVENING_CAST = "Haz un Lance"
@@ -555,10 +556,14 @@ ns.Locale("esES", function(L)
 	L.SHOP_USE = "Usar"
 	L.SHOP_USE_NOW = "Usarlo ya"
 	L.SIGN_DETAIL_COLOUR = "{species} {variety}"
+	L.SIGN_DETAIL_COLOUR_HIDDEN = "{species} ({rarity})"
 	L.SIGN_DETAIL_MONSTER = "{species}, {length}"
 	L.SIGN_HEAD = { colour = "{name} ha pescado un color raro", first = "Primero en {region} en pescar {fish}", hunt = "{name} se lleva el oro", ledger = "{name} ha completado el Libro", legend = "{name} ha pescado una Leyenda", monster = "{name} ha pescado un Monstruo", prestige = "{name} ha alcanzado Prestigio {rank}", region = "Primero en {region} este mes en pescar {fish}", zone = "{name} es Maestro de zona de {zone}" }
+	L.SIGN_HEAD_MASTER_PRESTIGE = "{name} ha alcanzado Prestigio de Maestro {master:0}"
+	L.SIGN_ITEM_UNKNOWN = "un pez"
 	L.SIGN_KICKER = { colour = "Color raro", first = "Primer aviso", hunt = "Oro en Caza", ledger = "El Libro", legend = "Leyenda", monster = "Monstruo", prestige = "Prestigio", region = "Noticias de la región · {region}", zone = "Maestro de zona" }
 	L.SIGN_MORE = { many = "+{count:0} más de tus pescadores", one = "+{count:0} más de tus pescadores", other = "+{count:0} más de tus pescadores" }
+	L.SIGN_ZONE_UNKNOWN = "Zona {zone}"
 	L.SIZE_BANDS = { "Pececillo", "Decente", "Robusto", "Descomunal", "Monstruo" }
 	L.SLASH_CORE_HELP = {
 		{ help = "abre los ajustes de Pagle (también /pagle solo)", name = "settings" },
