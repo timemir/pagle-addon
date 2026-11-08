@@ -60,7 +60,7 @@ Part of [Core](README.md). **The Morning Tide** is what players call the news si
 
 ### A drop (SIGN-R40–R43)
 
-- **SIGN-R40** The sign drops only when Pagle isn't restricted: a drop asked for in combat waits for it to end, and the last asked for wins. If combat starts while it shows, it goes up at once. *From 1.6,* it shares the screen with Core's letters (the letter service, ONB-R15–R17, such as the Prestige letter or the party letter of [#655](https://github.com/timemir/pagle-addon/issues/655)) one at a time: a drop asked for while a letter shows waits until no letter shows, then drops (a letter answered, or hidden by a restriction, ONB-R14); and a letter due while the sign shows waits until the sign has gone up (ONB-R17). Whichever is due first shows first. At login that is usually the sign, at the drop delay (SIGN-R14), since a letter also waits for the login's held Announcements and cards (ONB-R10); the letter follows `LETTER_DELAY` after the sign has gone up. A drop waiting for a letter keeps its words, as one waiting for combat does (SIGN-R14).
+- **SIGN-R40** The sign drops only when Pagle isn't restricted: a drop asked for in combat waits for it to end, and the last asked for wins. If combat starts while it shows, it goes up at once. *From 1.6,* it shares the screen with Core's letters (the letter service, ONB-R15–R17, such as the Prestige letter or the party letter of [#655](https://github.com/timemir/pagle-addon/issues/655)) one at a time: a drop asked for while a letter shows waits until no letter shows, then drops (a letter answered, or hidden by a restriction, ONB-R14); and a letter due while the sign shows waits until the sign has gone up (ONB-R17). Nor does it drop while the Field guide is open (ONB-R20), as a Module's letter doesn't (ONB-R17): it waits for `GuideClosed`, so the onboarding Letter's Open the letter, which opens the guide, never sends the sign down behind it, and its items are marked seen only once it drops (SIGN-R17). Whichever is due first shows first. At login that is usually the sign, at the drop delay (SIGN-R14), since a letter also waits for the login's held Announcements and cards (ONB-R10); the letter follows `LETTER_DELAY` after the sign has gone up. A drop waiting for a letter keeps its words, as one waiting for combat does (SIGN-R14).
 - **SIGN-R41** It plays its look's entrance, then hangs 8 s and goes up, then hides. While the mouse is over it, it eases a little toward the player and its time stands still; its time runs on once the mouse leaves.
 - **SIGN-R42** A right click sends it up at once. A left click opens the Fish Journal and sends it up. *From 1.6,* the left click opens the Fish Journal's news list on the item shown (LED-R176), through the first On Module's `def.news(id)` (VIEW-R46), and sends the sign up; with no On Module offering one (the Ledger off), it only sends the sign up. The sign from the Curio Shop's "Show on screen" or the dev command opens nothing.
 - **SIGN-R43** With Animations off (`announcements.motion`), it appears at rest and still, plays no sounds, and hides at once when its time is up.
@@ -93,12 +93,18 @@ Part of [Core](README.md). **The Morning Tide** is what players call the news si
 ## Contracts
 
 ```lua
-ns.DropNewsSign(lookKey, news)   -- SIGN-R40: drops when unrestricted; the last asked for wins
+ns.DropNewsSign(lookKey?, news, onStart?) -- SIGN-R40: drops when unrestricted and no letter shows; the last asked for
+                                 -- wins; no lookKey: the look equipped as it drops (SIGN-R57); onStart as it starts (SIGN-R17)
 ns.SendNewsSignUp()              -- SIGN-R42
-ns.NewsSignState()               -- nil, or { look, exiting, static } for a spec or the dev command
+ns.NewsSignState()               -- nil, or { look, id, exiting, static } for a spec or the dev command; id: the item shown
 ns.NewsSignFrame()               -- PagleNewsSign, once made
 ns.NewsSignSample(kind, more?)   -- SIGN-R60's sample news
 ns.DecideNewsSign()              -- from 1.6: SIGN-R14's decision, run once a session after the drop delay
+ns.PickNews(items, now, floor, switches) -- from 1.6: SIGN-R15's pick and SIGN-R16's count (logic/NewsSign.lua)
+ns.EquippedNewsSignLook()        -- from 1.6: the look key SIGN-R57 wears, Wood by default
+ns.NewsOption(key)               -- from 1.6: "show" or "headlines" on (SET-R37): true unless stored false (› Data)
+ns.NewsKindOn(kind)              -- from 1.6: a followed kind's switch on (SET-R37): true unless stored false
+ns.NewsSignMuted()               -- from 1.6: newsSign.mute stored true (SIGN-R31)
 
 ---@class PagleNewsSignNews
 ---@field kind string     -- SIGN-R10
@@ -106,12 +112,13 @@ ns.DecideNewsSign()              -- from 1.6: SIGN-R14's decision, run once a se
 ---@field head string
 ---@field detail string?
 ---@field more string?
----@field emblem table    -- SIGN-R13: { sign = name } | { atlas, sprite } | { legend, item } | { variety = { species, position } } | { file, fill, tape? }
+---@field emblem table    -- SIGN-R13: { sign = name } | { atlas, sprite } | { legend, item } | { variety = { species, position, silhouette? } } | { file, fill, tape? }
+                         -- silhouette: true for a variety the player hasn't caught, drawn dark (VAR-R27, from 1.6)
 ```
 
 *From 1.6,* the words of an item are `Pagle.NewsWords(item)` (VIEW-R45, SIGN-R19), which gives a `PagleNewsSignNews` without its more line; the decision adds the more line (SIGN-R16).
 
-The code is in `adapter/NewsSign.lua` (the frame, its drop and the drawing kit), `adapter/NewsSignLooks.lua` (the six looks) and `adapter/NewsSignDev.lua` (the kinds, the samples and the dev command), loaded by `adapter/Settings.xml`, after the files they use, so no TOC line changes. *From 1.6* (Decisions), they get TOC lines of their own in `Pagle.toc`, after the files they use, and `adapter/Settings.xml` loses their `<Script>` lines. Specs: `spec/Pagle/adapter/NewsSign_spec.lua`.
+The code is in `adapter/NewsSign.lua` (the frame, its drop and the drawing kit, and from 1.6 the reads of `newsSign`'s switches), `adapter/NewsSignLooks.lua` (the six looks) and `adapter/NewsSignDev.lua` (the kinds, the samples and the dev command), loaded by `adapter/Settings.xml`, after the files they use, so no TOC line changes. *From 1.6* (Decisions), they get TOC lines of their own in `Pagle.toc`, after the files they use, and `adapter/Settings.xml` loses their `<Script>` lines; the decision (SIGN-R14–R18) is `logic/NewsSign.lua` (the pick) and `adapter/NewsSignDrop.lua`. Specs: `spec/Pagle/adapter/NewsSign_spec.lua`, `spec/Pagle/adapter/NewsSignDrop_spec.lua`, `spec/Pagle/logic/NewsSign_spec.lua`.
 
 ## Data
 
