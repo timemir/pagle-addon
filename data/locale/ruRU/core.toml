@@ -357,6 +357,14 @@ en = "Shift-drag a toast to move the toasts and Nods, or the Session summary to 
 value = "Группа"
 en = "Party"
 
+[SETTINGS_PARTY_HUNTS]
+value = "Групповые охоты"
+en = "Party Hunts"
+
+[SETTINGS_PARTY_HUNTS_TOOLTIP]
+value = "В группе улов участников засчитывается в ваши Охоты и Пари Пэгла, пока вы рыбачите в одной зоне, а ваш — в их. Если выключено, Pagle не делится вашим уловом и не засчитывает их улов."
+en = "In a party, your groupmates' catches count toward your Hunts and Pagle Wagers while you fish the same zone, and yours count toward theirs. Off, Pagle neither shares your catches nor counts theirs."
+
 [SETTINGS_PARTY_SHARE]
 value = "Делиться моими моментами с группой"
 en = "Share my moments with my party"

@@ -98,6 +98,7 @@ local ns = select(2, ...)
 ---@field itemID integer
 ---@field zone integer        -- the Cast's zone areaID (0 if unresolved)
 ---@field date { year: integer, month: integer, day: integer }   -- the Cast's realm date (cast.conditions.date; its UTC day without one)
+---@field party boolean?   -- from 1.6: a Party Catch reached it (HNT-R181): `catchId` its Party Catch ID, `time` its catchTime
 
 ---@class PagleHuntsNS
 ---@field projection PagleProjection? -- Hunts' projection, made in OnInitialize (HNT-R136, logic/Projection.lua)

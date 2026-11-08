@@ -62,6 +62,16 @@ local function items(text)
 	return true
 end
 
+-- Whether a canonical item list holds an item that isn't item 0 (a Party Catch's, LOG-R113 item 3).
+local function knownItem(text)
+	for _, item in ipairs(fields(text, ",")) do
+		if item:match("^([^x]+)x") ~= "0" then
+			return true
+		end
+	end
+	return false
+end
+
 local function entryId(text)
 	local guid, time, tie = text:match("^(Player%-%d+%-[0-9A-F]+)%-([^%-]+)%-([^%-]+)$")
 	return guid ~= nil and number(time, 0) ~= nil and number(tie, 0) ~= nil
@@ -181,6 +191,23 @@ function ns.CanonicalRecordProblem(entry)
 			and ids(f[15])
 			and items(f[16])
 			and (f[5] ~= "g" or f[16] == "")
+	elseif tag == "G1" and #f == 15 then
+		-- A Party Catch (LOG-R115, from pagle-2026j): the groupmate's Cast's time and tie, then its C1 fields from
+		-- minute to items in their grammar, with a zone that isn't 0 and an item that isn't item 0; no GUID.
+		valid = number(f[5], 0) ~= nil
+			and number(f[6], 0) ~= nil
+			and optional(f[7])
+			and (f[7] == "" or tonumber(f[7]) < 1440)
+			and number(f[8], 1) ~= nil
+			and number(f[9], 0) ~= nil
+			and optional(f[10])
+			and optional(f[11], true)
+			and optional(f[12])
+			and ids(f[13])
+			and ids(f[14])
+			and f[15] ~= ""
+			and items(f[15])
+			and knownItem(f[15])
 	elseif tag == "S1" and #f == 7 then
 		valid = number(f[5], 0) ~= nil and number(f[6], 0) ~= nil and number(f[7], -MAX, true) ~= nil
 	elseif tag == "P1" and #f == 6 then

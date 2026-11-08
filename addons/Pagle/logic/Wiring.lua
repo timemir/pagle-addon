@@ -16,8 +16,9 @@ local ns = select(2, ...)
 ---@field fire fun(event: PagleEvent, ...: any)  -- fires a Core event on the bus (CORE-R22)
 ---@field listen fun(owner: string, event: PagleEvent, fn: fun(event: string, ...: any)) -- Pagle.RegisterCallback
 ---@field fingerprint fun(): string?             -- Pagle.CONTENT_FINGERPRINT
----@field iterate fun(afterSeq: integer?, module: string?): fun(): PagleRecord? -- the log's records after a seq: what
---- Pagle.IterateCatches yields, plus the Module records of `module` if given (M:IterateCatches, LOG-R41, LOG-R42)
+---@field iterate fun(afterSeq: integer?, module: string?, party: boolean?): fun(): PagleRecord? -- the log's records
+--- after a seq: what Pagle.IterateCatches yields, plus the Module records of `module` if given (M:IterateCatches,
+--- LOG-R41, LOG-R42), and the Party Catches with `party` (LOG-R117)
 ---@field serverTime fun(): integer              -- GetServerTime()
 ---@field after fun(seconds: number, fn: fun())  -- runs fn `seconds` from now (C_Timer.After)
 ---@field nextFrame fun(step: fun())             -- runs step on the next frame
@@ -522,9 +523,9 @@ end
 
 --- Prestige and purchase entries and Module records (LOG-R38–R40) as Core appends them: `M:RecordPrestige()` and
 --- `M:AppendRecord(kind, payload)` on every Module handle, and Core's own `ns.RecordPrestige()` and
---- `ns.RecordPurchase(goodID, price)`. Each appends for the logged-in character at the server time and hands the
---- record to the projections live (LOG-R73). A purchase has no Pagle or Module call: the Curio Shop's buy flow is its
---- only caller.
+--- `ns.RecordPurchase(goodID, price)`, and from 1.6 `ns.RecordPartyCatch(copy, name, sourceId)` (LOG-R115). Each
+--- appends for the logged-in character at the server time and hands the record to the projections live (LOG-R73). A
+--- purchase has no Pagle or Module call: the Curio Shop's buy flow is its only caller.
 ---@param host PagleHost
 function ns.WireLogEntries(host)
 	-- Appends `record` (its kind and fields) for the logged-in character now, and hands it over live. Raises an error
@@ -533,8 +534,9 @@ function ns.WireLogEntries(host)
 	-- (LOG-R14, LOG-R40, LOG-R75).
 	---@param record table
 	---@param what string the call, for its error
+	---@param live (fun(appended: PagleRecord): PagleRecord)? the record handed over live, made from the appended one
 	---@return PagleRecord
-	local function append(record, what)
+	local function append(record, what, live)
 		local mode = ns.projections:Mode()
 		if mode and mode ~= "live" then
 			error(("%s can't append from a projection's %s"):format(what, mode), 3)
@@ -545,7 +547,7 @@ function ns.WireLogEntries(host)
 		end
 		record.char, record.time = char, host.serverTime()
 		local appended = host.catchLog():Append(record)
-		ns.projections:Live(appended) -- LOG-R73
+		ns.projections:Live(live and live(appended) or appended) -- LOG-R73
 		return appended
 	end
 
@@ -587,6 +589,33 @@ function ns.WireLogEntries(host)
 		local companion = append({ kind = "companion", keyId = keyId, pushedSeq = seq }, "ns.RecordCompanion")
 		---@cast companion PagleCompanion
 		return companion
+	end
+
+	--- Appends a Party Catch (`G1`, LOG-R115) of `copy`, a groupmate's Cast as the receiver's checks passed it
+	--- (LOG-R113), for the logged-in character now; hands it to the projections that take Party Catches as live, with
+	--- the groupmate's `name` and the source entry ID `sourceId` on the live record only (LOG-R116), then fires
+	--- `PartyCatch(record)`. Nothing else: no Session, no catch toast, no Catch or CastEnded. Returns that live record,
+	--- or nil before PLAYER_LOGIN. adapter/PartyCatches.lua's receiver is its one caller.
+	---@param copy string
+	---@param name string
+	---@param sourceId string
+	---@return PaglePartyCatch?
+	function ns.RecordPartyCatch(copy, name, sourceId)
+		if not host.character() then
+			return nil
+		end
+		local live
+		append({ kind = "party", copy = copy }, "ns.RecordPartyCatch", function(appended)
+			-- The record every reader gets back from the log stays as it is (CORE-R18); the live one is a copy.
+			live = {}
+			for key, value in pairs(appended) do
+				live[key] = value
+			end
+			live.name, live.sourceId = name, sourceId
+			return live
+		end)
+		host.fire("PartyCatch", live)
+		return live
 	end
 
 	---@class PagleModuleHandle

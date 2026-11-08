@@ -2067,6 +2067,14 @@ en = "Shift-drag a toast to move the toasts and Nods, or the Session summary to 
 value = "Grupo"
 en = "Party"
 
+[SETTINGS_PARTY_HUNTS]
+value = "Cazas en grupo"
+en = "Party Hunts"
+
+[SETTINGS_PARTY_HUNTS_TOOLTIP]
+value = "En un grupo, las capturas de tus compañeros cuentan para tus Cazas y Apuestas Pagle mientras pescáis en la misma zona, y las tuyas para las suyas. Desactivado, Pagle ni comparte tus capturas ni cuenta las suyas."
+en = "In a party, your groupmates' catches count toward your Hunts and Pagle Wagers while you fish the same zone, and yours count toward theirs. Off, Pagle neither shares your catches nor counts theirs."
+
 [SETTINGS_PARTY_SHARE]
 value = "Compartir mis momentos con mi grupo"
 en = "Share my moments with my party"

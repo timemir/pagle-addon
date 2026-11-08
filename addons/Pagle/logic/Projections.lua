@@ -19,6 +19,9 @@ ns.PROJECTION_BUDGET = 4
 ---@field reset fun(): table         -- a fresh, empty state
 ---@field apply fun(state: table, record: PagleRecord, mode: PagleApplyMode)
 ---@field done? fun(state: table, info: PagleProjectionInfo)
+---@field partyCatches? boolean      -- from 1.6: it takes Party Catch records (LOG-R117)
+---@field wantsPartyCatch? fun(state: table, record: PaglePartyCatch): boolean -- from 1.6: whether a received Party
+--- Catch could count (LOG-R114); it never changes state. A def that takes Party Catches without one takes every one.
 
 --- How an entry reaches a projection (LOG-R75): `"live"` just recorded (may raise moments), `"replay"` a catch-up
 --- entry, `"rebuild"` a rebuild entry (neither raises moments).
@@ -136,6 +139,12 @@ local function problemWith(def)
 	end
 	if def.extraFingerprint ~= nil and type(def.extraFingerprint) ~= "string" then
 		return "NewProjection: def.extraFingerprint must be a string or nil"
+	end
+	if def.partyCatches ~= nil and type(def.partyCatches) ~= "boolean" then
+		return "NewProjection: def.partyCatches must be a boolean or nil"
+	end
+	if def.wantsPartyCatch ~= nil and type(def.wantsPartyCatch) ~= "function" then
+		return "NewProjection: def.wantsPartyCatch must be a function or nil"
 	end
 	return nil
 end
@@ -530,8 +539,8 @@ end
 --- Hands a just-appended entry to every projection (LOG-R73, LOG-R74): one that is up to date applies it as
 --- `"live"` now and sets `lastSeq`; one that is updating, or still applying the entries appended during its update,
 --- reads it back from the log as `"live"` when it gets there. A Module record goes only to its Module's projections,
---- and a Companion entry only to Core's own (LOG-R37); every other one that is up to date just moves `lastSeq` past it
---- (LOG-R41).
+--- a Companion entry only to Core's own (LOG-R37), and a Party Catch only to the projections that take them
+--- (LOG-R117); every other one that is up to date just moves `lastSeq` past it (LOG-R41).
 --- Called from inside an apply or a done, it is handed over when that returns (LOG-R40).
 ---@param record PagleRecord
 function Projections:Live(record)
@@ -542,7 +551,9 @@ function Projections:Live(record)
 	local owner = ns.RecordReader(record)
 	for _, projection in ipairs(self.list) do
 		if not projection.run and not projection.updating and record.seq > projection.def.db.lastSeq then
-			if owner and owner ~= (projection.module or ns.COMPANION_READER) then
+			local takesParty = owner == ns.PARTY_CATCH_READER and projection.def.partyCatches == true
+			local reader = takesParty and ns.PARTY_CATCH_READER or (projection.module or ns.COMPANION_READER)
+			if owner and owner ~= reader then
 				projection.def.db.lastSeq = record.seq
 			else
 				applyOne(projection, record, "live")
@@ -550,6 +561,40 @@ function Projections:Live(record)
 		end
 	end
 	self:settle()
+end
+
+--- Whether `module` has a projection that takes Party Catches (`partyCatches = true`, LOG-R117): what its
+--- M:IterateCatches yields them by.
+---@param module string? the Module's def.name
+---@return boolean
+function Projections:TakesPartyCatches(module)
+	for _, projection in ipairs(self.list) do
+		if module ~= nil and projection.module == module and projection.def.partyCatches == true then
+			return true
+		end
+	end
+	return false
+end
+
+--- The Hunts filter (LOG-R114): whether a received Party Catch, as `record` (the record its entry would make), could
+--- count. Every projection that takes Party Catches is asked, through its def's `wantsPartyCatch(state, record)`, and
+--- one true answer is enough; one with no such function takes every Party Catch. While one of them is updating, its
+--- state isn't built yet, so it takes every one. False when none takes Party Catches.
+---@param record PaglePartyCatch
+---@return boolean
+function Projections:WantsPartyCatch(record)
+	for _, projection in ipairs(self.list) do
+		local def = projection.def
+		if def.partyCatches == true then
+			if not self.loginSeq or projection:IsUpdating() or def.wantsPartyCatch == nil then
+				return true
+			end
+			if self.options.call(def.wantsPartyCatch, projection.state, record) == true then
+				return true
+			end
+		end
+	end
+	return false
 end
 
 --- Whether any projection is updating (LOG-R74), counting the time before `Start`, when none has caught up yet,
@@ -593,19 +638,21 @@ end
 --- Core's adapter and FakePagle publish the same methods.
 ---@param registry PagleModuleRegistry
 ---@param projections PagleProjections
----@param iterate fun(afterSeq: integer?, module: string?): fun(): PagleRecord? the log's records after a seq, with
---- the Module records of `module` (PagleHost.iterate)
+---@param iterate fun(afterSeq: integer?, module: string?, party: boolean?): fun(): PagleRecord? the log's records after
+--- a seq, with the Module records of `module`, and the Party Catches with `party` (PagleHost.iterate)
 function ns.AddProjectionMethods(registry, projections, iterate)
 	---@class PagleModuleHandle
 	local ModuleHandle = ns.ModuleHandle
 
 	--- Walks the log's records with `seq > afterSeq` (0 if nil), up to its length now, in order (LOG-R42): what
-	--- `Pagle.IterateCatches` yields, plus this Module's own Module records, never another Module's (LOG-R41).
+	--- `Pagle.IterateCatches` yields, plus this Module's own Module records, never another Module's (LOG-R41), and,
+	--- from 1.6, the Party Catches when one of its projections takes them (LOG-R117).
 	---@param afterSeq integer?
 	---@return fun(): PagleRecord?
 	function ModuleHandle:IterateCatches(afterSeq)
 		local module = registry:ModuleCalling(self, "IterateCatches", "afterSeq")
-		return iterate(afterSeq, module.def.name)
+		local name = module.def.name
+		return iterate(afterSeq, name, projections:TakesPartyCatches(name))
 	end
 
 	--- Binds a projection to `def.db`, a table in the Module's SavedVariables that Core owns from now on (LOG-R70).

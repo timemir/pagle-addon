@@ -41,6 +41,7 @@ ns.PAGLEDB_DEFAULTS = {
 		lengthUnit = nil, -- LOG-R69: "cm", "in", or nil (no default key) for the region default
 		clockFormat = nil, -- CORE-R87: "24h", "12h", or nil (no default key) to follow the game's clock
 		anglerTooltips = true, -- VIEW-R30: "Show other Anglers on player tooltips"
+		partyHunts = true, -- LOG-R121, SET-R35 (from 1.6): "Party Hunts", sending and counting alike
 		appearance = {}, -- SHOP-R32: each slot's pick, by slot ID
 		-- announcements.md › Data; everyCatch is "Show every catch" (ANN-R13), motion is "Animations".
 		announcements = {

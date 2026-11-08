@@ -18,6 +18,7 @@ local SHARE = "Pagle_Core_partyShare"
 local SHOW = "Pagle_Core_partyShow"
 local SOUNDS = "Pagle_Core_partySounds"
 local KIND = "Pagle_Core_partyKind_"
+local HUNTS = "Pagle_Core_partyHunts"
 
 local function notCozy()
 	return not ns.db.profile.announcements.cozy
@@ -36,14 +37,23 @@ local function greys(initializer, isLive)
 	initializer:AddEvaluateStateCVar(SHOW)
 end
 
---- Builds the Party block on the Announcements page (SET-R36): the header, Share, Show with a switch per kind under
---- it, then Cheers sounds. Each reads the stored value each time the page is shown and writes it at once (SET-R62);
---- each defaults to on, which the page's Defaults button restores (SET-R33).
+--- Builds the Party block on the Announcements page (SET-R36): the header, from 1.6 Party Hunts (SET-R35), then Share,
+--- Show with a switch per kind under it, then Cheers sounds. Each reads the stored value each time the page is shown and
+--- writes it at once (SET-R62); each defaults to on, which the page's Defaults button restores (SET-R33).
 ---@param page SettingsCategory
 ---@param layout SettingsLayout
 function ns.PartySettingsRows(page, layout)
 	local Boolean = Settings.VarType.Boolean
 	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_PARTY))
+
+	-- Party Hunts (SET-R35, LOG-R121): PagleDB.profile.partyHunts, on by default (logic/Migrations.lua), never greyed:
+	-- it governs what is shared and what counts, not what pops up.
+	local hunts = Settings.RegisterProxySetting(page, HUNTS, Boolean, L.SETTINGS_PARTY_HUNTS, true, function()
+		return ns.db.profile.partyHunts ~= false
+	end, function(value)
+		ns.db.profile.partyHunts = value == true
+	end)
+	Settings.CreateCheckbox(page, hunts, L.SETTINGS_PARTY_HUNTS_TOOLTIP)
 
 	-- A row over option `key`.
 	local function option(variable, label, key)

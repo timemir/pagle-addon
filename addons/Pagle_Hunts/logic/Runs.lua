@@ -14,10 +14,12 @@ local ns = select(2, ...)
 -- Casts before their run's record: a run's record can come after Casts it must credit (a pushed run logged mid-run
 -- with its real `start`, HNT-R151; the slots a catch-up logs, HNT-R155), and those Casts count (HNT-R149, HNT-R200).
 -- So folding a `run` record walks the run's earlier Casts again with M:IterateCatches, from the first Cast at or
--- after its `start` up to the record, and credits them in order as `apply` would, without moments (HNT-R149). The
--- state's hour index (`hours`, server hour to the first seq of a Cast in it, for the last 14 days of Casts, Tunables)
--- says where to start; a run older than that is credited from the index's start. A rebuild reads the log in the same
--- order, so it folds to the same state as the live entries did.
+-- after its `start` up to the record, and credits them in order as `apply` would, without moments (HNT-R149); from
+-- 1.6 it walks the earlier Party Catches with them, in log order, each by its `catchTime` (HNT-R183). The state's hour
+-- index (`hours`, server hour to the first seq of a Cast in it, for the last 14 days of Casts, Tunables) says where to
+-- start; it notes a Party Catch too, by its `catchTime`, so one logged before the first Cast of its run's hour is
+-- walked. A run older than that is credited from the index's start. A rebuild reads the log in the same order, so it
+-- folds to the same state as the live entries did.
 
 --- A run's key (HNT-R142): `<eventID>@<start>`.
 ---@param eventID string
@@ -216,30 +218,35 @@ end
 --- Credits one Cast to a known run on at its time (HNT-R144, HNT-R145, HNT-R137 step 2): for each Hunt of its event,
 --- in file order, the effort counter first (HNT-R25, HNT-R26: its condition spec, the event's zones included), then
 --- each qualifying Catch in loot-slot order, with the Coins and Activity XP each newly reached tier pays (HNT-R110,
---- HNT-R114). A Hunt of the run has progress once it has effort or a Catch.
+--- HNT-R114). A Hunt of the run has progress once it has effort or a Catch. With `party`, `cast` is a Party Catch's
+--- (ns.PartyCast): no effort, `sinceLast` left alone, and each tier it reaches marked `party` (HNT-R181, HNT-R183).
 ---@param state HuntsState
 ---@param on { key: string, run: HuntRun }
 ---@param event HuntEvent
 ---@param cast PagleCast
 ---@param lookups HuntsLookups
 ---@param reached HuntsRunsReached
-function ns.CreditRunCast(state, on, event, cast, lookups, reached)
+---@param party boolean?
+function ns.CreditRunCast(state, on, event, cast, lookups, reached, party)
 	local run = on.run
 	for _, hunt in ipairs(event.hunts) do
 		local progress = run.hunts[hunt.id] or ns.NewHuntProgress()
 		local spec = event.where[hunt.id].boardSpec
-		if spec and lookups.MatchesConditions(spec, cast.conditions) then
+		if not party and spec and lookups.MatchesConditions(spec, cast.conditions) then
 			progress.effort = progress.effort + 1
 			progress.sinceLast = progress.sinceLast + 1
 		end
 		local count = progress.count
 		for _, k in ipairs(ns.CountQualifying(progress, hunt, cast, ns.MatchingCatches(hunt, cast, lookups))) do
+			if party then
+				progress.reached[k].party = true
+			end
 			state.coins = state.coins + ns.TierAmount(ns.COINS_EVENT, k)
 			state.xp = state.xp + ns.TierAmount(ns.XP_EVENT, k)
 			state.tickets = state.tickets + ns.TierTickets(k) -- tier 3 only, so once per Hunt per run (HNT-R116)
 			reached.marks[#reached.marks + 1] = { run = on.key, hunt = hunt.id, tier = k }
 		end
-		if progress.count > count then
+		if not party and progress.count > count then
 			progress.sinceLast = 0
 		end
 		if progress.effort > 0 or progress.count > 0 then
@@ -285,6 +292,7 @@ end
 
 --- Notes a Cast in the state's hour index (hunts.md › Projection state, `hours`): the first seq of a Cast in each
 --- server hour, for the last 14 days of Casts (Tunables); an hour older than that is dropped once a newer one comes.
+--- A Party Catch is noted the same way, as ns.PartyCast makes it: its own seq, in its `catchTime`'s hour (HNT-R183).
 ---@param state HuntsState
 ---@param cast PagleCast
 function ns.NoteCastHour(state, cast)
@@ -319,7 +327,8 @@ end
 
 --- Folds one of Hunts' own Module records (HNT-R136, HNT-R137's last paragraph): a `run` record adds its run
 --- (ns.AddRun), then credits the run's Casts already folded, from the first Cast at or after its `start` up to the
---- record, in order (HNT-R149); a `def` record adds its part (ns.AddDefPart). Neither counts as a Cast. Returns what
+--- record, in order, and the Party Catches among them by their `catchTime` (HNT-R149, HNT-R183); a `def` record adds
+--- its part (ns.AddDefPart). Neither counts as a Cast. Returns what
 --- it newly reached, or nil when the record changed nothing: one the codec can't read (logic/Records.lua), another
 --- kind, an ignored run or a part already in.
 ---@param state HuntsState
@@ -356,6 +365,13 @@ function ns.ApplyRunRecord(state, record, lookups, iterate)
 				---@cast entry PagleCast
 				ns.CreditRunCast(state, on, event, entry, lookups, reached)
 				ns.SettleRun(state, on, event, reached)
+			elseif entry.kind == "party" then
+				---@cast entry PaglePartyCatch
+				local catchTime = entry.catchTime
+				if run.start <= catchTime and catchTime < run.end_ then
+					ns.CreditRunCast(state, on, event, ns.PartyCast(entry), lookups, reached, true)
+					ns.SettleRun(state, on, event, reached)
+				end
 			end
 		end
 	end
