@@ -9,7 +9,8 @@ end
 -- The Morning Tide's section on the Announcements page (settings.md SET-R37; core/news-sign.md SIGN-R14, SIGN-R15,
 -- SIGN-R18, SIGN-R31, Data; from 1.6): after the Party block, under its own header, native checkboxes on proxy
 -- settings over PagleDB.global.newsSign, nil meaning the default, as the Party block's rows read theirs
--- (adapter/PartySettings.lua), then the look's slot dropdown. adapter/AnnouncementSettings.lua calls it after the Party
+-- (adapter/PartySettings.lua), then the look's slot dropdown. They read the switches through adapter/NewsSign.lua's
+-- ns.NewsOption, ns.NewsKindOn and ns.NewsSignMuted, as the sign's decision does, and write them here. adapter/AnnouncementSettings.lua calls it after the Party
 -- block. Loaded by adapter/Settings.xml.
 local L = ns.L
 
@@ -34,41 +35,6 @@ local function writable()
 	return ns.db.global.newsSign
 end
 
---- Whether a switch of the sign's is on (SET-R37, news-sign.md › Data): "show" (Show news at login) or "headlines"
---- (Region headlines), on unless stored as false.
----@param key "show"|"headlines"
----@return boolean
-function ns.NewsOption(key)
-	local sign = stored()
-	return not (sign and sign[key] == false)
-end
-
---- Whether the switch of the followed kind `kind` (SIGN-R10) is on: on unless stored as false, so a missing key, or a
---- kind a later release adds, reads as on (news-sign.md › Data).
----@param kind string
----@return boolean
-function ns.NewsKindOn(kind)
-	local sign = stored()
-	local kinds = sign and sign.kinds
-	return not (kinds and kinds[kind] == false)
-end
-
---- Whether the sign is muted (SIGN-R31): only when stored as true.
----@return boolean
-function ns.NewsSignMuted()
-	local sign = stored()
-	return sign ~= nil and sign.mute == true
-end
-
---- The news floor (SIGN-R18, VIEW-R44): PagleDB.global.news.since, set to the server time now, so no item timed
---- before it is ever due. The seen items are left as they are.
--- Seam for #656, the news reader, which owns PagleDB.global.news and sets the first floor itself (SIGN-R14): turning
--- Show news at login on comes here, and the reader may move this into its own file, keeping the name.
-function ns.SetNewsFloor()
-	ns.db.global.news = ns.db.global.news or {}
-	ns.db.global.news.since = GetServerTime()
-end
-
 -- Sets switch `key` of the sign's: false is stored, on clears the key. Turning Show news at login on from off sets the
 -- floor (SIGN-R18), so it never brings the backlog that came while it was off; setting it on while on, as the page's
 -- Defaults does, leaves the floor (SET-R37).
@@ -85,7 +51,7 @@ local function setOption(key, on)
 		writable()[key] = false
 	end
 	if key == "show" and on and not was then
-		ns.SetNewsFloor()
+		ns.SetNewsFloor() -- logic/Wiring.lua's (VIEW-R44)
 	end
 end
 
@@ -169,7 +135,7 @@ function ns.NewsSignSettingsRows(page, layout)
 	local show = Settings.CreateCheckbox(page, option(SHOW, L.SETTINGS_NEWS_SHOW, "show"), L.SETTINGS_NEWS_SHOW_TOOLTIP)
 	greys(show, notCozy)
 
-	-- The followed kinds in the sign's rank (SIGN-R10, adapter/NewsSignDev.lua's list, less the region headline), then
+	-- The followed kinds in the sign's rank (SIGN-R10, logic/NewsSign.lua's ns.NEWS_FOLLOWED_KINDS), then
 	-- Region headlines, indented under the master and greyed with it.
 	local function kindRow(kind)
 		local setting = Settings.RegisterProxySetting(
@@ -189,10 +155,8 @@ function ns.NewsSignSettingsRows(page, layout)
 		row:SetParentInitializer(show)
 		greys(row, kindsLive)
 	end
-	for _, kind in ipairs(ns.NEWS_SIGN_KINDS) do
-		if kind ~= "region" then
-			kindRow(kind)
-		end
+	for _, kind in ipairs(ns.NEWS_FOLLOWED_KINDS) do
+		kindRow(kind)
 	end
 	local headlines = Settings.CreateCheckbox(
 		page,
