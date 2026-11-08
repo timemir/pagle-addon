@@ -16,6 +16,8 @@ ns.WireMoments(ns.host, function(announcement)
 	-- The moments a Module marked for the party go to it first, live ones only (ANN-R104, adapter/Party.lua); a
 	-- failure there is reported, and the Announcement shows all the same.
 	securecallfunction(ns.SharePartyMoments, announcement)
+	-- From 1.6, a Party Catch's Hunt completed or run settled goes to the party as "Completed for the party" (ANN-R111).
+	securecallfunction(ns.SharePartyHunts, announcement)
 	ns.lanes:Push(announcement)
 end)
 

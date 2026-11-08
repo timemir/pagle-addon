@@ -323,3 +323,13 @@ languages = ["pseudo"]
 reason = """A run page's time line under its hand ("until … · … in all", RUN_UNTIL_ALL) is held to the room right \
 of its dial (WagersEntry.lua, ns.FitWagerText) and cut with "…" there; it has no shrink step. Pseudo-only: \
 Russian's takes 140 of the 272. Accepted by the dev for 1.3.5."""
+
+[[allow]]
+kind = "cut"
+text = "*"
+stop = "core.announce.hp"
+reason = """"Completed for the party" (ANN-R111, #646): the tour's sample is the worst case, a run with a long event \
+name settled for four groupmates, and its line shrinks to its floor (0.6, adapter/PartyToast.lua) and is then cut \
+with the client's "…" (ns.ShrinkToFit) in the party toast's fixed 380 units (ANN-R107). A run or a Hunt for one or \
+two groupmates fits in every language. Accepted for 1.6 until the dev decides whether the line should drop names \
+first."""

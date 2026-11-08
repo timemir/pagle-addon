@@ -78,6 +78,25 @@ local function newWorld()
 	return world
 end
 
+-- The path to the first string in `value` (any depth) that contains `needle`, or nil for none.
+---@param value any
+---@param needle string
+---@return string?
+local function textAt(value, needle, path)
+	path = path or "."
+	if type(value) == "string" then
+		return value:find(needle, 1, true) and path or nil
+	elseif type(value) == "table" then
+		for key, inner in pairs(value) do
+			local found = textAt(inner, needle, path .. "." .. tostring(key))
+			if found then
+				return found
+			end
+		end
+	end
+	return nil
+end
+
 describe("the Session summary", function()
 	it(
 		"ends a Session with two Modules' moments as one card: Core's numbers, the Coins sum and the moments by Module"
@@ -142,6 +161,43 @@ describe("the Session summary", function()
 			},
 		}, world.global.summary.moments)
 	end)
+
+	it(
+		"keeps a moment's storedText in place of its text, here and on its card: no groupmate's name is stored (ANN-R110)",
+		function()
+			local world = newWorld()
+			world.summary:Add(raised(HUNTS, {
+				rung = "toast.high",
+				kind = "huntCompleted",
+				title = "Hunt completed",
+				text = "Night Run · with Kukli Emnabi",
+				storedText = "Night Run · with a groupmate",
+				partyCatch = "Player-4701-0A1B2C3D-1791731690-0:1",
+				partyHunt = "night_run",
+			}))
+			world.open = false
+			world.summary:Add(raised(HUNTS, {
+				rung = "toast.high",
+				kind = "huntTier",
+				title = "Silver",
+				text = "Night Run · 10 caught · with Kukli Emnabi",
+				storedText = "Night Run · 10 caught · with a groupmate",
+			}))
+			assert.are.equal("Night Run · with a groupmate", world.global.summary.moments[1].text)
+			assert.are.equal("Night Run · 10 caught · with a groupmate", world.global.pending[1].text)
+			world.open = true
+			world.summary:Started()
+			local card = world.summary:Ended(SESSION)
+			local texts = {}
+			for _, moment in ipairs(card.moments[1].moments) do
+				texts[#texts + 1] = moment.text
+			end
+			table.sort(texts)
+			assert.are.same({ "Night Run · 10 caught · with a groupmate", "Night Run · with a groupmate" }, texts)
+			assert.is_nil(textAt(world.global, "Kukli"))
+			assert.is_nil(textAt(world.global, "Player-4701"))
+		end
+	)
 
 	it(
 		"keeps the open Session's moments in global.summary until it ends, then clears them (ANN-R50, ANN-R53)",
