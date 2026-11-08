@@ -1,0 +1,9 @@
+<!-- The news sign's emblem (SHOP-R62, from 1.6): The Morning Tide's board hung on two ropes from its rail, three lines of
+     news on it and the emblem's ring at its left. New, not in prototypes/curio-crate/: drawn in its emblems' manner, FILL
+     the metal and DARK the engraving; see emblem-toast.svg. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="8" y="10" width="84" height="9" rx="4.5" fill="FILL" stroke="DARK" stroke-width="2.5"/>
+      <path d="M27 19 L23 38 M73 19 L77 38" stroke="DARK" stroke-width="3" stroke-linecap="round"/>
+      <rect x="8" y="36" width="84" height="50" rx="6" fill="FILL" stroke="DARK" stroke-width="2.5"/>
+      <rect x="13" y="41" width="74" height="40" rx="3" fill="none" stroke="DARK" stroke-width="2" opacity=".6"/>
+      <circle cx="30" cy="61" r="11" fill="none" stroke="DARK" stroke-width="2.5" opacity=".75"/><path d="M30 53 L33 59 L39 61 L33 63 L30 69 L27 63 L21 61 L27 59Z" fill="DARK"/>
+      <path d="M48 53 H81 M48 61 H75 M48 69 H79" stroke="DARK" stroke-width="2.5" stroke-linecap="round" opacity=".55"/></svg>

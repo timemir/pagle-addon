@@ -230,6 +230,7 @@ local EXPECTED = {
 			{ "checkbox", "Monster records", under = true },
 			{ "checkbox", "Region headlines", under = true, tip = TIPS.newsHeadlines },
 			{ "checkbox", "Mute the sign", tip = TIPS.newsMute },
+			{ "slot", "News sign" }, -- its look: Wood and the looks owned (SET-R37, SET-R51, SHOP-R60)
 			{ "header", "Hunts", of = "Hunts" },
 			{ "checkbox", "Announce open Hunt windows", tip = TIPS.windowMoments, of = "Hunts" },
 			{ "checkbox", "Remind me about the Pagle companion", tip = TIPS.companionHint, of = "Hunts" },
@@ -262,6 +263,7 @@ local EXPECTED = {
 			{ "header", "Announcements" },
 			{ "slot", "Toast style" },
 			{ "slot", "Sound set" },
+			{ "slot", "News sign" }, -- from 1.6 (SET-R50, SHOP-R60)
 			{ "header", "Crests" },
 			{ "slot", "Crests" },
 			{ "header", "Books" },
@@ -1052,6 +1054,7 @@ describe("Each page's Defaults button", function()
 				"Monster records",
 				"Monster-size records",
 				"Mute the sign",
+				"News sign",
 				"Party Hunts",
 				"Per",
 				"Prestige",
@@ -1082,6 +1085,7 @@ describe("Each page's Defaults button", function()
 				"Book binding",
 				"Crests",
 				"Hunts tracker frame",
+				"News sign",
 				"Sound set",
 				"Stats tracker frame",
 				"Tackle Board tracker frame",

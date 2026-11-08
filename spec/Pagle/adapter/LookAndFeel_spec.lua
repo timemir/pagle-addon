@@ -116,6 +116,8 @@ describe("The Look and Feel page", function()
 				"  23 more in the Curio Shop",
 				"Sound set = core.soundset.driftwood",
 				"  26 more in the Curio Shop",
+				"News sign = core.newssign.wood", -- from 1.6 (SHOP-R60)
+				"  5 more in the Curio Shop",
 				"# Crests",
 				"Crests = core.crest.plain",
 				"# Books",
@@ -163,7 +165,7 @@ describe("The Look and Feel page", function()
 			assert.is_false(table.concat(shown, "\n"):find("Journal binding", 1, true) ~= nil)
 			assert.are.same(
 				{ "# Trackers", "Hunts tracker frame = hunts.trackerframe.none", "# More looks" },
-				{ shown[12], shown[13], shown[14] }
+				{ shown[14], shown[15], shown[16] }
 			)
 		end
 	)

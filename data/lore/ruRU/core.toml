@@ -553,6 +553,44 @@ name.en = "Curio crate"
 description.value = "Упакован в доках кем-то, кто никогда не говорит, что внутри. Почти в каждом ящике найдётся облик, которого у вас ещё нет, и чем глубже копнёте, тем он реже. В основном солома."
 description.en = "Packed down at the docks by someone who never says what's in them. Nearly every crate holds one look you don't yet own, rarer the deeper you dig. Straw, mostly."
 
+# Machine-drafted (Claude) for the news sign's looks (SHOP-R60); awaits a native speaker's review.
+
+[good."core.newssign.wood"]
+name.value = "Дерево"
+name.en = "Wood"
+description.value = "Обветренные доски на двух верёвках. Опускается, качается, успокаивается и говорит своё. Просто, и этим гордится."
+description.en = "Weathered planks on two ropes. It drops, sways, settles and says its piece. Plain, and proud of it."
+
+[good."core.newssign.scroll"]
+name.value = "Свиток"
+name.en = "Scroll"
+description.value = "Свёрнутую карту спускают за красно-белым поплавком. Она разворачивается вместе с новостью и для верности получает сургучную печать."
+description.en = "A rolled chart reeled down behind a red and white bobber. It unrolls with the news and takes a wax seal for good measure."
+
+[good."core.newssign.lantern"]
+name.value = "Фонарь"
+name.en = "Lantern"
+description.value = "Латунный фонарь опускают на цепи перед тёмным стеклом. Он загорается, строки проступают одна за другой, а светлячки остаются."
+description.en = "A brass lantern lowered on a chain before a dark pane. It lights, the lines come up one by one, and the fireflies stay."
+
+[good."core.newssign.kraken"]
+name.value = "Кракен"
+name.en = "Kraken"
+description.value = "Два щупальца опускают обросшую водорослями каменную табличку, держа её за углы. С неё капает. Присоски пульсируют. Где остальное, никто не спрашивает."
+description.en = "Two tentacles bring down a weed-hung stone tablet, gripping its corners. It drips. Its suckers pulse. Nobody asks where the rest is."
+
+[good."core.newssign.astro"]
+name.value = "Астролябия"
+name.en = "Astrolabe"
+description.value = "Падает звезда, и вокруг неё раскручивается латунная астролябия, пока её диск не откроется ночному небу. При звёздах новости читаются лучше."
+description.en = "A star falls, and a brass astrolabe spins up round it until its plate opens on the night sky. The news reads better by starlight."
+
+[good."core.newssign.coral"]
+name.value = "Коралл"
+name.en = "Coral"
+description.value = "Падает капля, и из всплеска поднимается табличка в жемчужной оправе, обрастая водорослями и кораллами. Поднимаются пузыри. Кто-то там внизу читает."
+description.en = "A drop falls, and a pearl-rimmed plaque surfaces from the splash, kelp and coral growing round it. Bubbles rise. Something down there is reading."
+
 [binding.field]
 name.value = "Полевая кожа"
 name.en = "Field Leather"

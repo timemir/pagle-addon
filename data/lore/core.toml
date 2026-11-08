@@ -2013,3 +2013,31 @@ description = "Glows soft pink and blue, and leaves a faint shimmer in the water
 [good."core.crate"] # the Curio crate, sold on its own row
 name = "Curio crate"
 description = "Packed down at the docks by someone who never says what's in them. Nearly every crate holds one look you don't yet own, rarer the deeper you dig. Straw, mostly."
+
+# The Morning Tide's six looks (SHOP-R60), from 1.6: Wood free and the default, the other five for sale. Their names
+# are the looks' (SIGN-R50) until a lore pass names them; each description is what the look does as it drops
+# (SIGN-R51–R56).
+
+[good."core.newssign.wood"] # core.newssign, the default
+name = "Wood"
+description = "Weathered planks on two ropes. It drops, sways, settles and says its piece. Plain, and proud of it."
+
+[good."core.newssign.scroll"] # core.newssign, tier 3
+name = "Scroll"
+description = "A rolled chart reeled down behind a red and white bobber. It unrolls with the news and takes a wax seal for good measure."
+
+[good."core.newssign.lantern"] # core.newssign, tier 3
+name = "Lantern"
+description = "A brass lantern lowered on a chain before a dark pane. It lights, the lines come up one by one, and the fireflies stay."
+
+[good."core.newssign.kraken"] # core.newssign, tier 5
+name = "Kraken"
+description = "Two tentacles bring down a weed-hung stone tablet, gripping its corners. It drips. Its suckers pulse. Nobody asks where the rest is."
+
+[good."core.newssign.astro"] # core.newssign, tier 4
+name = "Astrolabe"
+description = "A star falls, and a brass astrolabe spins up round it until its plate opens on the night sky. The news reads better by starlight."
+
+[good."core.newssign.coral"] # core.newssign, tier 4
+name = "Coral"
+description = "A drop falls, and a pearl-rimmed plaque surfaces from the splash, kelp and coral growing round it. Bubbles rise. Something down there is reading."

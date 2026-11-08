@@ -14,9 +14,6 @@ end
 -- block. Loaded by adapter/Settings.xml.
 local L = ns.L
 
---- The news sign's slot (SHOP-R60), registered by Core's goods; its dropdown ends this section, not Core's rows.
-ns.NEWS_SIGN_SLOT = "core.newssign"
-
 -- The proxy setting variables: Core's Cozy mode (adapter/AnnouncementSettings.lua's), then the section's own.
 local COZY = "Pagle_Core_cozy"
 local SHOW = "Pagle_Core_newsShow"
@@ -101,15 +98,13 @@ local function greys(initializer, isLive)
 	initializer:AddEvaluateStateCVar(SHOW)
 end
 
---- Core's registered news sign slot, or nil while it has none, or no goods (SHOP-R60).
+--- Core's registered news sign slot (ns.NEWS_SIGN_SLOT, logic/CoreGoods.lua, SHOP-R60), or nil while it has no goods.
+--- Its dropdown ends this section, not Core's rows: ns.CoreAnnouncementSlots leaves it out (SET-R30).
 ---@return PagleRegisteredSlot?
 local function signSlot()
-	for _, slot in ipairs(ns.CoreAnnouncementSlots(ns.goods)) do
-		if slot.id == ns.NEWS_SIGN_SLOT then
-			return slot
-		end
-	end
-	return nil
+	return ns.goods:SlotsWithGoods(function(slot)
+		return slot.id == ns.NEWS_SIGN_SLOT
+	end)[1]
 end
 
 --- Builds The Morning Tide's section on the Announcements page (SET-R37): the header, Show news at login with a switch
@@ -171,9 +166,8 @@ function ns.NewsSignSettingsRows(page, layout)
 		Settings.RegisterProxySetting(page, MUTE, Boolean, L.SETTINGS_NEWS_MUTE, false, ns.NewsSignMuted, setMute)
 	Settings.CreateCheckbox(page, mute, L.SETTINGS_NEWS_MUTE_TOOLTIP)
 
-	-- The look: Core's slot dropdown, Wood and the looks owned (SET-R51), once Core's goods register the slot.
-	-- Seam for #660, which registers `core.newssign` with Wood and the five looks for sale (SHOP-R60): until then there
-	-- is no slot, so no row, as Toast style and Sound set had none before their slots (SET-R30).
+	-- The look: Core's slot dropdown, Wood and the looks owned (SET-R51), over `core.newssign`, which Core's goods
+	-- register with Wood and the five looks for sale (SHOP-R60).
 	local slot = signSlot()
 	if slot then
 		ns.SlotDropdown(page, layout, slot, "announcements")

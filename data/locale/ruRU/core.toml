@@ -1440,11 +1440,13 @@ en = "It shows here once its Module is on."
 [SHOP_CRATE_KINDS]
 value.binding = "Переплёт"
 value.crest = "Герб"
+value.newssign = "Табличка новостей"
 value.soundset = "Набор звуков"
 value.toaststyle = "Стиль плашек"
 value.trackerframe = "Рамка трекера"
 en.binding = "Binding"
 en.crest = "Crest"
+en.newssign = "News sign"
 en.soundset = "Sound set"
 en.toaststyle = "Toast style"
 en.trackerframe = "Tracker frame"
@@ -2651,6 +2653,11 @@ en = "Crests"
 [SLOT_BOOK_BINDING]
 value = "Переплёт книг"
 en = "Book binding"
+
+# Machine-drafted (Claude) for the news sign's looks (SHOP-R60); awaits a native speaker's review.
+[SLOT_NEWS_SIGN]
+value = "Табличка новостей"
+en = "News sign"
 
 [SLOT_CREST_ZONES]
 value = "Гербы зон"

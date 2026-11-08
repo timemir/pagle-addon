@@ -228,6 +228,7 @@ describe("the Collection's spread (LED-R168)", function()
 				{ "Sound sets", "Wearing Driftwood" },
 				{ "Bookplate crests", "Wearing Plain" },
 				{ "Bindings", "Wearing Field Leather" },
+				{ "News signs", "Wearing Wood" }, -- from 1.6 (SHOP-R60, LED-R167)
 				{ "Titles", "Signed “Minnow”" },
 			}, rows)
 		end
@@ -270,7 +271,8 @@ describe("the Collection's spread (LED-R168)", function()
 				end
 			end
 
-			assert.are.same({ "preview", "speaker", "shield", "book", "quill" }, kinds)
+			-- the news sign's look is Core's preview too (SHOP-R61), from 1.6
+			assert.are.same({ "preview", "speaker", "shield", "book", "preview", "quill" }, kinds)
 			local first = fake.goodPreviews[1]
 			assert.are.same({ PAGE, "card" }, { first.goodID, first.size })
 		end
@@ -475,8 +477,8 @@ describe("the Collection's spread (LED-R168)", function()
 		end
 
 		assert.are.equal(total(plain) + 2, total(loaded))
-		assert.are.same({ "Tracker frames", "No Frame" }, rows[5])
-		assert.are.same("Titles", rows[6][1])
+		assert.are.same({ "Tracker frames", "No Frame" }, rows[6])
+		assert.are.same("Titles", rows[7][1])
 	end)
 
 	it(
@@ -794,7 +796,7 @@ describe("Tracker frames and the Titles (LED-R167, LED-R169)", function()
 	it("show the frames each Module wears on the Collection's row, joined (LED-R168)", function()
 		local _, loaded = open("collection", nil, { modules = trackers })
 
-		local row = loaded.ns.journal.pages.left[9]
+		local row = loaded.ns.journal.pages.left[10] -- after 1.6's News signs row
 
 		assert.are.same({ "Tracker frames", "Hunts No Frame · Stats No Frame" }, { row.text, row.sub })
 	end)
@@ -1399,7 +1401,7 @@ describe("new and lately (LED-R171)", function()
 			assert.are.equal(5, loaded.ns.db.global.collection.seen[PAGE])
 			assert.is_nil(loaded.ns.db.global.collection.looked[PAGE])
 			assert.is_nil(loaded.ns.db.global.collection.looked[FIELD])
-			assert.are.equal(6, loaded.ns.CollectionModel(loaded.ns.journal.context).new)
+			assert.are.equal(7, loaded.ns.CollectionModel(loaded.ns.journal.context).new) -- Wood among them, from 1.6
 		end
 	)
 
@@ -1544,7 +1546,7 @@ describe("new and lately (LED-R171)", function()
 
 		assert.is_true(collection.seen["title:level10"] ~= nil)
 		assert.is_nil(collection.looked["title:level10"])
-		assert.are.equal("1 new", loaded.ns.journal.pages.left[9].note)
+		assert.are.equal("1 new", loaded.ns.journal.pages.left[10].note) -- after 1.6's News signs row
 	end)
 
 	it("notes a good a live entry earns when that entry is applied, before any drawing (LED-R171)", function()

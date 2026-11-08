@@ -553,6 +553,44 @@ name.en = "Curio crate"
 description.value = "Unten am Hafen gepackt, von jemandem, der nie sagt, was drin ist. Fast jede Kiste enthält eine Optik, die du noch nicht besitzt, seltener, je tiefer du gräbst. Meist Stroh."
 description.en = "Packed down at the docks by someone who never says what's in them. Nearly every crate holds one look you don't yet own, rarer the deeper you dig. Straw, mostly."
 
+# Machine-drafted (Claude) for the news sign's looks (SHOP-R60); awaits a native speaker's review.
+
+[good."core.newssign.wood"]
+name.value = "Holz"
+name.en = "Wood"
+description.value = "Verwitterte Planken an zwei Seilen. Es fällt, schwingt, kommt zur Ruhe und sagt, was es zu sagen hat. Schlicht, und stolz darauf."
+description.en = "Weathered planks on two ropes. It drops, sways, settles and says its piece. Plain, and proud of it."
+
+[good."core.newssign.scroll"]
+name.value = "Schriftrolle"
+name.en = "Scroll"
+description.value = "Eine gerollte Karte, hinter einem rot-weißen Schwimmer herabgespult. Sie entrollt sich mit der Nachricht und nimmt noch ein Wachssiegel mit."
+description.en = "A rolled chart reeled down behind a red and white bobber. It unrolls with the news and takes a wax seal for good measure."
+
+[good."core.newssign.lantern"]
+name.value = "Laterne"
+name.en = "Lantern"
+description.value = "Eine Messinglaterne, an einer Kette vor eine dunkle Scheibe gesenkt. Sie entflammt, die Zeilen erscheinen nacheinander, und die Glühwürmchen bleiben."
+description.en = "A brass lantern lowered on a chain before a dark pane. It lights, the lines come up one by one, and the fireflies stay."
+
+[good."core.newssign.kraken"]
+name.value = "Krake"
+name.en = "Kraken"
+description.value = "Zwei Tentakel bringen eine algenbehangene Steintafel herab und packen sie an den Ecken. Sie tropft. Die Saugnäpfe pulsieren. Wo der Rest ist, fragt keiner."
+description.en = "Two tentacles bring down a weed-hung stone tablet, gripping its corners. It drips. Its suckers pulse. Nobody asks where the rest is."
+
+[good."core.newssign.astro"]
+name.value = "Astrolabium"
+name.en = "Astrolabe"
+description.value = "Ein Stern fällt, und ein Messing-Astrolabium dreht sich um ihn auf, bis seine Scheibe sich zum Nachthimmel öffnet. Bei Sternenlicht liest sich die Nachricht besser."
+description.en = "A star falls, and a brass astrolabe spins up round it until its plate opens on the night sky. The news reads better by starlight."
+
+[good."core.newssign.coral"]
+name.value = "Koralle"
+name.en = "Coral"
+description.value = "Ein Tropfen fällt, und aus dem Spritzer taucht eine perlengesäumte Tafel auf, umwachsen von Tang und Koralle. Blasen steigen. Dort unten liest jemand mit."
+description.en = "A drop falls, and a pearl-rimmed plaque surfaces from the splash, kelp and coral growing round it. Bubbles rise. Something down there is reading."
+
 [binding.field]
 name.value = "Feldleder"
 name.en = "Field Leather"
