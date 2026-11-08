@@ -1,6 +1,6 @@
 # Pagle
 
-## 1.5.1 (unreleased)
+## 1.5.1 (2026-11-08)
 
 Pick how the Pagle button looks, and how big it is.
 
