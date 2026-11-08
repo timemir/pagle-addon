@@ -17,6 +17,7 @@ ns.MODULE_ROSTER = { "Ledger", "Hunts", "Stats", "TackleBoard", "QoL" }
 ---@field menu? { label: string|(fun():string), onClick: fun() }[]             -- extra compartment entries
 ---@field slash? { name: string, fn: fun(args: string), help: string }[]     -- /pagle <name>
 ---@field collection? fun(goodID?: string)  -- opens its view of every look (CORE-R45): the Ledger's Collection
+---@field news? fun(id?: string)  -- from 1.6: opens its view of the news, on that item (VIEW-R46): the Ledger's news list
 ---@field guideBlurb? string    -- its line on the Field guide's What's in the box page (ONB-R91)
 
 --- A roster entry's state, as the Settings status list shows it (CORE-R41).
@@ -141,6 +142,9 @@ function Registry:Problem(def)
 		return ("Pagle.RegisterModule: %s's def.collection is a function, which opens its view of every look"):format(
 			name
 		)
+	end
+	if def.news ~= nil and type(def.news) ~= "function" then
+		return ("Pagle.RegisterModule: %s's def.news is a function, which opens its view of the news"):format(name)
 	end
 	if def.guideBlurb ~= nil and (type(def.guideBlurb) ~= "string" or def.guideBlurb == "") then
 		return ("Pagle.RegisterModule: %s's def.guideBlurb is a string, its line in the Field guide"):format(name)

@@ -92,7 +92,7 @@ describe("the Fish Journal's tour stops (CORE-R65, CORE-R68)", function()
 		fake.slash("dev tour list ledger")
 
 		assert.are.same({
-			"Pagle dev: 8 tour stops:",
+			"Pagle dev: 9 tour stops:",
 			"  ledger.journal.home: the Fish Journal: Home",
 			"  ledger.journal.zone: the Fish Journal: the most-fished zone, its most-caught Species open",
 			"  ledger.journal.fish: the Fish Journal: the most-caught Species",
@@ -100,6 +100,7 @@ describe("the Fish Journal's tour stops (CORE-R65, CORE-R68)", function()
 			"  ledger.journal.curios: the Fish Journal: Curios",
 			"  ledger.journal.legends: the Fish Journal: Legends, on a caught one",
 			"  ledger.journal.angler: the Fish Journal: the Angler page",
+			"  ledger.journal.news: the Fish Journal: the news list, on sample news",
 			"  ledger.journal.search: the Fish Journal: search results for the most-caught Species' name",
 		}, fake.printed)
 	end)
@@ -111,7 +112,7 @@ describe("the Fish Journal's tour stops (CORE-R65, CORE-R68)", function()
 
 		fake.slash("dev tour ledger")
 		fake.wait(1.6)
-		for i = 1, 8 do
+		for i = 1, 9 do
 			assert(journal:IsShown(), "stop " .. i .. " left the book closed")
 			local search = journal.search:GetText()
 			seen[i] = { place = journal.router:Place(), search = search ~= "" and search or nil }
@@ -126,6 +127,7 @@ describe("the Fish Journal's tour stops (CORE-R65, CORE-R68)", function()
 			{ place = { id = "curios" } },
 			{ place = { id = "legends" } },
 			{ place = { id = "angler" } },
+			{ place = { id = "news" } },
 			{ place = { id = "home" }, search = "raw" },
 		}, seen)
 	end)
@@ -135,7 +137,7 @@ describe("the Fish Journal's tour stops (CORE-R65, CORE-R68)", function()
 		local journal = loaded.ns.journal
 
 		fake.slash("dev tour ledger")
-		fake.wait(1.6 + 7 * STOP)
+		fake.wait(1.6 + 8 * STOP)
 
 		assert.is_true(journal.searchDrop:IsShown())
 		assert.are.equal("Raw Brilliant Smallfish", journal.searchDrop.rows[1].label:GetText())
@@ -149,7 +151,7 @@ describe("the Fish Journal's tour stops (CORE-R65, CORE-R68)", function()
 			local journal = loaded.ns.journal
 
 			fake.slash("dev tour ledger")
-			fake.wait(1.6 + 7 * STOP)
+			fake.wait(1.6 + 8 * STOP)
 
 			assert.are.equal(typed, journal.search:GetText())
 			assert(journal.searchDrop:IsShown(), name)
@@ -166,7 +168,7 @@ describe("the Fish Journal's tour stops (CORE-R65, CORE-R68)", function()
 		assert.is_false(journal:IsShown())
 		assert.are.same({ id = "home" }, journal.router:Place())
 		assert.are.equal("", journal.search:GetText())
-		assert.are.equal(8, #fake.tourShots)
+		assert.are.equal(9, #fake.tourShots)
 	end)
 
 	it("leave the book open on the spread it was on", function()
@@ -197,7 +199,7 @@ describe("the Fish Journal's tour stops (CORE-R65, CORE-R68)", function()
 			shown[1] = fake.firstLooks:Showing()
 			fake.wait(60)
 
-			assert.are.equal(9, #fake.tourShots)
+			assert.are.equal(10, #fake.tourShots)
 			assert.are.same(before, fake.global.onboarding)
 			assert.is_false(fake.onboarding:IsEveningItemDone("journal"))
 			assert.are.same({}, fake.notesShown)
@@ -217,6 +219,79 @@ describe("the Fish Journal's tour stops (CORE-R65, CORE-R68)", function()
 		assert.is_true(fake.onboarding:IsEveningItemDone("journal"))
 		assert.is_true(fake.onboarding:IsLookSeen("ledger.journal"))
 	end)
+
+	it(
+		"show the news list on its sample, every kind, marking nothing and leaving the player's news as it was (LED-R176, CORE-R68)",
+		function()
+			local marked = {}
+			local fake, loaded = openJournal({
+				catalogue = fixture(),
+				log = LOG,
+				itemNames = NAMES,
+				areaNames = ZONES,
+				id = false,
+				-- the news API (VIEW-R42–R45), stubbed until #656 lands on FakePagle: the player's own news is one item
+				modules = function(f)
+					f.Pagle.GetNews = function()
+						return {
+							state = "ok",
+							items = {
+								{
+									id = "3f9a0c1d2e4b5a69",
+									kind = "legend",
+									time = SERVER_TIME,
+									angler = 1,
+									name = "Ada",
+								},
+							},
+						}
+					end
+					f.Pagle.NewsWords = function(item)
+						return {
+							kind = item.kind,
+							kicker = item.kind,
+							head = item.name .. " · " .. item.kind,
+							emblem = {},
+						}
+					end
+					f.Pagle.MarkNewsSeen = function(ids)
+						marked[#marked + 1] = ids or "all"
+					end
+				end,
+			})
+			fake.slash("dev on")
+			local journal = loaded.ns.journal
+
+			fake.slash("dev tour ledger")
+			fake.wait(1.6 + 7 * STOP)
+
+			assert.are.same({ id = "news" }, journal.router:Place())
+			local heads = {}
+			for _, block in ipairs(journal.pages.left) do
+				if block.kind == "newsRow" then
+					heads[#heads + 1] = block.text
+				end
+			end
+			assert.are.same({
+				"Kukli Emnabi · first",
+				"Kukli Emnabi · legend",
+				"Kukli Emnabi · prestige",
+				"Kukli Emnabi · ledger",
+				"Kukli Emnabi · colour",
+				"Kukli Emnabi · hunt",
+				"Kukli Emnabi · zone",
+				"Kukli Emnabi · monster",
+				"Grimtusk · region",
+			}, heads)
+
+			fake.wait(60)
+			assert.are.same({}, marked)
+			assert.is_nil(journal.newsSample)
+			journal:Open("news")
+			assert.are.equal("Ada · legend", blockOfKind(journal.pages.right, "title").text)
+			assert.are.same({ "all" }, marked)
+		end
+	)
 
 	it("aren't registered on a Core without M:RegisterTourStop, and the Ledger still starts", function()
 		local fake = newFakePagle()

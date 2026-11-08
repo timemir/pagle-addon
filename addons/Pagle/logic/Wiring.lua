@@ -43,6 +43,8 @@ local ns = select(2, ...)
 ---@field goods PagleGoods Core's one goods registry (ns.WireGoods).
 ---@field shop PagleShop The Curio Shop's entry points (ns.WireShop).
 ---@field CollectionOffered fun(): (fun(goodID: string?))? The first On Module's `def.collection` by def.order, or nil
+---@field NewsOffered fun(): (fun(id: string?))? The first On Module's `def.news` by def.order, or nil (VIEW-R46)
+---@field OpenNews fun(id: string?): boolean Opens the news on item `id` through NewsOffered's (VIEW-R46, SIGN-R42)
 --- (ns.WireShop, CORE-R45).
 ---@field OpenCollection fun(goodID: string?): boolean Opens the Collection through it, on `goodID` if given; false with
 --- none (ns.WireShop, CORE-R45).
@@ -938,6 +940,32 @@ function ns.WireShop(host, seams)
 			return false
 		end
 		host.call(collection, goodID)
+		return true
+	end
+
+	--- The first On Module's `def.news` by def.order, which opens its view of the news (VIEW-R46); nil when no On
+	--- Module has one (the Ledger off).
+	---@return (fun(id: string?))?
+	function ns.NewsOffered()
+		for _, module in ipairs(host.registry:Modules()) do
+			if module.def.news then
+				return module.def.news
+			end
+		end
+		return nil
+	end
+
+	--- Opens the news (VIEW-R46) on item `id`, if given, through the first On Module's `def.news`: the sign's left
+	--- click (SIGN-R42). One that raises is reported through `call` (geterrorhandler()). Returns whether a Module
+	--- offers one: with none nothing opens.
+	---@param id string?
+	---@return boolean
+	function ns.OpenNews(id)
+		local news = ns.NewsOffered()
+		if not news then
+			return false
+		end
+		host.call(news, id)
 		return true
 	end
 

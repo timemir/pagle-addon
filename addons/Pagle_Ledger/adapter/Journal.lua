@@ -104,6 +104,7 @@ end
 ---@field cacheKey string?     -- the place `pages` was read for in this drawing
 ---@field context LedgerJournalContext? -- what `pages` was read from
 ---@field updatingView LedgerJournalUpdatingView? -- the "being written up" pages, from the first update shown (LED-R122)
+---@field newsSample PagleNews? -- while the tour's news stop shows: the news its pages read instead of Core's (CORE-R68)
 local Journal = {}
 Journal.__index = Journal
 
@@ -127,11 +128,25 @@ function ns.JournalGoods()
 	}
 end
 
+-- The news on a Core without the news reader (before #656's Pagle.GetNews, VIEW-R42): none, as with no Companion.
+---@return PagleNews
+local function noNews()
+	return { state = "absent", items = {} }
+end
+
+-- Does nothing: what the news list marks seen while it shows the tour's sample (CORE-R68).
+local function markNothing() end
+
 --- What the spreads, and the search box, read now (LED-R122, LED-R123, LED-R148): nothing of the state while the
 --- projection is updating.
 ---@return LedgerJournalContext
 function Journal:Context() -- luacheck: no self
 	local state = ns.StateNow()
+	-- the one Journal's, so a caller that reads it without the book (Titles' specs) reads it too
+	local sample = ns.journal and ns.journal.newsSample
+	-- the news calls are the news reader's (VIEW-R42–R45), read as a table's so this builds on a Core before them
+	local core = Pagle --[[@as table]]
+	local newsWords = core.NewsWords
 	if not state then
 		return { updating = true, now = GetServerTime(), formatNumber = ns.FormatCount, text = ns.journalText }
 	end
@@ -167,6 +182,13 @@ function Journal:Context() -- luacheck: no self
 		prestigeSources = ns.db.global.prestigeSources,
 		-- Home's Following line and the Following spread read the Followed Anglers as they draw (LED-R163)
 		followedAnglers = Pagle.GetFollowedAnglers,
+		-- the Following spread's News link and the news list read the news as they draw (LED-R163, LED-R176–R179)
+		-- (with no words to draw them in, a Core before the news reader, there is no news to read)
+		news = not newsWords and noNews or sample and function()
+			return sample
+		end or core.GetNews,
+		newsWords = newsWords,
+		markNewsSeen = sample and markNothing or core.MarkNewsSeen,
 	}
 end
 
@@ -417,6 +439,11 @@ local function afterDraw(journal, place, notice)
 	-- drawing a shelf's spread has the Angler look at every owned look on it (LED-R171)
 	if not notice and not pages.updating and place.page == ns.JOURNAL_SHELF then
 		ns.NoteShelfLookedNow(journal.context --[[@as LedgerSpreadContext]], place.args and place.args.shelf)
+	end
+	-- drawing the news list with items marks them seen (LED-R177, VIEW-R43); the dots stay for the session (VIEW-R42)
+	local context = journal.context --[[@as LedgerSpreadContext]]
+	if not notice and not pages.updating and ns.NewsListDrawsItems(context, fromBook(place)) then
+		context.markNewsSeen()
 	end
 end
 

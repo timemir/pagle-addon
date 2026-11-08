@@ -797,7 +797,7 @@ local function makeFrame()
 			drop.top = screenTop()
 		end
 	end)
-	-- a left click opens the news (the Fish Journal; SIGN-R42), a right click sends it up; the release that ends a
+	-- a left click opens the news list on the item shown (SIGN-R42), a right click sends it up; the release that ends a
 	-- drag does neither
 	f:SetScript("OnClick", function(self, button)
 		if self.dragged then
@@ -805,25 +805,47 @@ local function makeFrame()
 			return
 		end
 		if button == "LeftButton" then
-			ns.OpenNewsSignNews()
+			ns.OpenNewsSignNews(drop and drop.news.id)
 		end
 		ns.SendNewsSignUp()
 	end)
 	return f
 end
 
---- What a left click on the sign opens: the Fish Journal, through the Ledger's view, if the Ledger is on. (Its
---- Following spread, the brief's, needs a view of its own from the Ledger: core/news-sign.md › Open questions.)
-function ns.OpenNewsSignNews()
-	for _, module in ipairs(ns.Modules and ns.Modules:Modules() or {}) do
-		for _, view in ipairs(module.def.views or {}) do
-			if view.id == "journal" and view.open then
-				view.open()
-				return true
-			end
-		end
+--- What a left click on the sign opens (SIGN-R42): the Fish Journal's news list on item `id`, the one shown, through
+--- the first On Module's `def.news` (VIEW-R46, ns.OpenNews); with none (the Ledger off), nothing. A sign with no item,
+--- the dev command's or the Curio Shop's "Show on screen" (sample news has no `id`), opens nothing. Returns whether
+--- a Module's view was called.
+---@param id string?
+---@return boolean
+function ns.OpenNewsSignNews(id)
+	if not id then
+		return false
 	end
-	return false
+	return ns.OpenNews(id)
+end
+
+-- ------------------------------------------------------------------ the emblem elsewhere (LED-R176)
+-- Each frame's kit, made at its first emblem.
+local emblemKits = setmetatable({}, { __mode = "k" })
+
+--- Draws a news item's emblem (`Pagle.NewsWords(item).emblem`, SIGN-R13) into `host`, `size` units across from its
+--- top left, as the Wood look's slot draws it: the Fish Journal's news list draws it at 96 (LED-R176). Drawing again
+--- replaces it; a nil emblem clears it.
+---@param host Frame
+---@param emblem table?
+---@param size number
+function Pagle.DrawNewsEmblem(host, emblem, size)
+	local kit = emblemKits[host]
+	if not kit then
+		kit = newKit(host, "SignWood")
+		emblemKits[host] = kit
+	end
+	kit:begin()
+	if emblem then
+		kit:emblem({ emblem = emblem }, size / 2, size / 2, { scale = size / 58 })
+	end
+	kit:finish()
 end
 
 local kits = {}

@@ -50,6 +50,7 @@ logic\JournalShelves.lua
 logic\JournalCollections.lua
 logic\JournalLegends.lua
 logic\JournalFollowing.lua
+logic\JournalNews.lua
 logic\JournalZone.lua
 logic\Tour.lua
 logic\Onboarding.lua
@@ -60,6 +61,7 @@ adapter\JournalCollections.lua
 adapter\JournalShelves.lua
 adapter\JournalLegends.lua
 adapter\JournalFollowing.lua
+adapter\JournalNews.lua
 adapter\JournalAngler.lua
 adapter\JournalZone.lua
 adapter\JournalVarieties.lua

@@ -323,3 +323,11 @@ languages = ["pseudo"]
 reason = """A run page's time line under its hand ("until … · … in all", RUN_UNTIL_ALL) is held to the room right \
 of its dial (WagersEntry.lua, ns.FitWagerText) and cut with "…" there; it has no shrink step. Pseudo-only: \
 Russian's takes 140 of the 272. Accepted by the dev for 1.3.5."""
+
+[[allow]]
+kind = "cut"
+text = "*"
+stop = "ledger.journal.news"
+detail = "wider than its box: * wide in 3[0-3]?*"
+reason = """The news list's rows set each headline on one line, cut with the client's "…" at the row's width \
+(LED-R176); the chosen item's page has it whole. Measured on the tour's sample news (#658)."""
