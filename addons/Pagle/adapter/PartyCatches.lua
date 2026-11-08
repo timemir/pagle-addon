@@ -32,11 +32,6 @@ local function unsecret(value)
 	return ns.UnlessSecret(issecretvalue, value)
 end
 
--- A party here (LOG-R110): a home group of up to 5, never a raid, an instance group or a battleground.
-local function inHomeParty()
-	return IsInGroup(LE_PARTY_CATEGORY_HOME) and not IsInRaid()
-end
-
 -- Whether `sender` is the player, the client's echo of their own message (LOG-R113 item 1): by GUID where the client
 -- resolves the sender's name, else by first name.
 ---@param sender string?
@@ -58,7 +53,9 @@ local partyCatches = ns.NewPartyCatches({
 	on = function()
 		return ns.PartyHuntsOn()
 	end,
-	inParty = inHomeParty,
+	inParty = function()
+		return ns.InHomeParty()
+	end,
 	groupmate = function(sender)
 		return ns.PartyGroupmate(sender)
 	end,

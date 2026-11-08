@@ -32,11 +32,6 @@ local function unsecret(value)
 	return ns.UnlessSecret(issecretvalue, value)
 end
 
--- A party here (LOG-R110): a home group of up to 5, never a raid.
-local function inHomeParty()
-	return IsInGroup(LE_PARTY_CATEGORY_HOME) and not IsInRaid()
-end
-
 --- Sends "Completed for the party" for each moment of `announcement` that carries partyCatch (ANN-R111), once, on the
 --- prefix PagleCatch, while Party Hunts (adapter/Party.lua's ns.PartyHuntsOn: from 1.6 off until the party letter is
 --- accepted, ANN-R113) and Share my moments with my party are on, in a party. adapter/Moments.lua
@@ -44,7 +39,7 @@ end
 --- a rebuild's.
 ---@param announcement PagleAnnouncement
 function ns.SharePartyHunts(announcement)
-	if not ns.PartyHuntsOn() or not ns.PartyOption("share") or not inHomeParty() then
+	if not ns.PartyHuntsOn() or not ns.PartyOption("share") or not ns.InHomeParty() then
 		return
 	end
 	for _, moment in ipairs(announcement.moments) do
@@ -135,7 +130,7 @@ Pagle.RegisterEvent(OWNER, "CHAT_MSG_ADDON", function(_, prefix, text, channel, 
 	if unsecret(prefix) ~= ns.PARTY_CATCH_PREFIX or unsecret(channel) ~= "PARTY" or type(text) ~= "string" then
 		return
 	end
-	if text:match("^[^|]*") ~= ns.PARTY_HUNT_KIND or not ns.PartyHuntsOn() or not inHomeParty() then
+	if text:match("^[^|]*") ~= ns.PARTY_HUNT_KIND or not ns.PartyHuntsOn() or not ns.InHomeParty() then
 		return
 	end
 	local member = ns.PartyGroupmate(unsecret(sender))

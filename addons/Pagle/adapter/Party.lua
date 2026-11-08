@@ -197,6 +197,13 @@ local function inParty()
 	return IsInGroup() and not IsInRaid()
 end
 
+--- A party for party-wide Hunts (LOG-R110, ANN-R111): a home group of up to 5, never a raid, an instance group or a
+--- battleground. adapter/PartyCatches.lua and adapter/PartyHunts.lua read it.
+---@return boolean
+function ns.InHomeParty()
+	return IsInGroup(LE_PARTY_CATEGORY_HOME) and not IsInRaid()
+end
+
 --- A groupmate as Core keeps them (ANN-R105): `key`, their GUID (their first name only where the client gives none),
 --- what Core remembers them by; `first`, their first name; and `name`, how a party toast and a cheer's Nod name them,
 --- "{name} {surname}" where Forever gives a surname, as the website writes it (pagle-backend ANG-R13). From 1.6, `guid`
