@@ -96,6 +96,9 @@ ns.Locale("ruRU", function(L)
 	L.DEV_SAMPLE_VARIETY_NAME = "Коралловая"
 	L.DEV_SAMPLE_WRITE_UP = "Сводка вашего Реестра по 2 340 забросам"
 	L.DEV_SESSION_ENDED = "Pagle dev: сессия завершена, будто перерыв уже прошёл."
+	L.DEV_SIGN_DROPPED = "Pagle dev: опускается табличка {look} с примером новости {kind}; наведение мыши удерживает её, правый щелчок поднимает."
+	L.DEV_SIGN_USAGE = "Pagle dev: /pagle dev sign <вид> [тип] [more], вид — один из {looks}, тип — один из {kinds}"
+	L.DEV_SIGN_WAITING = "Pagle dev: табличка опустится, когда закончатся бой и ограничения."
 	L.DEV_SKILL_CLEARED = "Pagle dev: навык рыбной ловли снова берётся из клиента."
 	L.DEV_SKILL_NOT_SET = "Pagle dev: навык рыбной ловли берётся из клиента; /pagle dev skill <ранг> его подменяет."
 	L.DEV_SKILL_REMINDER = "Pagle dev: навык рыбной ловли подменён на {rank}/{max} (/pagle dev skill off, чтобы сбросить)."
@@ -133,7 +136,7 @@ ns.Locale("ruRU", function(L)
 	L.DEV_TOUR_STOPPING = "Pagle dev: тур остановится, когда скроется эта остановка."
 	L.DEV_TOUR_STOPS = { few = "{count} остановки", many = "{count} остановок", one = "1 остановка", other = "{count} остановки" }
 	L.DEV_UNKNOWN_AREA = "Pagle dev: {areaText} — не область из каталога Pagle."
-	L.DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <тип> | stage <число> | glyphs | tour [модуль | list | stop] | probe | fonts | pseudo on | off | onboarding <команда> | content | views | pastetest <КБ>"
+	L.DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <тип> | stage <число> | glyphs | tour [модуль | list | stop] | probe | fonts | pseudo on | off | onboarding <команда> | content | views | pastetest <КБ> | sign <вид> [тип] [more]"
 	L.DEV_VIEWS_ABSENT = "Pagle dev: {name} отсутствует: {reason}."
 	L.DEV_VIEWS_ANGLERS = "Pagle dev: Pagle_Anglers — generatedAt {generatedAt}, блоков {dev_views_anglers_2}."
 	L.DEV_VIEWS_EXPIRED = "Pagle dev: {name} устарел: создан {age} с назад, срок годности — {viewExpiryAge} с."
@@ -527,6 +530,11 @@ ns.Locale("ruRU", function(L)
 	L.SHOP_TAG_SEPARATOR = " • "
 	L.SHOP_USE = "Использовать"
 	L.SHOP_USE_NOW = "Использовать сразу"
+	L.SIGN_DETAIL_COLOUR = "{species}, {variety}"
+	L.SIGN_DETAIL_MONSTER = "{species}, {length}"
+	L.SIGN_HEAD = { colour = "{name}: пойман редкий цвет", first = "Впервые в {region}: выловлен {fish}", hunt = "{name}: золото охоты", ledger = "{name}: Реестр заполнен", legend = "{name}: выловлена Легенда", monster = "{name}: выловлено Чудовище", prestige = "{name}: достигнут Престиж {rank}", region = "Впервые в {region} в этом месяце: выловлен {fish}", zone = "{name}: Мастер зоны {zone}" }
+	L.SIGN_KICKER = { colour = "Редкий цвет", first = "Первая весть", hunt = "Золото охоты", ledger = "Реестр", legend = "Легенда", monster = "Чудовище", prestige = "Престиж", region = "Новости региона • {region}", zone = "Мастер зоны" }
+	L.SIGN_MORE = { few = "+{count:0} от ваших рыболовов", many = "+{count:0} от ваших рыболовов", one = "+{count:0} от ваших рыболовов", other = "+{count:0} от ваших рыболовов" }
 	L.SIZE_BANDS = { "Мелочь", "Приличная", "Увесистая", "Громадина", "Чудовище" }
 	L.SLASH_CORE_HELP = {
 		{ help = "открыть настройки Pagle (или просто /pagle)", name = "settings" },

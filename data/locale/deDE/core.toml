@@ -1304,8 +1304,8 @@ value = "Pagle dev: Dev-Befehle sind aus; /pagle dev on schaltet sie ein."
 en = "Pagle dev: dev commands are off; /pagle dev on turns them on."
 
 [DEV_USAGE]
-value = "Pagle dev: /pagle dev on | off | endsession | preview <Art> | stage <Anzahl> | glyphs | tour [Modul | list | stop] | probe | fonts | pseudo on | off | onboarding <Befehl> | content | views | pastetest <KB>"
-en = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | stage <count> | glyphs | tour [module | list | stop] | probe | fonts | pseudo on | off | onboarding <command> | content | views | pastetest <KB>"
+value = "Pagle dev: /pagle dev on | off | endsession | preview <Art> | stage <Anzahl> | glyphs | tour [Modul | list | stop] | probe | fonts | pseudo on | off | onboarding <Befehl> | content | views | pastetest <KB> | sign <Stil> [Art] [more]"
+en = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | stage <count> | glyphs | tour [module | list | stop] | probe | fonts | pseudo on | off | onboarding <command> | content | views | pastetest <KB> | sign <look> [kind] [more]"
 
 [DEV_PSEUDO_USAGE]
 value = "Pagle dev: /pagle dev pseudo on | off"
@@ -2458,3 +2458,71 @@ en = "On the Fish Journal's bookplate."
 [PREVIEW_BINDING_NOTE]
 value = "Jedes deiner Bücher trägt ihn."
 en = "Every book of yours wears it."
+
+# Machine-drafted (Claude) for the news sign (core/news-sign.md); awaits a native speaker's review.
+
+[SIGN_KICKER]
+value.first = "Erstmeldung"
+value.legend = "Legende"
+value.prestige = "Prestige"
+value.ledger = "Das Anglerbuch"
+value.colour = "Seltene Farbe"
+value.hunt = "Jagdgold"
+value.zone = "Gebietsmeister"
+value.monster = "Monster"
+value.region = "Regionsnachricht · {region}"
+en.first = "First report"
+en.legend = "Legend"
+en.prestige = "Prestige"
+en.ledger = "The Ledger"
+en.colour = "Rare colour"
+en.hunt = "Hunt gold"
+en.zone = "Zone Master"
+en.monster = "Monster"
+en.region = "Region news · {region}"
+
+[SIGN_HEAD]
+value.first = "Als Erste in {region}: {fish} gelandet"
+value.legend = "{name} hat eine Legende gelandet"
+value.prestige = "{name} hat Prestige {rank} erreicht"
+value.ledger = "{name} hat das Anglerbuch vollendet"
+value.colour = "{name} hat eine seltene Farbe gefangen"
+value.hunt = "{name} holt Gold"
+value.zone = "{name} ist Gebietsmeister von {zone}"
+value.monster = "{name} hat ein Monster gelandet"
+value.region = "Diesen Monat als Erste in {region}: {fish} gelandet"
+en.first = "First in {region} to land {fish}"
+en.legend = "{name} landed a Legend"
+en.prestige = "{name} reached Prestige {rank}"
+en.ledger = "{name} completed the Ledger"
+en.colour = "{name} caught a rare colour"
+en.hunt = "{name} took gold"
+en.zone = "{name} became Master of {zone}"
+en.monster = "{name} landed a Monster"
+en.region = "First in {region} this month to land {fish}"
+
+[SIGN_DETAIL_COLOUR]
+value = "{variety} {species}"
+en = "{variety} {species}"
+
+[SIGN_DETAIL_MONSTER]
+value = "{species}, {length}"
+en = "{species}, {length}"
+
+[SIGN_MORE]
+value.one = "+{count:0} weitere von deinen Anglern"
+value.other = "+{count:0} weitere von deinen Anglern"
+en.one = "+{count:0} more from your anglers"
+en.other = "+{count:0} more from your anglers"
+
+[DEV_SIGN_USAGE]
+value = "Pagle dev: /pagle dev sign <Stil> [Art] [more], Stil eines von {looks}, Art eines von {kinds}"
+en = "Pagle dev: /pagle dev sign <look> [kind] [more], where look is one of {looks} and kind one of {kinds}"
+
+[DEV_SIGN_DROPPED]
+value = "Pagle dev: das Schild im Stil {look} fällt mit Beispielnachricht {kind}; Mauszeiger hält es, Rechtsklick schickt es hoch."
+en = "Pagle dev: dropping the {look} sign with sample {kind} news; hover holds it, a right click sends it up."
+
+[DEV_SIGN_WAITING]
+value = "Pagle dev: das Schild fällt, sobald Kampf und Sperre vorbei sind."
+en = "Pagle dev: the sign drops once combat and restriction end."

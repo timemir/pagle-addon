@@ -18,4 +18,12 @@
 	<Frame name="PagleSettingsKeyRowTemplate" mixin="PagleSettingsKeyRowMixin" virtual="true">
 		<Size x="280" y="26"/>
 	</Frame>
+	<!-- The news sign (core/news-sign.md): its art's atlases, its frame and drawing kit, its six looks, and its dev
+	command. Loaded here because the TOC's file lines are hashed by pagle-backend's ranked policy (PRJ-R64), so a new
+	file there would need a new rule set; an XML file's <Script> lines aren't. Nothing in them runs before login but
+	the tables they define. -->
+	<Script file="..\data\NewsSignArt.lua"/>
+	<Script file="NewsSign.lua"/>
+	<Script file="NewsSignLooks.lua"/>
+	<Script file="NewsSignDev.lua"/>
 </Ui>

@@ -96,6 +96,9 @@ ns.Locale("deDE", function(L)
 	L.DEV_SAMPLE_VARIETY_NAME = "Koralle"
 	L.DEV_SAMPLE_WRITE_UP = "Dein Anglerbuch wurde aus 2.340 Würfen nachgetragen"
 	L.DEV_SESSION_ENDED = "Pagle dev: Die Sitzung ist beendet, als wäre ihre Pause verstrichen."
+	L.DEV_SIGN_DROPPED = "Pagle dev: das Schild im Stil {look} fällt mit Beispielnachricht {kind}; Mauszeiger hält es, Rechtsklick schickt es hoch."
+	L.DEV_SIGN_USAGE = "Pagle dev: /pagle dev sign <Stil> [Art] [more], Stil eines von {looks}, Art eines von {kinds}"
+	L.DEV_SIGN_WAITING = "Pagle dev: das Schild fällt, sobald Kampf und Sperre vorbei sind."
 	L.DEV_SKILL_CLEARED = "Pagle dev: Die Angelfertigkeit gilt wieder so, wie der Client sie meldet."
 	L.DEV_SKILL_NOT_SET = "Pagle dev: Die Angelfertigkeit gilt so, wie der Client sie meldet; /pagle dev skill <Rang> überschreibt sie."
 	L.DEV_SKILL_REMINDER = "Pagle dev: Die Angelfertigkeit ist auf {rank}/{max} überschrieben (/pagle dev skill off hebt das auf)."
@@ -133,7 +136,7 @@ ns.Locale("deDE", function(L)
 	L.DEV_TOUR_STOPPING = "Pagle dev: Die Tour endet, sobald diese Station verschwindet."
 	L.DEV_TOUR_STOPS = { one = "1 Station", other = "{count} Stationen" }
 	L.DEV_UNKNOWN_AREA = "Pagle dev: {areaText} ist kein Gebiet in Pagles Katalog."
-	L.DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <Art> | stage <Anzahl> | glyphs | tour [Modul | list | stop] | probe | fonts | pseudo on | off | onboarding <Befehl> | content | views | pastetest <KB>"
+	L.DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <Art> | stage <Anzahl> | glyphs | tour [Modul | list | stop] | probe | fonts | pseudo on | off | onboarding <Befehl> | content | views | pastetest <KB> | sign <Stil> [Art] [more]"
 	L.DEV_VIEWS_ABSENT = "Pagle dev: {name} fehlt: {reason}."
 	L.DEV_VIEWS_ANGLERS = "Pagle dev: generatedAt von Pagle_Anglers {generatedAt}, Blöcke {dev_views_anglers_2}."
 	L.DEV_VIEWS_EXPIRED = "Pagle dev: {name} ist abgelaufen: vor {age} s erzeugt, das Ablaufalter ist {viewExpiryAge} s."
@@ -527,6 +530,11 @@ ns.Locale("deDE", function(L)
 	L.SHOP_TAG_SEPARATOR = " · "
 	L.SHOP_USE = "Nutzen"
 	L.SHOP_USE_NOW = "Jetzt nutzen"
+	L.SIGN_DETAIL_COLOUR = "{variety} {species}"
+	L.SIGN_DETAIL_MONSTER = "{species}, {length}"
+	L.SIGN_HEAD = { colour = "{name} hat eine seltene Farbe gefangen", first = "Als Erste in {region}: {fish} gelandet", hunt = "{name} holt Gold", ledger = "{name} hat das Anglerbuch vollendet", legend = "{name} hat eine Legende gelandet", monster = "{name} hat ein Monster gelandet", prestige = "{name} hat Prestige {rank} erreicht", region = "Diesen Monat als Erste in {region}: {fish} gelandet", zone = "{name} ist Gebietsmeister von {zone}" }
+	L.SIGN_KICKER = { colour = "Seltene Farbe", first = "Erstmeldung", hunt = "Jagdgold", ledger = "Das Anglerbuch", legend = "Legende", monster = "Monster", prestige = "Prestige", region = "Regionsnachricht · {region}", zone = "Gebietsmeister" }
+	L.SIGN_MORE = { one = "+{count:0} weitere von deinen Anglern", other = "+{count:0} weitere von deinen Anglern" }
 	L.SIZE_BANDS = { "Winzling", "Ordentlich", "Kräftig", "Brocken", "Monster" }
 	L.SLASH_CORE_HELP = {
 		{ help = "Pagles Einstellungen öffnen (auch /pagle allein)", name = "settings" },

@@ -939,8 +939,8 @@ value = "Pagle dev: los comandos de desarrollo están desactivados; /pagle dev o
 en = "Pagle dev: dev commands are off; /pagle dev on turns them on."
 
 [DEV_USAGE]
-value = "Pagle dev: /pagle dev on | off | endsession | preview <tipo> | stage <número> | glyphs | tour [module | list | stop] | probe | fonts | pseudo on | off | onboarding <comando> | content | views | pastetest <KB>"
-en = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | stage <count> | glyphs | tour [module | list | stop] | probe | fonts | pseudo on | off | onboarding <command> | content | views | pastetest <KB>"
+value = "Pagle dev: /pagle dev on | off | endsession | preview <tipo> | stage <número> | glyphs | tour [module | list | stop] | probe | fonts | pseudo on | off | onboarding <comando> | content | views | pastetest <KB> | sign <estilo> [tipo] [more]"
+en = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | stage <count> | glyphs | tour [module | list | stop] | probe | fonts | pseudo on | off | onboarding <command> | content | views | pastetest <KB> | sign <look> [kind] [more]"
 
 [DEV_PASTE_TEST_USAGE]
 value = "Pagle dev: /pagle dev pastetest <KB>, de {pasteTestMinKb} a {pasteTestMaxKb}; la comprobación copia 64, 128, 256 y 512."
@@ -2507,3 +2507,72 @@ en = "Raw "
 [FISH_CREST_UNCAUGHT_JOIN]
 value = ", "
 en = ", "
+
+# Machine-drafted (Claude) for the news sign (core/news-sign.md); awaits a native speaker's review.
+
+[SIGN_KICKER]
+value.first = "Primer aviso"
+value.legend = "Leyenda"
+value.prestige = "Prestigio"
+value.ledger = "El Libro"
+value.colour = "Color raro"
+value.hunt = "Oro en Caza"
+value.zone = "Maestro de zona"
+value.monster = "Monstruo"
+value.region = "Noticias de la región · {region}"
+en.first = "First report"
+en.legend = "Legend"
+en.prestige = "Prestige"
+en.ledger = "The Ledger"
+en.colour = "Rare colour"
+en.hunt = "Hunt gold"
+en.zone = "Zone Master"
+en.monster = "Monster"
+en.region = "Region news · {region}"
+
+[SIGN_HEAD]
+value.first = "Primero en {region} en pescar {fish}"
+value.legend = "{name} ha pescado una Leyenda"
+value.prestige = "{name} ha alcanzado Prestigio {rank}"
+value.ledger = "{name} ha completado el Libro"
+value.colour = "{name} ha pescado un color raro"
+value.hunt = "{name} se lleva el oro"
+value.zone = "{name} es Maestro de zona de {zone}"
+value.monster = "{name} ha pescado un Monstruo"
+value.region = "Primero en {region} este mes en pescar {fish}"
+en.first = "First in {region} to land {fish}"
+en.legend = "{name} landed a Legend"
+en.prestige = "{name} reached Prestige {rank}"
+en.ledger = "{name} completed the Ledger"
+en.colour = "{name} caught a rare colour"
+en.hunt = "{name} took gold"
+en.zone = "{name} became Master of {zone}"
+en.monster = "{name} landed a Monster"
+en.region = "First in {region} this month to land {fish}"
+
+[SIGN_DETAIL_COLOUR]
+value = "{species} {variety}"
+en = "{variety} {species}"
+
+[SIGN_DETAIL_MONSTER]
+value = "{species}, {length}"
+en = "{species}, {length}"
+
+[SIGN_MORE]
+value.one = "+{count:0} más de tus pescadores"
+value.many = "+{count:0} más de tus pescadores"
+value.other = "+{count:0} más de tus pescadores"
+en.one = "+{count:0} more from your anglers"
+en.other = "+{count:0} more from your anglers"
+
+[DEV_SIGN_USAGE]
+value = "Pagle dev: /pagle dev sign <estilo> [tipo] [more], estilo uno de {looks} y tipo uno de {kinds}"
+en = "Pagle dev: /pagle dev sign <look> [kind] [more], where look is one of {looks} and kind one of {kinds}"
+
+[DEV_SIGN_DROPPED]
+value = "Pagle dev: cae el cartel {look} con una noticia de ejemplo {kind}; el ratón encima lo sujeta, un clic derecho lo sube."
+en = "Pagle dev: dropping the {look} sign with sample {kind} news; hover holds it, a right click sends it up."
+
+[DEV_SIGN_WAITING]
+value = "Pagle dev: el cartel caerá cuando acaben el combate y la restricción."
+en = "Pagle dev: the sign drops once combat and restriction end."
