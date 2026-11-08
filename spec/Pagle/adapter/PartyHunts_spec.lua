@@ -193,11 +193,17 @@ describe("the Angler's own moments for a Party Catch (ANN-R110)", function()
 			assert.is_nil(moments[1].partyCatch)
 			assert.is_nil(moments[1].partyHunt)
 			loaded.client.advance(30)
+			-- Where each saved variable holds the name or the source Catch ID: nowhere.
+			local found = {}
 			for _, saved in ipairs({ "PagleDB", "PagleLog" }) do
 				for _, needle in ipairs({ "Kukli", "Stonebrew", "Player-4701" }) do
-					assert.is_nil(textAt(loaded.env[saved], needle), saved .. " holds " .. needle)
+					local at = textAt(loaded.env[saved], needle)
+					if at then
+						found[#found + 1] = saved .. at .. ": " .. needle
+					end
 				end
 			end
+			assert.are.same({}, found)
 		end
 	)
 
