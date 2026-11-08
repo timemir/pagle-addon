@@ -520,7 +520,7 @@ describe("Completed for the party in Settings (SET-R35, SET-R36)", function()
 		for _, variable in ipairs(row.evaluateStateVariables) do
 			hunts = hunts or variable == "Pagle_Core_partyHunts"
 		end
-		assert.is_true(hunts, "Party Hunts' changes re-evaluate the row")
+		assert(hunts == true, "Party Hunts' changes re-evaluate the row")
 
 		loaded.ns.SetPartyHunts(false)
 		assert.is_false(row:EvaluateModifyPredicates())

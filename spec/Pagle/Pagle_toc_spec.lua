@@ -99,7 +99,7 @@ describe("Pagle.toc", function()
 			local xmlFile = assert(io.open("addons/Pagle/adapter/Settings.xml", "r"))
 			local xml = xmlFile:read("*a")
 			xmlFile:close()
-			assert.is_nil(xml:find("<Script", 1, true), "Settings.xml loads no file, only its templates")
+			assert(not xml:find("<Script", 1, true), "Settings.xml loads no file, only its templates")
 
 			local files = {
 				"adapter/PartyMessages.lua",
@@ -115,7 +115,11 @@ describe("Pagle.toc", function()
 				assert(toc:find((file:gsub("/", "\\")), 1, true), file .. " has a TOC line")
 				assert(at[file] > (i > 1 and at[files[i - 1]] or at["adapter/Settings.lua"]), file)
 			end
-			for _, later in ipairs({ "adapter/PartyCatches.lua", "adapter/Letter.lua", "adapter/AnnouncementSettings.lua" }) do
+			for _, later in ipairs({
+				"adapter/PartyCatches.lua",
+				"adapter/Letter.lua",
+				"adapter/AnnouncementSettings.lua",
+			}) do
 				assert(at[later] > at["adapter/NewsSignSettings.lua"], later)
 			end
 		end

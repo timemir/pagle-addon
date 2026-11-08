@@ -376,25 +376,28 @@ describe("what the receiver checks, in order", function()
 	end)
 
 	describe("10. at most the party catch cap from each groupmate a minute (LOG-R113 item 10, Tunables)", function()
-		it("drops a groupmate's eleventh Party Catch in 60 s, and takes one again once the first is a minute old", function()
-			local world = receiver()
-			assert.are.same({ 10, 60 }, { ns.PARTY_CATCH_CAP, ns.PARTY_CATCH_CAP_WINDOW })
-			for i = 1, 10 do
-				world.now = NOW + (i - 1) * 3
-				assert.is_nil(select(2, world.receive(kukliAt(world.now - 1))), i)
+		it(
+			"drops a groupmate's eleventh Party Catch in 60 s, and takes one again once the first is a minute old",
+			function()
+				local world = receiver()
+				assert.are.same({ 10, 60 }, { ns.PARTY_CATCH_CAP, ns.PARTY_CATCH_CAP_WINDOW })
+				for i = 1, 10 do
+					world.now = NOW + (i - 1) * 3
+					assert(select(2, world.receive(kukliAt(world.now - 1))) == nil, "Catch " .. i)
+				end
+				world.now = NOW + 59
+				local _, failed = world.receive(kukliAt(NOW + 58))
+				assert.are.equal(10, failed)
+				-- another groupmate has a cap of their own
+				world.members["Arwen-Testrealm"] = { guid = "Player-4618-0C00000C", name = "Arwen" }
+				local arwen = "PC|1|Player-4618-0C00000C|" .. (NOW + 58) .. "|0|494|148|453|120|0||||6358x1"
+				assert.is_nil(select(2, world.receive(arwen, "Arwen-Testrealm")))
+				-- the first, received at NOW, leaves the window at NOW + 60
+				world.now = NOW + 60
+				assert.is_nil(select(2, world.receive(kukliAt(NOW + 59))))
+				assert.are.equal(12, #world.appended)
 			end
-			world.now = NOW + 59
-			local _, failed = world.receive(kukliAt(NOW + 58))
-			assert.are.equal(10, failed)
-			-- another groupmate has a cap of their own
-			world.members["Arwen-Testrealm"] = { guid = "Player-4618-0C00000C", name = "Arwen" }
-			local arwen = "PC|1|Player-4618-0C00000C|" .. (NOW + 58) .. "|0|494|148|453|120|0||||6358x1"
-			assert.is_nil(select(2, world.receive(arwen, "Arwen-Testrealm")))
-			-- the first, received at NOW, leaves the window at NOW + 60
-			world.now = NOW + 60
-			assert.is_nil(select(2, world.receive(kukliAt(NOW + 59))))
-			assert.are.equal(12, #world.appended)
-		end)
+		)
 	end)
 
 	it(
