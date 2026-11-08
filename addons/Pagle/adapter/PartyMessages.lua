@@ -18,6 +18,8 @@ local ns = select(2, ...)
 ---@field partyCatch? string   -- from 1.6: the groupmate's source Catch ID, from the live Party Catch record (LOG-R116), of
 --- a Party Catch that completed a Hunt or settled a run (HNT-R185); Core sends "Completed for the party" (ANN-R111)
 ---@field partyEvent? string   -- from 1.6, with partyCatch: the event ID of the run a Party Catch settled (ANN-R111)
+---@field storedText? string   -- from 1.6: what the Session summary keeps in place of `text`, which names a groupmate
+--- only as it shows (ANN-R110)
 
 --- What a Module's def may offer Core for party toasts (ANN-R106): Hunts names a Hunt by its ID, or nil for one it
 --- doesn't know. Declared here, beside logic/Modules.lua's PagleModuleDef, which a 1.5.2 patch can't change.

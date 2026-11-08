@@ -529,6 +529,10 @@ en = "Wager settled"
 value = "{text} · mit {name}"
 en = "{text} · with {name}"
 
+[PARTY_A_GROUPMATE]
+value = "einem Gruppenmitglied"
+en = "a groupmate"
+
 [WAGER_SETTLED_STAMP]
 value = "Eingelöst"
 en = "Settled"

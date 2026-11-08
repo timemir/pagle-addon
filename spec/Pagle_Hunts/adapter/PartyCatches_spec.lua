@@ -89,6 +89,19 @@ describe("a live Party Catch in Hunts", function()
 				end
 			end
 			assert(completed, "no huntCompleted moment")
+			-- Shown with the groupmate's name; stored with none, nor their Catch ID (ANN-R110).
+			local stored = {}
+			for _, moment in ipairs(fake.global.summary.moments) do
+				stored[#stored + 1] = moment.text
+			end
+			for _, moment in ipairs(fake.global.pending) do
+				stored[#stored + 1] = moment.text
+			end
+			assert.are.same({ "Snapper Run · with a groupmate" }, stored)
+			for _, text in ipairs(stored) do
+				assert.is_nil(text:find(hunts.GROUPMATE_NAME, 1, true))
+				assert.is_nil(text:find(sourceId, 1, true))
+			end
 			assert.are.same({
 				cast = pc.id,
 				text = "Snapper Run · with " .. hunts.GROUPMATE_NAME,

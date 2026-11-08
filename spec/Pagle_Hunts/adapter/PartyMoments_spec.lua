@@ -93,6 +93,8 @@ describe("a live Party Catch's moments (HNT-R185, ANN-R110)", function()
 		assert.are.equal("huntCompleted", moment.kind)
 		assert.are.equal(G1, moment.cast)
 		assert.are.equal(ns.hunts:HuntName(hunt.id) .. " · with Kukli Emnabi", moment.text)
+		-- What Core stores names no one (ANN-R110).
+		assert.are.equal(ns.hunts:HuntName(hunt.id) .. " · with a groupmate", moment.storedText)
 		-- The item that reached it is item 2 of the Party Catch: the groupmate's Catch 2 (ANN-R111).
 		assert.are.equal(SOURCE .. ":2", moment.partyCatch)
 		assert.are.equal(hunt.id, moment.partyHunt)
@@ -152,9 +154,14 @@ describe("a live Party Catch's moments (HNT-R185, ANN-R110)", function()
 		local mark, settled = moments[1], moments[2]
 		assert.are.same({ "wagerMark", G1 }, { mark.kind, mark.cast })
 		assert.matches(" · with Kukli Emnabi$", mark.text)
+		assert.matches(" · with a groupmate$", mark.storedText)
 		assert.is_nil(mark.partyCatch)
 		assert.are.same({ "wagerSettled", G1 }, { settled.kind, settled.cast })
 		assert.are.equal(ns.events:EventName(ns.events:Event("fixture_shore")) .. " · with Kukli Emnabi", settled.text)
+		assert.are.equal(
+			ns.events:EventName(ns.events:Event("fixture_shore")) .. " · with a groupmate",
+			settled.storedText
+		)
 		assert.are.equal(SOURCE .. ":3", settled.partyCatch)
 		assert.are.equal("fixture_shore", settled.partyEvent)
 	end)
