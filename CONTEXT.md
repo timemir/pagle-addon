@@ -324,6 +324,10 @@ _Avoid_: permanent hunt, normal hunt
 A group of Hunts themed on one or two zones, defined without dates and kept in a pool: the addon ships one, and the backend can push new ones. It counts only during a run. Completed runs add up towards titles. Players see Hunt Events as a whole under the name **Pagle Wagers**.
 _Avoid_: event (which is a game calendar event, such as the Fishing Extravaganza), season, challenge, limited hunt, Pagle Wager (as a domain term: it's only the players' name)
 
+**Party Catch**:
+A groupmate's Catch that counts toward the Angler's Hunts, both Standing Hunts and Pagle Wagers: one the groupmate made in a party of up to 5 while both fished the same zone, which Core logged from the party's message. It is never the Angler's own Catch: it counts for Hunts and for nothing else. Pagle's website counts it only once it has matched the groupmate's own Cast in their uploaded Catch log.
+_Avoid_: party credit (as a domain term; fine in passing), shared catch, assist, group catch
+
 **Run**:
 One time a Hunt Event is on, from a start to an end, about three days. The backend's schedule decides runs, or the addon's own rotation when the companion isn't connected. Any number of runs may be on at once. Each run starts fresh and pays again, and progress in a run that ends unfinished is simply lost.
 _Avoid_: occurrence, instance, edition

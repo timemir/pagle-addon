@@ -1,6 +1,6 @@
 # Core: Announcements, the Session summary and the Write-up
 
-> Status: Done · Milestones: M2, M4 (the Gilded sound set and the other toast styles as Curio Shop goods, size rulers, the catch Nod, from #437 the catch toast), M8.5 Onboarding (ANN-R38's `guide` reason, ANN-R64, `firstNote`, the budget default 20 per 5 min, from #437 40) · Sources: [Prototype Catch feedback: toasts, sounds and cozy mode](https://github.com/timemir/pagle-addon/issues/13#issuecomment-6113132854), [Decide who owns Announcements: a Core service or each Module](https://github.com/timemir/pagle-addon/issues/22#issuecomment-6113769547), [Prototype Pagle's sounds](https://github.com/timemir/pagle-addon/issues/23#issuecomment-6113915981), [Design Stats: session stats, honest odds and dry spells](https://github.com/timemir/pagle-addon/issues/21#issuecomment-6113657288), [Cut the MVP slice and roadmap](https://github.com/timemir/pagle-addon/issues/18#issuecomment-6113973068), [Design the Pagle currency and shop](https://github.com/timemir/pagle-addon/issues/28#issuecomment-6125331898), [Decide how the spec is assembled](https://github.com/timemir/pagle-addon/issues/31#issuecomment-6128960652), [Design the Simulated Size bands](https://github.com/timemir/pagle-addon/issues/33#issuecomment-6129722545), [Show a quiet catch Nod for every ordinary Catch](https://github.com/timemir/pagle-addon/issues/256), [A full toast for every ordinary catch, stepping down to a Nod when the budget is spent](https://github.com/timemir/pagle-addon/issues/437); ADR 0001, 0004, 0007, 0009, 0010. Prototypes: `prototypes/catch-feedback/`, `prototype/sounds` branch (`prototypes/sounds/`)
+> Status: Done · Milestones: M2, M4 (the Gilded sound set and the other toast styles as Curio Shop goods, size rulers, the catch Nod, from #437 the catch toast), M8.5 Onboarding (ANN-R38's `guide` reason, ANN-R64, `firstNote`, the budget default 20 per 5 min, from #437 40), 1.6 on rule set pagle-2026j (Party Catches, ANN-R110, ANN-R111) · Sources: [Map: Party-wide Hunts](https://github.com/timemir/pagle-addon/issues/641), [Party toasts and cheers](https://github.com/timemir/pagle-addon/issues/640), [Prototype Catch feedback: toasts, sounds and cozy mode](https://github.com/timemir/pagle-addon/issues/13#issuecomment-6113132854), [Decide who owns Announcements: a Core service or each Module](https://github.com/timemir/pagle-addon/issues/22#issuecomment-6113769547), [Prototype Pagle's sounds](https://github.com/timemir/pagle-addon/issues/23#issuecomment-6113915981), [Design Stats: session stats, honest odds and dry spells](https://github.com/timemir/pagle-addon/issues/21#issuecomment-6113657288), [Cut the MVP slice and roadmap](https://github.com/timemir/pagle-addon/issues/18#issuecomment-6113973068), [Design the Pagle currency and shop](https://github.com/timemir/pagle-addon/issues/28#issuecomment-6125331898), [Decide how the spec is assembled](https://github.com/timemir/pagle-addon/issues/31#issuecomment-6128960652), [Design the Simulated Size bands](https://github.com/timemir/pagle-addon/issues/33#issuecomment-6129722545), [Show a quiet catch Nod for every ordinary Catch](https://github.com/timemir/pagle-addon/issues/256), [A full toast for every ordinary catch, stepping down to a Nod when the budget is spent](https://github.com/timemir/pagle-addon/issues/437); ADR 0001, 0004, 0007, 0009, 0010. Prototypes: `prototypes/catch-feedback/`, `prototype/sounds` branch (`prototypes/sounds/`)
 
 Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules raise **moments**, and Core merges, paces and draws them.
 
@@ -21,7 +21,7 @@ Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules 
 
 ### A Cast's Announcements
 
-- **ANN-R10** Moments with a `cast` (a Cast's entry ID) are merged by that ID. Core collects them and flushes each Cast's moments together on the next frame after the last one arrived, but while any projection is updating (LOG-R74) it holds every Cast's moments and flushes them, Cast by Cast in Cast order, on the frame after the last projection finishes. Live entries reach every projection and the Cast events in one frame (LOG-R9), so a Cast's moments merge whatever order the Modules raised them in.
+- **ANN-R10** Moments with a `cast` (a Cast's entry ID, or *from 1.6* a Party Catch's, ANN-R110) are merged by that ID. Core collects them and flushes each Cast's moments together on the next frame after the last one arrived, but while any projection is updating (LOG-R74) it holds every Cast's moments and flushes them, Cast by Cast in Cast order, on the frame after the last projection finishes. Live entries reach every projection and the Cast events in one frame (LOG-R9), so a Cast's moments merge whatever order the Modules raised them in.
 - **ANN-R11** A Cast's moments become at most **two Announcements**, split by lane (ANN-R20):
   - **big:** its `banner` and `splash` moments
   - **catch:** its `toast.*` and `nod` moments
@@ -40,6 +40,17 @@ Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules 
   - **Only live Catches.** A got-away Cast, and a Cast whose every item is item `0`, raise none; nor does a replay or rebuild, which fires no `CastEnded` (ANN-R4, LOG-R73).
 
   With "Show every catch" off, an ordinary Catch raises nothing and never pops up. Either way a Module may move its own bar or view, and a Module raises a moment only for what is worth one: an ordinary Catch is the catch toast's. A moment with no Cast stays what it is: a Hunt window opening, the Pagle Wagers companion hint, Kindling burned and a login Nod are Nods still.
+
+### Party Catches and the party
+
+*From 1.6 (pagle-2026j).* A groupmate's Catch can count toward the Angler's Hunts (LOG-R110–R121, HNT-R180–R187). Two moments come of it: the Angler's own, for what the groupmate's Catch reached, and the **completed for the party** party toast, which shows the party what one Catch did for them. Party toasts are [#640](https://github.com/timemir/pagle-addon/issues/640)'s: groupmates' moments in a small, compact style in the player's Toast column, live only, sent over the party channel (LOG-R110). This section assumes #640 as its issue states it, since its branch has no spec yet: one compact party style, the Toast column's lanes, budget, combat hold, Cozy mode and expiry, a master switch and one switch per kind, and messages of the form `<kind>|<v>|…` on the prefix `Pagle`, chat type `PARTY`.
+
+- **ANN-R110** **The Angler's own moments for a Party Catch.** Hunts raises them as for a Cast (HNT-R185), with `cast` set to the Party Catch's entry ID, so Core merges one Party Catch's moments into at most two Announcements as it does a Cast's (ANN-R10, ANN-R11), under every rule a Cast's moments follow (the budget, the combat hold, Cozy mode, the Session summary). Their text names the groupmate in game ("Night Run · with Kukli Emnabi"); nothing Pagle sends outside the game does. A Party Catch raises no catch toast (ANN-R13): it isn't the Angler's Catch.
+- **ANN-R111** **Completed for the party.** When a live moment that carries `partyCatch` (HNT-R185) is raised, Core sends a party toast of kind `hp` ("Hunt for the party"), version 1, to the party on the party channel through its send queue (LOG-R112), while the Party Hunts setting is on (LOG-R121) and #640's master switch is on: `hp|1|<what>|<id>|<sourceCatchId>`, with `<what>` `h` for a Standing Hunt completed, its Hunt ID as `<id>`, or `w` for a settled run, its event ID as `<id>`, and `<sourceCatchId>` the groupmate's Catch ID the moment carries. It names no zone and no player: the receiving clients know who sent it.
+  - **Who sees it.** Every groupmate whose #640 party toasts are on and whose "Completed for the party" kind switch is on (SET-R35), checking the sender as LOG-R113 items 1, 2 and 4 do. The catcher, whose own GUID opens `<sourceCatchId>`, sees "Your catch" as the kicker; every other groupmate sees "Completed for the party".
+  - **What it shows.** One compact party toast, #640's style, its title the kicker above, its text "{Hunt name} · for {sender}" or, for a run, "{event name} settled · for {sender}". Names come from the receiver's own lore (`hunt.<id>.name`, `event.<id>.name`, HNT-R130); an event the receiver doesn't know (a pushed one it never logged) reads "a Pagle Wager". The icon is Hunts' `Trade_Fishing`.
+  - **Merging.** `hp` toasts with the same `<sourceCatchId>` and `<id>` that arrive within the party merge window (Tunables) of the first become one toast, listing every sender: "Night Run · for Kukli and Bram", "· for Kukli, Bram and 2 more". So a Catch that completes a Hunt for the whole party shows once on each screen.
+  - It is a `toast.low` in rank and budget, like any party toast; it carries no Coins, no Refreshes and no cheers button, never reaches the Session summary, and is dropped, not held, if it waits longer than #640's expiry. Nothing of it is logged.
 
 ### The display queue
 
@@ -270,6 +281,7 @@ A stored moment keeps: `module`, `moduleTitle`, `moduleOrder`, `kind`, `rung`, `
 ---@field expiresAt? integer     -- server time (ANN-R45)
 ---@field pastText? string       -- shown in the summary if it expired
 ---@field summaryOnly? boolean   -- ANN-R63
+---@field partyCatch? string    -- from 1.6: the groupmate's source Catch ID of a Party Catch that completed a Hunt or settled a run (HNT-R185); Core sends ANN-R111's party toast. Never stored
 ---@field firstNote? string      -- the Margin note shown the first time a moment of this Module and kind shows (ONB-R53)
 ---@field seal? integer|"waves"|"book"|"quill"|"frame"|"crest" -- a banner's wax seal (UI); default "waves"
 ---@field frameRank? integer    -- with seal "frame": the prestige rank whose Prestige frame to show (ANN-R83)
@@ -350,6 +362,8 @@ ANN-R51.
 | Hunts | Pagle Wagers: settled run | `toast.high` |
 | Hunts | Pagle Wagers: ladder title | `banner` |
 | Hunts | Pagle Wagers: companion hint (behind its switch, on at 1.0) | `nod`, no `cast` |
+| Hunts | *from 1.6:* any of its moments reached through a Party Catch | the same rung as above, `cast` = the Party Catch's entry ID (ANN-R110) |
+| Core | *from 1.6:* completed for the party, a groupmate's party toast (ANN-R111) | #640's party toast, ranked as `toast.low`, never summarized |
 | Tackle Board | Notice completed | `toast.low` |
 | Tackle Board | Expedition completed | `toast` |
 | Tackle Board | Campfire milestone, title, Fly Box complete | `banner` |
@@ -421,6 +435,7 @@ These sit on the Announcements page. Toast style and sound set also appear on Lo
 | Budget default | 40 per 5 min (20 before #437) | ANN-R31 |
 | Rare-record flair threshold (Ledger's rule) | 50 Catches of the Species since the last record | rung table |
 | Delay after combat | 2 s | ANN-R36 |
+| Party merge window: `hp` toasts of one Catch and Hunt merging | 5 s | ANN-R111 |
 | Cards kept | 3 | ANN-R54 |
 | Toast variants per sound set | 3 (Gilded 1) | ANN-R72 |
 | Motion sprites per composed rung | at most 2, plus `toast.high`'s extras; the epic five as many as their kit draws | ANN-R82, ANN-R85 |

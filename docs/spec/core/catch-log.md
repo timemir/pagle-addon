@@ -1,12 +1,12 @@
 # Core: Catch log, conditions, Sessions and projections
 
-> Status: Done · Milestones: M1 (recording, conditions snapshot, catalogue lookup), M2 (projections, Sessions, catalogue v1), M3 (the Field report projection, `NextWindow`), M4 (Simulated Size, the length unit, Prestige and purchase entries, the wallet projection), M7 (Module records) · Sources: [Define the Core data model](https://github.com/timemir/pagle-addon/issues/10#issuecomment-6112707372), [Define the Core/Module contract](https://github.com/timemir/pagle-addon/issues/9#issuecomment-6112445901), [Beta probe: which fishing signals can the Forever client see?](https://github.com/timemir/pagle-addon/issues/7#issuecomment-6110508010), [How can Pagle identify items and places independent of client language?](https://github.com/timemir/pagle-addon/issues/20), [Design Hunts and the Now/Soon board](https://github.com/timemir/pagle-addon/issues/14#issuecomment-6113353568), [Design Stats: session stats, honest odds and dry spells](https://github.com/timemir/pagle-addon/issues/21#issuecomment-6113657288), [Define the content data pipeline](https://github.com/timemir/pagle-addon/issues/19#issuecomment-6113646946), [Design the /pagle report format and issue form](https://github.com/timemir/pagle-addon/issues/26#issuecomment-6124884698), [Design the Tackle Board](https://github.com/timemir/pagle-addon/issues/25#issuecomment-6124911363), [Design the Pagle currency and shop](https://github.com/timemir/pagle-addon/issues/28#issuecomment-6125331898), [Cut the MVP slice and roadmap](https://github.com/timemir/pagle-addon/issues/18#issuecomment-6113973068), [Decide how the spec is assembled](https://github.com/timemir/pagle-addon/issues/31#issuecomment-6128960652), [Design the Simulated Size bands](https://github.com/timemir/pagle-addon/issues/33#issuecomment-6129722545); ADR 0001, 0003, 0004, 0008, 0009, 0010, [Catch log hardening](https://github.com/timemir/pagle-backend/issues/302)
+> Status: Done · Milestones: M1 (recording, conditions snapshot, catalogue lookup), M2 (projections, Sessions, catalogue v1), M3 (the Field report projection, `NextWindow`), M4 (Simulated Size, the length unit, Prestige and purchase entries, the wallet projection), M7 (Module records), 1.6 on rule set pagle-2026j (Party Catches) · Sources: [Define the Core data model](https://github.com/timemir/pagle-addon/issues/10#issuecomment-6112707372), [Define the Core/Module contract](https://github.com/timemir/pagle-addon/issues/9#issuecomment-6112445901), [Beta probe: which fishing signals can the Forever client see?](https://github.com/timemir/pagle-addon/issues/7#issuecomment-6110508010), [How can Pagle identify items and places independent of client language?](https://github.com/timemir/pagle-addon/issues/20), [Design Hunts and the Now/Soon board](https://github.com/timemir/pagle-addon/issues/14#issuecomment-6113353568), [Design Stats: session stats, honest odds and dry spells](https://github.com/timemir/pagle-addon/issues/21#issuecomment-6113657288), [Define the content data pipeline](https://github.com/timemir/pagle-addon/issues/19#issuecomment-6113646946), [Design the /pagle report format and issue form](https://github.com/timemir/pagle-addon/issues/26#issuecomment-6124884698), [Design the Tackle Board](https://github.com/timemir/pagle-addon/issues/25#issuecomment-6124911363), [Design the Pagle currency and shop](https://github.com/timemir/pagle-addon/issues/28#issuecomment-6125331898), [Cut the MVP slice and roadmap](https://github.com/timemir/pagle-addon/issues/18#issuecomment-6113973068), [Decide how the spec is assembled](https://github.com/timemir/pagle-addon/issues/31#issuecomment-6128960652), [Design the Simulated Size bands](https://github.com/timemir/pagle-addon/issues/33#issuecomment-6129722545); ADR 0001, 0003, 0004, 0008, 0009, 0010, [Catch log hardening](https://github.com/timemir/pagle-backend/issues/302), [Map: Party-wide Hunts](https://github.com/timemir/pagle-addon/issues/641)
 
 Part of [Core](README.md). This file covers what Core observes, how it is stored, and how Modules read it back.
 
 ## Purpose and boundary
 
-**Owns:** detecting Casts and Catches, the account-wide append-only Catch log (`PagleLog`), `PagleDB`, the character table and the Angler, Skill Readings, build entries, Prestige entries, purchase entries (written for the Curio Shop), Module records, the conditions service, the content catalogue lookups, Simulated Sizes, cutting Sessions, the projection machinery, and the diagnostics buffer.
+**Owns:** detecting Casts and Catches, the account-wide append-only Catch log (`PagleLog`), `PagleDB`, the character table and the Angler, Skill Readings, build entries, Prestige entries, purchase entries (written for the Curio Shop), Module records, Party Catches (the party catch message and the `G1` entry, *from 1.6*), the conditions service, the content catalogue lookups, Simulated Sizes, cutting Sessions, the projection machinery, and the diagnostics buffer.
 
 **Doesn't own:** what any Module derives from the log, how the catalogue is generated (`docs/spec/content-data.md`), or how moments are presented ([announcements.md](announcements.md)).
 
@@ -119,9 +119,41 @@ Before step 1, Core applies the player's Language (CORE-R8, SET-R10): it reads `
 - **LOG-R40** `M:AppendRecord(kind, payload)` appends `A1|<header>|<module>|<kind>|<payload>` (ADR 0008), with `module` the Module's `def.name`. `kind` matches `[%w_.]+`. `payload` is any string without a line feed (LOG-R101), at most 200 bytes; a longer or invalid one raises a Lua error in the caller. Core never reads the payload. It returns the record and hands it to the Module's projections as a `"live"` entry under LOG-R73/R74: right away if they are up to date, after the current `apply` returns if called from inside one, or when the catch-up finishes if they are updating. Calling it during a `"replay"` or `"rebuild"` apply or from `done` raises a Lua error, so a rebuild never writes records twice.
 - **LOG-R41** A Module record is replayed only to the Module that wrote it, through its handle's `M:IterateCatches` and its projections. Records from a disabled or uninstalled Module stay in the log and are skipped. A Module never appends a record as a cache of derived state.
 
+### Party Catches
+
+*From 1.6 (pagle-2026j).* In a party, a groupmate's Catch can count toward the Angler's Hunts ([hunts.md](../hunts.md), HNT-R180–R187). Core is the only part of Pagle that talks to the party (ADR 0001): it sends a message for each of the Angler's own caught Casts, receives its groupmates', checks them, and logs the ones that count as **Party Catch** entries (`G1`). A Party Catch is never the Angler's own Catch: it counts for Hunts and for nothing else (LOG-R118).
+
+- **LOG-R110** **The party channel.** Core sends and receives on the addon prefix `Pagle`, chat type `PARTY`, the channel and prefix of the party toasts and cheers ([#640](https://github.com/timemir/pagle-addon/issues/640), [announcements.md](announcements.md), ANN-R110). Each message starts with its kind and version, `<kind>|<v>|`; a receiver ignores, without a word, a message whose kind it doesn't know or whose version is above the highest it reads, so a later Pagle can add kinds and versions. The party catch message is kind `PC`, version 1. Core registers the prefix with `C_ChatInfo.RegisterAddonMessagePrefix` at `PLAYER_LOGIN`, every login and reload. A **party** here is a home group of up to 5: `IsInGroup(LE_PARTY_CATEGORY_HOME)` true and `IsInRaid()` false. A raid, an instance group and a battleground never count: Core neither sends nor logs there.
+- **LOG-R111** **Sending.** After it appends one of the Angler's own Casts (LOG-R9 step 2), Core sends a party catch message when all of these hold: the Cast ended caught; it has at least one item that isn't item `0`; its zone isn't `0`; the Angler is in a party (LOG-R110); the Party Hunts setting is on (LOG-R121); and the Cast wasn't written by `/pagle dev catch`. The message is the Cast's own fields, as written in its entry, behind the character's GUID and the entry's `time` and `tie`:
+
+  `PC|1|<guid>|<time>|<tie>|<minute>|<zone>|<subzone>|<rank>|<mod>|<lure>|<events>|<auras>|<items>`
+
+  So `<guid>-<time>-<tie>` is the Cast's entry ID (LOG-R13), and each item's Catch ID is that ID and `:<n>`. Every field after `<tie>` is a byte-for-byte copy of the `C1` field of the same name ([Entry formats](#entry-formats)); the Cast's outcome (always `c`), `uiMap` and `instance` aren't sent. A message longer than 255 bytes, the addon message limit, isn't sent at all: its Catches simply aren't shared. Nothing is sent for a Cast replayed or rebuilt, only when it is appended.
+- **LOG-R112** **Throttling.** Core sends every party message through one queue for the `Pagle` prefix, shared with #640's party toasts and cheers: at most 5 in a burst, then at most 1 a second, under the game's own 10-message allowance per prefix. A party catch message goes before a party toast or cheer waiting in the queue. While the client refuses addon messages (`InChatMessagingLockdown()`, during an encounter) the queue holds. A party catch message still unsent the max party delay (Tunables) after its Cast's `time` is dropped, as the receiver would refuse it anyway (LOG-R113). Sending never waits on, and never delays, recording.
+- **LOG-R113** **What the receiver checks.** On `CHAT_MSG_ADDON` with prefix `Pagle`, chat type `PARTY` and kind `PC`, Core checks, in this order, and drops the message without a word at the first that fails:
+  1. the sender isn't the player (the client echoes the player's own messages back);
+  2. the Party Hunts setting is on, and the player is in a party (LOG-R110);
+  3. the version is 1, and the message has exactly the fields of LOG-R111, each in the grammar of its `C1` field ([Entry formats](#entry-formats)), with `<guid>` a player GUID (`Player-<serverID>-<ID>`, as `UnitGUID` gives it, at most 64 bytes of `[A-Za-z0-9-]`), `<zone>` not `0`, and at least one item that isn't item `0`;
+  4. the sender is one of the player's party units (`party1` to `party4`), matched by name and realm, and that unit's `UnitGUID` equals `<guid>`, so a message can't speak for another character;
+  5. `<guid>` isn't one of this Catch log's own characters (`PagleLog.characters`);
+  6. **in time:** with `now` the receiver's `GetServerTime()`, `<time>` is at most the clock slack after `now`, and at most the max party delay before it (Tunables);
+  7. **fishing in the same zone:** the latest Cast in this Catch log (caught or got away) is the current character's, its zone equals `<zone>`, and its `time` is at least `<time>` minus the party window (Tunables). Only the zone areaID counts, never the subzone: two groupmates on either side of a subzone border fish the same zone;
+  8. **not seen before:** no Party Catch in this Catch log has the same groupmate entry ID `<guid>-<time>-<tie>` (Core remembers the Party Catches appended in the last max party delay and clock slack together, and reads them back from the log's end at login, LOG-R105's `TaggedBack`);
+  9. **worth logging:** the Hunts filter (LOG-R114) takes it.
+
+  A message that passes every check is appended as a Party Catch entry (LOG-R115). Every check reads only the message, the party roster, the clock and this Catch log, so checks 5 to 8 can be made again from the log alone (pagle-backend's trust.md); checks 1 to 4 and 9 can't, and the backend doesn't need them.
+- **LOG-R114** **The Hunts filter.** A Party Catch is logged only when it could count: Core asks every On Module's projection whose def takes Party Catches (`partyCatches = true`, [Projection definition](#projection-definition)) through its `wantsPartyCatch(state, record)`, with the record the entry would make (LOG-R116), and logs it when any answers true. Only Hunts takes them (HNT-R180). With no such projection On, or none answering true, nothing is logged. While such a projection is updating (LOG-R74), Core logs every message that passes LOG-R113's other checks, since the state it would ask is not yet built. The filter keeps the log from growing by every groupmate's every Catch: a Party Catch that counts for nothing is never written.
+- **LOG-R115** **The Party Catch entry** (`G1`) is appended for the current character, at the receiver's `GetServerTime()`, with the message's fields from `<guid>` on, byte for byte ([Entry formats](#entry-formats)). The groupmate's Cast thus keeps its own identity inside the entry: its **source entry ID** is `<guid>-<time>-<tie>` from the copied fields, and each item's **source Catch ID** is that ID and `:<n>`. The entry's own entry ID follows LOG-R13 like any entry's, and each item's **Party Catch ID** is that entry ID and `:<n>`. The entry is handed to every projection that takes Party Catches as `"live"` (LOG-R73), then `PartyCatch(record)` fires ([Events](#events-core-fires-owned-here)). Nothing else changes: no Session starts or ends, no catch toast is raised (ANN-R13) and no `Catch` or `CastEnded` fires.
+- **LOG-R116** **The Party Catch record** ([Typed records](#typed-records)) carries the entry's header fields; the groupmate's GUID; the source entry ID; `catchTime` and `catchTie`, the copied `time` and `tie`; `conditions`, a `ConditionsSnapshot` built from the copied fields as a Cast's is (LOG-R20, LOG-R49), with `time` = `catchTime`, so the realm date is the groupmate's Cast's; and `items`, each with its `n`, `itemID`, `quantity`, Party Catch ID and source Catch ID. An item has no `size` and no `variety`: a Simulated Size needs the catcher's skill and earlier Catches (LOG-R65), which the receiver's log doesn't hold. A live record also carries `name`, the groupmate's full name as `UnitName` gives it at receipt, for moments only; it is never stored, and a replayed or rebuilt record has none.
+- **LOG-R117** **Who reads Party Catches.** `Pagle.IterateCatches` and `M:IterateCatches` yield a Party Catch record only to a Module whose projection takes Party Catches, and Core hands the entry, live, replayed and rebuilt, only to such projections. So the Ledger, Stats, the Tackle Board and Core's own projections (the Field report, the wallet, the varieties) never see one, and none of their rules versions changes.
+- **LOG-R118** **A Party Catch is no Catch of the Angler's.** It is never a Cast, never in a Session (LOG-R60, LOG-R98), never counted among the earlier Catches of a Simulated Size (LOG-R65, LOG-R100: those count `C1` items only), never in the diagnostics buffer or the Field report (LOG-R81), and never a Catch for a Module that doesn't take Party Catches (LOG-R117).
+- **LOG-R119** **Additive kind.** `G1`, like `K1` (LOG-R37), changes no earlier entry, so `PagleLog.format` stays 4 (LOG-R17) and no log is started over. A Core from before 1.6 skips a `G1` as an entry it can't decode (LOG-R16). Pagle's backend refuses a Catch log it can't admit, so the backend reads `G1` before 1.6 is released (pagle-backend's record contract).
+- **LOG-R120** **Privacy.** The party catch message carries the catcher's GUID, the Cast's zone, subzone, skill, lure, events, auras and items, and nothing else, to the party only, never further. The receiver's log keeps the groupmate's GUID in its `G1` entries, and its Party Catch IDs are the receiver's own, so no Module state holds the groupmate's GUID (HNT-R181). Pagle's website never names a groupmate (pagle-backend's angler-page.md). A groupmate's name shows only in game, in the receiver's own moments (ANN-R110).
+- **LOG-R121** **The Party Hunts setting** (`PagleDB.profile.partyHunts`, on by default; [settings.md](../settings.md), SET-R35) turns both sides off at once: off, Core sends no party catch message and logs none it receives. It changes nothing already logged.
+
 ### Reading the log back
 
-- **LOG-R42** `Pagle.IterateCatches(afterSeq)` walks entries with `seq > afterSeq` up to the log's length when called, in order, and yields typed records (see [Contracts](#contracts)), decoding lazily. It yields Casts, Skill Readings, Prestiges, builds and purchases, never Module records. `M:IterateCatches(afterSeq)` yields the same plus that Module's own Module records. Casts and Skill Readings carry their Session's ID (LOG-R98).
+- **LOG-R42** `Pagle.IterateCatches(afterSeq)` walks entries with `seq > afterSeq` up to the log's length when called, in order, and yields typed records (see [Contracts](#contracts)), decoding lazily. It yields Casts, Skill Readings, Prestiges, builds and purchases, never Module records. `M:IterateCatches(afterSeq)` yields the same plus that Module's own Module records, and, *from 1.6*, Party Catches to a Module whose projection takes them (LOG-R117). Casts and Skill Readings carry their Session's ID (LOG-R98).
 - **LOG-R43** `Catch` and `CastEnded` hand Modules the same records `IterateCatches` would yield for that Cast.
 
 ### Conditions
@@ -308,8 +340,11 @@ Every entry starts with the header `<tag>|<char>|<time>|<tie>` (LOG-R11). The ca
 | `U1` | Purchase | `good` (good ID, `[%w_.]+`, or `core.crate` for a Curio crate) · `price` |
 | `K1` | Companion | `keyId` · `seq` (the accepted file's, LOG-R37) |
 | `A1` | Module record | `module` (`def.name`) · `kind` (`[%w_.]+`) · `payload` (everything after the 6th `\|`, verbatim) |
+| `G1` | Party Catch (*from 1.6*, LOG-R115) | `guid` (the groupmate's character GUID, LOG-R113 item 3) · `time` · `tie` (the groupmate's Cast entry's, so `<guid>-<time>-<tie>` is its entry ID) · `minute` · `zone` (never `0`) · `subzone` · `rank` · `mod` · `lure` · `events` · `auras` · `items` (at least one item not `0`): each a byte-for-byte copy of the groupmate's `C1` field of that name |
 
 Example, a caught Cast: `C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1`. That is character 1, caught at realm 08:14 in The Long Wash (148/453), skill 86+25 with lure 263, no listed event or aura, one Oily Blackmouth. About 60 bytes.
+
+Example, a Party Catch: `G1|1|1791731749|0|Player-4618-0B2C3D4E|1791731748|0|494|148|453|120|0||||6358x1`. That is character 1, two seconds after a groupmate's Cast at 08:14 in the same water, which caught one Oily Blackmouth at skill 120 with no lure. The groupmate's entry ID is `Player-4618-0B2C3D4E-1791731748-0`, and the Catch's source Catch ID that and `:1`. About 90 bytes.
 
 The ADR 0003 and ADR 0008 notes sketch `B1`, `U1` and `A1` without the shared header; this table is the canonical layout.
 
@@ -342,6 +377,7 @@ The ADR 0003 and ADR 0008 notes sketch `B1`, `U1` and `A1` without the shared he
 | `global.pasteCheckpoints` | the content checkpoints kept for the next Paste export ([paste-string.md](paste-string.md#data), PST-R42); default `{}` |
 | `global.minimap` | the minimap icon's place and shown state (CORE-R53, CORE-R56): `angle`, degrees round the minimap counterclockwise from its right, to 0.1, default `225` (its bottom left); `hide`, default `false`; *from 1.5:* `detached`, Detach from the minimap (CORE-R53, SET-R10 row 10a), default `false`; `point`, the detached icon's spot, `{ x, y }`, its centre as fractions of `UIParent`'s width and height from its bottom left, no default (no key) until the icon is first detached, and dropped when it goes back to the edge |
 | `profile.reloadReminder` | boolean, the `/reload` reminder (LOG-R86); default `false` |
+| `profile.partyHunts` | boolean, the Party Hunts setting (LOG-R121, SET-R35), *from 1.6*; default `true`, no schema step |
 | `profile.lengthUnit` | `"cm"`, `"in"`, or `nil` for the region default (LOG-R69); default `nil`. The Defaults button sets it back to `nil` (SET-R13). |
 | `profile.anglerTooltips` | the "Show other Anglers on player tooltips" setting ([anglers-in-game.md](anglers-in-game.md#data), VIEW-R30); default `true` |
 | `profile.*` (other keys) | Core settings in the other topic files: `profile.announcements`, `profile.appearance`, `profile.dock` |
@@ -358,7 +394,7 @@ Each Module keeps one AceDB SavedVariable, `Pagle<Module>DB`, account-wide with 
 ---@class PagleRecord
 ---@field seq integer
 ---@field id string              -- entry ID (LOG-R13)
----@field kind "cast"|"skill"|"prestige"|"build"|"purchase"|"module"
+---@field kind "cast"|"skill"|"prestige"|"build"|"purchase"|"module"|"party"   -- "party" from 1.6 (LOG-R117)
 ---@field char integer           -- index into Angler.characters
 ---@field time integer           -- server time
 
@@ -367,6 +403,15 @@ Each Module keeps one AceDB SavedVariable, `Pagle<Module>DB`, account-wide with 
 ---@field session string        -- its Session's ID (LOG-R98)
 ---@field conditions ConditionsSnapshot
 ---@field items { n: integer, itemID: integer, quantity: integer, catchId: string, size?: PagleSize, variety?: PagleVariety }[]
+
+---@class PaglePartyCatch : PagleRecord   -- from 1.6 (LOG-R116)
+---@field groupmate string       -- the groupmate's character GUID
+---@field sourceId string        -- the groupmate's Cast entry ID, <guid>-<catchTime>-<catchTie>
+---@field catchTime integer      -- the groupmate's Cast's server time
+---@field catchTie integer
+---@field conditions ConditionsSnapshot   -- from the copied fields, time = catchTime
+---@field items { n: integer, itemID: integer, quantity: integer, catchId: string, sourceCatchId: string }[]   -- catchId is the Party Catch ID (<id>:<n>); no size, no variety
+---@field name? string           -- live only: the groupmate's full name at receipt, never stored
 
 ---@class PagleCatch            -- payload of the Catch event, one per item
 ---@field catchId string
@@ -460,6 +505,7 @@ Each Module keeps one AceDB SavedVariable, `Pagle<Module>DB`, account-wide with 
 | `ConditionsChanged` | `changedKeys: string[]` | LOG-R47 |
 | `SessionStarted` | `Session` | LOG-R62 |
 | `SessionEnded` | `Session` | LOG-R62, LOG-R63 |
+| `PartyCatch` | `PaglePartyCatch` | LOG-R115, *from 1.6*, after the live entry reached the projections that take it |
 
 `Session` is `{ id, startTime, endTime, firstSeq, lastSeq, casts, catches, gotAway, characters = {char…}, zones = {areaID…}, whileAway? }`, with `id` the entry ID of its first Cast.
 
@@ -473,6 +519,8 @@ Each Module keeps one AceDB SavedVariable, `Pagle<Module>DB`, account-wide with 
 ---@field reset fun(): table         -- a fresh, empty state
 ---@field apply fun(state: table, record: PagleRecord, mode: "live"|"replay"|"rebuild")
 ---@field done? fun(state: table, info: { firstBuild: boolean, rebuilt: boolean, replayed: integer })
+---@field partyCatches? boolean   -- from 1.6: this projection takes Party Catch records (LOG-R117)
+---@field wantsPartyCatch? fun(state: table, record: PaglePartyCatch): boolean   -- from 1.6: whether a received Party Catch could count (LOG-R114); never changes state
 ```
 
 `M:NewProjection(def)` returns a projection with `:GetState()`, `:IsUpdating()` and `:Rebuild()` (a manual full rebuild, for a debug command).
@@ -516,8 +564,9 @@ None of its own. The only visible output is the optional unsaved-Casts chat line
 |---|---|---|
 | Remind me to `/reload` when Casts are unsaved (`profile.reloadReminder`) | on/off | off |
 | Length unit (`profile.lengthUnit`) | cm / in | in on region 1, else cm (LOG-R69) |
+| Party Hunts: count my party's catches, and share mine (`profile.partyHunts`), *from 1.6* | on/off | on (LOG-R121) |
 
-Both sit on the Settings root, in its Saving and Units sections (CORE-R40, SET-R10).
+The first two sit on the Settings root, in its Saving and Units sections (CORE-R40, SET-R10); Party Hunts sits on the Announcements page (SET-R35).
 
 ## Tunables
 
@@ -540,6 +589,11 @@ Both sit on the Settings root, in its Saving and Units sections (CORE-R40, SET-R
 | Realm UTC offset rounding | 15 min | LOG-R49 |
 | A Legend's size multipliers of the typical length at each band edge (the ends frozen) | 0.55 / 0.75 / 1.10 / 1.30 / 1.55 / 1.80 | LOG-R67 |
 | `Pagle.SIZE_RULES_VERSION` before 1.0 | 2 | LOG-R68 |
+| Party window: how long before a groupmate's Catch the receiver's latest Cast may be, in the same zone | 300 s | LOG-R113 |
+| Max party delay: how old a groupmate's Cast may be when its message is received or sent | 60 s | LOG-R112, LOG-R113 |
+| Clock slack: how far after the receiver's clock a groupmate's Cast time may be | 30 s | LOG-R113 |
+| Party send queue: burst, then rate | 5, then 1 message a second, shared with #640's party toasts and cheers | LOG-R112 |
+| Addon message limit | 255 bytes | LOG-R111 |
 
 These are not tunables: they are frozen (LOG-R68, ADR 0014). The hash; the skill reach's 300 and the experience reach's 1,000, its square root and the place's exponent 3; the band edges as places in the full range (0.16 / 0.44 / 0.60 / 0.80); the full range's ends (0.55× and 1.80× the typical length); a Legend's cut points (0.15 / 0.70 / 0.93 / 0.995).
 
@@ -553,3 +607,8 @@ These are not tunables: they are frozen (LOG-R68, ADR 0014). The hash; the skill
 - **LOG-R95 Daily or weekly reset.** Nothing in this file depends on it. A Session that crosses realm midnight stays one Session.
 - **LOG-R96 Uncharted or unconfirmed Catch.** An Uncharted item is recorded like any item (LOG-R8); `Pagle.GetItem` returns `nil` for it until a release classifies it, and the new content fingerprint then rebuilds every projection (LOG-R72), which credits it retroactively; if it is classified as a Species, its records gain a Simulated Size from then on (LOG-R65), the same one it would have had live. Unconfirmed catalogue facts carry `confirmed = false` and are recorded identically. Item `0` (a secret ID) is never credited.
 - **LOG-R97 Two machines, one WoW account.** Each `PagleLog` is local, so two PCs keep two diverging logs with different `logId`s. Merging them is out of scope; entry IDs are unique, so a future backend can.
+- **LOG-R122 Party Catches and a Module turned off or rebuilt.** With Hunts off, no projection takes Party Catches (LOG-R114), so nothing is logged and nothing is credited later: a groupmate's Catch counts only while Hunts runs. A rebuild or catch-up feeds every logged `G1` again, with the same fields (LOG-R115), so it credits exactly what was credited live. A content update that makes an Uncharted item a Species can't credit a groupmate's Catch the filter refused when it came: it was never logged.
+- **LOG-R123 Joining or leaving a party mid-Session.** Core starts sending and accepting the moment the player is in a party, and stops the moment they aren't (LOG-R110, LOG-R113 item 2); nothing from before the join is sent or logged later. A party that becomes a raid stops both. Party Catches already logged stay (LOG-R14).
+- **LOG-R124 A groupmate without Pagle, or on an older one.** They send nothing, so nothing of theirs is logged, and nothing tells the player. A groupmate on a Pagle before 1.6 ignores `PC` messages (an unknown kind, LOG-R110). A groupmate with the Party Hunts setting off neither sends nor logs.
+- **LOG-R125 One Catch credited twice.** A groupmate's Cast is logged at most once per Catch log (LOG-R113 item 8). Two groupmates never loot the same fish: each Party Catch is a different groupmate's own Cast, and each counts. The player's own Catch is never a Party Catch (LOG-R113 items 1 and 5).
+- **LOG-R126 Clocks.** Every time in a message and an entry is `GetServerTime()` on some client of the same realm, never the local clock, so two clients differ by at most a few seconds; the clock slack, the max party delay and the party window (Tunables) absorb that and the message's trip. A Cast from a client whose clock runs far ahead or behind is refused (LOG-R113 item 6), which loses only that Party Catch. In combat, recording and receiving go on (LOG-R93); only sending waits, while the client refuses addon messages (LOG-R112). After a crash, Party Catches since the last save are lost like Casts (LOG-R85).

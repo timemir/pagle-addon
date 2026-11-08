@@ -531,4 +531,27 @@ There is no check 22: it looked for a per-character Self-Found call, and the cha
 
 ## After 1.0
 
+### 1.6: Party-wide Hunts (rule set pagle-2026j)
+
+**Goal:** in a party of up to 5, a groupmate's Catch counts toward the Angler's Hunts, Standing Hunts and Pagle Wagers alike, while both fish the same zone ([#641](https://github.com/timemir/pagle-addon/issues/641)). It is a policy release: it adds the `G1` entry and raises the Hunts rules version, so it declares a new rule set, `pagle-2026j`, and pagle-backend must read `G1` and hold `pagle-2026j` before the tag (pagle-backend [#457](https://github.com/timemir/pagle-backend/issues/457)): a backend that doesn't know `G1` refuses every Catch log that holds one. It ships after [#640](https://github.com/timemir/pagle-addon/issues/640)'s party toasts, whose channel, send queue and compact style it uses.
+
+**Build order:** 1. Core's channel, message, checks, `G1` entry and record, and the Party Hunts row (LOG-R110–R121, SET-R35). 2. Hunts' fold of Party Catches, its filter and its board line (HNT-R180–R187). 3. The moments: the Angler's own and the completed-for-the-party toast (ANN-R110, ANN-R111).
+
+**Core rules:** LOG-R110–R121, LOG-R122–R126, and the 1.6 parts of LOG-R42 and the Entry formats; ANN-R10 for Party Catches, ANN-R110, ANN-R111
+
+**Module rules:** Hunts: HNT-R180–R187, HNT-R205–R208, and the 1.6 parts of HNT-R136, HNT-R137, HNT-R149, HNT-R190
+
+**Settings rules:** SET-R33 for the Party section, SET-R35
+
+**Exit check,** with two accounts in one party, both on 1.6:
+1. Both fish the same zone: each Catch of one that a Hunt of the other targets adds to the other's count, and a tier it reaches shows "party" on the tier ladder; the other's toast reads "… · with {name}".
+2. When a groupmate's Catch completes a Hunt, the catcher sees a "Your catch" party toast and the third groupmate a "Completed for the party" one, each once.
+3. One of them moves to another zone, or stops casting for more than 5 minutes: the other's Catches no longer count for them.
+4. Converted to a raid, or with Party Hunts off on either side, nothing is shared or counted.
+5. A `/reload` rebuilds nothing and the counts stay; turning Hunts off and on again catches up the Party Catches logged meanwhile.
+6. The Paste string of a log with Party Catches uploads to pagle-backend without a refusal.
+7. `scripts/check.sh` passes.
+
+### Later
+
 On the roadmap but not specified: custom Journal art (1.0 uses in-client textures, shared with the Hunts board and the Stats window), translations (1.0 is enUS only, with every string in `ns.L` from M0), QoL's recast reminder, and the post-launch Hunts (the Fishing Trip quest, Chef's Knife, the Rack and Hut contents), each with its own `since` date.
