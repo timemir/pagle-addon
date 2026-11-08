@@ -96,12 +96,15 @@ Part of [Core](README.md). **The Morning Tide** is what players call the news si
 ns.DropNewsSign(lookKey?, news, onStart?) -- SIGN-R40: drops when unrestricted and no letter shows; the last asked for
                                  -- wins; no lookKey: the look equipped as it drops (SIGN-R57); onStart as it starts (SIGN-R17)
 ns.SendNewsSignUp()              -- SIGN-R42
-ns.NewsSignState()               -- nil, or { look, exiting, static } for a spec or the dev command
+ns.NewsSignState()               -- nil, or { look, id, exiting, static } for a spec or the dev command; id: the item shown
 ns.NewsSignFrame()               -- PagleNewsSign, once made
 ns.NewsSignSample(kind, more?)   -- SIGN-R60's sample news
 ns.DecideNewsSign()              -- from 1.6: SIGN-R14's decision, run once a session after the drop delay
 ns.PickNews(items, now, floor, switches) -- from 1.6: SIGN-R15's pick and SIGN-R16's count (logic/NewsSign.lua)
 ns.EquippedNewsSignLook()        -- from 1.6: the look key SIGN-R57 wears, Wood by default
+ns.NewsOption(key)               -- from 1.6: "show" or "headlines" on (SET-R37): true unless stored false (› Data)
+ns.NewsKindOn(kind)              -- from 1.6: a followed kind's switch on (SET-R37): true unless stored false
+ns.NewsSignMuted()               -- from 1.6: newsSign.mute stored true (SIGN-R31)
 
 ---@class PagleNewsSignNews
 ---@field kind string     -- SIGN-R10
@@ -115,7 +118,7 @@ ns.EquippedNewsSignLook()        -- from 1.6: the look key SIGN-R57 wears, Wood 
 
 *From 1.6,* the words of an item are `Pagle.NewsWords(item)` (VIEW-R45, SIGN-R19), which gives a `PagleNewsSignNews` without its more line; the decision adds the more line (SIGN-R16).
 
-The code is in `adapter/NewsSign.lua` (the frame, its drop and the drawing kit), `adapter/NewsSignLooks.lua` (the six looks) and `adapter/NewsSignDev.lua` (the kinds, the samples and the dev command), loaded by `adapter/Settings.xml`, after the files they use, so no TOC line changes. *From 1.6* (Decisions), they get TOC lines of their own in `Pagle.toc`, after the files they use, and `adapter/Settings.xml` loses their `<Script>` lines; the decision (SIGN-R14–R18) is `logic/NewsSign.lua` (the pick) and `adapter/NewsSignDrop.lua`. Specs: `spec/Pagle/adapter/NewsSign_spec.lua`, `spec/Pagle/adapter/NewsSignDrop_spec.lua`, `spec/Pagle/logic/NewsSign_spec.lua`.
+The code is in `adapter/NewsSign.lua` (the frame, its drop and the drawing kit, and from 1.6 the reads of `newsSign`'s switches), `adapter/NewsSignLooks.lua` (the six looks) and `adapter/NewsSignDev.lua` (the kinds, the samples and the dev command), loaded by `adapter/Settings.xml`, after the files they use, so no TOC line changes. *From 1.6* (Decisions), they get TOC lines of their own in `Pagle.toc`, after the files they use, and `adapter/Settings.xml` loses their `<Script>` lines; the decision (SIGN-R14–R18) is `logic/NewsSign.lua` (the pick) and `adapter/NewsSignDrop.lua`. Specs: `spec/Pagle/adapter/NewsSign_spec.lua`, `spec/Pagle/adapter/NewsSignDrop_spec.lua`, `spec/Pagle/logic/NewsSign_spec.lua`.
 
 ## Data
 

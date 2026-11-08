@@ -1,8 +1,9 @@
 -- The news sign with real news (core/news-sign.md SIGN-R14–R19, SIGN-R40, SIGN-R57; onboarding.md ONB-R17): one
 -- decision a session, 5 s after the first PLAYER_ENTERING_WORLD; the floor, the holds and what is marked seen; the
 -- pick's words and the more line; the equipped look; and the letters, one at a time with the sign. Through the real
--- TOC and the fake client. The news itself is VIEW-R40–R46's (#656): Pagle.GetNews, MarkNewsSeen and NewsWords are
--- faked here as those rules give them, so the sign's side is what these check.
+-- TOC and the fake client, over Core's real news reader (VIEW-R40–R46): Pagle_Following installed with IGV Contracts'
+-- news example (anglerFileExamples().news) carrying each spec's lines, Pagle.GetNews, MarkNewsSeen and NewsWords
+-- watched as the sign calls them.
 
 local DAY = 86400
 local LETTER_DELAY = 4
@@ -15,14 +16,13 @@ local function run(loaded, seconds)
 end
 
 local serial = 0
--- A news line of `kind`, `ago` seconds before the fake client's server time at login, as VIEW-R42 hands it out: new.
+-- A news line of `kind` (IGV Contracts' fields), `ago` seconds before the fake client's server time at login.
 local function item(kind, ago, fields)
 	serial = serial + 1
 	local it = {
 		id = ("%016x"):format(serial),
 		kind = kind,
 		time = SERVER_TIME - (ago or 600),
-		new = true,
 		angler = 1,
 		name = "Kukli Emnabi",
 		region = "eu",
@@ -39,63 +39,85 @@ local function item(kind, ago, fields)
 	return it
 end
 
--- PagleDB with the sign's floor set a day ago (SIGN-R18), and `global` merged into its global table.
-local function floored(global)
+-- PagleDB with the sign's floor set a day ago (SIGN-R18), the items of `seen` marked seen (VIEW-R44), and `global`
+-- merged into its global table.
+local function floored(global, seen)
 	local saved = { global = { news = { since = SERVER_TIME - DAY, seen = {} } } }
+	for _, it in ipairs(seen or {}) do
+		saved.global.news.seen[it.id] = it.time
+	end
 	for k, v in pairs(global or {}) do
 		saved.global[k] = v
 	end
 	return saved
 end
 
--- Fakes VIEW-R42–R45 on `loaded` over `items`: GetNews reads them in state `fake.state` ("ok"), MarkNewsSeen records
--- each call in `fake.marked` ("all" for no ids), NewsWords words an item as "News <id>" with the item's `detail` and
--- `emblem` (the laurel by default) and records its id in `fake.worded`.
-local function fakeNews(loaded, items)
-	local fake = { state = "ok", marked = {}, worded = {}, reads = 0 }
+-- Installs Pagle_Following on `loaded`, before PLAYER_LOGIN, with the news example's file carrying the lines `items`
+-- in state `watch.state`: "ok" (written ten minutes ago), "expired" (written past the view expiry age, VIEW-R2),
+-- "none" (a Companion that predates the news: no news block) or "absent" (not installed). Then watches Core's news
+-- API: each Pagle.GetNews counted in `watch.reads`, each Pagle.MarkNewsSeen in `watch.marked` ("all" for no ids),
+-- each item Pagle.NewsWords words in `watch.worded`, its words in `watch.words[id]`; each still Core's own.
+local function installNews(loaded, items, watch)
+	watch.reads, watch.marked, watch.worded = 0, {}, {}
+	if watch.state ~= "absent" then
+		local data = anglerFileExamples().news
+		data.generatedAt = watch.state == "expired" and SERVER_TIME - 2 * DAY or SERVER_TIME - 600
+		data.news = watch.state ~= "none" and items or nil
+		loaded.client.addons.Pagle_Following = { metadata = {} }
+		loaded.env.PagleFollowingData = data
+	end
 	local Pagle = loaded.env.Pagle
+	local getNews, markNewsSeen, newsWords = Pagle.GetNews, Pagle.MarkNewsSeen, Pagle.NewsWords
 	Pagle.GetNews = function()
-		fake.reads = fake.reads + 1
-		local copy = {}
-		if fake.state == "ok" then
-			for i, it in ipairs(items) do
-				copy[i] = it
-			end
-		end
-		return { state = fake.state, items = copy }
+		watch.reads = watch.reads + 1
+		return getNews()
 	end
 	Pagle.MarkNewsSeen = function(ids)
-		fake.marked[#fake.marked + 1] = ids or "all"
+		watch.marked[#watch.marked + 1] = ids or "all"
+		return markNewsSeen(ids)
 	end
+	watch.words = {}
 	Pagle.NewsWords = function(it)
-		fake.worded[#fake.worded + 1] = it.id
-		return {
-			kind = it.kind,
-			kicker = "Kicker " .. it.kind,
-			head = "News " .. it.id,
-			detail = it.detail,
-			emblem = it.emblem or { sign = "laurel" },
-		}
+		watch.worded[#watch.worded + 1] = it.id
+		watch.words[it.id] = newsWords(it)
+		return watch.words[it.id]
 	end
-	return fake
+	return watch
+end
+
+-- Whether every item of `items` is marked seen in PagleDB (VIEW-R44).
+local function allSeen(loaded, items)
+	for _, it in ipairs(items) do
+		if not loaded.ns.anglerViews:NewsSeen(it.id) then
+			return false
+		end
+	end
+	return true
 end
 
 -- Core loaded for a returning Angler (no Letter of its own, ONB-R2) over PagleDB `saved` (the floor set a day ago by
--- default) with the news `items`, logged in; its drops counted in `fake.drops`.
+-- default) with the news `items`, logged in; `before(loaded, fake)` runs first, and may set `fake.state`. Its drops
+-- are counted in `fake.drops`.
 local function login(items, saved, before)
 	local loaded = loadCore(history(2), saved or floored())
-	local fake = fakeNews(loaded, items)
-	fake.drops = 0
+	local fake = { state = "ok", drops = 0 }
+	if before then
+		before(loaded, fake)
+	end
+	installNews(loaded, items, fake)
 	local drop = loaded.ns.DropNewsSign
 	loaded.ns.DropNewsSign = function(...)
 		fake.drops = fake.drops + 1
 		return drop(...)
 	end
-	if before then
-		before(loaded, fake)
-	end
 	enterWorld(loaded)
 	return loaded, fake
+end
+
+-- The news item the sign shows, by its id, or nil with none showing.
+local function shownId(loaded)
+	local state = loaded.ns.NewsSignState()
+	return state and state.id
 end
 
 -- The texts of the sign's font strings that show.
@@ -164,24 +186,28 @@ describe("When the sign drops (SIGN-R14)", function()
 		end
 	end)
 
-	it("sign_r14: does nothing on a Core without the news reader (VIEW-R42 not there)", function()
-		local loaded = login({}, nil, function(loaded)
-			loaded.env.Pagle.GetNews = nil
-		end)
+	it("sign_r14_r18: sets no floor while the news isn't ok, so the first login with news still sets it", function()
+		for _, state in ipairs({ "absent", "expired", "none" }) do
+			local loaded = login({ item("legend") }, {}, function(_, fake)
+				fake.state = state
+			end)
 
-		loaded.client.advance(6)
+			loaded.client.advance(6)
 
-		assert.is_nil(loaded.ns.NewsSignState())
-		assert.are.equal(SERVER_TIME - DAY, loaded.ns.db.global.news.since)
+			local kept = loaded.ns.db.global.news
+			assert(kept == nil or kept.since == nil, state)
+		end
 	end)
 
 	it("sign_r14_r18: with no floor yet sets it to now, marks every item seen and drops nothing", function()
-		local loaded, fake = login({ item("legend") }, {})
+		local legend = item("legend")
+		local loaded, fake = login({ legend }, {})
 
 		loaded.client.advance(5)
 
 		assert.are.equal(SERVER_TIME + 5, loaded.ns.db.global.news.since)
 		assert.are.same({ "all" }, fake.marked)
+		assert.is_true(allSeen(loaded, { legend }))
 		assert.are.equal(0, fake.drops)
 	end)
 
@@ -207,7 +233,9 @@ describe("When the sign drops (SIGN-R14)", function()
 	end)
 
 	it("sign_r14: with nothing due, drops nothing and marks every item seen", function()
-		local loaded, fake = login({ item("legend", 600, { new = false }), item("zone", 2 * DAY) })
+		-- one already seen (VIEW-R44), one older than the floor (SIGN-R18)
+		local seen, old = item("legend"), item("zone", 2 * DAY)
+		local loaded, fake = login({ seen, old }, floored(nil, { seen }))
 
 		loaded.client.advance(5)
 
@@ -225,8 +253,7 @@ describe("What the sign shows (SIGN-R15, SIGN-R16, SIGN-R19)", function()
 		run(loaded, 2)
 
 		local shown = words(loaded)
-		assert.truthy(has(shown, "News " .. legend.id))
-		assert.truthy(has(shown, "Kicker legend"))
+		assert.are.equal(legend.id, shownId(loaded))
 		assert.truthy(has(shown, "+2 more from your anglers"))
 		assert.are.same({ legend.id }, fake.worded)
 	end)
@@ -294,19 +321,9 @@ describe("What the sign shows (SIGN-R15, SIGN-R16, SIGN-R19)", function()
 		assert.are.equal(1, fake.drops)
 	end)
 
-	it("sign_r12_r13_var_r27: draws an uncaught variety's fish as a dark silhouette, in NewsWords' words", function()
-		local colour = item("colour", 600, {
-			detail = "Epic Spotted Yellowtail",
-			emblem = { variety = { species = 4603, position = 8, silhouette = true } },
-		})
-		local loaded = login({ colour })
-
-		loaded.client.advance(5)
-		run(loaded, 2)
-
-		assert.truthy(has(words(loaded), "Epic Spotted Yellowtail"))
-		local art = loaded.ns.VARIETY_ART[4603][8]
-		local file = loaded.ns.VARIETY_ATLASES[art[1]]
+	-- The variety fish texture of species 4603 at `position` drawn on the sign, if any.
+	local function fishOf(loaded, position)
+		local file = loaded.ns.VARIETY_ATLASES[loaded.ns.VARIETY_ART[4603][position][1]]
 		local fish
 		local function walk(region)
 			for _, child in ipairs(region.children or {}) do
@@ -317,28 +334,41 @@ describe("What the sign shows (SIGN-R15, SIGN-R16, SIGN-R19)", function()
 			end
 		end
 		walk(loaded.ns.NewsSignFrame())
+		return fish
+	end
+
+	it("sign_r12_r13_var_r27: draws an uncaught variety's fish as a dark silhouette, in NewsWords' words", function()
+		-- the Spotted Yellowtail's epic variety, which this Angler hasn't caught
+		local colour = item("colour", 600, { item = 4603, key = "tidecaller" })
+		local loaded, fake = login({ colour })
+		loaded.client.loadItem(4603, "Spotted Yellowtail")
+
+		loaded.client.advance(5)
+		run(loaded, 2)
+
+		local said = assert(fake.words[colour.id])
+		assert.is_true(said.emblem.variety.silhouette)
+		assert.are.equal("Epic Spotted Yellowtail", said.detail)
+		assert.truthy(has(words(loaded), said.detail))
+		local fish = fishOf(loaded, said.emblem.variety.position)
 		assert(fish, "the variety's fish is drawn")
 		assert.is_true(fish.desaturated)
 		assert.are.same({ 0, 0, 0 }, { fish.vertexColor[1], fish.vertexColor[2], fish.vertexColor[3] })
 	end)
 
 	it("sign_r13: draws a caught variety's fish in its colours", function()
-		local loaded = login({ item("colour", 600, { emblem = { variety = { species = 4603, position = 8 } } }) })
+		local loaded = login({})
+		loaded.client.advance(6)
 
-		loaded.client.advance(5)
+		loaded.ns.DropNewsSign("wood", {
+			kind = "colour",
+			kicker = "Rare colour",
+			head = "Ada Brook caught a rare colour",
+			emblem = { variety = { species = 4603, position = 8 } },
+		})
 		run(loaded, 2)
 
-		local file = loaded.ns.VARIETY_ATLASES[loaded.ns.VARIETY_ART[4603][8][1]]
-		local fish
-		local function walk(region)
-			for _, child in ipairs(region.children or {}) do
-				if child.kind == "Texture" and child.texture == file and child.shown ~= false then
-					fish = child
-				end
-				walk(child)
-			end
-		end
-		walk(loaded.ns.NewsSignFrame())
+		local fish = fishOf(loaded, 8)
 		assert(fish, "the variety's fish is drawn")
 		assert.is_falsy(fish.desaturated)
 		assert.are.same({ 1, 1, 1 }, { fish.vertexColor[1], fish.vertexColor[2], fish.vertexColor[3] })
@@ -359,7 +389,7 @@ describe("Holds, and marking seen (SIGN-R17, SIGN-R40)", function()
 
 		assert.is_not_nil(loaded.ns.NewsSignState())
 		assert.are.same({ "all" }, fake.marked)
-		assert.truthy(has(words(loaded), "News " .. legend.id))
+		assert.are.equal(legend.id, shownId(loaded))
 		assert.are.equal(1, fake.reads)
 	end)
 
@@ -377,12 +407,14 @@ describe("Holds, and marking seen (SIGN-R17, SIGN-R40)", function()
 	end)
 
 	it("sign_r17: marks every item seen once, as the sign drops", function()
-		local loaded, fake = login({ item("legend"), item("region"), item("zone", 600, { new = false }) })
+		local items = { item("legend"), item("region"), item("zone") }
+		local loaded, fake = login(items, floored(nil, { items[3] }))
 
 		loaded.client.advance(5)
 		run(loaded, 12)
 
 		assert.are.same({ "all" }, fake.marked)
+		assert.is_true(allSeen(loaded, items))
 	end)
 
 	it("sign_r17_r60: a drop from /pagle dev sign marks nothing", function()
@@ -465,8 +497,7 @@ describe("The sign and the letters, one at a time (SIGN-R40, ONB-R17)", function
 		loaded.ns.letter:Later()
 		run(loaded, 2)
 
-		assert.is_not_nil(loaded.ns.NewsSignState())
-		assert.truthy(has(words(loaded), "News " .. legend.id))
+		assert.are.equal(legend.id, shownId(loaded))
 		assert.are.same({ "all" }, fake.marked)
 	end)
 
@@ -476,7 +507,7 @@ describe("The sign and the letters, one at a time (SIGN-R40, ONB-R17)", function
 			-- a new Angler's Letter at 4 s (ONB-R10), the sign's decision at 5 s, waiting for it
 			local legend = item("legend")
 			local loaded = loadCore({ BUILD_ENTRY }, floored())
-			local fake = fakeNews(loaded, { legend })
+			local fake = installNews(loaded, { legend }, { state = "ok" })
 			loaded.ns.db.profile.announcements.motion = false
 			enterWorld(loaded, 3)
 			loaded.client.advance(5)
@@ -493,8 +524,7 @@ describe("The sign and the letters, one at a time (SIGN-R40, ONB-R17)", function
 			loaded.ns.guide:Close()
 			loaded.client.advance(0)
 
-			assert.is_not_nil(loaded.ns.NewsSignState())
-			assert.truthy(has(words(loaded), "News " .. legend.id))
+			assert.are.equal(legend.id, shownId(loaded))
 			assert.are.same({ "all" }, fake.marked)
 		end
 	)
@@ -513,7 +543,7 @@ describe("The sign and the letters, one at a time (SIGN-R40, ONB-R17)", function
 			},
 		})
 		local loaded = loadCore({ BUILD_ENTRY }, saved)
-		fakeNews(loaded, { item("legend") })
+		installNews(loaded, { item("legend") }, { state = "ok" })
 		loaded.ns.db.profile.announcements.motion = false
 		enterWorld(loaded, 3)
 		loaded.client.advance(5)

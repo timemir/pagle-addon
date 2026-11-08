@@ -9,49 +9,22 @@ end
 local Pagle = Pagle
 
 -- The news sign with the news (core/news-sign.md SIGN-R14–R19): once a session, the drop delay after its first
--- PLAYER_ENTERING_WORLD, Core reads the news (Pagle.GetNews, VIEW-R42) and decides: set the floor, hold the sign, or
--- drop it in the equipped look with the pick's words and its more line, marking every item seen as it drops
--- (Pagle.MarkNewsSeen, VIEW-R43). The pick is logic/NewsSign.lua's; the words are Pagle.NewsWords' (VIEW-R45); the
--- drop is adapter/NewsSign.lua's, which waits for combat, a restriction and a letter (SIGN-R40).
---
--- The news API comes from the news reader (#656), the switches' rows from Settings (#659, SET-R37) and the looks from
--- the Curio Shop's slot (#660, SHOP-R60). This file reads each through a seam that holds without them: no
--- Pagle.GetNews reads as news that isn't `ok`, a missing switch reads as on (news-sign.md › Data), and a slot with no
--- goods wears Wood (ns.EquippedNewsSignLook).
+-- PLAYER_ENTERING_WORLD, Core reads the news (Pagle.GetNews, VIEW-R42) and decides: set the floor (ns.SetNewsFloor,
+-- VIEW-R44), hold the sign, or drop it in the equipped look with the pick's words and its more line, marking every
+-- item seen as it drops (Pagle.MarkNewsSeen, VIEW-R43). The pick is logic/NewsSign.lua's; the words are
+-- Pagle.NewsWords' (VIEW-R45); the switches are ns.NewsOption and ns.NewsKindOn (adapter/NewsSign.lua, SET-R37); the
+-- drop is adapter/NewsSign.lua's, which waits for combat, a restriction, a letter and the Field guide (SIGN-R40).
 
 local OWNER = "Pagle news sign drop"
-
--- The news reader's API (VIEW-R42–R45, #656), read at each call: Pagle.GetNews, MarkNewsSeen and NewsWords.
-local news = Pagle --[[@as table]]
-
--- PagleDB.global.newsSign, or nil before it is written (news-sign.md › Data).
-local function stored()
-	return ns.db and ns.db.global and ns.db.global.newsSign
-end
-
---- A news sign switch (SET-R37), as news-sign.md › Data stores it: `show` ("Show news at login"), `headlines` ("Region
---- headlines"), or with `kind`, that followed kind's row (`kinds[kind]`). Each is on unless stored false, so a key
---- that isn't there reads as on.
----@param key "show"|"headlines"|"kinds"
----@param kind string?
----@return boolean
-function ns.NewsSignOption(key, kind)
-	local sign = stored()
-	if key == "kinds" then
-		local kinds = sign and sign.kinds
-		return not (type(kinds) == "table" and kinds[kind] == false)
-	end
-	return not (sign and sign[key] == false)
-end
 
 -- The switches the pick reads (logic/NewsSign.lua).
 ---@type PagleNewsSignSwitches
 local SWITCHES = {
 	kind = function(kind)
-		return ns.NewsSignOption("kinds", kind)
+		return ns.NewsKindOn(kind)
 	end,
 	headlines = function()
-		return ns.NewsSignOption("headlines")
+		return ns.NewsOption("headlines")
 	end,
 }
 
@@ -63,15 +36,14 @@ end
 
 -- Every item of the news block marked seen (SIGN-R17, VIEW-R43).
 local function markAll()
-	if news.MarkNewsSeen then
-		news.MarkNewsSeen()
-	end
+	Pagle.MarkNewsSeen()
 end
 
--- PagleDB.global.news, VIEW-R44's: the floor and the seen items.
-local function newsStore()
-	ns.db.global.news = ns.db.global.news or {}
-	return ns.db.global.news
+-- The floor, PagleDB.global.news.since (VIEW-R44), or nil before the first decision with news sets it (SIGN-R18).
+---@return integer?
+local function floor()
+	local kept = ns.db.global.news
+	return kept and type(kept.since) == "number" and kept.since or nil
 end
 
 -- The kinds whose words name the line's `item` (SIGN-R19): a fish, a Legend or a Species.
@@ -102,28 +74,28 @@ end
 --- drops, marking every item as it does).
 ---@return "none"|"floor"|"held"|"nothing"|"drop"
 function ns.DecideNewsSign()
-	local block = news.GetNews and news.GetNews()
-	if type(block) ~= "table" or block.state ~= "ok" or type(block.items) ~= "table" then
+	-- absent, expired or none: nothing to read or mark (VIEW-R42)
+	local block = Pagle.GetNews()
+	if block.state ~= "ok" then
 		return "none"
 	end
-	local store = newsStore()
-	local now = GetServerTime()
-	if type(store.since) ~= "number" then
-		store.since = now -- SIGN-R18: the first login with news shows nothing older than this
+	local since = floor()
+	if not since then
+		ns.SetNewsFloor() -- SIGN-R18: the first login with news shows nothing older than this
 		markAll()
 		return "floor"
 	end
-	if not ns.NewsSignOption("show") or cozy() then
+	if not ns.NewsOption("show") or cozy() then
 		markAll()
 		return "held"
 	end
-	local pick, more = ns.PickNews(block.items, now, store.since, SWITCHES)
-	if not pick or not news.NewsWords then
+	local pick, more = ns.PickNews(block.items, GetServerTime(), since, SWITCHES)
+	if not pick then
 		markAll()
 		return "nothing"
 	end
 	whenNamed(pick, function()
-		local words = news.NewsWords(pick)
+		local words = Pagle.NewsWords(pick)
 		---@type PagleNewsSignNews
 		local shown = {
 			kind = words.kind,

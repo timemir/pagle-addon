@@ -646,9 +646,43 @@ local drop
 ---@type table? a drop waiting for combat, restriction, a letter and the guide to end: { look?, news, onStart? }
 local waiting
 
+-- ------------------------------------------------------------------ the sign's settings (news-sign.md › Data)
+-- PagleDB.global.newsSign as stored, or nil: nothing is written until a switch is turned off, the sign muted or moved.
+---@return { show: boolean?, kinds: table<string, boolean>?, headlines: boolean?, mute: boolean?, point: table? }?
+local function stored()
+	return ns.db and ns.db.global and ns.db.global.newsSign
+end
+
+--- Whether a switch of the sign's is on (SET-R37, news-sign.md › Data): "show" (Show news at login) or "headlines"
+--- (Region headlines), on unless stored as false. The one read of them: the decision's (adapter/NewsSignDrop.lua) and
+--- the Settings rows' alike.
+---@param key "show"|"headlines"
+---@return boolean
+function ns.NewsOption(key)
+	local sign = stored()
+	return not (sign and sign[key] == false)
+end
+
+--- Whether the switch of the followed kind `kind` (SIGN-R10) is on: on unless stored as false, so a missing key, or a
+--- kind a later release adds, reads as on (news-sign.md › Data).
+---@param kind string
+---@return boolean
+function ns.NewsKindOn(kind)
+	local sign = stored()
+	local kinds = sign and sign.kinds
+	return not (type(kinds) == "table" and kinds[kind] == false)
+end
+
+--- Whether the sign is muted (SIGN-R31): only when stored as true.
+---@return boolean
+function ns.NewsSignMuted()
+	local sign = stored()
+	return sign ~= nil and sign.mute == true
+end
+
 -- The saved spot, or the default (SIGN-R20).
 local function spot()
-	local saved = ns.db and ns.db.global and ns.db.global.newsSign
+	local saved = stored()
 	local p = saved and saved.point
 	if p and type(p.x) == "number" and type(p.y) == "number" then
 		return p
@@ -681,7 +715,7 @@ local function screenTop()
 end
 
 local function playSound(name)
-	if not (ns.db and ns.db.global and ns.db.global.newsSign and ns.db.global.newsSign.mute) then
+	if not ns.NewsSignMuted() then
 		PlaySoundFile(SOUNDS .. name .. ".ogg", "SFX")
 	end
 end
@@ -988,6 +1022,7 @@ function ns.NewsSignState()
 	end
 	return {
 		look = drop.look.key,
+		id = drop.news.id, -- the news item shown (VIEW-R41), none for a sample
 		t = drop.t,
 		exiting = drop.exitAt ~= nil,
 		hangLeft = drop.hangLeft,
