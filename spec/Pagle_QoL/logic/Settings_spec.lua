@@ -410,7 +410,7 @@ describe("QoL's Fishing page with FakePagle", function()
 
 	it("registers no Fishing page while QoL is inert (SET-R20, CORE-R13, CORE-R42)", function()
 		local fake = newFakePagle()
-		fake.addons.Pagle_QoL.metadata["X-Pagle-API"] = "3"
+		fake.addons.Pagle_QoL.metadata["X-Pagle-API"] = "4"
 		fake.load("Pagle_QoL")
 
 		fake.login()

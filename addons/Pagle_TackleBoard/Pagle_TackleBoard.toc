@@ -6,7 +6,7 @@
 ## Category: Professions
 ## Version: @project-version@
 ## Dependencies: Pagle
-## X-Pagle-API: 2
+## X-Pagle-API: 3
 ## SavedVariables: PagleTackleBoardDB
 
 locale\enUS.lua

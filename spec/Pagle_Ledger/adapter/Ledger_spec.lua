@@ -250,7 +250,7 @@ describe("Pagle_Ledger with FakePagle", function()
 
 	it("stops while inert, with no SavedVariables touched (CORE-R13)", function()
 		local fake = newFakePagle()
-		fake.addons.Pagle_Ledger.metadata["X-Pagle-API"] = "3"
+		fake.addons.Pagle_Ledger.metadata["X-Pagle-API"] = "4"
 
 		local loaded = fake.load("Pagle_Ledger")
 
