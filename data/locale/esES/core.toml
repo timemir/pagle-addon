@@ -484,6 +484,41 @@ value.other = "{count} alzaron una jarra"
 en.one = "{count} raised a mug"
 en.other = "{count} raised a mug"
 
+[PARTY_HP_MINE]
+value = "Tu captura"
+en = "Your catch"
+
+[PARTY_HP_PARTY]
+value = "Completado para el grupo"
+en = "Completed for the party"
+
+[PARTY_HP_HUNT]
+value = "{hunt} · para {senders}"
+en = "{hunt} · for {senders}"
+
+[PARTY_HP_RUN]
+value = "{event} liquidada · para {senders}"
+en = "{event} settled · for {senders}"
+
+[PARTY_HP_SOME_HUNT]
+value = "una caza"
+en = "a Hunt"
+
+[PARTY_HP_SOME_RUN]
+value = "una apuesta Pagle"
+en = "a Pagle Wager"
+
+[PARTY_HP_SENDERS_TWO]
+value = "{name} y {other}"
+en = "{name} and {other}"
+
+[PARTY_HP_SENDERS_MORE]
+value.many = "{name}, {other} y {count} más"
+value.one = "{name}, {other} y {count} más"
+value.other = "{name}, {other} y {count} más"
+en.one = "{name}, {other} and {count} more"
+en.other = "{name}, {other} and {count} more"
+
 [TOAST_SAMPLE_TITLE]
 value = "Nueva Especie"
 en = "New Species"
@@ -1206,6 +1241,11 @@ en = "Pagle dev: Pagle_Anglers has loaded this login."
 [DEV_VIEWS_NOT_LOADED]
 value = "Pagle dev: Pagle_Anglers no se ha cargado en esta sesión."
 en = "Pagle dev: Pagle_Anglers hasn't loaded this login."
+
+# Machine-drafted (Claude) for the news reader (#656); awaits a native speaker's review.
+[DEV_VIEWS_NEWS]
+value = "Pagle dev: noticias {state}: líneas usadas {used}, omitidas {skipped}; vistas {seen}, umbral {floor}."
+en = "Pagle dev: news {state}: lines used {used}, skipped {skipped}; seen {seen}, floor {floor}."
 
 [DEV_VIEWS_NONE]
 value = "ninguno"
@@ -2094,6 +2134,7 @@ en = "A small toast when a groupmate who runs Pagle has a moment, with a mug you
 [SETTINGS_PARTY_KINDS]
 value.colour = "Colores raros"
 value.gold = "Nivel de Oro en una caza"
+value.hp = "Completado para el grupo"
 value.ledger = "Libro de registro al 100 %"
 value.legend = "Leyendas"
 value.monster = "Récords de tamaño Monstruo"
@@ -2101,6 +2142,7 @@ value.prestige = "Prestigio"
 value.zone = "Maestro de zona"
 en.colour = "Rare colours"
 en.gold = "Gold tier in a Hunt"
+en.hp = "Completed for the party"
 en.ledger = "Ledger 100%"
 en.legend = "Legends"
 en.monster = "Monster-size records"
@@ -2691,6 +2733,23 @@ en = "{variety} {species}"
 [SIGN_DETAIL_MONSTER]
 value = "{species}, {length}"
 en = "{species}, {length}"
+
+# Machine-drafted (Claude) for the news reader (#656); awaits a native speaker's review.
+[SIGN_DETAIL_COLOUR_HIDDEN]
+value = "{species} ({rarity})"
+en = "{rarity} {species}"
+
+[SIGN_HEAD_MASTER_PRESTIGE]
+value = "{name} ha alcanzado Prestigio de Maestro {master:0}"
+en = "{name} reached Master Prestige {master:0}"
+
+[SIGN_ITEM_UNKNOWN]
+value = "un pez"
+en = "a fish"
+
+[SIGN_ZONE_UNKNOWN]
+value = "Zona {zone}"
+en = "Zone {zone}"
 
 [SIGN_MORE]
 value.one = "+{count:0} más de tus pescadores"

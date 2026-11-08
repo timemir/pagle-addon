@@ -33,6 +33,7 @@ data\BookBindingArt.lua
 data\FieldArt.lua
 data\VarietyArt.lua
 data\LegendCrestArt.lua
+data\NewsSignArt.lua
 data\ApiInventory.lua
 
 locale\enUS.lua
@@ -122,6 +123,7 @@ logic\FirstLooks.lua
 logic\Guide.lua
 logic\GuidePages.lua
 logic\Letter.lua
+logic\NewsSign.lua
 logic\Evening.lua
 logic\Wiring.lua
 adapter\Core.lua
@@ -203,6 +205,10 @@ adapter\GuideBook.lua
 adapter\GuidePages.lua
 adapter\Guide.lua
 adapter\Letter.lua
+adapter\NewsSign.lua
+adapter\NewsSignLooks.lua
+adapter\NewsSignDev.lua
+adapter\NewsSignDrop.lua
 adapter\Tour.lua
 adapter\Evening.lua
 adapter\MarginNotes.lua

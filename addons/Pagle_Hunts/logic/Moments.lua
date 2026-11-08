@@ -91,22 +91,63 @@ function ns.HuntSetTitleMoment(setID)
 	}
 end
 
+--- The source Catch ID (LOG-R116) of the Party Catch item that reached a tier (HNT-R185): the live `record`'s
+--- `sourceId` and the item's `n`, read off the tier's `catchId` (the Party Catch ID `<entry ID>:<n>`, HNT-R181). Nil
+--- when the tier isn't this Party Catch's, or the record carries no `sourceId`.
+---@param record PaglePartyCatch
+---@param catchId string?
+---@return string?
+function ns.PartySourceCatch(record, catchId)
+	local prefix = record.id .. ":"
+	if type(record.sourceId) ~= "string" or type(catchId) ~= "string" or catchId:sub(1, #prefix) ~= prefix then
+		return nil
+	end
+	return record.sourceId .. ":" .. catchId:sub(#prefix + 1)
+end
+
+-- A live Party Catch's moments name the groupmate after their text (HNT-R185, ANN-R110): " · with {name}", left out
+-- when the record carries no name. What Core stores of them says " · with a groupmate" (`storedText`): no groupmate's
+-- name is kept anywhere.
+---@param moments PagleMoment[]
+---@param record PaglePartyCatch
+local function withGroupmate(moments, record)
+	local name = record.name
+	if type(name) ~= "string" or name == "" then
+		return
+	end
+	local L = ns.L
+	for _, moment in ipairs(moments) do
+		if moment.cast == record.id and moment.text then
+			moment.storedText = ns.Text(L.PARTY_WITH, { text = moment.text, name = L.PARTY_A_GROUPMATE })
+			moment.text = ns.Text(L.PARTY_WITH, { text = moment.text, name = name })
+		end
+	end
+end
+
 --- The moments for what a `"live"` Cast newly reached (HNT-R86, HNT-R87, HNT-R91), each added to the celebrated set:
 --- a tier above the Hunt's celebrated one, or a title not yet shown, then Pagle Wagers' marks, settled runs and ladder
 --- titles, in that order. A tier, a wager and a title from a Catch carry the Cast's entry ID, so Core merges them into
---- its Announcement (ANN-R10); a title from a retirement is summary-only and carries none.
+--- its Announcement (ANN-R10); a title from a retirement is summary-only and carries none. From 1.6, a live Party
+--- Catch's do the same with its entry ID, name the groupmate, and a Hunt completed or a run settled through it carries
+--- `partyCatch` with its Hunt's or event's ID, for Core's "Completed for the party" (HNT-R185, ANN-R110, ANN-R111).
 ---@param celebrated HuntsCelebrated
 ---@param state HuntsState
----@param cast PagleCast
+---@param cast PagleCast|PaglePartyCatch
 ---@param reached HuntsReached
 ---@return PagleMoment[]
 function ns.CelebrateReached(celebrated, state, cast, reached)
 	local moments = {}
+	local party = cast.kind == "party" and cast --[[@as PaglePartyCatch]] or nil
 	for _, at in ipairs(reached.tiers) do
 		local hunt = ns.hunts:Hunt(at.hunt)
 		if hunt and at.tier > (celebrated.tiers[at.hunt] or 0) then
-			local moment = ns.HuntTierMoment(hunt, at.tier, state.hunts[at.hunt].reached[at.tier])
+			local huntTier = state.hunts[at.hunt].reached[at.tier]
+			local moment = ns.HuntTierMoment(hunt, at.tier, huntTier)
 			moment.cast = cast.id
+			local source = party and at.tier == 1 and ns.PartySourceCatch(party, huntTier.catchId)
+			if source then
+				moment.partyCatch, moment.partyHunt = source, hunt.id
+			end
 			moments[#moments + 1] = moment
 			celebrated.tiers[at.hunt] = at.tier
 		end
@@ -123,8 +164,11 @@ function ns.CelebrateReached(celebrated, state, cast, reached)
 			celebrated.sets[setID] = true
 		end
 	end
-	for _, moment in ipairs(ns.CelebrateWagersReached(celebrated, state, reached, cast.id)) do
+	for _, moment in ipairs(ns.CelebrateWagersReached(celebrated, state, reached, cast.id, nil, party)) do
 		moments[#moments + 1] = moment
+	end
+	if party then
+		withGroupmate(moments, party)
 	end
 	return moments
 end

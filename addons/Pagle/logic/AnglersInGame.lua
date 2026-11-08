@@ -6,10 +6,12 @@ local ns = select(2, ...)
 -- PagleAnglersData, every Published Angler in the player's regions with the tooltip card. Their formats, and what
 -- makes one absent or expired, are pagle-backend's (in-game-views.md: IGV-R40–R47, Contracts › The addon folders);
 -- this file reads them as those say (VIEW-R1, VIEW-R2), says when Pagle_Anglers loads (VIEW-R3), looks a unit up in
--- them (VIEW-R10), writes the Pagle block from a card (VIEW-R21) and hands out the Followed Anglers (VIEW-R11). Pure
--- logic over what it's handed (CORE-R7): logic/Wiring.lua's ns.WireAnglerViews hands it the client's seams, or
--- FakePagle's. Nothing flows back (VIEW-R4): Core never writes either file, and never logs, stores or prints what they
--- hold, but for `/pagle dev views`' states and counts (VIEW-R12) and the block on the tooltip (VIEW-R20).
+-- them (VIEW-R10), writes the Pagle block from a card (VIEW-R21) and hands out the Followed Anglers (VIEW-R11); from
+-- 1.6 it reads Pagle_Following's news block, hands out the news, keeps what was seen and the floor, and words an item
+-- (VIEW-R40–R46). Pure logic over what it's handed (CORE-R7): logic/Wiring.lua's ns.WireAnglerViews hands it the
+-- client's seams, or FakePagle's. Nothing flows back (VIEW-R4): Core never writes either file, and never logs, stores
+-- or prints what they hold, but for `/pagle dev views`' states and counts (VIEW-R12), the block on the tooltip
+-- (VIEW-R20) and, from 1.6, the ids and times of news items marked seen, and the floor (VIEW-R44).
 
 local floor = math.floor
 
@@ -17,6 +19,14 @@ local floor = math.floor
 ns.VIEW_FILE_VERSIONS = { [1] = true }
 --- How old, in seconds by GetServerTime(), a data file is when it expires (VIEW-R1, IGV's Tunables): 24 h.
 ns.VIEW_EXPIRY_AGE = 24 * 3600
+
+--- The news kinds Core reads (VIEW-R41): SIGN-R10's eight followed kinds in their rank, then the region headline. A
+--- line of any other kind is skipped, so a kind a later server sends is ignored (IGV Contracts).
+ns.NEWS_KINDS = { "first", "legend", "prestige", "ledger", "colour", "hunt", "zone", "monster", "region" }
+--- How old, in seconds by GetServerTime(), a seen item's time is when it is dropped from PagleDB.global.news.seen
+--- (VIEW-R44, Tunables): 31 days, the news age (SIGN-R15) and a day, so an entry is kept while its item can still be
+--- due and the table holds at most what the block held over that time.
+ns.NEWS_SEEN_AGE = 31 * 24 * 3600
 
 -- Pagle_Anglers' widths (IGV Contracts, Tunables): a key is a 13-character search key and a 6-digit card number; a card
 -- is 16 characters.
@@ -39,6 +49,31 @@ local FOLLOWING_GLOBAL, ANGLERS_GLOBAL = "PagleFollowingData", "PagleAnglersData
 ---@field anglers PagleFollowedAngler[]? Pagle_Following's Anglers, copied, in the file's order
 ---@field guids table<string, integer>? Pagle_Following's lookup: each GUID's Angler, by index into `anglers`
 ---@field blocks PagleViewBlock[]? Pagle_Anglers' blocks, in the file's order
+---@field news PagleNewsBlock? from 1.6, Pagle_Following's news block as read (VIEW-R40); nil when the file has none
+
+--- A news item (VIEW-R41, VIEW-R42): a line of the news block, its fields as IGV Contracts' `news-line` names them, and
+--- their meanings by kind IGV Contracts'. `new` is set only on the items Pagle.GetNews hands out.
+---@class PagleNewsItem
+---@field id string 16 lowercase hexadecimal digits, opaque (IGV-R63)
+---@field kind string one of ns.NEWS_KINDS
+---@field time integer Unix seconds (IGV-R63)
+---@field angler integer the Angler's 1-based place in `anglers`; 0 for a headline's Angler not followed
+---@field name string the Angler's name (IGV-R13), every `|` doubled (VIEW-R13)
+---@field region string "us", "eu", "kr" or "tw" for `first` and `region`; "" otherwise
+---@field item integer
+---@field rank integer
+---@field key string
+---@field text string every `|` doubled (VIEW-R13)
+---@field zone integer
+---@field length integer millimetres
+---@field new boolean? unseen and at or after the floor at the session's first read (VIEW-R42)
+
+--- Pagle_Following's news block as read once (VIEW-R40, VIEW-R41): the lines used, in the file's order, and how many
+--- were used and skipped, for `/pagle dev views` (VIEW-R12, VIEW-R98).
+---@class PagleNewsBlock
+---@field items PagleNewsItem[]
+---@field used integer
+---@field skipped integer
 
 --- A Followed Angler with its full card (VIEW-R11, IGV-R11), its fields as Pagle_Following's grammar names them.
 ---@class PagleFollowedAngler
@@ -159,6 +194,81 @@ local function copyAngler(line)
 	}
 end
 
+-- The news kinds as a set (VIEW-R41).
+local NEWS_KIND = {}
+for _, kind in ipairs(ns.NEWS_KINDS) do
+	NEWS_KIND[kind] = true
+end
+
+-- A news-line's fields that are whole numbers from 0, and that are strings (IGV Contracts, VIEW-R41); `id` and
+-- `kind` are checked on their own.
+local NEWS_NUMBERS = { "time", "angler", "item", "rank", "zone", "length" }
+local NEWS_STRINGS = { "name", "region", "key", "text" }
+
+-- Whether `value` is a whole number from 0: not a fraction, NaN or infinity.
+---@param value any
+---@return boolean
+local function whole(value)
+	return type(value) == "number" and value >= 0 and value < math.huge and value == floor(value)
+end
+
+-- A news line as an item (VIEW-R41): a copy of news-line's fields, `name` and `text` drawn as written (VIEW-R13), or
+-- nil for a line Core can't use: one missing a field or holding one of the wrong type, a kind Core doesn't know, or
+-- an `angler` past the file's `anglerCount` Anglers.
+---@param line any
+---@param anglerCount integer
+---@return PagleNewsItem?
+local function newsItem(line, anglerCount)
+	if type(line) ~= "table" then
+		return nil
+	end
+	local id = line.id
+	if type(id) ~= "string" or #id ~= 16 or id:find("[^0-9a-f]") or not NEWS_KIND[line.kind] then
+		return nil
+	end
+	local item = { id = id, kind = line.kind }
+	for _, field in ipairs(NEWS_NUMBERS) do
+		if not whole(line[field]) then
+			return nil
+		end
+		item[field] = line[field]
+	end
+	for _, field in ipairs(NEWS_STRINGS) do
+		if type(line[field]) ~= "string" then
+			return nil
+		end
+		item[field] = line[field]
+	end
+	if item.angler > anglerCount then
+		return nil
+	end
+	item.name, item.text = drawable(item.name), drawable(item.text)
+	return item
+end
+
+--- Reads Pagle_Following's news block (VIEW-R40, VIEW-R41) in a file of `anglerCount` Anglers: nil when `news` isn't a
+--- table, the file of a Companion that predates the news (IGV-R65); otherwise every line Core can use, copied, in the
+--- file's order, each other line skipped on its own and counted, a line repeating an earlier line's `id` among them.
+---@param news any PagleFollowingData.news
+---@param anglerCount integer
+---@return PagleNewsBlock?
+function ns.ReadNewsBlock(news, anglerCount)
+	if type(news) ~= "table" then
+		return nil
+	end
+	local items, ids, skipped = {}, {}, 0
+	for _, line in ipairs(news) do
+		local item = newsItem(line, anglerCount)
+		if item and not ids[item.id] then
+			ids[item.id] = true
+			items[#items + 1] = item
+		else
+			skipped = skipped + 1
+		end
+	end
+	return { items = items, used = #items, skipped = skipped }
+end
+
 --- Reads Pagle_Following's PagleFollowingData (VIEW-R1): absent with the first of IGV-R44's conditions that holds, or
 --- its Anglers copied in the file's order with each GUID's Angler for the lookup (VIEW-R10). `missing` is the reason
 --- for no global at all, when the client says why (Pagle_Following isn't installed, didn't load, …).
@@ -184,7 +294,13 @@ function ns.ReadFollowingFile(data, missing)
 			end
 		end
 	end
-	return { generatedAt = data.generatedAt, count = data.count, anglers = anglers, guids = guids }
+	return {
+		generatedAt = data.generatedAt,
+		count = data.count,
+		anglers = anglers,
+		guids = guids,
+		news = ns.ReadNewsBlock(data.news, #anglers),
+	}
 end
 
 -- IGV-R44's block conditions over block `i`: the first that holds, as a reason, or nil when none does.
@@ -526,6 +642,7 @@ end
 ---@field isRestricted fun(): boolean          -- Pagle.IsRestricted() (CORE-R30)
 ---@field tooltips fun(): boolean              -- the tooltip setting is on (PagleDB.profile.anglerTooltips, VIEW-R30)
 ---@field isSecret fun(value: any): boolean    -- issecretvalue (CORE-R31)
+---@field global fun(): table                  -- PagleDB.global, where the news seen and the floor are kept (VIEW-R44)
 
 --- Core's reads of the Companion's data files this login.
 ---@class PagleAnglerViews
@@ -535,6 +652,7 @@ end
 ---@field package started boolean
 ---@field package tried boolean Core tried to load Pagle_Anglers this login (VIEW-R3)
 ---@field package loaded boolean and Pagle_Anglers loaded
+---@field package fresh table<string, true>? the ids new this session, from its first read of ok news (VIEW-R42)
 local AnglerViews = {}
 AnglerViews.__index = AnglerViews
 
@@ -625,6 +743,139 @@ function AnglerViews:FollowedAnglers()
 	return ns.FollowedAnglers(self.following, self.options.serverTime())
 end
 
+---@alias PagleNewsState "ok"|"none"|"expired"|"absent"
+
+--- What Pagle.GetNews() returns (VIEW-R42).
+---@class PagleNews
+---@field state PagleNewsState
+---@field items PagleNewsItem[] empty unless the state is "ok"
+
+--- The news state of a read Pagle_Following at server time `now` (VIEW-R42): "absent" or "expired" as the file is
+--- (VIEW-R1, VIEW-R2), "none" for a live file with no news block (VIEW-R40), "ok" otherwise.
+---@param following PagleViewFile
+---@param now integer GetServerTime()
+---@return PagleNewsState
+function ns.NewsState(following, now)
+	local state = ns.ViewFileState(following, now)
+	if state ~= "live" then
+		return state --[[@as PagleNewsState]]
+	end
+	return following.news and "ok" or "none"
+end
+
+-- PagleDB.global.news (VIEW-R44), made when first needed: `since`, the floor, and `seen`, `{ [id] = time }`. A value
+-- of the wrong type is read as none.
+---@param views PagleAnglerViews
+---@return { since: integer?, seen: table<string, integer> }
+local function newsKept(views)
+	local global = views.options.global()
+	local kept = global.news
+	if type(kept) ~= "table" then
+		kept = {}
+		global.news = kept
+	end
+	if type(kept.seen) ~= "table" then
+		kept.seen = {}
+	end
+	if type(kept.since) ~= "number" then
+		kept.since = nil
+	end
+	return kept
+end
+
+-- The session's first read of ok news (VIEW-R42, VIEW-R44), once: with no floor yet it calls nothing new (the first
+-- login with news, whose decision sets the floor, SIGN-R18); otherwise an item is new when its id wasn't seen and its
+-- time is at or after the floor. Then drops from `seen` every entry older than the seen age, and any that isn't a
+-- time. Reading never sets the floor: the sign's decision does (SIGN-R14), and the switch (ns.SetNewsFloor, SET-R37).
+---@param views PagleAnglerViews
+---@param items PagleNewsItem[]
+---@param now integer
+local function firstRead(views, items, now)
+	if views.fresh then
+		return
+	end
+	local kept, fresh = newsKept(views), {}
+	if kept.since ~= nil then
+		for _, item in ipairs(items) do
+			if kept.seen[item.id] == nil and item.time >= kept.since then
+				fresh[item.id] = true
+			end
+		end
+	end
+	views.fresh = fresh
+	local oldest = now - ns.NEWS_SEEN_AGE
+	for id, time in pairs(kept.seen) do
+		if type(time) ~= "number" or time < oldest then
+			kept.seen[id] = nil
+		end
+	end
+end
+
+--- Pagle.GetNews() (VIEW-R42) at the server time now: the news state, and while it's "ok" a fresh copy of every item
+--- used, in the file's order, each with `new`. The session's first call that finds "ok" news decides `new` for the
+--- session and prunes what was seen (VIEW-R44); it never sets the floor. Absent before Start.
+---@return PagleNews
+function AnglerViews:News()
+	local now = self.options.serverTime()
+	local state = ns.NewsState(self.following, now)
+	if state ~= "ok" then
+		return { state = state, items = {} }
+	end
+	local block = self.following.news --[[@as PagleNewsBlock]]
+	firstRead(self, block.items, now)
+	local items = {}
+	for i, item in ipairs(block.items) do
+		local copy = {}
+		for field, value in pairs(item) do
+			copy[field] = value
+		end
+		copy.new = self.fresh[item.id] == true
+		items[i] = copy
+	end
+	return { state = "ok", items = items }
+end
+
+--- Pagle.MarkNewsSeen(ids) (VIEW-R43): marks each id in `ids` seen with its item's time, or with no `ids` every item
+--- of the news, whatever its kind or switch (SIGN-R17). An id that isn't an item of the news now is passed over. Does
+--- nothing while the news isn't "ok". It never changes `new` this session (VIEW-R42).
+---@param ids string[]?
+function AnglerViews:MarkNewsSeen(ids)
+	local news = self:News()
+	if news.state ~= "ok" then
+		return
+	end
+	local seen = newsKept(self).seen
+	if ids == nil then
+		for _, item in ipairs(news.items) do
+			seen[item.id] = item.time
+		end
+		return
+	end
+	local times = {}
+	for _, item in ipairs(news.items) do
+		times[item.id] = item.time
+	end
+	for _, id in ipairs(ids) do
+		if times[id] then
+			seen[id] = times[id]
+		end
+	end
+end
+
+--- Whether news item `id` is marked seen now (VIEW-R44), for the sign's decision (SIGN-R15).
+---@param id string
+---@return boolean
+function AnglerViews:NewsSeen(id)
+	local kept = self.options.global().news
+	return type(kept) == "table" and type(kept.seen) == "table" and kept.seen[id] ~= nil
+end
+
+--- Sets the floor to the server time now (SIGN-R18, VIEW-R44), whatever the news: what turning "Show news at login"
+--- on does (SET-R37), and the sign's Defaults that turn it back on. Items timed before it are never due.
+function AnglerViews:SetNewsFloor()
+	newsKept(self).since = self.options.serverTime()
+end
+
 -- A data file's state line for `/pagle dev views`: live, absent with its reason, or expired with its age.
 ---@param name string
 ---@param file PagleViewFile
@@ -644,9 +895,31 @@ local function stateLine(name, file, now)
 	return ns.RenderText(L.DEV_VIEWS_LIVE, { name = name })
 end
 
+-- The news line of `/pagle dev views` (VIEW-R12): the news state, the lines used and skipped, how many items are seen
+-- and the floor. It reads, never sets: it neither sets the floor nor prunes.
+---@param views PagleAnglerViews
+---@param now integer
+---@return string
+local function newsLine(views, now)
+	local block = ns.ViewFileState(views.following, now) ~= "absent" and views.following.news or nil
+	local kept = views.options.global().news
+	kept = type(kept) == "table" and kept or {}
+	local seen = 0
+	for _ in pairs(type(kept.seen) == "table" and kept.seen or {}) do
+		seen = seen + 1
+	end
+	return ns.RenderText(ns.L.DEV_VIEWS_NEWS, {
+		state = ns.NewsState(views.following, now),
+		used = shown(block and block.used),
+		skipped = shown(block and block.skipped),
+		seen = shown(seen),
+		floor = shown(type(kept.since) == "number" and kept.since or nil),
+	})
+end
+
 --- `/pagle dev views` (VIEW-R12): each file's state now (live, absent with the first reason IGV-R44 found, or expired
 --- with its age), its generatedAt and its Angler or block count as read, and whether Pagle_Anglers has loaded this
---- login. No GUID, name or card (VIEW-R4).
+--- login, and from 1.6 the news line (VIEW-R12, VIEW-R42, VIEW-R44). No GUID, name or card (VIEW-R4).
 ---@return string[]
 function AnglerViews:Report()
 	local L, now = ns.L, self.options.serverTime()
@@ -663,5 +936,152 @@ function AnglerViews:Report()
 			{ generatedAt = shown(anglers.generatedAt), dev_views_anglers_2 = shown(anglers.count) }
 		),
 		self.loaded and L.DEV_VIEWS_LOADED or L.DEV_VIEWS_NOT_LOADED,
+		newsLine(self, now),
+	}
+end
+
+--- What Pagle.NewsWords reads from the client and from Core, each when asked (VIEW-R45, SIGN-R19).
+---@class PagleNewsLookups
+---@field itemName fun(itemID: integer): string?          -- the client's name, nil until it has loaded it
+---@field dropPrefix string|false|nil                     -- the prefix a fish's name drops: "Raw " on an enUS client
+---@field varieties fun(species: integer): PagleVarietyEntry[]? -- Pagle.GetVarieties (VAR-R11)
+---@field caught fun(species: integer): table<integer, true>? -- Pagle.GetVarietiesCaught (VAR-R11)
+---@field areaName fun(areaID: integer): string?           -- C_Map.GetAreaInfo, nil when the client has none
+---@field formatLength fun(mm: integer): string            -- Pagle.FormatLength in the player's unit (LOG-R69)
+---@field ledgerOn fun(): boolean                          -- the Ledger is On, so its zone crests are there
+---@field fishCrest fun(species: integer): boolean          -- Core has a fish crest for the Species (VAR-R12)
+
+-- The emblems' art (SIGN-R13): the Ledger's book, the zone crests (the Ledger's) and the fish crests (Core's), and the
+-- share of the slot each fills, as the dev command's samples draw them.
+local LEDGER_BOOK = "Interface\\AddOns\\Pagle\\media\\minimap\\Ledger-Book"
+local ZONE_CRESTS = "Interface\\AddOns\\Pagle_Ledger\\media\\crests\\"
+local FISH_CRESTS = "Interface\\AddOns\\Pagle\\media\\crests\\fish\\"
+local BOOK_FILL, CREST_FILL = 1.25, 0.92
+
+-- An item's or a Species' name as the sign words it (SIGN-R19): the client's, less a leading "Raw " on an enUS client
+-- (VAR-R12), or SIGN_ITEM_UNKNOWN ("a fish") while the client hasn't loaded it.
+---@param lookups PagleNewsLookups
+---@param itemID integer
+---@return string
+local function fishName(lookups, itemID)
+	local name, prefix = lookups.itemName(itemID), lookups.dropPrefix
+	if type(name) ~= "string" or name == "" then
+		return ns.L.SIGN_ITEM_UNKNOWN
+	elseif prefix and prefix ~= "" and #name > #prefix and name:sub(1, #prefix) == prefix then
+		return name:sub(#prefix + 1)
+	end
+	return name
+end
+
+-- The rarity's place in ns.VARIETY_RARITIES of the variety at `position` in its Species' ten, or of rarity `key`.
+---@param key string?
+---@param position integer
+---@return integer?
+local function rarityIndex(key, position)
+	key = key or (ns.VarietyRarity(position) or {}).key
+	for i, rarity in ipairs(ns.VARIETY_RARITIES) do
+		if rarity.key == key then
+			return i
+		end
+	end
+	return nil
+end
+
+-- A colour's detail and emblem (SIGN-R12, SIGN-R13, SIGN-R19): Pagle.GetVarieties' entry whose key is the line's,
+-- named once the player has caught it ("All-gold Spotted Yellowtail") and drawn in its colours; otherwise, or for a
+-- key the client doesn't know, its rarity and Species ("Epic Spotted Yellowtail") on its silhouette (VAR-R27). A key
+-- the client doesn't know takes the line's `rank`, the variety's position (IGV Contracts).
+---@param item PagleNewsItem
+---@param lookups PagleNewsLookups
+---@return string detail
+---@return table emblem
+local function colourWords(item, lookups)
+	local L = ns.L
+	local species = fishName(lookups, item.item)
+	local entry
+	for _, variety in ipairs(lookups.varieties(item.item) or {}) do
+		if variety.key == item.key then
+			entry = variety
+			break
+		end
+	end
+	local position = entry and entry.index or item.rank
+	local caught = entry and (lookups.caught(item.item) or {})[position] == true and type(entry.name) == "string"
+	if caught then
+		return ns.RenderText(L.SIGN_DETAIL_COLOUR, { variety = entry.name, species = species }),
+			{ variety = { species = item.item, position = position } }
+	end
+	local rarity = rarityIndex(entry and entry.rarity, position)
+	return ns.RenderText(L.SIGN_DETAIL_COLOUR_HIDDEN, {
+		rarity = rarity and ns.VarietyRarityName(rarity) or "",
+		species = species,
+	}),
+		{ variety = { species = item.item, position = position, silhouette = true } }
+end
+
+--- An item's words and emblem as the sign draws them (VIEW-R45, SIGN-R12, SIGN-R13, SIGN-R19): `{ kind, kicker, head,
+--- detail, emblem }`, a PagleNewsSignNews without its more line, for the sign and the Fish Journal's news list alike.
+--- The Angler is the line's `name` (SIGN-R11), never a character's; a region is its code in capitals ("EU"). An item the
+--- client hasn't loaded yet reads SIGN_ITEM_UNKNOWN at the call, so a caller that draws again once the client has it
+--- gets its name.
+---@param item PagleNewsItem
+---@param lookups PagleNewsLookups
+---@return PagleNewsSignNews
+function ns.NewsWords(item, lookups)
+	local L, kind = ns.L, item.kind
+	local values = { name = item.name, region = drawable(item.region:upper()) }
+	local detail, emblem
+	if kind == "first" or kind == "region" then
+		values.fish = fishName(lookups, item.item)
+		detail, emblem = item.name, { sign = "laurel" }
+	elseif kind == "legend" then
+		local crests = ns.LEGEND_CRESTS or {}
+		detail, emblem = fishName(lookups, item.item), { legend = crests[item.item] or "unwritten", item = item.item }
+	elseif kind == "prestige" then
+		local sprite = ns.PrestigeEmblemSprite(item.rank)
+		emblem = sprite and { atlas = "PrestigeEmblems", sprite = sprite } or { sign = "laurel" }
+		if item.rank > #L.PRESTIGE_NUMERALS then
+			return {
+				kind = kind,
+				kicker = ns.RenderText(L.SIGN_KICKER[kind], values),
+				head = ns.RenderText(
+					L.SIGN_HEAD_MASTER_PRESTIGE,
+					{ name = item.name, master = item.rank - #L.PRESTIGE_NUMERALS }
+				),
+				emblem = emblem,
+			}
+		end
+		values.rank = L.PRESTIGE_NUMERALS[item.rank] or tostring(item.rank)
+	elseif kind == "ledger" then
+		emblem = { file = LEDGER_BOOK, fill = BOOK_FILL }
+	elseif kind == "colour" then
+		detail, emblem = colourWords(item, lookups)
+	elseif kind == "hunt" then
+		detail, emblem = item.text, { sign = "medal" }
+	elseif kind == "zone" then
+		values.zone = lookups.areaName(item.zone)
+			or ns.RenderText(L.SIGN_ZONE_UNKNOWN, { zone = ("%d"):format(item.zone) })
+		if item.key ~= "" and lookups.ledgerOn() then
+			emblem = { file = ZONE_CRESTS .. item.key, fill = CREST_FILL }
+		else
+			emblem = { sign = "laurel" }
+		end
+	elseif kind == "monster" then
+		detail = ns.RenderText(
+			L.SIGN_DETAIL_MONSTER,
+			{ species = fishName(lookups, item.item), length = lookups.formatLength(item.length) }
+		)
+		if lookups.fishCrest(item.item) then
+			emblem = { file = FISH_CRESTS .. item.item, fill = CREST_FILL, tape = true }
+		else
+			emblem = { sign = "laurel", tape = true }
+		end
+	end
+	return {
+		kind = kind,
+		kicker = ns.RenderText(L.SIGN_KICKER[kind], values),
+		head = ns.RenderText(L.SIGN_HEAD[kind], values),
+		detail = detail,
+		emblem = emblem,
 	}
 end

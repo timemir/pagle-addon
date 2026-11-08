@@ -147,6 +147,7 @@ ns.Locale("esES", function(L)
 	L.DEV_VIEWS_FOLLOWING = "Pagle dev: generatedAt de Pagle_Following {generatedAt}, Pescadores {dev_views_following_2}."
 	L.DEV_VIEWS_LIVE = "Pagle dev: {name} está activo."
 	L.DEV_VIEWS_LOADED = "Pagle dev: Pagle_Anglers se ha cargado en esta sesión."
+	L.DEV_VIEWS_NEWS = "Pagle dev: noticias {state}: líneas usadas {used}, omitidas {skipped}; vistas {seen}, umbral {floor}."
 	L.DEV_VIEWS_NONE = "ninguno"
 	L.DEV_VIEWS_NOT_LOADED = "Pagle dev: Pagle_Anglers no se ha cargado en esta sesión."
 	L.EVENING_CAST = "Haz un Lance"
@@ -320,6 +321,14 @@ ns.Locale("esES", function(L)
 	L.PARTY_DETAIL = "{what} · {detail}"
 	L.PARTY_FULL_NAME = "{name} {surname}"
 	L.PARTY_GOLD = "Consiguió oro en {hunt}"
+	L.PARTY_HP_HUNT = "{hunt} · para {senders}"
+	L.PARTY_HP_MINE = "Tu captura"
+	L.PARTY_HP_PARTY = "Completado para el grupo"
+	L.PARTY_HP_RUN = "{event} liquidada · para {senders}"
+	L.PARTY_HP_SENDERS_MORE = { many = "{name}, {other} y {count} más", one = "{name}, {other} y {count} más", other = "{name}, {other} y {count} más" }
+	L.PARTY_HP_SENDERS_TWO = "{name} y {other}"
+	L.PARTY_HP_SOME_HUNT = "una caza"
+	L.PARTY_HP_SOME_RUN = "una apuesta Pagle"
 	L.PARTY_LINES = { epic = "Pescó un color épico", gold = "Consiguió oro en una caza", ledger = "Libro de registro al 100 %", legend = "Pescó una Leyenda", monster = "Récord de tamaño Monstruo", rare = "Pescó un color raro", zone = "Maestro de zona" }
 	L.PARTY_MUG = "Alzar una jarra"
 	L.PARTY_MUG_RAISED = "Alzaste una jarra"
@@ -470,7 +479,7 @@ ns.Locale("esES", function(L)
 	L.SETTINGS_PARTY = "Grupo"
 	L.SETTINGS_PARTY_HUNTS = "Cazas en grupo"
 	L.SETTINGS_PARTY_HUNTS_TOOLTIP = "En un grupo, las capturas de tus compañeros cuentan para tus Cazas y Apuestas Pagle mientras pescáis en la misma zona, y las tuyas para las suyas. Desactivado, Pagle ni comparte tus capturas ni cuenta las suyas."
-	L.SETTINGS_PARTY_KINDS = { colour = "Colores raros", gold = "Nivel de Oro en una caza", ledger = "Libro de registro al 100 %", legend = "Leyendas", monster = "Récords de tamaño Monstruo", prestige = "Prestigio", zone = "Maestro de zona" }
+	L.SETTINGS_PARTY_KINDS = { colour = "Colores raros", gold = "Nivel de Oro en una caza", hp = "Completado para el grupo", ledger = "Libro de registro al 100 %", legend = "Leyendas", monster = "Récords de tamaño Monstruo", prestige = "Prestigio", zone = "Maestro de zona" }
 	L.SETTINGS_PARTY_SHARE = "Compartir mis momentos con mi grupo"
 	L.SETTINGS_PARTY_SHARE_TOOLTIP = "Cuando pescas una Leyenda, logras un récord de tamaño Monstruo y cosas así, los miembros del grupo que usan Pagle reciben un pequeño aviso. Solo se envía el momento, nunca dónde estás. No en una banda."
 	L.SETTINGS_PARTY_SHOW = "Mostrar los momentos de mi grupo"
@@ -557,10 +566,14 @@ ns.Locale("esES", function(L)
 	L.SHOP_USE = "Usar"
 	L.SHOP_USE_NOW = "Usarlo ya"
 	L.SIGN_DETAIL_COLOUR = "{species} {variety}"
+	L.SIGN_DETAIL_COLOUR_HIDDEN = "{species} ({rarity})"
 	L.SIGN_DETAIL_MONSTER = "{species}, {length}"
 	L.SIGN_HEAD = { colour = "{name} ha pescado un color raro", first = "Primero en {region} en pescar {fish}", hunt = "{name} se lleva el oro", ledger = "{name} ha completado el Libro", legend = "{name} ha pescado una Leyenda", monster = "{name} ha pescado un Monstruo", prestige = "{name} ha alcanzado Prestigio {rank}", region = "Primero en {region} este mes en pescar {fish}", zone = "{name} es Maestro de zona de {zone}" }
+	L.SIGN_HEAD_MASTER_PRESTIGE = "{name} ha alcanzado Prestigio de Maestro {master:0}"
+	L.SIGN_ITEM_UNKNOWN = "un pez"
 	L.SIGN_KICKER = { colour = "Color raro", first = "Primer aviso", hunt = "Oro en Caza", ledger = "El Libro", legend = "Leyenda", monster = "Monstruo", prestige = "Prestigio", region = "Noticias de la región · {region}", zone = "Maestro de zona" }
 	L.SIGN_MORE = { many = "+{count:0} más de tus pescadores", one = "+{count:0} más de tus pescadores", other = "+{count:0} más de tus pescadores" }
+	L.SIGN_ZONE_UNKNOWN = "Zona {zone}"
 	L.SIZE_BANDS = { "Pececillo", "Decente", "Robusto", "Descomunal", "Monstruo" }
 	L.SLASH_CORE_HELP = {
 		{ help = "abre los ajustes de Pagle (también /pagle solo)", name = "settings" },

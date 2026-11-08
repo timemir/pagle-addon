@@ -148,6 +148,7 @@ SETTINGS_PARTY_KINDS.gold = "Gold tier in a Hunt"
 SETTINGS_PARTY_KINDS.zone = "Zone Master"
 SETTINGS_PARTY_KINDS.prestige = "Prestige"
 SETTINGS_PARTY_KINDS.ledger = "Ledger 100%"
+SETTINGS_PARTY_KINDS.hp = "Completed for the party"
 SETTINGS_PARTY_SOUNDS = "Cheers sounds"
 SETTINGS_PARTY_SOUNDS_TOOLTIP = "A clink when a groupmate's toast arrives, when you raise a mug, and when someone raises one to you."
 SETTINGS_NO_MODULE = "Recording your Catches. Enable a Module to see them."
@@ -299,6 +300,18 @@ PARTY_CHEER_NAME = "{name} raised a mug"
 PARTY_CHEER_NAMES = "{name} and {other} raised a mug"
 PARTY_CHEER_COUNT.one = "{count} raised a mug"
 PARTY_CHEER_COUNT.other = "{count} raised a mug"
+# "Completed for the party" (ANN-R111, from 1.6): the kicker the catcher sees, and every other groupmate; the line, a
+# Hunt or a run and the groupmates it was for; a Hunt or an event the player's Hunts can't name; and the groupmates,
+# two, or from three the first two and a count.
+PARTY_HP_MINE = "Your catch"
+PARTY_HP_PARTY = "Completed for the party"
+PARTY_HP_HUNT = "{hunt} · for {senders}"
+PARTY_HP_RUN = "{event} settled · for {senders}"
+PARTY_HP_SOME_HUNT = "a Hunt"
+PARTY_HP_SOME_RUN = "a Pagle Wager"
+PARTY_HP_SENDERS_TWO = "{name} and {other}"
+PARTY_HP_SENDERS_MORE.one = "{name}, {other} and {count} more"
+PARTY_HP_SENDERS_MORE.other = "{name}, {other} and {count} more"
 # A toast style's sample on the Curio Shop's preview stage (wallet-and-shop.md › UI, ANN-R80): its headline, its
 # one stamp, and the button that shows it through the lanes.
 TOAST_SAMPLE_TITLE = "New Species"
@@ -598,6 +611,9 @@ DEV_VIEWS_ANGLERS = "Pagle dev: Pagle_Anglers' generatedAt {generatedAt}, blocks
 DEV_VIEWS_LOADED = "Pagle dev: Pagle_Anglers has loaded this login."
 DEV_VIEWS_NOT_LOADED = "Pagle dev: Pagle_Anglers hasn't loaded this login."
 DEV_VIEWS_NONE = "none"
+# From 1.6, the news (VIEW-R12): its state (ok, none, expired or absent), the news lines used and skipped (VIEW-R41),
+# how many items are seen and the floor, a server time (VIEW-R44), each "none" when there is none.
+DEV_VIEWS_NEWS = "Pagle dev: news {state}: lines used {used}, skipped {skipped}; seen {seen}, floor {floor}."
 # Why a data file is absent (VIEW-R1, IGV-R44), the first that holds, as /pagle dev views names it: no file (by
 # folder name, with the client's reason a load failed, or the global's name), then IGV-R44's conditions in order.
 # A global's or field's name; v as read; count as read, the list's name and its length; a block's number, and its
@@ -983,6 +999,13 @@ SIGN_HEAD.monster = "{name} landed a Monster"
 SIGN_HEAD.region = "First in {region} this month to land {fish}"
 SIGN_DETAIL_COLOUR = "{variety} {species}"
 SIGN_DETAIL_MONSTER = "{species}, {length}"
+# From 1.6 (SIGN-R12, SIGN-R19): an uncaught variety's detail, its rarity's name (Epic) for its own (VAR-R27); a Master
+# Prestige's headline, {master} its rank above X; an item the client hasn't loaded yet; a zone the client has no name
+# for, {zone} its areaID.
+SIGN_DETAIL_COLOUR_HIDDEN = "{rarity} {species}"
+SIGN_HEAD_MASTER_PRESTIGE = "{name} reached Master Prestige {master:0}"
+SIGN_ITEM_UNKNOWN = "a fish"
+SIGN_ZONE_UNKNOWN = "Zone {zone}"
 SIGN_MORE.one = "+{count:0} more from your anglers"
 SIGN_MORE.other = "+{count:0} more from your anglers"
 # /pagle dev sign (SIGN-R60): drops the news sign with sample news; dev text stays English.

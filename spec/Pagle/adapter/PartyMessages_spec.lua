@@ -302,4 +302,142 @@ describe("party messages", function()
 		assert.are.equal("3 raised a mug", n.PartyCheerTitle({ "Kukli", "Arwen", "Bram" }))
 		assert.are.equal("4 raised a mug", n.PartyCheerTitle({ "Kukli", "Arwen", "Bram", "Dela" }))
 	end)
+
+	-- "Completed for the party" (ANN-R111, from 1.6): the hp message, on the party catch prefix PagleCatch in the
+	-- `<kind>|<v>|` form, not this envelope (catch-log.md LOG-R110).
+	describe("the hp message (ANN-R111)", function()
+		-- A groupmate's source Catch ID (LOG-R116): <guid>-<time>-<tie>:<n>.
+		local SOURCE = "Player-4701-0A1B2C3D-1793750400-0:1"
+
+		it(
+			"writes a Hunt completed and a run settled for the party: hp, 1, h or w, the ID, the source Catch ID",
+			function()
+				local n = ns()
+				assert.are.equal(
+					"hp|1|h|mackerel_run|" .. SOURCE,
+					n.PartyHuntText({ what = "hunt", id = "mackerel_run", source = SOURCE })
+				)
+				assert.are.equal(
+					"hp|1|w|darkshore_moonlight|" .. SOURCE,
+					n.PartyHuntText({ what = "run", id = "darkshore_moonlight", source = SOURCE })
+				)
+			end
+		)
+
+		it("keeps to the addon message limit, the longest IDs included", function()
+			local n = ns()
+			local longest = n.PartyHuntText({
+				what = "run",
+				id = string.rep("a", 64),
+				source = "Player-99999-0A1B2C3D-1793750400-12:4",
+			})
+			assert.is_not_nil(longest)
+			---@cast longest string
+			assert.is_true(#longest <= 255)
+		end)
+
+		it("writes nothing for an ID or a source Catch ID it can't write", function()
+			local n = ns()
+			assert.is_nil(n.PartyHuntText({ what = "hunt", id = "Mackerel_Run", source = SOURCE }))
+			assert.is_nil(n.PartyHuntText({ what = "hunt", id = string.rep("a", 65), source = SOURCE }))
+			assert.is_nil(n.PartyHuntText({ what = "hunt", id = "", source = SOURCE }))
+			assert.is_nil(n.PartyHuntText({ what = "hunt", id = "a|b", source = SOURCE }))
+			assert.is_nil(n.PartyHuntText({ what = "tier", id = "mackerel_run", source = SOURCE }))
+			assert.is_nil(
+				n.PartyHuntText({ what = "hunt", id = "mackerel_run", source = "Player-4701-0A1B2C3D-1793750400-0" })
+			)
+			assert.is_nil(n.PartyHuntText({ what = "hunt", id = "mackerel_run", source = "Creature-0-1-2-3:1" }))
+			assert.is_nil(n.PartyHuntText({ what = "hunt", id = "mackerel_run" }))
+		end)
+
+		it("reads one back: a Hunt or a run, its ID, the source Catch ID and the GUID it opens with", function()
+			local n = ns()
+			assert.are.same(
+				{ what = "hunt", id = "mackerel_run", source = SOURCE, catcher = "Player-4701-0A1B2C3D" },
+				n.ParsePartyHuntText("hp|1|h|mackerel_run|" .. SOURCE)
+			)
+			assert.are.same(
+				{ what = "run", id = "darkshore_moonlight", source = SOURCE, catcher = "Player-4701-0A1B2C3D" },
+				n.ParsePartyHuntText("hp|1|w|darkshore_moonlight|" .. SOURCE)
+			)
+		end)
+
+		it("ignores one that isn't exactly an hp message, a later version among them (LOG-R110)", function()
+			local n = ns()
+			for _, text in ipairs({
+				"hp|2|h|mackerel_run|" .. SOURCE,
+				"hp|1|x|mackerel_run|" .. SOURCE,
+				"hp|1|h|Mackerel_Run|" .. SOURCE,
+				"hp|1|h||" .. SOURCE,
+				"hp|1|h|mackerel_run|Player-4701-0A1B2C3D-1793750400-0",
+				"hp|1|h|mackerel_run|Player-4701-0A1B2C3D-1793750400-0:0",
+				"hp|1|h|mackerel_run|" .. SOURCE .. "|more",
+				"hp|1|h|mackerel_run",
+				"HP|1|h|mackerel_run|" .. SOURCE,
+				"PC|1|h|mackerel_run|" .. SOURCE,
+				"1:hp:h:mackerelZrun",
+				"hp|1|h|mackerel_run|" .. SOURCE .. string.rep(" ", 255),
+			}) do
+				assert.is_nil(n.ParsePartyHuntText(text))
+			end
+		end)
+
+		it(
+			"reads what a moment carries: partyCatch with partyHunt a Hunt, with partyEvent a run, and nothing else",
+			function()
+				local n = ns()
+				assert.are.same(
+					{ what = "hunt", id = "mackerel_run", source = SOURCE },
+					n.PartyHuntShareOf({ kind = "huntCompleted", partyCatch = SOURCE, partyHunt = "mackerel_run" })
+				)
+				assert.are.same(
+					{ what = "run", id = "darkshore_moonlight", source = SOURCE },
+					n.PartyHuntShareOf({
+						kind = "wagerSettled",
+						partyCatch = SOURCE,
+						partyEvent = "darkshore_moonlight",
+					})
+				)
+				-- A Hunt gold of the player's own carries partyHunt, but no partyCatch.
+				assert.is_nil(n.PartyHuntShareOf({ kind = "huntTier", party = "gold", partyHunt = "mackerel_run" }))
+				assert.is_nil(n.PartyHuntShareOf({ kind = "huntCompleted", partyCatch = SOURCE }))
+			end
+		)
+
+		it("names the Hunt or the run from the player's own lore, then every groupmate it was for", function()
+			local n = ns()
+			local lookups = {
+				huntName = function(id)
+					return id == "mackerel_run" and "Mackerel Run" or nil
+				end,
+				eventName = function(id)
+					return id == "darkshore_moonlight" and "Grouper by Moonlight" or nil
+				end,
+			}
+			local hunt = { what = "hunt", id = "mackerel_run", source = SOURCE }
+			local run = { what = "run", id = "darkshore_moonlight", source = SOURCE }
+			assert.are.equal("Mackerel Run · for Kukli Emnabi", n.PartyHuntLine(hunt, { "Kukli Emnabi" }, lookups))
+			assert.are.equal(
+				"Grouper by Moonlight settled · for Kukli Emnabi and Bram",
+				n.PartyHuntLine(run, { "Kukli Emnabi", "Bram" }, lookups)
+			)
+			assert.are.equal(
+				"Mackerel Run · for Kukli Emnabi, Bram and 1 more",
+				n.PartyHuntLine(hunt, { "Kukli Emnabi", "Bram", "Dela Marsh" }, lookups)
+			)
+			assert.are.equal(
+				"Mackerel Run · for Kukli Emnabi, Bram and 2 more",
+				n.PartyHuntLine(hunt, { "Kukli Emnabi", "Bram", "Dela Marsh", "Arwen Tull" }, lookups)
+			)
+			-- An event the player doesn't know (a pushed one it never logged) is a Pagle Wager; a Hunt, a Hunt.
+			assert.are.equal(
+				"a Pagle Wager settled · for Kukli Emnabi",
+				n.PartyHuntLine({ what = "run", id = "p_elsewhere", source = SOURCE }, { "Kukli Emnabi" }, lookups)
+			)
+			assert.are.equal(
+				"a Hunt · for Kukli Emnabi",
+				n.PartyHuntLine({ what = "hunt", id = "nowhere", source = SOURCE }, { "Kukli Emnabi" }, lookups)
+			)
+		end)
+	end)
 end)

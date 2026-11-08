@@ -1241,7 +1241,71 @@ describe("FakePagle", function()
 					.. " isn't restricted, with the tooltip setting on).",
 				"Pagle dev: Pagle_Anglers' generatedAt none, blocks none.",
 				"Pagle dev: Pagle_Anglers hasn't loaded this login.",
-			}, { unpack(fake.printed, #fake.printed - 4) })
+				"Pagle dev: news none: lines used none, skipped none; seen 0, floor none.",
+			}, { unpack(fake.printed, #fake.printed - 5) })
+		end)
+
+		-- From 1.6, IGV Contracts' example with a news block, written ten minutes before the fake's server time.
+		local function news()
+			local data = anglerFileExamples().news
+			data.generatedAt = SERVER_TIME - 600
+			return data
+		end
+
+		it(
+			"serve the news block as Core's reads do, calling nothing new before the sign sets a floor (VIEW-R42, VIEW-R44)",
+			function()
+				local fake = newFakePagle()
+				fake.setFollowing(news())
+				fake.login()
+
+				local got = fake.Pagle.GetNews()
+
+				assert.are.same({ "ok", 3 }, { got.state, #got.items })
+				assert.are.same({ false, false, false }, { got.items[1].new, got.items[2].new, got.items[3].new })
+				assert.are.same({ seen = {} }, fake.global.news)
+			end
+		)
+
+		it(
+			"call items new after a floor a spec sets, and mark them seen in fake.global.news (VIEW-R42, VIEW-R43)",
+			function()
+				local fake = newFakePagle()
+				fake.global.news = { since = 1791700000, seen = {} }
+				fake.setFollowing(news())
+				fake.login()
+
+				local items = fake.Pagle.GetNews().items
+				fake.Pagle.MarkNewsSeen({ items[1].id })
+
+				assert.are.same({ true, true, false }, { items[1].new, items[2].new, items[3].new })
+				assert.are.same({ [items[1].id] = items[1].time }, fake.global.news.seen)
+			end
+		)
+
+		it("read none for a Companion without news, as Core does (VIEW-R40, VIEW-R96)", function()
+			local fake = newFakePagle()
+			fake.setFollowing(example())
+			fake.login()
+
+			assert.are.same({ state = "none", items = {} }, fake.Pagle.GetNews())
+		end)
+
+		it("word an item as an enUS client does, from fake.itemNames and fake.areaNames (VIEW-R45)", function()
+			local fake = newFakePagle()
+			fake.setFollowing(news())
+			fake.login()
+			local items = fake.Pagle.GetNews().items
+
+			assert.are.same(
+				{ "Ada Brook landed a Monster", "a fish, 21.4 in" },
+				{ fake.Pagle.NewsWords(items[1]).head, fake.Pagle.NewsWords(items[1]).detail }
+			)
+			fake.itemNames[6358] = "Raw Old Ironjaw"
+			assert.are.equal("First in EU this month to land Old Ironjaw", fake.Pagle.NewsWords(items[3]).head)
+			local zone = { kind = "zone", name = "Ada Brook", region = "", zone = 12, key = "elwynn" }
+			fake.areaNames[12] = "Elwynn Forest"
+			assert.are.equal("Ada Brook became Master of Elwynn Forest", fake.Pagle.NewsWords(zone).head)
 		end)
 
 		it("refuse a set after login: Core reads Pagle_Following once (VIEW-R1)", function()

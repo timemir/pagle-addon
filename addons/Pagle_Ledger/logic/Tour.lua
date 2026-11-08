@@ -16,6 +16,7 @@ local ns = select(2, ...)
 ---@field label string -- its label's key in ns.L, read when the stop registers (scripts load logic/ without locale)
 ---@field place fun(context: LedgerSpreadContext): LedgerJournalPlace
 ---@field search? fun(context: LedgerSpreadContext): string
+---@field news? fun(now: integer): PagleNews -- the news the book shows while the stop does, in place of Core's
 
 -- Home, on the tab it opens on (LED-R130).
 ---@return LedgerJournalPlace
@@ -130,6 +131,58 @@ local function searchText(context)
 	return start and ns.Lower(start) or "a"
 end
 
+-- A news line (IGV Contracts' `news-line`, VIEW-R41) of the news list stop's sample, `hours` before `now`, about the
+-- sample's followed Angler unless `fields` say otherwise.
+---@param now integer
+---@param n integer
+---@param kind string
+---@param hours number
+---@param fields table?
+---@return PagleNewsItem
+local function sampleLine(now, n, kind, hours, fields)
+	local line = {
+		id = ("%016x"):format(n),
+		kind = kind,
+		time = now - math.floor(hours * 3600),
+		angler = 1,
+		name = "Kukli Emnabi",
+		region = "",
+		item = 0,
+		rank = 0,
+		key = "",
+		text = "",
+		zone = 0,
+		length = 0,
+		new = n <= 3,
+	}
+	for key, value in pairs(fields or {}) do
+		line[key] = value
+	end
+	return line
+end
+
+--- The news list stop's sample news (LED-R176): an item of every kind, the region headline last, the first three new,
+--- so every row and the chosen item's page are measured with words in them (CORE-R65's representative state). The
+--- names are the dev's sample text, as the sign's dev samples are (SIGN-R60); the words are Core's (Pagle.NewsWords).
+---@param now integer
+---@return PagleNews
+function ns.TourNewsSample(now)
+	return {
+		state = "ok",
+		items = {
+			sampleLine(now, 1, "first", 1, { region = "eu", item = 6358 }),
+			sampleLine(now, 2, "legend", 3, { item = 19805 }),
+			sampleLine(now, 3, "prestige", 5, { rank = 3 }),
+			sampleLine(now, 4, "ledger", 9),
+			sampleLine(now, 5, "colour", 20, { item = 4603, key = "all-gold" }),
+			sampleLine(now, 6, "hunt", 30, { key = "long_haul", text = "The Long Haul" }),
+			sampleLine(now, 7, "zone", 50, { zone = 12 }),
+			sampleLine(now, 8, "monster", 80, { item = 13422, length = 1626 }),
+			sampleLine(now, 9, "region", 120, { angler = 0, name = "Grimtusk", region = "eu", item = 6358 }),
+		},
+	}
+end
+
 --- The Journal's tour stops, in tour order (CORE-R68).
 ---@type LedgerTourStop[]
 ns.JOURNAL_TOUR = {
@@ -152,5 +205,14 @@ ns.JOURNAL_TOUR = {
 		end,
 	},
 	{ id = "journal.angler", label = "TOUR_ANGLER", place = ns.JournalPlace.angler },
+	-- the news list on its sample, the newest chosen (LED-R176)
+	{
+		id = "journal.news",
+		label = "TOUR_NEWS",
+		place = function()
+			return ns.JournalPlace.news()
+		end,
+		news = ns.TourNewsSample,
+	},
 	{ id = "journal.search", label = "TOUR_SEARCH", place = home, search = searchText },
 }

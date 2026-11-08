@@ -37,13 +37,15 @@ end
 
 --- The Ledger's def for `Pagle.RegisterModule` (LED-R1): its one view, the Fish Journal, and `/pagle journal`, both
 --- toggling the Journal (any text after the command is ignored), `/pagle collection`, which opens the Collection, the
---- `collection` call that opens it on a look (LED-R166, LED-R174, CORE-R45), and its line on the Field guide's What's in
---- the box step (ONB-R91). No menu entry, `settingsAction` or settings rows, so its status button is "Open Fish Journal"
+--- `collection` call that opens it on a look (LED-R166, LED-R174, CORE-R45), from 1.6 the `news` call that opens the
+--- news list on an item, the news sign's left click (LED-R178, VIEW-R46, SIGN-R42), and its line on the Field guide's
+--- What's in the box step (ONB-R91). No menu entry, `settingsAction` or settings rows, so its status button is "Open Fish Journal"
 --- (CORE-R44, SET-R11).
 ---@param toggleJournal fun() opens or closes the Fish Journal
 ---@param openCollection fun(goodID: string?) opens the Fish Journal on a look's shelf with it chosen, or on the Collection
+---@param openNews fun(id: string?) opens the Fish Journal on the news list with that item chosen
 ---@return PagleModuleDef
-function ns.ModuleDef(toggleJournal, openCollection)
+function ns.ModuleDef(toggleJournal, openCollection, openNews)
 	return {
 		name = "Ledger",
 		title = ns.L.TITLE,
@@ -68,6 +70,9 @@ function ns.ModuleDef(toggleJournal, openCollection)
 		},
 		collection = function(goodID)
 			openCollection(goodID)
+		end,
+		news = function(id)
+			openNews(id)
 		end,
 	}
 end

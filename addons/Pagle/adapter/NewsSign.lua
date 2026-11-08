@@ -10,9 +10,11 @@ local Pagle = Pagle
 
 -- The news sign, The Morning Tide to players (core/news-sign.md): one piece of news about the Anglers the player follows, or a region headline,
 -- drops in from the top of the screen in one of six looks, hangs about 8 s and goes back up. This file is the sign's
--- frame and its drawing kit; adapter/NewsSignLooks.lua has the six looks' motion. It wears the look equipped in Core's
--- slot `core.newssign` (SIGN-R57); the Curio Shop's preview draws a look still here too, and its Show on screen drops
--- one with sample news (SHOP-R61), as `/pagle dev sign` does (SIGN-R60).
+-- frame and its drawing kit, and when a drop may start: out of combat and restriction, with no letter on screen and
+-- the Field guide closed (SIGN-R40, ONB-R17). It wears the look equipped in Core's slot `core.newssign` (SIGN-R57);
+-- the Curio Shop's preview draws a look still here too, and its Show on screen drops one with sample news (SHOP-R61).
+-- adapter/NewsSignLooks.lua has the six looks' motion, adapter/NewsSignDev.lua `/pagle dev sign` (SIGN-R60), and
+-- adapter/NewsSignDrop.lua the once-a-session drop with the news (SIGN-R14–R19).
 --
 -- One frame, PagleNewsSign, sits where the sign rests (SIGN-R20); every region is placed from its top left each frame,
 -- in UI units with y growing down, as the design kit's canvas (engine.js) draws it. Three child frames stack the
@@ -41,7 +43,8 @@ local LIFETIME = 600
 ---@field detail string? the line under it
 ---@field plate string? the region headline's plate
 ---@field more string? the "+N more" line
----@field emblem table how the kind's emblem draws (SIGN-R13)
+---@field id string? the news item shown, by its id (VIEW-R41), for SIGN-R42; none for a sample
+---@field emblem table how the kind's emblem draws (SIGN-R13); `variety.silhouette` true draws an uncaught one dark (VAR-R27)
 
 ---@class PagleNewsSignLook
 ---@field key string
@@ -538,11 +541,17 @@ function Kit:emblem(news, cx, cy, o)
 	if alpha <= 0 or size <= 0.5 then
 		return
 	end
-	local function file(key, path, w, h, coords)
+	-- `dark`: drawn as a dark silhouette, as the varieties spread draws an uncaught variety (VAR-R24, VAR-R27)
+	local function file(key, path, w, h, coords, dark)
 		local t = self:texture("emblem:" .. key, on)
 		t:SetTexture(path)
 		t:SetTexCoord(unpack(coords or { 0, 1, 0, 1 }))
-		t:SetVertexColor(1, 1, 1)
+		t:SetDesaturated(dark == true)
+		if dark then
+			t:SetVertexColor(0, 0, 0)
+		else
+			t:SetVertexColor(1, 1, 1)
+		end
 		t:SetBlendMode("BLEND")
 		t:SetAlpha(alpha)
 		if t.SetRotation then
@@ -607,12 +616,13 @@ function Kit:emblem(news, cx, cy, o)
 		local at = art and art[e.variety.position]
 		local A = ns.VARIETY_ART_SIZE
 		if at and A then
+			-- a variety the player hasn't caught is never coloured on the sign (SIGN-R13, VAR-R27)
 			file("variety", ns.VARIETY_ATLASES[at[1]], size, size / 2, {
 				at[2] / A.atlas,
 				(at[2] + A.w) / A.atlas,
 				at[3] / A.atlas,
 				(at[3] + A.h) / A.atlas,
-			})
+			}, e.variety.silhouette == true)
 		end
 	elseif e.file then
 		file("file", e.file, size * (e.fill or 1), size * (e.fill or 1))
@@ -635,12 +645,46 @@ end
 local frame
 ---@type table? the drop showing: look, news, kit, words, t, exitAt, hover, hanging, hangLeft, cues, top
 local drop
----@type table? a drop waiting for combat and restriction to end
+---@type table? a drop waiting for combat, restriction, a letter and the guide to end: { look?, news, onStart? }
 local waiting
+
+-- ------------------------------------------------------------------ the sign's settings (news-sign.md › Data)
+-- PagleDB.global.newsSign as stored, or nil: nothing is written until a switch is turned off, the sign muted or moved.
+---@return { show: boolean?, kinds: table<string, boolean>?, headlines: boolean?, mute: boolean?, point: table? }?
+local function stored()
+	return ns.db and ns.db.global and ns.db.global.newsSign
+end
+
+--- Whether a switch of the sign's is on (SET-R37, news-sign.md › Data): "show" (Show news at login) or "headlines"
+--- (Region headlines), on unless stored as false. The one read of them: the decision's (adapter/NewsSignDrop.lua) and
+--- the Settings rows' alike.
+---@param key "show"|"headlines"
+---@return boolean
+function ns.NewsOption(key)
+	local sign = stored()
+	return not (sign and sign[key] == false)
+end
+
+--- Whether the switch of the followed kind `kind` (SIGN-R10) is on: on unless stored as false, so a missing key, or a
+--- kind a later release adds, reads as on (news-sign.md › Data).
+---@param kind string
+---@return boolean
+function ns.NewsKindOn(kind)
+	local sign = stored()
+	local kinds = sign and sign.kinds
+	return not (type(kinds) == "table" and kinds[kind] == false)
+end
+
+--- Whether the sign is muted (SIGN-R31): only when stored as true.
+---@return boolean
+function ns.NewsSignMuted()
+	local sign = stored()
+	return sign ~= nil and sign.mute == true
+end
 
 -- The saved spot, or the default (SIGN-R20).
 local function spot()
-	local saved = ns.db and ns.db.global and ns.db.global.newsSign
+	local saved = stored()
 	local p = saved and saved.point
 	if p and type(p.x) == "number" and type(p.y) == "number" then
 		return p
@@ -673,7 +717,7 @@ local function screenTop()
 end
 
 local function playSound(name)
-	if not (ns.db and ns.db.global and ns.db.global.newsSign and ns.db.global.newsSign.mute) then
+	if not ns.NewsSignMuted() then
 		PlaySoundFile(SOUNDS .. name .. ".ogg", "SFX")
 	end
 end
@@ -692,6 +736,10 @@ local function finish()
 	drop = nil
 	assert(frame):Hide()
 	Pagle.UnregisterEvent(OWNER, "PLAYER_REGEN_DISABLED")
+	-- a letter that came due while the sign showed follows it, LETTER_DELAY on (ONB-R17)
+	if ns.letter then
+		ns.letter:SetSignShowing(false)
+	end
 end
 
 --- Sends the sign up now: its exit plays, then it hides (SIGN-R42). With Animations off it hides at once.
@@ -798,53 +846,62 @@ local function makeFrame()
 			drop.top = screenTop()
 		end
 	end)
-	-- a left click opens the news (the Fish Journal; SIGN-R42), a right click sends it up; the release that ends a
+	-- a left click opens the news list on the item shown (SIGN-R42), a right click sends it up; the release that ends a
 	-- drag does neither
 	f:SetScript("OnClick", function(self, button)
 		if self.dragged then
 			self.dragged = false
 			return
 		end
-		-- the Curio Shop's sample opens nothing (SIGN-R42, SHOP-R61)
-		if button == "LeftButton" and not (drop and drop.sample) then
-			ns.OpenNewsSignNews()
+		if button == "LeftButton" then
+			ns.OpenNewsSignNews(drop and drop.news.id)
 		end
 		ns.SendNewsSignUp()
 	end)
 	return f
 end
 
---- What a left click on the sign opens: the Fish Journal, through the Ledger's view, if the Ledger is on. (Its
---- Following spread, the brief's, needs a view of its own from the Ledger: core/news-sign.md › Open questions.)
-function ns.OpenNewsSignNews()
-	for _, module in ipairs(ns.Modules and ns.Modules:Modules() or {}) do
-		for _, view in ipairs(module.def.views or {}) do
-			if view.id == "journal" and view.open then
-				view.open()
-				return true
-			end
-		end
+--- What a left click on the sign opens (SIGN-R42): the Fish Journal's news list on item `id`, the one shown, through
+--- the first On Module's `def.news` (VIEW-R46, ns.OpenNews); with none (the Ledger off), nothing. A sign with no item,
+--- the dev command's or the Curio Shop's "Show on screen" (sample news has no `id`), opens nothing. Returns whether
+--- a Module's view was called.
+---@param id string?
+---@return boolean
+function ns.OpenNewsSignNews(id)
+	if not id then
+		return false
 	end
-	return false
+	return ns.OpenNews(id)
+end
+
+-- ------------------------------------------------------------------ the emblem elsewhere (LED-R176)
+-- Each frame's kit, made at its first emblem.
+local emblemKits = setmetatable({}, { __mode = "k" })
+
+--- Draws a news item's emblem (`Pagle.NewsWords(item).emblem`, SIGN-R13) into `host`, `size` units across from its
+--- top left, as the Wood look's slot draws it: the Fish Journal's news list draws it at 96 (LED-R176). Drawing again
+--- replaces it; a nil emblem clears it.
+---@param host Frame
+---@param emblem table?
+---@param size number
+function Pagle.DrawNewsEmblem(host, emblem, size)
+	local kit = emblemKits[host]
+	if not kit then
+		kit = newKit(host, "SignWood")
+		emblemKits[host] = kit
+	end
+	kit:begin()
+	if emblem then
+		kit:emblem({ emblem = emblem }, size / 2, size / 2, { scale = size / 58 })
+	end
+	kit:finish()
 end
 
 local kits = {}
 
---- The look the sign wears (SIGN-R57): the key of the look equipped in Core's slot `core.newssign`, which is Wood while
---- the one stored isn't owned (SHOP-R32), and Wood for any look the sign doesn't have.
----@return string
-function ns.EquippedNewsSignLook()
-	local key = ns.NewsSignLookOf(Pagle.GetEquipped(ns.NEWS_SIGN_SLOT))
-	if ns.NEWS_SIGN_LOOKS[key] then
-		return key
-	end
-	return ns.NewsSignLookOf(ns.NEWS_SIGN_DEFAULT)
-end
-
--- Starts a drop now: the frame takes the look's size and its spot, the words are set, and the clock starts. With no
--- look named, it wears the one equipped now (SIGN-R57), so a change of look applies from the next drop.
-local function start(lookKey, news, options)
-	local look = assert(ns.NEWS_SIGN_LOOKS[lookKey or ns.EquippedNewsSignLook()], lookKey)
+-- Starts a drop now: the frame takes the look's size and its spot, the words are set, and the clock starts.
+local function start(lookKey, news)
+	local look = assert(ns.NEWS_SIGN_LOOKS[lookKey], lookKey)
 	if drop then
 		finish()
 	end
@@ -875,10 +932,12 @@ local function start(lookKey, news, options)
 		hangLeft = ns.NEWS_SIGN_HANG,
 		cues = {},
 		top = screenTop(),
-		sample = options and options.sample == true,
 	}
 	d.words = kit:words(news, look, "clip")
 	drop = d
+	if ns.letter then
+		ns.letter:SetSignShowing(true) -- no letter shows while the sign does (ONB-R17)
+	end
 	Pagle.RegisterEvent(OWNER, "PLAYER_REGEN_DISABLED", function()
 		ns.SendNewsSignUp()
 	end)
@@ -922,23 +981,61 @@ local function start(lookKey, news, options)
 	end)
 end
 
---- Drops the sign (SIGN-R40): `look` is a key of ns.NEWS_SIGN_LOOKS, or nil for the look equipped when it drops
---- (SIGN-R57), `news` what it shows. Never in combat or while restricted: it waits until both end, and only the last
---- one asked for waits. `options.sample`: the Curio Shop's Show on screen (SHOP-R61), which opens nothing on a left
---- click (SIGN-R42).
+--- The look the sign wears (SIGN-R57): the key of the look equipped in Core's slot `core.newssign` (Pagle.GetEquipped,
+--- SHOP-R32), which is Wood while the one stored isn't owned, and Wood for any look the sign doesn't have.
+---@return string
+function ns.EquippedNewsSignLook()
+	local key = ns.NewsSignLookOf(Pagle.GetEquipped(ns.NEWS_SIGN_SLOT))
+	if key and ns.NEWS_SIGN_LOOKS[key] then
+		return key
+	end
+	return ns.NewsSignLookOf(ns.NEWS_SIGN_DEFAULT)
+end
+
+-- Starts the drop waiting, unless a letter is on screen or the Field guide is open (SIGN-R40, ONB-R17): then it waits
+-- on, and ns.NewsSignLetterGone or GuideClosed tries again.
+local function tryWaiting()
+	local w = waiting
+	if not w or (ns.letter and ns.letter:IsShowing()) or (ns.guide and ns.guide:IsOpen()) then
+		return
+	end
+	waiting = nil
+	start(w.look or ns.EquippedNewsSignLook(), w.news)
+	if w.onStart then
+		w.onStart()
+	end
+end
+
+--- Drops the sign (SIGN-R40): `look` is a key of ns.NEWS_SIGN_LOOKS, or nil for the look equipped as it drops
+--- (SIGN-R57); `news` is what it shows; `onStart`, if given, is called as its entrance starts (SIGN-R17's marking).
+--- Never in combat or while restricted, never while a letter shows and never while the Field guide is open: it waits
+--- until all have ended, keeping its words, and only the last one asked for waits.
 ---@param lookKey string?
 ---@param news PagleNewsSignNews
----@param options { sample: boolean? }?
-function ns.DropNewsSign(lookKey, news, options)
-	waiting = { look = lookKey, news = news, options = options }
-	ns.RunWhenUnrestricted(function()
-		local w = waiting
-		waiting = nil
-		if w then
-			start(w.look, w.news, w.options)
-		end
-	end)
+---@param onStart fun()?
+function ns.DropNewsSign(lookKey, news, onStart)
+	waiting = { look = lookKey, news = news, onStart = onStart }
+	ns.RunWhenUnrestricted(tryWaiting)
 end
+
+-- A drop waiting tries again, once unrestricted.
+local function retry()
+	if waiting then
+		ns.RunWhenUnrestricted(tryWaiting)
+	end
+end
+
+--- A letter left the screen (adapter/Letter.lua's hide: answered, or hidden by a restriction or an instance): a drop
+--- waiting for it tries again a frame later (SIGN-R40), since the letter hides before its confirm button acts, and
+--- the onboarding Letter's opens the Field guide, which the drop then waits for.
+function ns.NewsSignLetterGone()
+	if waiting then
+		C_Timer.After(0, retry)
+	end
+end
+
+-- SIGN-R40: the Field guide closing lets a drop waiting for it start, as it lets a letter (ONB-R17).
+Pagle.RegisterCallback("Pagle news sign guide", "GuideClosed", retry)
 
 -- Each still's host's kits, by look, made once as the sign's are. Weak, so a host that goes takes its kits.
 ---@type table<Frame, table<string, PagleNewsSignKit>>
@@ -991,6 +1088,7 @@ function ns.NewsSignState()
 	end
 	return {
 		look = drop.look.key,
+		id = drop.news.id, -- the news item shown (VIEW-R41), none for a sample
 		t = drop.t,
 		exiting = drop.exitAt ~= nil,
 		hangLeft = drop.hangLeft,

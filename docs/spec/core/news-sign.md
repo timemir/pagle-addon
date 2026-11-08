@@ -17,7 +17,7 @@ Part of [Core](README.md). **The Morning Tide** is what players call the news si
 - **SIGN-R10** A piece of news is one of eight **kinds** about a followed Angler, in this order of rank: `first` (first in the region to land a fish), `legend`, `prestige`, `ledger` (completed the Ledger), `colour` (a rare variety), `hunt` (Hunt gold), `zone` (Zone Master) and `monster`; or the **region headline**, `region`, the region's first of a fish this month. When there is more news than the sign shows, it shows the highest-ranked and says how many more. *From 1.6,* the news is the news block's items (VIEW-R40): the eight kinds are the followed items, each about an Angler the player follows, and `region` is a region headline, about any Angler of the player's regions. Each kind has its own switch, the region headlines one more, and the sign one master switch (SET-R37). The rank decides only which item the sign shows (SIGN-R15); the Fish Journal lists them all by time (LED-R176).
 - **SIGN-R11** The news names an Angler by the Angler's name, never a character's: the news line's `name` (IGV-R13), drawn as written (VIEW-R13).
 - **SIGN-R12** The sign's words are its **kicker** (the kind, `SIGN_KICKER.<kind>`), its **headline** (`SIGN_HEAD.<kind>`, two lines at most), an optional **detail** line (the Legend, the variety and species `SIGN_DETAIL_COLOUR`, the Hunt, the Monster and its length `SIGN_DETAIL_MONSTER`, the Angler for `first` and `region`) and, when there's more, the **more line** (`SIGN_MORE`, counted). Every one goes through `ns.L`. They are set in the repo's faces: the kicker in IM Fell English SC, the headline in Marcellus, the detail in IM Fell English italic, the more line in Caveat SemiBold. Each look has a words box; the words are centred in it, above the more line where it sits on the board. Words that don't fit at their sizes, a long translation's or the pseudo-locale's, are set smaller together, at 0.9, 0.8 then 0.72 of them; a detail still wider than the box scrolls to and fro in it as a toast's does (ANN-R101); the more line is set smaller to fit its room, and cut there at the last. *From 1.6,* a variety the player hasn't caught yet is never named on the sign (VAR-R27): its detail is `SIGN_DETAIL_COLOUR_HIDDEN`, "{rarity} {species}" ("Epic Spotted Yellowtail"), with the rarity's name (`Pagle.VARIETY_RARITIES`) for the variety's (SIGN-R19).
-- **SIGN-R13** Each kind has an **emblem** at the board's left, drawn in a slot 58 units across: the sign's laurel (`first`, `region`) and medal (`hunt`); a Legend's crest and the fish's item icon (`legend`); the Prestige emblem (`prestige`); the Ledger's book (`ledger`); the variety's fish (`colour`); the zone's crest from the Ledger (`zone`); the fish's crest with a measuring tape over it (`monster`). Each look frames the slot its own way. *From 1.6:* a variety the player hasn't caught is drawn as its dark silhouette, as the varieties spread draws it (VAR-R24, VAR-R27); the zone's crest is `Pagle_Ledger/media/crests/<key>` with the news line's `key`, and the laurel when the line has no key (a zone with no crest, LED-R113) or the Ledger is off, since then its crests aren't there.
+- **SIGN-R13** Each kind has an **emblem** at the board's left, drawn in a slot 58 units across: the sign's laurel (`first`, `region`) and medal (`hunt`); a Legend's crest and the fish's item icon (`legend`); the Prestige emblem (`prestige`); the Ledger's book (`ledger`); the variety's fish (`colour`); the zone's crest from the Ledger (`zone`); the fish's crest with a measuring tape over it (`monster`). Each look frames the slot its own way. *From 1.6:* a variety the player hasn't caught is drawn as its dark silhouette, as the varieties spread draws it (VAR-R24, VAR-R27); the zone's crest is `Pagle_Ledger/media/crests/<key>` with the news line's `key`, and the laurel when the line has no key (a zone with no crest, LED-R113) or the Ledger is off, since then its crests aren't there; a Monster of a Species with no fish crest (Core has them for the Species with varieties, VAR-R12) has the laurel under its tape.
 
 ### When it drops (SIGN-R14–R19)
 
@@ -43,10 +43,10 @@ Part of [Core](README.md). **The Morning Tide** is what players call the news si
 - **SIGN-R19** **Words from a news line.** Core words an item from its line (IGV Contracts' fields), for the sign and for the Fish Journal's list alike (`Pagle.NewsWords`, VIEW-R45):
   - the Angler: `name`; the region: `region` in capitals ("EU");
   - a Legend or a Species: `item`'s name as the client gives it (`C_Item.GetItemNameByID`; a Species by its Species ID, its representative item, DATA-R19), less a leading "Raw " on an enUS client as VAR-R12 strips it; a name the client hasn't loaded yet is asked for (`Item:CreateFromItemID(item):ContinueOnItemLoad`) and the drop waits for it up to the name wait, then shows `SIGN_ITEM_UNKNOWN` ("a fish") in its place;
-  - a Prestige: `rank` as the bookplate writes it (I–X, then "Master Prestige {n}", LED-R146);
+  - a Prestige: `rank` as the bookplate writes it (I–X, then "Master Prestige {n}", LED-R146), a Master Prestige's headline its own string (`SIGN_HEAD_MASTER_PRESTIGE`, "{name} reached Master Prestige {n}"), since "Prestige Master Prestige 2" would say it twice;
   - a variety: `Pagle.GetVarieties(item)`'s entry whose key is `key`: its name and rarity, named only once the player has caught it (`Pagle.GetVarietiesCaught(item)`, VAR-R27, SIGN-R12);
   - a Hunt: `text`, the backend's enUS name (IGV-R60);
-  - a zone: `C_Map.GetAreaInfo(zone)`, or "Zone {zone}" when the client has none;
+  - a zone: `C_Map.GetAreaInfo(zone)`, or "Zone {zone}" (`SIGN_ZONE_UNKNOWN`) when the client has none;
   - a length: `Pagle.FormatLength(length)` in the player's unit (LOG-R69).
 
 ### Where it hangs (SIGN-R20)
@@ -60,7 +60,7 @@ Part of [Core](README.md). **The Morning Tide** is what players call the news si
 
 ### A drop (SIGN-R40–R43)
 
-- **SIGN-R40** The sign drops only when Pagle isn't restricted: a drop asked for in combat waits for it to end, and the last asked for wins. If combat starts while it shows, it goes up at once. *From 1.6,* it shares the screen with Core's letters (the letter service, ONB-R15–R17, such as the Prestige letter or the party letter of [#655](https://github.com/timemir/pagle-addon/issues/655)) one at a time: a drop asked for while a letter shows waits until no letter shows, then drops (a letter answered, or hidden by a restriction, ONB-R14); and a letter due while the sign shows waits until the sign has gone up (ONB-R17). Whichever is due first shows first. At login that is usually the sign, at the drop delay (SIGN-R14), since a letter also waits for the login's held Announcements and cards (ONB-R10); the letter follows `LETTER_DELAY` after the sign has gone up. A drop waiting for a letter keeps its words, as one waiting for combat does (SIGN-R14).
+- **SIGN-R40** The sign drops only when Pagle isn't restricted: a drop asked for in combat waits for it to end, and the last asked for wins. If combat starts while it shows, it goes up at once. *From 1.6,* it shares the screen with Core's letters (the letter service, ONB-R15–R17, such as the Prestige letter or the party letter of [#655](https://github.com/timemir/pagle-addon/issues/655)) one at a time: a drop asked for while a letter shows waits until no letter shows, then drops (a letter answered, or hidden by a restriction, ONB-R14); and a letter due while the sign shows waits until the sign has gone up (ONB-R17). Nor does it drop while the Field guide is open (ONB-R20), as a Module's letter doesn't (ONB-R17): it waits for `GuideClosed`, so the onboarding Letter's Open the letter, which opens the guide, never sends the sign down behind it, and its items are marked seen only once it drops (SIGN-R17). Whichever is due first shows first. At login that is usually the sign, at the drop delay (SIGN-R14), since a letter also waits for the login's held Announcements and cards (ONB-R10); the letter follows `LETTER_DELAY` after the sign has gone up. A drop waiting for a letter keeps its words, as one waiting for combat does (SIGN-R14).
 - **SIGN-R41** It plays its look's entrance, then hangs 8 s and goes up, then hides. While the mouse is over it, it eases a little toward the player and its time stands still; its time runs on once the mouse leaves.
 - **SIGN-R42** A right click sends it up at once. A left click opens the Fish Journal and sends it up. *From 1.6,* the left click opens the Fish Journal's news list on the item shown (LED-R176), through the first On Module's `def.news(id)` (VIEW-R46), and sends the sign up; with no On Module offering one (the Ledger off), it only sends the sign up. The sign from the Curio Shop's "Show on screen" or the dev command opens nothing.
 - **SIGN-R43** With Animations off (`announcements.motion`), it appears at rest and still, plays no sounds, and hides at once when its time is up.
@@ -93,12 +93,21 @@ Part of [Core](README.md). **The Morning Tide** is what players call the news si
 ## Contracts
 
 ```lua
-ns.DropNewsSign(lookKey, news)   -- SIGN-R40: drops when unrestricted; the last asked for wins
+ns.DropNewsSign(lookKey?, news, onStart?) -- SIGN-R40: drops when unrestricted and no letter shows; the last asked for
+                                 -- wins; no lookKey: the look equipped as it drops (SIGN-R57); onStart as it starts (SIGN-R17)
 ns.SendNewsSignUp()              -- SIGN-R42
-ns.NewsSignState()               -- nil, or { look, exiting, static } for a spec or the dev command
+ns.NewsSignState()               -- nil, or { look, id, exiting, static } for a spec or the dev command; id: the item shown
 ns.NewsSignFrame()               -- PagleNewsSign, once made
 ns.NewsSignSample(kind, more?)   -- SIGN-R60's sample news
 ns.DecideNewsSign()              -- from 1.6: SIGN-R14's decision, run once a session after the drop delay
+ns.PickNews(items, now, floor, switches) -- from 1.6: SIGN-R15's pick and SIGN-R16's count (logic/NewsSign.lua)
+ns.EquippedNewsSignLook()        -- from 1.6: the look key SIGN-R57 wears, Wood by default
+ns.NewsOption(key)               -- from 1.6: "show" or "headlines" on (SET-R37): true unless stored false (› Data)
+ns.NewsKindOn(kind)              -- from 1.6: a followed kind's switch on (SET-R37): true unless stored false
+ns.NewsSignMuted()               -- from 1.6: newsSign.mute stored true (SIGN-R31)
+ns.OpenNewsSignNews(id?)         -- from 1.6: the left click (SIGN-R42): ns.OpenNews(id) (VIEW-R46); a sample (no id) opens nothing
+Pagle.DrawNewsEmblem(host, emblem?, size) -- from 1.6: an emblem as the Wood look's slot draws it (SIGN-R13), size units
+                                 -- across, into `host`; the Fish Journal's news list draws it at 96 (LED-R176)
 
 ---@class PagleNewsSignNews
 ---@field kind string     -- SIGN-R10
@@ -106,12 +115,13 @@ ns.DecideNewsSign()              -- from 1.6: SIGN-R14's decision, run once a se
 ---@field head string
 ---@field detail string?
 ---@field more string?
----@field emblem table    -- SIGN-R13: { sign = name } | { atlas, sprite } | { legend, item } | { variety = { species, position } } | { file, fill, tape? }
+---@field emblem table    -- SIGN-R13: { sign = name } | { atlas, sprite } | { legend, item } | { variety = { species, position, silhouette? } } | { file, fill, tape? }
+                         -- silhouette: true for a variety the player hasn't caught, drawn dark (VAR-R27, from 1.6)
 ```
 
 *From 1.6,* the words of an item are `Pagle.NewsWords(item)` (VIEW-R45, SIGN-R19), which gives a `PagleNewsSignNews` without its more line; the decision adds the more line (SIGN-R16).
 
-The code is in `adapter/NewsSign.lua` (the frame, its drop and the drawing kit), `adapter/NewsSignLooks.lua` (the six looks) and `adapter/NewsSignDev.lua` (the kinds, the samples and the dev command), loaded by `adapter/Settings.xml`, after the files they use, so no TOC line changes. *From 1.6* (Decisions), they get TOC lines of their own in `Pagle.toc`, after the files they use, and `adapter/Settings.xml` loses their `<Script>` lines. Specs: `spec/Pagle/adapter/NewsSign_spec.lua`.
+The code is in `adapter/NewsSign.lua` (the frame, its drop and the drawing kit, and from 1.6 the reads of `newsSign`'s switches), `adapter/NewsSignLooks.lua` (the six looks) and `adapter/NewsSignDev.lua` (the kinds, the samples and the dev command), loaded by `adapter/Settings.xml`, after the files they use, so no TOC line changes. *From 1.6* (Decisions), they get TOC lines of their own in `Pagle.toc`, after the files they use, and `adapter/Settings.xml` loses their `<Script>` lines; the decision (SIGN-R14–R18) is `logic/NewsSign.lua` (the pick) and `adapter/NewsSignDrop.lua`. Specs: `spec/Pagle/adapter/NewsSign_spec.lua`, `spec/Pagle/adapter/NewsSignDrop_spec.lua`, `spec/Pagle/logic/NewsSign_spec.lua`.
 
 ## Data
 

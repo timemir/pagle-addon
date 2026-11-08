@@ -209,6 +209,8 @@ local EXPECTED = {
 			{ "checkbox", "Zone Master", under = true },
 			{ "checkbox", "Prestige", under = true },
 			{ "checkbox", "Ledger 100%", under = true },
+			-- From 1.6, "Completed for the party" (SET-R35, ANN-R111).
+			{ "checkbox", "Completed for the party", under = true },
 			{ "checkbox", "Cheers sounds", tip = TIPS.partySounds },
 			{ "header", "Hunts", of = "Hunts" },
 			{ "checkbox", "Announce open Hunt windows", tip = TIPS.windowMoments, of = "Hunts" },
@@ -791,6 +793,7 @@ describe("Greying in the Settings tree", function()
 			"Zone Master",
 			"Prestige",
 			"Ledger 100%",
+			"Completed for the party",
 			"Cheers sounds",
 		}, greyedOn(loaded, "Announcements"))
 
@@ -977,6 +980,7 @@ describe("Each page's Defaults button", function()
 				"Animations",
 				"Announce open Hunt windows",
 				"Cheers sounds",
+				"Completed for the party",
 				"Cozy mode",
 				"Gold tier in a Hunt",
 				"Interruption budget",
@@ -1167,6 +1171,7 @@ describe("Each page's Defaults button", function()
 			["Zone Master"] = true,
 			["Prestige"] = true,
 			["Ledger 100%"] = true,
+			["Completed for the party"] = true,
 			["Cheers sounds"] = true,
 		}, valuesOn(loaded, "Announcements"))
 		assert.are.equal(300, loaded.namespaces.Pagle.db.profile.announcements.budget.window) -- stored in seconds

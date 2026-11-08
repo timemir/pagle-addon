@@ -146,6 +146,7 @@ ns.Locale("ruRU", function(L)
 	L.DEV_VIEWS_FOLLOWING = "Pagle dev: Pagle_Following — generatedAt {generatedAt}, рыболовов {dev_views_following_2}."
 	L.DEV_VIEWS_LIVE = "Pagle dev: {name} активен."
 	L.DEV_VIEWS_LOADED = "Pagle dev: Pagle_Anglers загружен за этот вход в игру."
+	L.DEV_VIEWS_NEWS = "Pagle dev: новости {state}: строк использовано {used}, пропущено {skipped}; просмотрено {seen}, порог {floor}."
 	L.DEV_VIEWS_NONE = "нет"
 	L.DEV_VIEWS_NOT_LOADED = "Pagle dev: Pagle_Anglers за этот вход в игру не загружался."
 	L.EVENING_CAST = "Сделать заброс"
@@ -319,6 +320,14 @@ ns.Locale("ruRU", function(L)
 	L.PARTY_DETAIL = "{what} • {detail}"
 	L.PARTY_FULL_NAME = "{name} {surname}"
 	L.PARTY_GOLD = "Взял(а) золото в охоте «{hunt}»"
+	L.PARTY_HP_HUNT = "{hunt} • для: {senders}"
+	L.PARTY_HP_MINE = "Твой улов"
+	L.PARTY_HP_PARTY = "Выполнено для группы"
+	L.PARTY_HP_RUN = "Выиграно для {senders}: {event}"
+	L.PARTY_HP_SENDERS_MORE = { few = "{name}, {other} и ещё {count}", many = "{name}, {other} и ещё {count}", one = "{name}, {other} и ещё {count}", other = "{name}, {other} и ещё {count}" }
+	L.PARTY_HP_SENDERS_TWO = "{name} и {other}"
+	L.PARTY_HP_SOME_HUNT = "охота"
+	L.PARTY_HP_SOME_RUN = "пари Пэгла"
 	L.PARTY_LINES = { epic = "Поймал(а) эпическую окраску", gold = "Взял(а) золото в охоте", ledger = "Реестр на 100%", legend = "Поймал(а) легенду", monster = "Рекорд размера «Чудовище»", rare = "Поймал(а) редкую окраску", zone = "Мастер зоны" }
 	L.PARTY_MUG = "Поднять кружку"
 	L.PARTY_MUG_RAISED = "Вы подняли кружку"
@@ -469,7 +478,7 @@ ns.Locale("ruRU", function(L)
 	L.SETTINGS_PARTY = "Группа"
 	L.SETTINGS_PARTY_HUNTS = "Групповые охоты"
 	L.SETTINGS_PARTY_HUNTS_TOOLTIP = "В группе улов участников засчитывается в ваши Охоты и Пари Пэгла, пока вы рыбачите в одной зоне, а ваш — в их. Если выключено, Pagle не делится вашим уловом и не засчитывает их улов."
-	L.SETTINGS_PARTY_KINDS = { colour = "Редкие окраски", gold = "Золотая ступень в охоте", ledger = "Реестр на 100%", legend = "Легенды", monster = "Рекорды размера «Чудовище»", prestige = "Престиж", zone = "Мастер зоны" }
+	L.SETTINGS_PARTY_KINDS = { colour = "Редкие окраски", gold = "Золотая ступень в охоте", hp = "Выполнено для группы", ledger = "Реестр на 100%", legend = "Легенды", monster = "Рекорды размера «Чудовище»", prestige = "Престиж", zone = "Мастер зоны" }
 	L.SETTINGS_PARTY_SHARE = "Делиться моими моментами с группой"
 	L.SETTINGS_PARTY_SHARE_TOOLTIP = "Когда вы ловите легенду, ставите рекорд размера «Чудовище» и тому подобное, участники группы с Pagle видят небольшую плашку. Отправляется только сам момент, а не то, где вы находитесь. Не в рейде."
 	L.SETTINGS_PARTY_SHOW = "Показывать моменты моей группы"
@@ -556,10 +565,14 @@ ns.Locale("ruRU", function(L)
 	L.SHOP_USE = "Использовать"
 	L.SHOP_USE_NOW = "Использовать сразу"
 	L.SIGN_DETAIL_COLOUR = "{species}, {variety}"
+	L.SIGN_DETAIL_COLOUR_HIDDEN = "{species} ({rarity})"
 	L.SIGN_DETAIL_MONSTER = "{species}, {length}"
 	L.SIGN_HEAD = { colour = "{name}: пойман редкий цвет", first = "Впервые в {region}: выловлен {fish}", hunt = "{name}: золото охоты", ledger = "{name}: Реестр заполнен", legend = "{name}: выловлена Легенда", monster = "{name}: выловлено Чудовище", prestige = "{name}: достигнут Престиж {rank}", region = "Впервые в {region} в этом месяце: выловлен {fish}", zone = "{name}: Мастер зоны {zone}" }
+	L.SIGN_HEAD_MASTER_PRESTIGE = "{name}: достигнут Престиж мастера {master:0}"
+	L.SIGN_ITEM_UNKNOWN = "рыба"
 	L.SIGN_KICKER = { colour = "Редкий цвет", first = "Первая весть", hunt = "Золото охоты", ledger = "Реестр", legend = "Легенда", monster = "Чудовище", prestige = "Престиж", region = "Новости региона • {region}", zone = "Мастер зоны" }
 	L.SIGN_MORE = { few = "+{count:0} от ваших рыболовов", many = "+{count:0} от ваших рыболовов", one = "+{count:0} от ваших рыболовов", other = "+{count:0} от ваших рыболовов" }
+	L.SIGN_ZONE_UNKNOWN = "Зона {zone}"
 	L.SIZE_BANDS = { "Мелочь", "Приличная", "Увесистая", "Громадина", "Чудовище" }
 	L.SLASH_CORE_HELP = {
 		{ help = "открыть настройки Pagle (или просто /pagle)", name = "settings" },
