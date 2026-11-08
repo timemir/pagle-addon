@@ -1864,10 +1864,12 @@ en.other = "{label}s"
 [COLLECTION_SLOT_NAMES]
 value."core.binding" = ["Einband", "Einbände"]
 value."core.crest" = ["Exlibris-Wappen", "Exlibris-Wappen"]
+value."core.newssign" = ["Nachrichtenschild", "Nachrichtenschilder"]
 value."core.soundset" = ["Klangset", "Klangsets"]
 value."core.toaststyle" = ["Einblendungsstil", "Einblendungsstile"]
 en."core.binding" = ["Binding", "Bindings"]
 en."core.crest" = ["Bookplate crest", "Bookplate crests"]
+en."core.newssign" = ["News sign", "News signs"]
 en."core.soundset" = ["Sound set", "Sound sets"]
 en."core.toaststyle" = ["Toast style", "Toast styles"]
 

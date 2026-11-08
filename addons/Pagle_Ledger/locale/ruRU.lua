@@ -96,6 +96,7 @@ ns.Locale("ruRU", function(L)
 	L.COLLECTION_SLOT_NAMES = {
 		["core.binding"] = { "Переплёт", "Переплёты" },
 		["core.crest"] = { "Герб экслибриса", "Гербы экслибриса" },
+		["core.newssign"] = { "Табличка новостей", "Таблички новостей" },
 		["core.soundset"] = { "Набор звуков", "Наборы звуков" },
 		["core.toaststyle"] = { "Стиль плашек", "Стили плашек" },
 	}

@@ -717,6 +717,7 @@ COLLECTION_SLOT_FALLBACK.one = "{label}"
 COLLECTION_SLOT_FALLBACK.other = "{label}s"
 COLLECTION_SLOT_NAMES."core.binding" = ["Binding", "Bindings"]
 COLLECTION_SLOT_NAMES."core.crest" = ["Bookplate crest", "Bookplate crests"]
+COLLECTION_SLOT_NAMES."core.newssign" = ["News sign", "News signs"]
 COLLECTION_SLOT_NAMES."core.soundset" = ["Sound set", "Sound sets"]
 COLLECTION_SLOT_NAMES."core.toaststyle" = ["Toast style", "Toast styles"]
 COLLECTION_TRACKER_FRAME = "Tracker frame"

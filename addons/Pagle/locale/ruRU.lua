@@ -324,9 +324,9 @@ ns.Locale("ruRU", function(L)
 	L.PARTY_FULL_NAME = "{name} {surname}"
 	L.PARTY_GOLD = "Взял(а) золото в охоте «{hunt}»"
 	L.PARTY_HP_HUNT = "{hunt} • для: {senders}"
-	L.PARTY_HP_MINE = "Твой улов"
+	L.PARTY_HP_MINE = "Ваш улов"
 	L.PARTY_HP_PARTY = "Выполнено для группы"
-	L.PARTY_HP_RUN = "Выиграно для {senders}: {event}"
+	L.PARTY_HP_RUN = "{event}: рассчитано • для: {senders}"
 	L.PARTY_HP_SENDERS_MORE = { few = "{name}, {other} и ещё {count}", many = "{name}, {other} и ещё {count}", one = "{name}, {other} и ещё {count}", other = "{name}, {other} и ещё {count}" }
 	L.PARTY_HP_SENDERS_TWO = "{name} и {other}"
 	L.PARTY_HP_SOME_HUNT = "охота"
@@ -583,7 +583,7 @@ ns.Locale("ruRU", function(L)
 	L.SIGN_DETAIL_COLOUR = "{species}, {variety}"
 	L.SIGN_DETAIL_COLOUR_HIDDEN = "{species} ({rarity})"
 	L.SIGN_DETAIL_MONSTER = "{species}, {length}"
-	L.SIGN_HEAD = { colour = "{name}: пойман редкий цвет", first = "Впервые в {region}: выловлен {fish}", hunt = "{name}: золото охоты", ledger = "{name}: Реестр заполнен", legend = "{name}: выловлена Легенда", monster = "{name}: выловлено Чудовище", prestige = "{name}: достигнут Престиж {rank}", region = "Впервые в {region} в этом месяце: выловлен {fish}", zone = "{name}: Мастер зоны {zone}" }
+	L.SIGN_HEAD = { colour = "{name}: пойман редкий цвет", first = "Впервые в {region}: {fish}", hunt = "{name}: золото охоты", ledger = "{name}: Реестр заполнен", legend = "{name}: выловлена Легенда", monster = "{name}: выловлено Чудовище", prestige = "{name}: достигнут Престиж {rank}", region = "Впервые в {region} в этом месяце: {fish}", zone = "{name}: Мастер зоны {zone}" }
 	L.SIGN_HEAD_MASTER_PRESTIGE = "{name}: достигнут Престиж мастера {master:0}"
 	L.SIGN_ITEM_UNKNOWN = "рыба"
 	L.SIGN_KICKER = { colour = "Редкий цвет", first = "Первая весть", hunt = "Золото охоты", ledger = "Реестр", legend = "Легенда", monster = "Чудовище", prestige = "Престиж", region = "Новости региона • {region}", zone = "Мастер зоны" }

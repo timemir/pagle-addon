@@ -97,6 +97,7 @@ ns.L = {
 	COLLECTION_SLOT_NAMES = {
 		["core.binding"] = { "Binding", "Bindings" },
 		["core.crest"] = { "Bookplate crest", "Bookplate crests" },
+		["core.newssign"] = { "News sign", "News signs" },
 		["core.soundset"] = { "Sound set", "Sound sets" },
 		["core.toaststyle"] = { "Toast style", "Toast styles" },
 	},

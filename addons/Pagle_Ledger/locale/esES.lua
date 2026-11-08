@@ -97,6 +97,7 @@ ns.Locale("esES", function(L)
 	L.COLLECTION_SLOT_NAMES = {
 		["core.binding"] = { "Encuadernación", "Encuadernaciones" },
 		["core.crest"] = { "Blasón de ex libris", "Blasones de ex libris" },
+		["core.newssign"] = { "Cartel de noticias", "Carteles de noticias" },
 		["core.soundset"] = { "Juego de sonidos", "Juegos de sonidos" },
 		["core.toaststyle"] = { "Estilo de aviso emergente", "Estilos de aviso emergente" },
 	}
@@ -293,7 +294,7 @@ ns.Locale("esES", function(L)
 		ok = { "No hay noticias este mes.", "Cuando un Pescador al que sigues pesca una Leyenda, alcanza un Prestigio o completa el Libro, aparece aquí, y en el cartel en tu próximo inicio de sesión." },
 	}
 	L.NEWS_FOLLOW = "Síguelo desde su página en la web de Pagle."
-	L.NEWS_KICKER = "La marea matinal"
+	L.NEWS_KICKER = "La Marea Matinal"
 	L.NEWS_LINE = "De los Pescadores que sigues, y los primeros de tu región este mes. Lo que muestra el cartel se elige en Ajustes."
 	L.NEWS_TITLE = "Noticias"
 	L.NEW_CURIO_STAMP = "¡Nueva!"

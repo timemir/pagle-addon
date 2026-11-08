@@ -96,6 +96,7 @@ ns.Locale("deDE", function(L)
 	L.COLLECTION_SLOT_NAMES = {
 		["core.binding"] = { "Einband", "Einbände" },
 		["core.crest"] = { "Exlibris-Wappen", "Exlibris-Wappen" },
+		["core.newssign"] = { "Nachrichtenschild", "Nachrichtenschilder" },
 		["core.soundset"] = { "Klangset", "Klangsets" },
 		["core.toaststyle"] = { "Einblendungsstil", "Einblendungsstile" },
 	}

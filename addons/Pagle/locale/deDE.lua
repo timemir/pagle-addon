@@ -583,7 +583,7 @@ ns.Locale("deDE", function(L)
 	L.SIGN_DETAIL_COLOUR = "{variety} {species}"
 	L.SIGN_DETAIL_COLOUR_HIDDEN = "{species} ({rarity})"
 	L.SIGN_DETAIL_MONSTER = "{species}, {length}"
-	L.SIGN_HEAD = { colour = "{name} hat eine seltene Farbe gefangen", first = "Als Erste in {region}: {fish} gelandet", hunt = "{name} holt Gold", ledger = "{name} hat das Anglerbuch vollendet", legend = "{name} hat eine Legende gelandet", monster = "{name} hat ein Monster gelandet", prestige = "{name} hat Prestige {rank} erreicht", region = "Diesen Monat als Erste in {region}: {fish} gelandet", zone = "{name} ist Gebietsmeister von {zone}" }
+	L.SIGN_HEAD = { colour = "{name} hat eine seltene Farbe gefangen", first = "Zuerst in {region} gelandet: {fish}", hunt = "{name} holt Gold", ledger = "{name} hat das Anglerbuch vollendet", legend = "{name} hat eine Legende gelandet", monster = "{name} hat ein Monster gelandet", prestige = "{name} hat Prestige {rank} erreicht", region = "Diesen Monat zuerst in {region} gelandet: {fish}", zone = "{name} ist Gebietsmeister von {zone}" }
 	L.SIGN_HEAD_MASTER_PRESTIGE = "{name} hat Meisterprestige {master:0} erreicht"
 	L.SIGN_ITEM_UNKNOWN = "ein Fisch"
 	L.SIGN_KICKER = { colour = "Seltene Farbe", first = "Erstmeldung", hunt = "Jagdgold", ledger = "Das Anglerbuch", legend = "Legende", monster = "Monster", prestige = "Prestige", region = "Regionsnachricht · {region}", zone = "Gebietsmeister" }

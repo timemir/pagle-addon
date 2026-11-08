@@ -900,7 +900,7 @@ value = "Нет, спасибо"
 en = "No thanks"
 
 [PARTY_HP_MINE]
-value = "Твой улов"
+value = "Ваш улов"
 en = "Your catch"
 
 [PARTY_HP_PARTY]
@@ -912,7 +912,7 @@ value = "{hunt} • для: {senders}"
 en = "{hunt} · for {senders}"
 
 [PARTY_HP_RUN]
-value = "Выиграно для {senders}: {event}"
+value = "{event}: рассчитано • для: {senders}"
 en = "{event} settled · for {senders}"
 
 [PARTY_HP_SOME_HUNT]
@@ -2750,7 +2750,7 @@ en.monster = "Monster"
 en.region = "Region news · {region}"
 
 [SIGN_HEAD]
-value.first = "Впервые в {region}: выловлен {fish}"
+value.first = "Впервые в {region}: {fish}"
 value.legend = "{name}: выловлена Легенда"
 value.prestige = "{name}: достигнут Престиж {rank}"
 value.ledger = "{name}: Реестр заполнен"
@@ -2758,7 +2758,7 @@ value.colour = "{name}: пойман редкий цвет"
 value.hunt = "{name}: золото охоты"
 value.zone = "{name}: Мастер зоны {zone}"
 value.monster = "{name}: выловлено Чудовище"
-value.region = "Впервые в {region} в этом месяце: выловлен {fish}"
+value.region = "Впервые в {region} в этом месяце: {fish}"
 en.first = "First in {region} to land {fish}"
 en.legend = "{name} landed a Legend"
 en.prestige = "{name} reached Prestige {rank}"
