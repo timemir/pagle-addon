@@ -1477,6 +1477,50 @@ en.absent = ["The Companion keeps this page.", "Anglers you follow on the Pagle 
 en.expired = ["These pages are more than a day old.", "Pagle has set them aside until the Companion brings fresh ones.", "Start the Companion, then /reload."]
 en.none = ["You follow no one yet.", "Follow an Angler from their page on the Pagle website.", "The Companion brings them in within the hour; they show here after your next /reload."]
 
+[FOLLOWING_NEWS]
+value = "Neuigkeiten »"
+en = "News »"
+
+[FOLLOWING_NEWS_NEW]
+value.one = "Neuigkeiten: {count:n} neu »"
+value.other = "Neuigkeiten: {count:n} neu »"
+en.one = "News: {count:n} new »"
+en.other = "News: {count:n} new »"
+
+[NEWS_TITLE]
+value = "Neuigkeiten"
+en = "News"
+
+[NEWS_KICKER]
+value = "Die Morgenflut"
+en = "The Morning Tide"
+
+[NEWS_LINE]
+value = "Von den Anglern, denen du folgst, und die Ersten deiner Region in diesem Monat. Was das Schild zeigt, stellst du in den Einstellungen ein."
+en = "From the Anglers you follow, and your region's firsts this month. What the sign shows is set in Settings."
+
+[NEWS_AGE_HOURS]
+value = "{hours:0} Std."
+en = "{hours:0} h"
+
+[NEWS_AGE_DAYS]
+value = "{days:0} Tg."
+en = "{days:0} d"
+
+[NEWS_CARD]
+value = "Zur Karte von {name} »"
+en = "See {name}'s card »"
+
+[NEWS_FOLLOW]
+value = "Folge ihm über seine Seite auf der Pagle-Website."
+en = "Follow them from their page on the Pagle website."
+
+[NEWS_EMPTY]
+value.none = ["Die Neuigkeiten kommen mit dem Begleiter.", "Aktualisiere den Pagle-Begleiter, um Neuigkeiten von den Anglern zu bekommen, denen du folgst.", "Ihre Karten stehen weiter unter Gefolgte Angler."]
+value.ok = ["Keine Neuigkeiten in diesem Monat.", "Fängt ein Angler, dem du folgst, eine Legende, erreicht ein Prestige oder vollendet das Anglerbuch, steht es hier und beim nächsten Einloggen auf dem Schild."]
+en.none = ["The news comes with the Companion.", "Update the Pagle Companion to bring news of the Anglers you follow.", "Their cards still show on the Following spread."]
+en.ok = ["No news this month.", "When an Angler you follow lands a Legend, takes a Prestige or completes the Ledger, it shows here, and on the sign at your next login."]
+
 [PRESTIGE_CONFIRM_KICKER]
 value = "Prestige"
 en = "Prestige"
@@ -1664,6 +1708,10 @@ en = "the Fish Journal: the Angler page"
 [TOUR_SEARCH]
 value = "das Fischjournal: Suchergebnisse zum Namen der meistgefangenen Art"
 en = "the Fish Journal: search results for the most-caught Species' name"
+
+[TOUR_NEWS]
+value = "das Fischjournal: die Neuigkeiten, mit Beispielnachrichten"
+en = "the Fish Journal: the news list, on sample news"
 
 [COLLECTION_CONTENTS]
 value = "Die Sammlung: Optiken und Titel"

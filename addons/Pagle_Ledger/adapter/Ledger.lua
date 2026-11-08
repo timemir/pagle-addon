@@ -12,7 +12,7 @@ ns.Ledger = LibStub("AceAddon-3.0"):NewAddon(addonName)
 --- AceAddon calls it once, at the Ledger's ADDON_LOADED, after Core's (CORE-R10).
 function ns.Ledger.OnInitialize()
 	--- The Ledger's Module handle: the calls that act for the Ledger (CORE-R12). Nil while the Ledger is inert.
-	ns.Module = Pagle.RegisterModule(ns.ModuleDef(ns.ToggleJournal, ns.OpenCollection))
+	ns.Module = Pagle.RegisterModule(ns.ModuleDef(ns.ToggleJournal, ns.OpenCollection, ns.OpenJournalNews))
 	-- An inert Module must stop (CORE-R13).
 	if not ns.Module then
 		return

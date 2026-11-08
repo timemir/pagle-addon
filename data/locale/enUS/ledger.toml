@@ -587,6 +587,29 @@ FOLLOWING_EMPTY.none = [
 	"Follow an Angler from their page on the Pagle website.",
 	"The Companion brings them in within the hour; they show here after your next /reload.",
 ]
+# The news list (LED-R176–R179): the Following spread's link to it (LED-R163; "{n} new" counted), its kicker, title
+# and line, an item's age at its row's right ("{n} h" under a day, "{n} d" from then on), the chosen item's link to a
+# followed Angler's card and the hint for a region headline's Angler the player doesn't follow, and the empty states'
+# lines for `none` and for `ok` with no item (`absent` and `expired` read FOLLOWING_EMPTY's).
+FOLLOWING_NEWS = "News »"
+FOLLOWING_NEWS_NEW.one = "News: {count:n} new »"
+FOLLOWING_NEWS_NEW.other = "News: {count:n} new »"
+NEWS_TITLE = "News"
+NEWS_KICKER = "The Morning Tide"
+NEWS_LINE = "From the Anglers you follow, and your region's firsts this month. What the sign shows is set in Settings."
+NEWS_AGE_HOURS = "{hours:0} h"
+NEWS_AGE_DAYS = "{days:0} d"
+NEWS_CARD = "See {name}'s card »"
+NEWS_FOLLOW = "Follow them from their page on the Pagle website."
+NEWS_EMPTY.none = [
+	"The news comes with the Companion.",
+	"Update the Pagle Companion to bring news of the Anglers you follow.",
+	"Their cards still show on the Following spread.",
+]
+NEWS_EMPTY.ok = [
+	"No news this month.",
+	"When an Angler you follow lands a Legend, takes a Prestige or completes the Ledger, it shows here, and on the sign at your next login.",
+]
 # The Prestige confirm (LED-R33); a Master Prestige's stars beside the Master's emblem are STAR stamps (LED-R34).
 PRESTIGE_CONFIRM_KICKER = "Prestige"
 PRESTIGE_CONFIRM_TITLE = "Begin a new Ledger?"
@@ -645,6 +668,7 @@ TOUR_CURIOS = "the Fish Journal: Curios"
 TOUR_LEGENDS = "the Fish Journal: Legends, on a caught one"
 TOUR_ANGLER = "the Fish Journal: the Angler page"
 TOUR_SEARCH = "the Fish Journal: search results for the most-caught Species' name"
+TOUR_NEWS = "the Fish Journal: the news list, on sample news"
 
 # The Collection (LED-R166–R175): Home's contents line, its crumb, and the search slip's placeholder on its spreads.
 # "{n} new" in red hand wherever a count of new looks shows (LED-R171).

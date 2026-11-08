@@ -218,6 +218,7 @@ describe("the Following spread's left page (LED-R163)", function()
 			"In this Ledger",
 			"Following",
 			"4 Anglers you follow. Follow and unfollow on the Pagle website.",
+			"News »",
 			"Ada",
 			"Bram Ashcombe",
 			"Iver Coldwater",
@@ -264,7 +265,7 @@ describe("the Following spread's left page (LED-R163)", function()
 			return marks
 		end
 		assert.are.same({ true, false, false, false }, selected())
-		assert.are.same({ id = "following", args = { angler = 3 } }, journal.pages.left[6].place)
+		assert.are.same({ id = "following", args = { angler = 3 } }, journal.pages.left[7].place)
 
 		journal.shown.left.drawn.row[3]:Click()
 
@@ -276,7 +277,7 @@ describe("the Following spread's left page (LED-R163)", function()
 	it("selects the first row when its args name no Angler in the file (LED-R163)", function()
 		local _, loaded = journalWith(file(), "following", { angler = 9 })
 
-		assert.is_true(loaded.ns.journal.pages.left[4].selected)
+		assert.is_true(loaded.ns.journal.pages.left[5].selected)
 		assert.are.equal("Ada", blockOfKind(loaded.ns.journal.pages.right, "title").text)
 	end)
 
@@ -566,22 +567,30 @@ describe("the Following spread's empty states (LED-R163)", function()
 	}) do
 		local state, following, lines = case[1], case[2], case[3]
 
-		it(("keeps the kicker and title, then reads its three lines in state %s (LED-R163)"):format(state), function()
-			local _, loaded = journalWith(following, "following")
-			local left = loaded.ns.journal.pages.left
+		it(
+			("keeps the kicker and title, then reads its three lines in state %s, and the News link but in absent (LED-R163)"):format(
+				state
+			),
+			function()
+				local _, loaded = journalWith(following, "following")
+				local left = loaded.ns.journal.pages.left
 
-			assert.are.same({
-				{ kind = "kicker", text = "In this Ledger" },
-				{ kind = "title", text = "Following" },
-				{ kind = "text", hand = true, text = lines[1] },
-				{ kind = "text", text = lines[2] },
-				{ kind = "text", color = "faded", text = lines[3] },
-			}, left)
-			assert.are.same(
-				{ "In this Ledger", "Following", lines[1], lines[2], lines[3] },
-				shownTexts(loaded.ns.journal.shown.left)
-			)
-		end)
+				local blocks = {
+					{ kind = "kicker", text = "In this Ledger" },
+					{ kind = "title", text = "Following" },
+					{ kind = "text", hand = true, text = lines[1] },
+					{ kind = "text", text = lines[2] },
+					{ kind = "text", color = "faded", text = lines[3] },
+				}
+				local texts = { "In this Ledger", "Following", lines[1], lines[2], lines[3] }
+				if state ~= "absent" then
+					blocks[6] = { kind = "link", hand = true, text = "News »", place = { id = "news" } }
+					texts[6] = "News »"
+				end
+				assert.are.same(blocks, left)
+				assert.are.same(texts, shownTexts(loaded.ns.journal.shown.left))
+			end
+		)
 
 		it(("leaves the right page blank in state %s (LED-R163)"):format(state), function()
 			local _, loaded = journalWith(following, "following", { angler = 1 })

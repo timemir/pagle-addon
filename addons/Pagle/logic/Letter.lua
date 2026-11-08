@@ -4,9 +4,10 @@ local ns = select(2, ...)
 -- The Letter (core/onboarding.md › The Letter) and the letters a Module sends through Core (ONB-R15–R18): when a
 -- letter shows, once per login, as ONB-R10's conditions hold; Open the letter, Later and, from 1.6, a letter's third
 -- button and its re-ask policy (ONB-R12, ONB-R16); a letter's words written as it shows (ONB-R15); which of
--- several letters shows first, one at a time (ONB-R17); whether one shows now, for the menu's tooltip (ONB-R13); a
--- restriction or an instance hiding it until the checks pass again (ONB-R14); the Modules' dialogs it waits for
--- (ONB-R100, QoL's conflict note); `/pagle dev onboarding letter` (ONB-R83) and its tour stops' samples (ONB-R84).
+-- several letters shows first, one at a time and never with the news sign (ONB-R17); whether one shows now, for the
+-- menu's tooltip (ONB-R13); a restriction or an instance hiding it until the checks pass again (ONB-R14); the
+-- Modules' dialogs it waits for (ONB-R100, QoL's conflict note); `/pagle dev onboarding letter` (ONB-R83) and its tour
+-- stops' samples (ONB-R84).
 -- Pure logic over what it's handed (CORE-R7); logic/Wiring.lua's ns.WireLetter builds it over Core's host, and
 -- adapter/Letter.lua draws the frame.
 
@@ -68,6 +69,7 @@ ns.LETTER_DELAY = 4
 ---@field package letters table<string, { spec: PagleLetterSpec, owner: string }> -- the Modules' letters (ONB-R15)
 ---@field package queue string[]              -- the Modules' letters sent this login, in the order sent, not answered
 ---@field package answered table<string, true> -- the letters answered this login (ONB-R12)
+---@field package signShowing boolean?       -- the news sign is on screen: no letter shows (ONB-R17, SIGN-R40)
 local Letter = {}
 Letter.__index = Letter
 
@@ -305,8 +307,8 @@ end
 --- ONB-R10's checks, run at each moment a letter may come or go: the delay's end, RestrictionChanged,
 --- ZONE_CHANGED_NEW_AREA, a card closing, a Module's dialog closing and the Field guide closing. A letter still to
 --- show this login shows once it is due (waiting or later), the delay has passed, no Module's dialog is open, the
---- login's cards have shown and closed, and neither a restriction nor an instance keeps it away; only one shows at a
---- time, the onboarding Letter first (ONB-R17). One on screen hides for a restriction or an instance alone (ONB-R14),
+--- login's cards have shown and closed, the news sign isn't on screen, and neither a restriction nor an instance
+--- keeps it away; only one shows at a time, the onboarding Letter first (ONB-R17). One on screen hides for a restriction or an instance alone (ONB-R14),
 --- and shows again at a later check. While the tour's sample shows, nothing changes.
 function Letter:Check()
 	if self.preview then
@@ -320,7 +322,7 @@ function Letter:Check()
 		end
 		return
 	end
-	if not self.ready or self:IsDialogOpen() or keptAway(self) or not options.cardsSettled() then
+	if not self.ready or self.signShowing or self:IsDialogOpen() or keptAway(self) or not options.cardsSettled() then
 		return
 	end
 	local id = nextLetter(self)
@@ -351,6 +353,19 @@ end
 function Letter:EnteredWorld()
 	wait(self)
 	self:Check()
+end
+
+--- The news sign came on screen (`true`) or went up (`false`) (ONB-R17, SIGN-R40): no letter shows while it is on
+--- screen, and once it has gone up the letters wait LETTER_DELAY again before the next check, so a letter that came due
+--- meanwhile follows the sign by that much. The sign itself never drops while a letter shows.
+---@param showing boolean
+function Letter:SetSignShowing(showing)
+	if showing then
+		self.signShowing = true
+	elseif self.signShowing then
+		self.signShowing = nil
+		wait(self)
+	end
 end
 
 --- A Module's dialog that asks the player something opened or closed (M:SetDialogOpen, ONB-R100): the letters wait

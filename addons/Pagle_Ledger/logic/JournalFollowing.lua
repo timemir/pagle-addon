@@ -53,21 +53,22 @@ local function rowValue(followed)
 	return ns.Text(L.FOLLOWING_ROW_NO_PRESTIGE, { level = followed.level, ledger = followed.ledger })
 end
 
--- The left page in state `ok` (LED-R163): kicker, title, the count, then the index in GetFollowedAnglers' order (by
--- name, IGV-R31), each row the Angler's name, an "HC" stamp for a Hardcore Angler and its level, Prestige and Ledger
+-- The left page in state `ok` (LED-R163): kicker, title, the count and the News link under it (LED-R176), then the
+-- index in GetFollowedAnglers' order (by name, IGV-R31), each row the Angler's name, an "HC" stamp for a Hardcore Angler and its level, Prestige and Ledger
 -- completion at the right with its Prestige emblem's rank (LED-R152; none at rank 0), selecting it; the selected one
 -- is marked.
----@param _ LedgerSpreadContext
+---@param context LedgerSpreadContext
 ---@param anglers PagleFollowedAngler[]
 ---@param selected integer
 ---@return LedgerBlock[]
-local function index(_, anglers, selected)
+local function index(context, anglers, selected)
 	local L = ns.L
 	local count = ns.Text(L.FOLLOWING_COUNT, { count = #anglers })
 	local blocks = {
 		{ kind = "kicker", text = L.FOLLOWING_KICKER },
 		{ kind = "title", text = L.FOLLOWING_TITLE },
 		{ kind = "text", text = count },
+		ns.FollowingNewsLink(context, "ok"),
 	}
 	for i, followed in ipairs(anglers) do
 		blocks[#blocks + 1] = {
@@ -145,10 +146,12 @@ local function card(context, followed)
 end
 
 -- The left page in state `none`, `absent` or `expired` (LED-R163): its kicker and title, then the state's three
--- lines, the first in the hand and the last faded. The right page stays blank.
+-- lines, the first in the hand and the last faded, then the News link but in `absent` (LED-R176). The right page
+-- stays blank.
+---@param context LedgerSpreadContext
 ---@param state string "none", "absent" or "expired"
 ---@return LedgerBlock[]
-local function emptyPage(state)
+local function emptyPage(context, state)
 	local L = ns.L
 	local lines = L.FOLLOWING_EMPTY[state]
 	return {
@@ -157,6 +160,7 @@ local function emptyPage(state)
 		{ kind = "text", hand = true, text = lines[1] },
 		{ kind = "text", text = lines[2] },
 		{ kind = "text", color = "faded", text = lines[3] },
+		ns.FollowingNewsLink(context, state),
 	}
 end
 
@@ -171,7 +175,7 @@ ns.RegisterJournalSpread(ns.JOURNAL_FOLLOWING, {
 		local followed = context.followedAnglers()
 		local anglers = followed.anglers
 		if followed.state ~= "ok" then
-			return { left = emptyPage(followed.state), right = {} }
+			return { left = emptyPage(context, followed.state), right = {} }
 		end
 		local selected = anglers[args.angler] and args.angler or 1
 		return { left = index(context, anglers, selected), right = card(context, anglers[selected]) }
