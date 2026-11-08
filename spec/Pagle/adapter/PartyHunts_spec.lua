@@ -123,6 +123,23 @@ local function raise(loaded, M, ...)
 	loaded.client.advance(0)
 end
 
+-- The path to the first string in `value` (any depth, keys too) that contains `needle`, or nil for none.
+local function textAt(value, needle, path)
+	path = path or "."
+	if type(value) == "string" then
+		return value:find(needle, 1, true) and path or nil
+	elseif type(value) == "table" then
+		for key, inner in pairs(value) do
+			local found = (type(key) == "string" and key:find(needle, 1, true) and path)
+				or textAt(inner, needle, path .. "." .. tostring(key))
+			if found then
+				return found
+			end
+		end
+	end
+	return nil
+end
+
 -- Hunts' moment for a Hunt a Party Catch completed (HNT-R185), as #645's Hunts raises it.
 local function completed(extra)
 	local moment = {
@@ -130,6 +147,7 @@ local function completed(extra)
 		kind = "huntCompleted",
 		title = "Hunt completed",
 		text = "Mackerel Run · with Kukli Stonebrew",
+		storedText = "Mackerel Run · with a groupmate",
 		cast = G1,
 		partyCatch = SOURCE,
 		partyHunt = "mackerel_run",
@@ -159,17 +177,29 @@ describe("the Angler's own moments for a Party Catch (ANN-R110)", function()
 		assert.are.equal("Mackerel Run · with Kukli Stonebrew", toast.display.announcement.headline.text)
 	end)
 
-	it("keep the source Catch ID out of the Session summary: partyCatch is never stored (LOG-R116)", function()
-		local loaded, M = inParty()
-		raise(loaded, M, completed())
-		-- With no Session open, the summary keeps it pending (ANN-R52).
-		local global = loaded.ns.db.global
-		local moments = #global.summary.moments > 0 and global.summary.moments or global.pending
-		assert.are.equal(1, #moments)
-		assert.are.equal("Mackerel Run · with Kukli Stonebrew", moments[1].text)
-		assert.is_nil(moments[1].partyCatch)
-		assert.is_nil(moments[1].partyHunt)
-	end)
+	it(
+		"show the groupmate's name, but store neither it nor the source Catch ID: PagleDB keeps 'with a groupmate'"
+			.. " (ANN-R110, LOG-R116)",
+		function()
+			local loaded, M = inParty()
+			raise(loaded, M, completed())
+			local toast = loaded.ns.announcementFrames.toast
+			assert.are.equal("Mackerel Run · with Kukli Stonebrew", toast.display.announcement.headline.text)
+			-- With no Session open, the summary keeps it pending (ANN-R52).
+			local global = loaded.ns.db.global
+			local moments = #global.summary.moments > 0 and global.summary.moments or global.pending
+			assert.are.equal(1, #moments)
+			assert.are.equal("Mackerel Run · with a groupmate", moments[1].text)
+			assert.is_nil(moments[1].partyCatch)
+			assert.is_nil(moments[1].partyHunt)
+			loaded.client.advance(30)
+			for _, saved in ipairs({ "PagleDB", "PagleLog" }) do
+				for _, needle in ipairs({ "Kukli", "Stonebrew", "Player-4701" }) do
+					assert.is_nil(textAt(loaded.env[saved], needle), saved .. " holds " .. needle)
+				end
+			end
+		end
+	)
 
 	it("are dropped, and share nothing, when a rebuild raises them: no name and no hp (ANN-R4, LOG-R75)", function()
 		local loaded = loadCore(history(3, 1791731000))

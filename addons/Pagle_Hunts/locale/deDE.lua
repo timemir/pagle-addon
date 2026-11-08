@@ -130,6 +130,7 @@ ns.Locale("deDE", function(L)
 	L.NEEDS_SKILL = "braucht Fertigkeit {need:0}"
 	L.NO_HUNTS = "Noch keine Jagden."
 	L.OUT_OF_SEASON = "außer Saison"
+	L.PARTY_A_GROUPMATE = "einem Gruppenmitglied"
 	L.PARTY_WITH = "{text} · mit {name}"
 	L.PAY_AMOUNT = "+{xpRun:0} EP · {coins:0} Münzen"
 	L.PAY_PAID_OUT = "ausgezahlt"

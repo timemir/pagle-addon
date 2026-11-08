@@ -106,7 +106,8 @@ function ns.PartySourceCatch(record, catchId)
 end
 
 -- A live Party Catch's moments name the groupmate after their text (HNT-R185, ANN-R110): " · with {name}", left out
--- when the record carries no name.
+-- when the record carries no name. What Core stores of them says " · with a groupmate" (`storedText`): no groupmate's
+-- name is kept anywhere.
 ---@param moments PagleMoment[]
 ---@param record PaglePartyCatch
 local function withGroupmate(moments, record)
@@ -114,9 +115,11 @@ local function withGroupmate(moments, record)
 	if type(name) ~= "string" or name == "" then
 		return
 	end
+	local L = ns.L
 	for _, moment in ipairs(moments) do
 		if moment.cast == record.id and moment.text then
-			moment.text = ns.Text(ns.L.PARTY_WITH, { text = moment.text, name = name })
+			moment.storedText = ns.Text(L.PARTY_WITH, { text = moment.text, name = L.PARTY_A_GROUPMATE })
+			moment.text = ns.Text(L.PARTY_WITH, { text = moment.text, name = name })
 		end
 	end
 end

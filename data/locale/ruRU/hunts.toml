@@ -529,6 +529,10 @@ en = "Wager settled"
 value = "{text} • с {name}"
 en = "{text} · with {name}"
 
+[PARTY_A_GROUPMATE]
+value = "участником группы"
+en = "a groupmate"
+
 [WAGER_SETTLED_STAMP]
 value = "Выиграно"
 en = "Settled"
