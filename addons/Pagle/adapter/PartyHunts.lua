@@ -32,19 +32,14 @@ local function unsecret(value)
 	return ns.UnlessSecret(issecretvalue, value)
 end
 
---- Whether Party Hunts is on (SET-R35, LOG-R121): `PagleDB.profile.partyHunts`, nil meaning on.
----@return boolean
-function ns.PartyHuntsOn()
-	return not (ns.db and ns.db.profile.partyHunts == false)
-end
-
 -- A party here (LOG-R110): a home group of up to 5, never a raid.
 local function inHomeParty()
 	return IsInGroup(LE_PARTY_CATEGORY_HOME) and not IsInRaid()
 end
 
 --- Sends "Completed for the party" for each moment of `announcement` that carries partyCatch (ANN-R111), once, on the
---- prefix PagleCatch, while Party Hunts and Share my moments with my party are on, in a party. adapter/Moments.lua
+--- prefix PagleCatch, while Party Hunts (adapter/Party.lua's ns.PartyHuntsOn: from 1.6 off until the party letter is
+--- accepted, ANN-R113) and Share my moments with my party are on, in a party. adapter/Moments.lua
 --- calls it with every Announcement the collector shows, so only live moments reach it (ANN-R4): never a replay's or
 --- a rebuild's.
 ---@param announcement PagleAnnouncement

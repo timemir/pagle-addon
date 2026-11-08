@@ -37,11 +37,6 @@ local function inHomeParty()
 	return IsInGroup(LE_PARTY_CATEGORY_HOME) and not IsInRaid()
 end
 
--- The Party Hunts setting (LOG-R121, SET-R35), on by default.
-local function partyHuntsOn()
-	return ns.db ~= nil and ns.db.profile.partyHunts ~= false
-end
-
 -- Whether `sender` is the player, the client's echo of their own message (LOG-R113 item 1): by GUID where the client
 -- resolves the sender's name, else by first name.
 ---@param sender string?
@@ -59,7 +54,10 @@ end
 
 local partyCatches = ns.NewPartyCatches({
 	isPlayer = isPlayer,
-	on = partyHuntsOn,
+	-- The Party Hunts setting (LOG-R121, SET-R35): from 1.6 off until the party letter is accepted (ANN-R113).
+	on = function()
+		return ns.PartyHuntsOn()
+	end,
 	inParty = inHomeParty,
 	groupmate = function(sender)
 		return ns.PartyGroupmate(sender)

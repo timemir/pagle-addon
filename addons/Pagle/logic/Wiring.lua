@@ -1848,7 +1848,7 @@ end
 --- What the Letter's wiring needs from where Core runs, beyond the host: Core's adapter passes its frame and
 --- IsInInstance() (adapter/Letter.lua), FakePagle its records.
 ---@class PagleLetterView
----@field show fun(content: PagleLetterSpec) -- the frame on screen with these words, rising in with the `letter` sound (ONB-R11)
+---@field show fun(content: PagleLetterWords) -- the frame on screen with these words, rising in with the `letter` sound (ONB-R11)
 ---@field hide fun()               -- the frame off screen, at once
 ---@field inInstance fun(): boolean -- IsInInstance()
 
@@ -1893,6 +1893,8 @@ function ns.WireLetter(host, view)
 			local log = host.catchLog()
 			return log ~= nil and log.data.test == true
 		end,
+		-- ONB-R16: a re-ask policy's clock (from 1.6).
+		now = host.serverTime,
 	})
 	ns.letter = letter
 
@@ -1913,9 +1915,10 @@ function ns.WireLetter(host, view)
 
 	--- Declares a letter of the Module's own (ONB-R15): its id `<module>.<name>`, its `kicker`, `text`, `confirm`
 	--- and `later` words and the `onConfirm` function its confirm button calls, once Core has set the letter
-	--- `opened`. Call it in OnInitialize or OnEnable, and only `if M.RegisterLetter then`, so it runs on a Core without
-	--- it (ONB-R90). Raises an error at the Module's call, adding nothing, for a missing or mistyped field or an id
-	--- registered before (ns.LetterProblem). Core keeps a copy.
+	--- `opened`; from 1.6, if it likes, a third button's `decline` label, live `words` and a re-ask policy, `again`
+	--- (PagleLetterSpec). Call it in OnInitialize or OnEnable, and only `if M.RegisterLetter then`, so it runs on a
+	--- Core without it (ONB-R90). Raises an error at the Module's call, adding nothing, for a missing or mistyped field
+	--- or an id registered before (ns.LetterProblem). Core keeps a copy.
 	---@param id string
 	---@param spec PagleLetterSpec
 	function ModuleHandle:RegisterLetter(id, spec)

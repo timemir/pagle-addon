@@ -14,10 +14,16 @@ local function party()
 end
 
 -- Core logged in on Forever over a log of two old Casts, with `group` (none: alone), the Ledger registered and every
--- login frame run; Margin notes off, so only the Announcements' own sounds play.
-local function loggedIn(group)
+-- login frame run; Margin notes off, so only the Announcements' own sounds play. The party letter accepted (Fish
+-- together, ANN-R113, ANN-R115), so the party features are on, unless `unasked`.
+local function loggedIn(group, unasked)
 	local loaded = loadCore(history(2))
 	loaded.env.PagleDB.global.onboarding.notesOn = false
+	if not unasked then
+		loaded.ns.db.profile.party = { optIn = 1, share = true, show = true, sounds = true }
+		loaded.ns.db.profile.partyHunts = true
+		loaded.env.PagleDB.global.onboarding.letters = { ["core.party"] = "opened" }
+	end
 	loaded.client.group = group
 	local M = loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
 	enterWorld(loaded, 3)
@@ -236,7 +242,7 @@ describe("sharing a moment", function()
 			raise(loaded, L, legend())
 			assert.are.same({}, sent(loaded))
 
-			loaded.ns.db.profile.party = nil
+			loaded.ns.db.profile.party = { optIn = 1, share = true }
 			loaded.client.group.raid = true
 			raise(loaded, L, legend())
 			assert.are.same({}, sent(loaded))
@@ -652,29 +658,33 @@ describe("the Party block (SET-R36)", function()
 	end)
 
 	it(
-		"starts every row on with nothing stored, writes false for off and clears it for on, and Defaults turns them"
-			.. " all back on (SET-R36, SET-R33)",
+		"starts Share and Show off with nothing stored and the rest on, stores each change of Share, Show and Cheers"
+			.. " sounds as it is, a kind's off as false, and Defaults turns Share and Show off and the rest on"
+			.. " (SET-R36, SET-R33, ANN-R113)",
 		function()
-			local loaded = loggedIn(nil)
-			for _, label in ipairs(LABELS) do
-				assert(row(loaded, label):GetSetting():GetValue() == true, label)
+			local loaded = loggedIn(nil, true)
+			for i, label in ipairs(LABELS) do
+				assert(row(loaded, label):GetSetting():GetValue() == (i > 2), label)
 			end
 			assert.is_nil(loaded.ns.db.profile.party)
 
-			row(loaded, "Share my moments with my party"):GetSetting():SetValue(false)
+			row(loaded, "Share my moments with my party"):GetSetting():SetValue(true)
 			row(loaded, "Gold tier in a Hunt"):GetSetting():SetValue(false)
 			row(loaded, "Cheers sounds"):GetSetting():SetValue(false)
-			assert.are.same({ share = false, kinds = { gold = false }, sounds = false }, loaded.ns.db.profile.party)
+			assert.are.same(
+				{ optIn = 1, share = true, kinds = { gold = false }, sounds = false },
+				loaded.ns.db.profile.party
+			)
 
 			row(loaded, "Gold tier in a Hunt"):GetSetting():SetValue(true)
 			assert.is_nil(loaded.ns.db.profile.party.kinds.gold)
 
 			loaded.client.settings.defaults(page(loaded))
-			for _, label in ipairs(LABELS) do
-				assert(row(loaded, label):GetSetting():GetValue() == true, label)
+			for i, label in ipairs(LABELS) do
+				assert(row(loaded, label):GetSetting():GetValue() == (i > 2), label)
 			end
-			assert.is_nil(loaded.ns.db.profile.party.share)
-			assert.is_nil(loaded.ns.db.profile.party.sounds)
+			assert.are.same({ false, true }, { loaded.ns.db.profile.party.share, loaded.ns.db.profile.party.sounds })
+			assert.is_nil(loaded.ns.db.profile.party.show)
 		end
 	)
 

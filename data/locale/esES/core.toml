@@ -484,6 +484,26 @@ value.other = "{count} alzaron una jarra"
 en.one = "{count} raised a mug"
 en.other = "{count} raised a mug"
 
+[PARTY_LETTER_KICKER]
+value = "Una carta, pasada por la orilla"
+en = "A letter, passed along the bank"
+
+[PARTY_LETTER_LINE]
+value = "{name} está pescando en {zone} contigo y también usa Pagle. Pescad juntos: comparte tus mejores capturas, brinda por las suyas y que las capturas de cada uno cuenten para las Cazas del otro."
+en = "{name} is fishing {zone} with you, and they run Pagle too. Fish together: share your best catches, cheer theirs, and count each other’s catches toward your Hunts."
+
+[PARTY_LETTER_YES]
+value = "Pescar juntos"
+en = "Fish together"
+
+[PARTY_LETTER_LATER]
+value = "Ahora no"
+en = "Not now"
+
+[PARTY_LETTER_NO]
+value = "No, gracias"
+en = "No thanks"
+
 [PARTY_HP_MINE]
 value = "Tu captura"
 en = "Your catch"
@@ -1043,8 +1063,8 @@ value = "Pagle dev: /pagle dev on | off | endsession | preview <tipo> | stage <n
 en = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | stage <count> | glyphs | tour [module | list | stop] | probe | fonts | pseudo on | off | onboarding <command> | content | views | pastetest <KB> | sign <look> [kind] [more]"
 
 [DEV_PARTY_USAGE]
-value = "Pagle dev: /pagle dev party <kind | all | cheer [1-4]>, donde kind es uno de {kinds}"
-en = "Pagle dev: /pagle dev party <kind | all | cheer [1-4]>, where kind is one of {kinds}"
+value = "Pagle dev: /pagle dev party <kind | all | cheer [1-4] | letter [reset]>, donde kind es uno de {kinds}"
+en = "Pagle dev: /pagle dev party <kind | all | cheer [1-4] | letter [reset]>, where kind is one of {kinds}"
 
 [DEV_PARTY_QUEUED]
 value = "Pagle dev: un aviso de grupo de {name} está en cola: {kind}."
@@ -1053,6 +1073,14 @@ en = "Pagle dev: a party toast from {name} is queued: {kind}."
 [DEV_PARTY_CHEERED]
 value = "Pagle dev: {count:0} brindis por un momento tuyo van en camino."
 en = "Pagle dev: {count:0} cheers for a moment of yours are on their way."
+
+[DEV_PARTY_LETTER]
+value = "Pagle dev: la carta del grupo está en pantalla, como si {name} pescara a tu lado."
+en = "Pagle dev: the party letter is on screen, as if {name} were fishing beside you."
+
+[DEV_PARTY_LETTER_RESET]
+value = "Pagle dev: se ha olvidado la respuesta a la carta del grupo; compartir con el grupo queda desactivado hasta que se responda."
+en = "Pagle dev: the party letter's answer is forgotten; party sharing is off until it is answered."
 
 [DEV_PASTE_TEST_USAGE]
 value = "Pagle dev: /pagle dev pastetest <KB>, de {pasteTestMinKb} a {pasteTestMaxKb}; la comprobación copia 64, 128, 256 y 512."

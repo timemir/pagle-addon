@@ -535,15 +535,16 @@ There is no check 22: it looked for a per-character Self-Found call, and the cha
 
 **Goal:** in a party of up to 5, a groupmate's Catch counts toward the Angler's Hunts, Standing Hunts and Pagle Wagers alike, while both fish the same zone ([#641](https://github.com/timemir/pagle-addon/issues/641)). It is a policy release: it adds the `G1` entry and raises the Hunts rules version, so it declares a new rule set, `pagle-2026j`, and pagle-backend must read `G1` and hold `pagle-2026j` before the tag (pagle-backend [#457](https://github.com/timemir/pagle-backend/issues/457)): a backend that doesn't know `G1` refuses every Catch log that holds one. It ships after [#640](https://github.com/timemir/pagle-addon/issues/640)'s party toasts, whose channel, send queue and compact style it uses.
 
-**Build order:** 1. Core's channel, message, checks, `G1` entry and record, and the Party Hunts row (LOG-R110–R121, SET-R35). 2. Hunts' fold of Party Catches, its filter and its board line (HNT-R180–R187). 3. The moments: the Angler's own and the completed-for-the-party toast (ANN-R110, ANN-R111).
+**Build order:** 1. Core's channel, message, checks, `G1` entry and record, and the Party Hunts row (LOG-R110–R121, SET-R35). 2. Hunts' fold of Party Catches, its filter and its board line (HNT-R180–R187). 3. The moments: the Angler's own and the completed-for-the-party toast (ANN-R110, ANN-R111). 4. The party letter governs Party Hunts, and the letter service gains a third button, live words and a re-ask policy, so the party letter needs no workaround ([#665](https://github.com/timemir/pagle-addon/issues/665); hashed: `logic/Letter.lua`, `logic/Onboarding.lua`, `logic/Wiring.lua`, `logic/Migrations.lua`'s step 4).
 
-**Core rules:** LOG-R110–R121, LOG-R122–R126, and the 1.6 parts of LOG-R42 and the Entry formats; ANN-R10 for Party Catches, ANN-R110, ANN-R111
+**Core rules:** LOG-R110–R121, LOG-R122–R126, and the 1.6 parts of LOG-R42 and the Entry formats; ANN-R10 for Party Catches, ANN-R110, ANN-R111; the 1.6 parts of ANN-R113–R116, ANN-R117, ONB-R15 and ONB-R16
 
 **Module rules:** Hunts: HNT-R180–R187, HNT-R205–R208, and the 1.6 parts of HNT-R136, HNT-R137, HNT-R149, HNT-R190
 
 **Settings rules:** SET-R33 for the Party section, SET-R35
 
 **Exit check,** with two accounts in one party, both on 1.6:
+0. Neither shares nor counts anything until each accepts the party letter (Fish together turns Party Hunts on, ANN-R113, ANN-R115); No thanks on one side keeps that side's Party Hunts off.
 1. Both fish the same zone: each Catch of one that a Hunt of the other targets adds to the other's count, and a tier it reaches shows "party" on the tier ladder; the other's toast reads "… · with {name}".
 2. When a groupmate's Catch completes a Hunt, the catcher sees a "Your catch" party toast and the third groupmate a "Completed for the party" one, each once.
 3. One of them moves to another zone, or stops casting for more than 5 minutes: the other's Catches no longer count for them.

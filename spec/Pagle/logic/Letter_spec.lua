@@ -11,8 +11,9 @@ local ns = loadAddon("Pagle", FOREVER_GLOBALS).ns
 -- spec changes them: not restricted, not in an instance, the login's cards settled. Returns the Letter and what it
 -- did: `shown` and `hidden` count each show and hide of its frame, `guides` each guide opened, `world` the
 -- conditions to change (`guide` is the Field guide being open, ONB-R17), `contents` the words of each letter shown, in
--- order, `confirmed` the ids of the Module letters whose confirm button ran, `global` PagleDB.global and `clock` the
--- fake clock's advance.
+-- order, `confirmed` the ids of the Module letters whose confirm button ran, `global` PagleDB.global, `clock` the
+-- fake clock's advance, `serverTime` what GetServerTime() returns (a re-ask policy's clock, ONB-R16) and `showingAtHide`
+-- whether the Letter said a letter was showing as each hide ran, `reported` each error a call reported.
 local function letterWith(letter)
 	local global = { onboarding = ns.NewOnboardingState(letter or "waiting") }
 	local onboarding = ns.NewOnboarding({
@@ -27,6 +28,7 @@ local function letterWith(letter)
 	local timers = {}
 	local now = 0
 	local seen = { shown = 0, hidden = 0, guides = 0, global = global, contents = {}, confirmed = {} }
+	seen.serverTime, seen.showingAtHide, seen.reported = 1000000, {}, {}
 	seen.world = { restricted = false, instance = false, settled = true, guide = false, test = false }
 	function seen.clock(seconds)
 		now = now + seconds
@@ -59,6 +61,19 @@ local function letterWith(letter)
 		end,
 		hide = function()
 			seen.hidden = seen.hidden + 1
+			seen.showingAtHide[#seen.showingAtHide + 1] = seen.made:IsShowing()
+		end,
+		now = function()
+			return seen.serverTime
+		end,
+		-- host.call: an error in a Module's function reported, not raised
+		call = function(fn, ...)
+			local ok, result = pcall(fn, ...)
+			if not ok then
+				seen.reported[#seen.reported + 1] = result
+				return nil
+			end
+			return result
 		end,
 		openGuide = function()
 			seen.guides = seen.guides + 1
@@ -77,6 +92,7 @@ local function letterWith(letter)
 			return seen.world.test == true
 		end,
 	})
+	seen.made = made
 	return made, seen
 end
 
@@ -892,5 +908,267 @@ describe("a Module's letter from /pagle dev onboarding letter and the tour (ONB-
 
 		assert.are.equal(0, seen.shown)
 		assert.is_false(letter:IsShowing())
+	end)
+end)
+
+describe("a letter's third button, live words and re-ask policy (ONB-R15, ONB-R16; from 1.6, #665)", function()
+	local DAY = 24 * 60 * 60
+
+	-- A Letter over an answered onboarding Letter, past the delay, with `ledger.ask` registered as `over` makes it.
+	local function asking(over)
+		local letter, seen = letterWith("opened")
+		local spec = {
+			kicker = "A kicker",
+			text = "The line",
+			confirm = "Yes",
+			later = "Not now",
+			decline = "No thanks",
+			onConfirm = function()
+				seen.confirmed[#seen.confirmed + 1] = "ledger.ask"
+			end,
+		}
+		for key, value in pairs(over or {}) do
+			spec[key] = value
+		end
+		assert.is_nil(letter:Register("ledger.ask", spec, "Ledger"))
+		letter:EnteredWorld()
+		seen.clock(ns.LETTER_DELAY)
+		return letter, seen
+	end
+
+	-- The next login over `seen`'s saved state and server time.
+	local function nextLogin(seen, over)
+		local letter, again = asking(over)
+		again.global.onboarding = seen.global.onboarding
+		again.serverTime = seen.serverTime
+		return letter, again
+	end
+
+	it("onb_r15 takes a decline label, a words function and an again in seconds, each optional", function()
+		local letter = letterWith()
+		local function spec(over)
+			local made = { kicker = "k", text = "t", confirm = "c", later = "l", onConfirm = function() end }
+			for key, value in pairs(over) do
+				made[key] = value
+			end
+			return made
+		end
+
+		assert.is_nil(
+			letter:Register("ledger.a", spec({ decline = "No", words = function() end, again = DAY }), "Ledger")
+		)
+		assert.matches("needs a decline", letter:Register("ledger.b", spec({ decline = "" }), "Ledger"))
+		assert.matches("words is a function, got string", letter:Register("ledger.b", spec({ words = "w" }), "Ledger"))
+		assert.matches("again is a number of seconds", letter:Register("ledger.b", spec({ again = 0 }), "Ledger"))
+		assert.matches("again is a number of seconds", letter:Register("ledger.b", spec({ again = "1d" }), "Ledger"))
+		assert.are.same({ "ledger.a" }, letter:Ids())
+	end)
+
+	it("onb_r15 shows a third button only for a letter that has one", function()
+		local letter, seen = asking()
+		register(letter, seen, "hunts.other")
+		letter:Send("ledger.ask")
+		letter:Send("hunts.other")
+		assert.are.equal("No thanks", seen.contents[1].decline)
+
+		letter:Open()
+		seen.clock(ns.LETTER_DELAY)
+
+		assert.are.equal("The line of hunts.other", seen.contents[2].text)
+		assert.is_nil(seen.contents[2].decline)
+	end)
+
+	it("onb_r16 the third button declines the letter: it goes, and never shows again", function()
+		local letter, seen = asking()
+		letter:Send("ledger.ask")
+
+		letter:Decline()
+
+		assert.are.equal("declined", seen.global.onboarding.letters["ledger.ask"])
+		assert.are.equal(1, seen.hidden)
+		assert.are.same({}, seen.confirmed)
+		assert.is_false(letter:IsShowing())
+		local again, seenAgain = nextLogin(seen)
+		seenAgain.serverTime = seen.serverTime + 30 * DAY
+		assert.is_false(again:Send("ledger.ask"))
+		assert.are.equal(0, seenAgain.shown)
+	end)
+
+	it("onb_r16 the third button does nothing for a letter without one, nor with no letter on screen", function()
+		local letter, seen = letterWith("opened")
+		register(letter, seen, "ledger.prestige")
+		letter:Decline()
+		letter:EnteredWorld()
+		seen.clock(ns.LETTER_DELAY)
+		letter:Send("ledger.prestige")
+
+		letter:Decline()
+
+		assert.is_true(letter:IsShowing())
+		assert.are.equal("waiting", seen.global.onboarding.letters["ledger.prestige"])
+		assert.are.equal(0, seen.hidden)
+	end)
+
+	it("onb_r17 the next letter follows a declined one LETTER_DELAY on, as after any answer", function()
+		local letter, seen = asking()
+		register(letter, seen, "hunts.other")
+		letter:Send("ledger.ask")
+		letter:Send("hunts.other")
+
+		letter:Decline()
+		seen.clock(ns.LETTER_DELAY - 0.1)
+		assert.are.equal(1, seen.shown)
+		seen.clock(0.1)
+
+		assert.are.equal(2, seen.shown)
+		assert.are.equal("The line of hunts.other", seen.contents[2].text)
+	end)
+
+	it("onb_r15 writes a letter's live words as it shows, each time, its registered ones standing in", function()
+		local calls, name = 0, "Kukli"
+		local letter, seen = asking({
+			words = function()
+				calls = calls + 1
+				return { text = name .. " is here", decline = "Never" }
+			end,
+		})
+		letter:Send("ledger.ask")
+		assert.are.equal(1, calls)
+		assert.are.same(
+			{ kicker = "A kicker", text = "Kukli is here", confirm = "Yes", later = "Not now", decline = "Never" },
+			seen.contents[1]
+		)
+
+		name = "Arwen"
+		letter:Later()
+		letter:ShowNow("ledger.ask")
+		letter:Later()
+		name = "Bram"
+		letter:TourShow("ledger.ask")
+
+		assert.are.equal(3, calls)
+		assert.are.same({ "Arwen is here", "Bram is here" }, { seen.contents[2].text, seen.contents[3].text })
+	end)
+
+	it("onb_r15 falls back to a letter's registered words when its live words fail", function()
+		local letter, seen = asking({
+			words = function()
+				error("no zone")
+			end,
+		})
+
+		letter:Send("ledger.ask")
+
+		assert.are.equal(1, #seen.reported)
+		assert.are.same(
+			{ kicker = "A kicker", text = "The line", confirm = "Yes", later = "Not now", decline = "No thanks" },
+			seen.contents[1]
+		)
+	end)
+
+	it(
+		"onb_r16 asks again after again's seconds: Later keeps it later, the time kept, and never declines it",
+		function()
+			local letter, seen = asking({ again = DAY })
+			letter:Send("ledger.ask")
+
+			letter:Later()
+
+			assert.are.equal("later", seen.global.onboarding.letters["ledger.ask"])
+			assert.are.equal(seen.serverTime, seen.global.onboarding.laterAt["ledger.ask"])
+
+			-- Within the day: sent, but neither queued nor shown.
+			local soon, seenSoon = nextLogin(seen, { again = DAY })
+			seenSoon.serverTime = seen.serverTime + DAY - 60
+			assert.is_false(soon:Send("ledger.ask"))
+			seenSoon.clock(ns.LETTER_DELAY)
+			assert.are.equal(0, seenSoon.shown)
+
+			-- After it: shown again; Later again keeps it later, with the new time.
+			local day, seenDay = nextLogin(seen, { again = DAY })
+			seenDay.serverTime = seen.serverTime + DAY + 60
+			assert.is_true(day:Send("ledger.ask"))
+			assert.are.equal(1, seenDay.shown)
+			day:Later()
+			assert.are.equal("later", seenDay.global.onboarding.letters["ledger.ask"])
+			assert.are.equal(seen.serverTime + DAY + 60, seenDay.global.onboarding.laterAt["ledger.ask"])
+		end
+	)
+
+	it("onb_r16 asks at most once a login, however long the login: an answered letter stays answered", function()
+		local letter, seen = asking({ again = DAY })
+		letter:Send("ledger.ask")
+		letter:Later()
+
+		seen.serverTime = seen.serverTime + 2 * DAY
+		seen.clock(ns.LETTER_DELAY)
+
+		assert.is_false(letter:Send("ledger.ask"))
+		assert.are.equal(1, seen.shown)
+	end)
+
+	it("onb_r16 forgets the kept time once the letter is opened or declined", function()
+		local letter, seen = asking({ again = DAY })
+		letter:Send("ledger.ask")
+		letter:Later()
+		local day, seenDay = nextLogin(seen, { again = DAY })
+		seenDay.serverTime = seen.serverTime + 2 * DAY
+
+		day:Send("ledger.ask")
+		day:Decline()
+
+		assert.are.equal("declined", seenDay.global.onboarding.letters["ledger.ask"])
+		assert.is_nil(seenDay.global.onboarding.laterAt)
+	end)
+
+	it("onb_r84 the tour's sample has the third button, which only closes it, writing nothing", function()
+		local letter, seen = asking({ again = DAY })
+
+		letter:TourShow("ledger.ask")
+		assert.are.equal("No thanks", seen.contents[1].decline)
+		letter:Decline()
+		letter:TourShow("ledger.ask")
+		letter:Later()
+		letter:TourShow("ledger.ask")
+		letter:Open()
+
+		assert.is_false(letter:IsShowing())
+		assert.are.equal(3, seen.hidden)
+		assert.is_nil(seen.global.onboarding.letters)
+		assert.is_nil(seen.global.onboarding.laterAt)
+		assert.are.same({}, seen.confirmed)
+	end)
+
+	it(
+		"onb_r17 no letter reads as showing as any of its three buttons takes it away (the news sign's turn, SIGN-R40)",
+		function()
+			local letter, seen = asking()
+			register(letter, seen, "hunts.one")
+			register(letter, seen, "hunts.two")
+			letter:Send("ledger.ask")
+			letter:Send("hunts.one")
+			letter:Send("hunts.two")
+
+			letter:Decline()
+			seen.clock(ns.LETTER_DELAY)
+			letter:Later()
+			seen.clock(ns.LETTER_DELAY)
+			letter:Open()
+
+			assert.are.same({ false, false, false }, seen.showingAtHide)
+			assert.are.equal(3, seen.shown)
+		end
+	)
+
+	it("onb_r83 /pagle dev onboarding reset forgets every kept time with every letter's state", function()
+		local letter, seen = asking({ again = DAY })
+		letter:Send("ledger.ask")
+		letter:Later()
+		local onboarding = letter.options.onboarding()
+
+		onboarding:Reset("Player-1")
+
+		assert.is_nil(seen.global.onboarding.laterAt)
+		assert.is_nil(seen.global.onboarding.letters)
 	end)
 end)

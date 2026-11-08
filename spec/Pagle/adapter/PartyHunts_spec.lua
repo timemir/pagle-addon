@@ -19,10 +19,16 @@ local function party()
 end
 
 -- Core logged in on Forever over a log of two old Casts, with `group` (none: alone), Hunts registered with names for
--- one Hunt and one event, and every login frame run; Margin notes off.
-local function loggedIn(group)
+-- one Hunt and one event, and every login frame run; Margin notes off. The party letter accepted (Fish together turns
+-- Party Hunts, Share, Show and Cheers sounds on, ANN-R115), unless `unasked`.
+local function loggedIn(group, unasked)
 	local loaded = loadCore(history(2))
 	loaded.env.PagleDB.global.onboarding.notesOn = false
+	if not unasked then
+		loaded.ns.db.profile.party = { optIn = 1, share = true, show = true, sounds = true }
+		loaded.ns.db.profile.partyHunts = true
+		loaded.env.PagleDB.global.onboarding.letters = { ["core.party"] = "opened" }
+	end
 	loaded.client.group = group
 	local M = loaded.env.Pagle.RegisterModule({
 		name = "Hunts",
@@ -455,6 +461,30 @@ describe("receiving Completed for the party (ANN-R111)", function()
 	)
 end)
 
+describe("Completed for the party before the party letter is accepted (ANN-R113; from 1.6, #665)", function()
+	it(
+		"ann_r111 neither sends nor shows it while Party Hunts is off, not asked yet, whatever Share and Show say",
+		function()
+			local loaded, M = loggedIn(party(), true)
+			loaded.ns.db.profile.party = { optIn = 1, share = true, show = true }
+			loaded.client.advance(2)
+			sent(loaded)
+			assert.is_false(loaded.ns.PartyHuntsOn())
+
+			raise(loaded, M, completed())
+			receive(loaded, "hp|1|h|mackerel_run|" .. THEIRS)
+			loaded.client.advance(1)
+
+			assert.are.same({}, sentHp(loaded))
+			assert.is_nil(reads(loaded))
+
+			loaded.ns.db.profile.partyHunts = true
+			raise(loaded, M, completed())
+			assert.are.equal(1, #sentHp(loaded))
+		end
+	)
+end)
+
 describe("Completed for the party in Settings (SET-R35, SET-R36)", function()
 	it("has its own kind row under Show my party's moments, on by default, writing kinds.hp", function()
 		local loaded = loggedIn(nil)
@@ -471,7 +501,7 @@ describe("Completed for the party in Settings (SET-R35, SET-R36)", function()
 		assert.are.equal(show, row:GetParentInitializer())
 		assert.is_true(row:GetSetting():GetValue())
 		row:GetSetting():SetValue(false)
-		assert.are.same({ kinds = { hp = false } }, loaded.ns.db.profile.party)
+		assert.are.same({ hp = false }, loaded.ns.db.profile.party.kinds)
 	end)
 end)
 
