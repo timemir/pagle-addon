@@ -91,19 +91,10 @@ function ns.HuntSetTitleMoment(setID)
 	}
 end
 
---- What HNT-R185 reads of a live Party Catch record (catch-log.md LOG-R116, from 1.6): its kind "party", its entry ID,
---- and, live only, the groupmate's `name` and the source entry ID `sourceId` (`<guid>-<time>-<tie>`). A replayed or
---- rebuilt record has neither, and raises no moments anyway (LOG-R75).
----@class HuntsPartyCatchSource
----@field kind string
----@field id string
----@field name string?
----@field sourceId string?
-
 --- The source Catch ID (LOG-R116) of the Party Catch item that reached a tier (HNT-R185): the live `record`'s
 --- `sourceId` and the item's `n`, read off the tier's `catchId` (the Party Catch ID `<entry ID>:<n>`, HNT-R181). Nil
 --- when the tier isn't this Party Catch's, or the record carries no `sourceId`.
----@param record HuntsPartyCatchSource
+---@param record PaglePartyCatch
 ---@param catchId string?
 ---@return string?
 function ns.PartySourceCatch(record, catchId)
@@ -117,7 +108,7 @@ end
 -- A live Party Catch's moments name the groupmate after their text (HNT-R185, ANN-R110): " · with {name}", left out
 -- when the record carries no name.
 ---@param moments PagleMoment[]
----@param record HuntsPartyCatchSource
+---@param record PaglePartyCatch
 local function withGroupmate(moments, record)
 	local name = record.name
 	if type(name) ~= "string" or name == "" then
@@ -138,12 +129,12 @@ end
 --- `partyCatch` with its Hunt's or event's ID, for Core's "Completed for the party" (HNT-R185, ANN-R110, ANN-R111).
 ---@param celebrated HuntsCelebrated
 ---@param state HuntsState
----@param cast PagleCast|HuntsPartyCatchSource
+---@param cast PagleCast|PaglePartyCatch
 ---@param reached HuntsReached
 ---@return PagleMoment[]
 function ns.CelebrateReached(celebrated, state, cast, reached)
 	local moments = {}
-	local party = cast.kind == "party" and cast --[[@as HuntsPartyCatchSource]] or nil
+	local party = cast.kind == "party" and cast --[[@as PaglePartyCatch]] or nil
 	for _, at in ipairs(reached.tiers) do
 		local hunt = ns.hunts:Hunt(at.hunt)
 		if hunt and at.tier > (celebrated.tiers[at.hunt] or 0) then

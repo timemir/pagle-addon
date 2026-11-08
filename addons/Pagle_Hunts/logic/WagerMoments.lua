@@ -279,7 +279,7 @@ end
 ---@param reached HuntsRunsReached
 ---@param castID string?
 ---@param now integer?
----@param party HuntsPartyCatchSource? from 1.6, the live Party Catch that reached them (HNT-R185)
+---@param party PaglePartyCatch? from 1.6, the live Party Catch that reached them (HNT-R185)
 ---@return PagleMoment[]
 function ns.CelebrateWagersReached(celebrated, state, reached, castID, now, party)
 	local moments = {}
@@ -312,7 +312,7 @@ end
 --- first whose tier 1 a `party` item reached (ns.PartySourceCatch), or nil for none.
 ---@param state HuntsState
 ---@param run HuntRun
----@param party HuntsPartyCatchSource
+---@param party PaglePartyCatch
 ---@return string?
 function ns.SettlingSourceCatch(state, run, party)
 	local event = ns.KnownEvent(state, run.event)
