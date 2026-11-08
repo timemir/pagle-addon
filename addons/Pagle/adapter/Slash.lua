@@ -58,6 +58,12 @@ local function run(line)
 			return
 		end
 	end
+	-- `/pagle dev party` (ANN-R109, from 1.5.2) is adapter/Party.lua's: logic/Dev.lua, where the other dev commands
+	-- are, is a hashed file a patch can't change. It keeps their dev switch.
+	if name == "dev" and ns.ParseSlash(rest) == "party" then
+		ns.RunPartyDev(select(2, ns.ParseSlash(rest)))
+		return
+	end
 	commands:Run(line, ns.coreSubcommands, securecallfunction, print)
 end
 
