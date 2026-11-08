@@ -371,6 +371,7 @@ end)
 describe("a shared moment and a party catch together", function()
 	it("both go out, the catch first, through the one queue (LOG-R112, ANN-R103)", function()
 		local loaded, _, M = loggedIn(party())
+		loaded.ns.SetPartyOption("share", true) -- sharing is opt-in from 1.5.3 (ANN-R113)
 		receive(loaded, "1:H:0", "Kukli-Testrealm", "Pagle")
 		sentAll(loaded)
 		loaded.client.chatLockdown = true

@@ -13,6 +13,8 @@ local Pagle = Pagle
 -- queue behind the player's own toasts, the mug and the merged cheers, the Party block's values and /pagle dev party.
 -- Live only: nothing here reaches PagleLog, the Catch log, a projection or the Session summary. Over
 -- adapter/PartyMessages.lua; the party toast's frame is adapter/PartyToast.lua's and its rows adapter/PartySettings.lua's.
+-- From 1.5.3 (#655) sharing and showing are off until the party letter is answered (ANN-R113, adapter/PartyLetter.lua),
+-- which reads here who in the party runs Pagle and is in the player's zone (ns.PartyGroupmateHere).
 -- Loaded by adapter/Settings.xml, before the lanes exist: everything it reaches of them (ns.lanes, ns.db) it looks up
 -- when it runs. Its own owner on Core's bus.
 local OWNER = "Pagle party"
@@ -54,40 +56,85 @@ local function unsecret(value)
 	return ns.UnlessSecret(issecretvalue, value)
 end
 
--- The Party block's values (SET-R36): `PagleDB.profile.party`, nil meaning on, so no default sits in logic/.
+-- The Party block's values (SET-R36) in `PagleDB.profile.party`, no default sitting in logic/. From 1.5.3 (#655) the
+-- party features are opt-in (ANN-R113): `share` and `show` are on only once stored true, by the party letter's Fish
+-- together (adapter/PartyLetter.lua) or by hand in Settings, and nil, not asked yet, reads off. `sounds` and each kind
+-- stay on unless stored false. `optIn` marks a table read under the opt-in, so a 1.5.2 table is migrated once.
+
+-- A 1.5.2 table, the first time 1.5.3 reads it (ANN-R113): a player who stored any setting there keeps what they had,
+-- each of Share, Show and Cheers sounds that was nil (on, in 1.5.2) stored true, so the letter never asks them; one
+-- with nothing stored (an empty table, or empty kinds) is not asked yet.
+---@param party table
+local function migrate(party)
+	local chose = party.share == false or party.show == false or party.sounds == false
+	for _, on in pairs(type(party.kinds) == "table" and party.kinds or {}) do
+		chose = chose or on == false
+	end
+	if chose then
+		for _, key in ipairs({ "share", "show", "sounds" }) do
+			if party[key] == nil then
+				party[key] = true
+			end
+		end
+	end
+	party.optIn = 1
+end
 
 ---@return table?
 local function stored()
-	return ns.db and ns.db.profile.party
+	local party = ns.db and ns.db.profile.party
+	if type(party) ~= "table" then
+		return nil
+	end
+	if party.optIn == nil then
+		migrate(party)
+	end
+	return party
 end
 
 -- The table to write to, made at the first change.
 ---@return table
 local function writable()
-	local profile = ns.db.profile --[[@as table]]
-	profile.party = profile.party or {}
-	return profile.party
+	local party = stored()
+	if not party then
+		party = { optIn = 1 }
+		ns.db.profile.party = party
+	end
+	return party
 end
 
---- Whether a Party option is on (SET-R36): `share`, `show` or `sounds`, on unless stored as false.
+--- The Party table to write to (adapter/PartyLetter.lua's answers), made at the first change and migrated as read.
+---@return table
+function ns.PartyStore()
+	return writable()
+end
+
+--- The Party table as stored, migrated as read (ANN-R113), or nil while nothing is.
+---@return table?
+function ns.PartyStored()
+	return stored()
+end
+
+--- Whether a Party option is on (SET-R36, ANN-R113): `share` and `show` only once stored true; `sounds` unless stored
+--- false.
 ---@param key "share"|"show"|"sounds"
 ---@return boolean
 function ns.PartyOption(key)
 	local party = stored()
-	return not (party and party[key] == false)
+	if key == "sounds" then
+		return not (party and party.sounds == false)
+	end
+	return party ~= nil and party[key] == true
 end
 
---- Sets a Party option: false is stored, on clears the key.
+--- Sets a Party option, stored as given (ANN-R113): a change of Share or Show by hand is an answer to the party
+--- letter. Setting what it already is writes nothing, so the Defaults button on a player not asked yet answers
+--- nothing.
 ---@param key "share"|"show"|"sounds"
 ---@param on boolean
 function ns.SetPartyOption(key, on)
-	if on then
-		local party = stored()
-		if party then
-			party[key] = nil
-		end
-	else
-		writable()[key] = false
+	if ns.PartyOption(key) ~= on then
+		writable()[key] = on
 	end
 end
 
@@ -350,6 +397,7 @@ local function rosterSettled()
 	if newcomer then
 		sayHello(true)
 	end
+	ns.CheckPartyLetter()
 end
 
 -- HELLO_DELAY after the roster last changed, or after login, a /reload or a load screen.
@@ -597,7 +645,12 @@ Pagle.RegisterEvent(OWNER, "CHAT_MSG_ADDON", function(_, prefix, text, channel, 
 	if overLimit(member.key, message.type) then
 		return
 	end
+	local newPeer = not state.peers[member.key]
 	state.peers[member.key] = true
+	if newPeer then
+		-- A groupmate found to run Pagle may be the party letter's reason (ANN-R114).
+		ns.CheckPartyLetter()
+	end
 	if message.type == "hello" then
 		if message.ask and (not state.helloAt or GetTime() - state.helloAt >= HELLO_GAP) then
 			sayHello(false)
@@ -608,6 +661,29 @@ Pagle.RegisterEvent(OWNER, "CHAT_MSG_ADDON", function(_, prefix, text, channel, 
 		cheered(message.id --[[@as string]], member)
 	end
 end)
+
+--- The Pagle groupmate the party letter names (ANN-R114): the first of party1 to party4 who sent a valid message (a
+--- Pagle groupmate, ANN-R103) and whom the client places on the player's own map (`C_Map.GetBestMapForUnit`), with that
+--- map's ID; nil out of a party, with no Pagle groupmate, or none the client places beside the player.
+---@return PagleGroupmate?
+---@return integer? map
+function ns.PartyGroupmateHere()
+	if not inParty() or next(state.peers) == nil then
+		return nil
+	end
+	local here = unsecret((C_Map.GetBestMapForUnit("player")))
+	if type(here) ~= "number" then
+		return nil
+	end
+	for i = 1, 4 do
+		local unit = "party" .. i
+		local member = memberAt(unit)
+		if member and state.peers[member.key] and unsecret((C_Map.GetBestMapForUnit(unit))) == here then
+			return member, here
+		end
+	end
+	return nil
+end
 
 --- Shares the moments of `announcement` a Module marked with `party` (ANN-R104), each once, while Share is on, in a
 --- party with a Pagle groupmate. adapter/Moments.lua calls it with every Announcement the collector shows, so only
@@ -660,6 +736,8 @@ local DEV_SAMPLES = {
 }
 -- Made-up groupmates, with Forever's surnames and one without.
 local DEV_NAMES = { "Kukli Emnabi", "Arwen Tull", "Bram", "Dela Marsh" }
+--- The made-up groupmate of the dev commands and the party letter's sample (ANN-R109, ANN-R116).
+ns.PARTY_DEV_NAME = DEV_NAMES[1]
 
 -- A party toast of `kind` from Kukli, through the receiving path past the party and the limits.
 ---@param kind string
@@ -673,8 +751,8 @@ local function devToast(kind)
 	print(ns.RenderText(ns.L.DEV_PARTY_QUEUED, { name = DEV_NAMES[1], kind = kind }))
 end
 
---- Runs `/pagle dev party <args>` (ANN-R109), behind the dev switch: a party toast of a kind, all seven, or 1 to 4
---- cheers for a made-up moment of the player's.
+--- Runs `/pagle dev party <args>` (ANN-R109), behind the dev switch: a party toast of a kind, all seven, 1 to 4
+--- cheers for a made-up moment of the player's, or (from 1.5.3) the party letter (ANN-R116, adapter/PartyLetter.lua).
 ---@param args string
 function ns.RunPartyDev(args)
 	local L = ns.L
@@ -687,6 +765,9 @@ function ns.RunPartyDev(args)
 		for _, kind in ipairs(ns.PARTY_KINDS) do
 			devToast(kind)
 		end
+		return
+	elseif word == "letter" then
+		ns.RunPartyLetterDev(rest)
 		return
 	elseif DEV_SAMPLES[word] then
 		devToast(word)

@@ -48,6 +48,11 @@ ns.LETTER = {
 }
 local LETTER = ns.LETTER
 
+-- The buttons' row (the kit's P.ShowLetter): from the slip's left at 34, each its words and 36 of leather, 14 apart;
+-- closed up to 24 and 8 for a row of three too wide for the slip (from 1.5.3, the party letter).
+local BUTTON_X, BUTTON_PAD, BUTTON_GAP = 34, 36, 14
+local BUTTON_PAD_TIGHT, BUTTON_GAP_TIGHT = 24, 8
+
 --- The Letter's frame.
 ---@class PagleLetterFrame: Frame
 ---@field seal Frame        -- the wax seal and its P, scaled about its centre as it drops
@@ -56,12 +61,49 @@ local LETTER = ns.LETTER
 ---@field line FontString
 ---@field open PagleGuideButton
 ---@field later PagleGuideButton
+---@field decline PagleGuideButton -- a third button, for a letter whose ns.letterExtras give one (from 1.5.3)
 ---@field gauge FontString  -- two lines of the letter's type, hidden: how tall the kit's slip has room for
 ---@field sealY number      -- where the seal sits in the frame now (it keeps to the slip's middle as the slip grows)
 
 --- The Letter's frame, made the first time it shows.
 ---@type PagleLetterFrame?
 ns.letterFrame = nil
+
+--- What a letter adds to the service's two buttons and fixed words (from 1.5.3; the party letter, announcements.md
+--- ANN-R115, ANN-R116): `words`, the kicker, line and button labels written as it shows, with `decline`, a third
+--- button's; `onLater` and `onDecline`, run after Later or the third button answered it. Kept here, by letter id,
+--- since the service in logic/ is hashed and a 1.5.x patch can't widen PagleLetterSpec.
+---@class PagleLetterExtras
+---@field words? fun(): { kicker: string, text: string, confirm: string, later: string, decline: string? }
+---@field onLater? fun()
+---@field onDecline? fun()
+
+--- Each letter's extras, by id.
+---@type table<string, PagleLetterExtras>
+ns.letterExtras = {}
+
+-- The service's state of letter `id` (ONB-R16), read without making the table.
+---@param id string?
+---@return string?
+local function stateOf(id)
+	local letters = ns.onboarding:State().letters
+	return type(id) == "string" and type(letters) == "table" and letters[id] or nil
+end
+
+-- Later, or the third button: the service's Later hides the letter and steps its state (ONB-R16); then the letter's
+-- own `onLater` or `onDecline` runs, only when that answered it (its state stepped), never for the tour's sample,
+-- whose buttons only close it (ONB-R84).
+---@param handler "onLater"|"onDecline"
+local function answerLater(handler)
+	local id = ns.letter:Showing()
+	local before = stateOf(id)
+	ns.letter:Later()
+	local extras = id and ns.letterExtras[id]
+	local fn = extras and extras[handler]
+	if fn and stateOf(id) ~= before then
+		fn()
+	end
+end
 
 -- The light leather button (the kit's LButton with look "light"): its words in the printed ink, no shadow, the
 -- paper a little brighter under the mouse; `click` and `onClick` as the guide's buttons.
@@ -153,9 +195,13 @@ local function frameOf()
 	end, nil, 28)
 	ns.GuideAt(frame.open, slip, 34, 92)
 	frame.later = lightButton(slip, L.LETTER_LATER, function()
-		ns.letter:Later()
+		answerLater("onLater")
 	end, 28)
 	ns.GuideAt(frame.later, slip, 34 + frame.open:GetWidth() + 14, 92)
+	frame.decline = lightButton(slip, L.LETTER_LATER, function()
+		answerLater("onDecline")
+	end, 28)
+	frame.decline:Hide()
 
 	-- The seal over the slip's left edge, its P in gilt on the wax.
 	local seal = CreateFrame("Frame", nil, frame)
@@ -173,12 +219,15 @@ end
 
 -- Writes letter `content` on the frame (ONB-R15): its kicker and line, its two buttons sized to their words with the
 -- second after the first, the slip as tall as its line needs (the kit's 132 holds two lines of it, so the onboarding
--- Letter stays as drawn) with the buttons under the line, and the seal on the slip's middle.
+-- Letter stays as drawn) with the buttons under the line, and the seal on the slip's middle. A letter with extras
+-- (ns.letterExtras) writes their words instead, and a third button after the second when they give one.
 ---@param frame PagleLetterFrame
 ---@param content PagleLetterSpec
 local function write(frame, content)
-	frame.kicker:SetText(content.kicker)
-	frame.line:SetText(content.text)
+	local extras = ns.letterExtras[ns.letter:Showing() or ""]
+	local words = extras and extras.words and extras.words() or content
+	frame.kicker:SetText(words.kicker)
+	frame.line:SetText(words.text)
 	-- Only a line taller than the gauge's two by more than half a unit grows it, so the onboarding Letter stays the
 	-- kit's 132 whatever the client's metrics make of a fraction.
 	local over = frame.line:GetStringHeight() - frame.gauge:GetStringHeight()
@@ -187,13 +236,31 @@ local function write(frame, content)
 	frame:SetSize(LETTER.width, height)
 	frame.slip:SetSize(LETTER.slipWidth, height)
 	frame.sealY = LETTER.sealY + extra / 2
-	for _, button in ipairs({ frame.open, frame.later }) do
-		local label = button == frame.open and content.confirm or content.later
-		button.label:SetText(label)
-		button:SetWidth(math.ceil(button.label:GetStringWidth()) + 36)
+	local labels = { [frame.open] = words.confirm, [frame.later] = words.later, [frame.decline] = words.decline }
+	local shown, wordsWide = {}, 0
+	for _, button in ipairs({ frame.open, frame.later, frame.decline }) do
+		local label = labels[button]
+		if label then
+			button.label:SetText(label)
+			button:Show()
+			shown[#shown + 1] = button
+			wordsWide = wordsWide + math.ceil(button.label:GetStringWidth())
+		else
+			button:Hide()
+		end
 	end
-	ns.GuideAt(frame.open, frame.slip, 34, 92 + extra)
-	ns.GuideAt(frame.later, frame.slip, 34 + frame.open:GetWidth() + 14, 92 + extra)
+	-- Each button its words and 36 of leather, 14 apart; a row that would pass the slip's right margin (as long as its
+	-- left) closes up to its words and 24, 8 apart.
+	local pad, gap = BUTTON_PAD, BUTTON_GAP
+	if wordsWide + #shown * pad + (#shown - 1) * gap > LETTER.slipWidth - 2 * BUTTON_X then
+		pad, gap = BUTTON_PAD_TIGHT, BUTTON_GAP_TIGHT
+	end
+	local x = BUTTON_X
+	for _, button in ipairs(shown) do
+		button:SetWidth(math.ceil(button.label:GetStringWidth()) + pad)
+		ns.GuideAt(button, frame.slip, x, 92 + extra)
+		x = x + button:GetWidth() + gap
+	end
 end
 
 -- The Letter's view (PagleLetterView): `content` on screen with `letter` and its rise (0.5 s, ease-out, 30 units up and

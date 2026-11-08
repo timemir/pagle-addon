@@ -299,6 +299,14 @@ PARTY_CHEER_NAME = "{name} raised a mug"
 PARTY_CHEER_NAMES = "{name} and {other} raised a mug"
 PARTY_CHEER_COUNT.one = "{count} raised a mug"
 PARTY_CHEER_COUNT.other = "{count} raised a mug"
+# The party letter (ANN-R113–R116, from 1.5.3): its kicker, its line naming the Pagle groupmate ("{name} {surname}",
+# PARTY_FULL_NAME) and the zone they share, and its three buttons. Fish together turns the party features on; Not
+# now asks again a day later at the soonest; No thanks never asks again.
+PARTY_LETTER_KICKER = "A letter, passed along the bank"
+PARTY_LETTER_LINE = "{name} is fishing {zone} with you, and they run Pagle too. Fish together: share your best catches and cheer theirs."
+PARTY_LETTER_YES = "Fish together"
+PARTY_LETTER_LATER = "Not now"
+PARTY_LETTER_NO = "No thanks"
 # A toast style's sample on the Curio Shop's preview stage (wallet-and-shop.md › UI, ANN-R80): its headline, its
 # one stamp, and the button that shows it through the lanes.
 TOAST_SAMPLE_TITLE = "New Species"
@@ -523,9 +531,12 @@ DEV_OFF = "Pagle dev: dev commands are off."
 DEV_IS_OFF = "Pagle dev: dev commands are off; /pagle dev on turns them on."
 DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | stage <count> | glyphs | tour [module | list | stop] | probe | fonts | pseudo on | off | onboarding <command> | content | views | pastetest <KB> | sign <look> [kind] [more]"
 # /pagle dev party (ANN-R109, from 1.5.2): its usage, and what it queued.
-DEV_PARTY_USAGE = "Pagle dev: /pagle dev party <kind | all | cheer [1-4]>, where kind is one of {kinds}"
+DEV_PARTY_USAGE = "Pagle dev: /pagle dev party <kind | all | cheer [1-4] | letter [reset]>, where kind is one of {kinds}"
 DEV_PARTY_QUEUED = "Pagle dev: a party toast from {name} is queued: {kind}."
 DEV_PARTY_CHEERED = "Pagle dev: {count:0} cheers for a moment of yours are on their way."
+# /pagle dev party letter [reset] (ANN-R116, from 1.5.3): the party letter shown, and its answer forgotten.
+DEV_PARTY_LETTER = "Pagle dev: the party letter is on screen, as if {name} were fishing beside you."
+DEV_PARTY_LETTER_RESET = "Pagle dev: the party letter's answer is forgotten; party sharing is off until it is answered."
 # /pagle dev pseudo on | off (#524): the development pseudo-locale, its usage and the line it prints once the flag is
 # saved; the text changes at the next /reload. Dev text stays English, pseudo-locale on or off.
 DEV_PSEUDO_USAGE = "Pagle dev: /pagle dev pseudo on | off"

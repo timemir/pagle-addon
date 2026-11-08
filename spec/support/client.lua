@@ -16,6 +16,8 @@
 ---@field loot FakeLoot The loot window, as the loot API reads it.
 ---@field areaNames table<integer, string> Each area's name, as `C_Map.GetAreaInfo` returns it. Default none.
 ---@field mapNames table<integer, string> Each uiMap's name, for `C_Map.GetMapInfo`. Default none.
+---@field playerMap integer? The player's uiMap, as `C_Map.GetBestMapForUnit("player")` returns it (the party letter,
+--- ANN-R114). Default nil, as for every unit.
 ---@field instanceType string? The instance the player is in, for `IsInInstance` ("party", "raid", …); nil or "none"
 --- in the open world, the default.
 ---@field sounds string[] Each PlaySoundFile and PlaySound call, in order, as "<path> <channel>" or "<sound kit id>
@@ -43,7 +45,8 @@
 --- sender name their add-on messages arrive from, which UnitGUID also takes as a unit ("<name>-Testrealm" by default);
 --- and whether it is a raid.
 ---@class FakeGroup
----@field members { name: string, surname: string?, guid: string?, sender: string? }[]
+---@field members { name: string, surname: string?, guid: string?, sender: string?, map: integer? }[] `map` is their
+--- uiMap, as `C_Map.GetBestMapForUnit("partyN")` returns it (the party letter, ANN-R114); nil by default.
 ---@field raid boolean?
 ---@field instance boolean? an instance group (the dungeon finder's), not a home party: IsInGroup(LE_PARTY_CATEGORY_HOME)
 --- is false for it (Party Catches, LOG-R110)
@@ -256,8 +259,15 @@ local function clientStubs(client)
 				local name = client.mapNames[uiMapID]
 				return name and { uiMapID = uiMapID, name = name } or nil
 			end,
-			GetBestMapForUnit = function()
-				return nil
+			-- The player's client.playerMap, a groupmate's map in client.group (the party letter, ANN-R114); nil for
+			-- any other unit, and by default.
+			GetBestMapForUnit = function(unit)
+				if unit == "player" then
+					return client.playerMap
+				end
+				local index = type(unit) == "string" and tonumber(unit:match("^party(%d)$"))
+				local member = index and client.group and client.group.members[index]
+				return member and member.map or nil
 			end,
 		},
 		-- The conditions service's reads (LOG-R20, LOG-R45–R47): realm 08:15 on Sunday 11 October 2026 (a US Pacific

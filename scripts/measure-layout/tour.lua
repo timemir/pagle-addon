@@ -430,6 +430,10 @@ describe("the layout harness", function()
 		enterWorld(loaded, 3)
 		local env, client = loaded.env, loaded.client
 		local core = loaded.namespaces.Pagle
+		-- The new Angler's Letter answered before its 4 s are up (ONB-R10), so it never shows for real: a letter on
+		-- screen keeps every letter's tour stop from showing its own sample (ONB-R84), and each letter's stop,
+		-- the onboarding Letter's included, then measures that letter's words (the party letter's three buttons, #655).
+		env.PagleDB.global.onboarding.letter = "declined"
 		-- The fake client runs no OnUpdate, so an animation would stay at its first frame (a book at alpha 0); with
 		-- Animations off each one jumps to where it settles, which is what the tour's screenshot shows in-game.
 		core.db.profile.announcements.motion = false

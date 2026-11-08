@@ -633,16 +633,44 @@ local function setRow(loaded, name, label, value)
 	row.initializer:GetSetting():SetValue(value)
 end
 
-describe("Greying in the Settings tree", function()
-	it("greys only Swap gear, Lure and the Tackle Board's checkbox at first (SET-R20, SET-R43)", function()
-		local loaded = ready()
+-- The Party block's kind rows (SET-R36), greyed while Show my party's moments is off: from 1.5.3 it is until the party
+-- letter is accepted (ANN-R113).
+local PARTY_KINDS = {
+	"Legends",
+	"Rare colours",
+	"Monster-size records",
+	"Gold tier in a Hunt",
+	"Zone Master",
+	"Prestige",
+	"Ledger 100%",
+}
 
-		assert.are.same({}, greyedOn(loaded, "Pagle"))
-		assert.are.same({ "Swap gear", "Lure" }, greyedOn(loaded, "Fishing"))
-		assert.are.same({}, greyedOn(loaded, "Announcements"))
-		assert.are.same({ "Show goals workable here" }, greyedOn(loaded, "Trackers"))
-		assert.are.same({}, greyedOn(loaded, "Look and Feel"))
-	end)
+-- `list`, then the Party block's kind rows.
+local function withPartyKinds(list)
+	local all = {}
+	for _, name in ipairs(list) do
+		all[#all + 1] = name
+	end
+	for _, name in ipairs(PARTY_KINDS) do
+		all[#all + 1] = name
+	end
+	return all
+end
+
+describe("Greying in the Settings tree", function()
+	it(
+		"greys only Swap gear, Lure, the Tackle Board's checkbox and, until the party letter is accepted, the party"
+			.. " kinds at first (SET-R20, SET-R43, SET-R36, ANN-R113)",
+		function()
+			local loaded = ready()
+
+			assert.are.same({}, greyedOn(loaded, "Pagle"))
+			assert.are.same({ "Swap gear", "Lure" }, greyedOn(loaded, "Fishing"))
+			assert.are.same(PARTY_KINDS, greyedOn(loaded, "Announcements"))
+			assert.are.same({ "Show goals workable here" }, greyedOn(loaded, "Trackers"))
+			assert.are.same({}, greyedOn(loaded, "Look and Feel"))
+		end
+	)
 
 	it(
 		"greys Detach from the minimap, the button's style and its size while the minimap icon is hidden (SET-R10 rows"
@@ -794,7 +822,7 @@ describe("Greying in the Settings tree", function()
 		}, greyedOn(loaded, "Announcements"))
 
 		setRow(loaded, "Announcements", "Cozy mode", false)
-		assert.are.same({}, greyedOn(loaded, "Announcements"))
+		assert.are.same(PARTY_KINDS, greyedOn(loaded, "Announcements"))
 	end)
 
 	it(
@@ -816,14 +844,14 @@ describe("Greying in the Settings tree", function()
 		local loaded = ready()
 
 		setRow(loaded, "Announcements", "Interruption budget", false)
-		assert.are.same({ "Interruptions", "Per" }, greyedOn(loaded, "Announcements"))
+		assert.are.same(withPartyKinds({ "Interruptions", "Per" }), greyedOn(loaded, "Announcements"))
 
 		setRow(loaded, "Announcements", "Cozy mode", true)
 		setRow(loaded, "Announcements", "Cozy mode", false)
-		assert.are.same({ "Interruptions", "Per" }, greyedOn(loaded, "Announcements"))
+		assert.are.same(withPartyKinds({ "Interruptions", "Per" }), greyedOn(loaded, "Announcements"))
 
 		setRow(loaded, "Announcements", "Interruption budget", true)
-		assert.are.same({}, greyedOn(loaded, "Announcements"))
+		assert.are.same(PARTY_KINDS, greyedOn(loaded, "Announcements"))
 	end)
 
 	it("makes the Tackle Board's checkbox live once the board is started (SET-R43, SET-R61)", function()
@@ -846,7 +874,7 @@ describe("Greying in the Settings tree", function()
 			"Swap gear",
 			"Lure",
 		}, greyedOn(loaded, "Fishing"))
-		assert.are.same({}, greyedOn(loaded, "Announcements"))
+		assert.are.same(PARTY_KINDS, greyedOn(loaded, "Announcements"))
 		assert.are.same({ "Show goals workable here" }, greyedOn(loaded, "Trackers"))
 		assert.are.same({}, greyedOn(loaded, "Look and Feel"))
 
@@ -1134,7 +1162,7 @@ describe("Each page's Defaults button", function()
 			["Announce open Hunt windows"] = true,
 			["Remind me about the Pagle companion"] = false,
 			["Party Hunts"] = false,
-			["Share my moments with my party"] = false,
+			["Share my moments with my party"] = true,
 			["Zone Master"] = false,
 			["Cheers sounds"] = false,
 		}) do
@@ -1154,10 +1182,11 @@ describe("Each page's Defaults button", function()
 			["Animations"] = true,
 			["Announce open Hunt windows"] = false,
 			["Remind me about the Pagle companion"] = true,
-			-- SET-R35's and SET-R36's: every one on.
+			-- SET-R35's Party Hunts on; SET-R36's Share and Show off until the party letter is accepted (ANN-R113), the
+			-- rest on.
 			["Party Hunts"] = true,
-			["Share my moments with my party"] = true,
-			["Show my party's moments"] = true,
+			["Share my moments with my party"] = false,
+			["Show my party's moments"] = false,
 			["Legends"] = true,
 			["Rare colours"] = true,
 			["Monster-size records"] = true,

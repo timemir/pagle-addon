@@ -7,9 +7,10 @@ if not Pagle then
 end
 
 -- The Party block on the Announcements page (settings.md SET-R36; announcements.md ANN-R104–R108; from 1.5.2, #640):
--- after Core's rows, under its own header, native checkboxes on proxy settings over PagleDB.profile.party, nil meaning
--- on (adapter/Party.lua's ns.PartyOption and ns.PartyKindOn), since Core's defaults sit in logic/, which a patch can't
--- change. adapter/AnnouncementSettings.lua calls it last. Loaded by adapter/Settings.xml.
+-- after Core's rows, under its own header, native checkboxes on proxy settings over PagleDB.profile.party, read
+-- through adapter/Party.lua's ns.PartyOption and ns.PartyKindOn, since Core's defaults sit in logic/, which a patch
+-- can't change: from 1.5.3 Share and Show are off until the party letter is accepted (ANN-R113), the rest on unless
+-- stored off. adapter/AnnouncementSettings.lua calls it last. Loaded by adapter/Settings.xml.
 local L = ns.L
 
 -- The proxy setting variables: Core's Cozy mode (adapter/AnnouncementSettings.lua's), then the block's own.
@@ -39,7 +40,8 @@ end
 
 --- Builds the Party block on the Announcements page (SET-R36): the header, from 1.6 Party Hunts (SET-R35), then Share,
 --- Show with a switch per kind under it, then Cheers sounds. Each reads the stored value each time the page is shown and
---- writes it at once (SET-R62); each defaults to on, which the page's Defaults button restores (SET-R33).
+--- writes it at once (SET-R62); Share and Show default to off (ANN-R113), the rest to on, which the page's Defaults
+--- button restores (SET-R33).
 ---@param page SettingsCategory
 ---@param layout SettingsLayout
 function ns.PartySettingsRows(page, layout)
@@ -55,19 +57,19 @@ function ns.PartySettingsRows(page, layout)
 	end)
 	Settings.CreateCheckbox(page, hunts, L.SETTINGS_PARTY_HUNTS_TOOLTIP)
 
-	-- A row over option `key`.
-	local function option(variable, label, key)
-		return Settings.RegisterProxySetting(page, variable, Boolean, label, true, function()
+	-- A row over option `key`, defaulting to `default`.
+	local function option(variable, label, key, default)
+		return Settings.RegisterProxySetting(page, variable, Boolean, label, default, function()
 			return ns.PartyOption(key)
 		end, function(value)
 			ns.SetPartyOption(key, value)
 		end)
 	end
 
-	Settings.CreateCheckbox(page, option(SHARE, L.SETTINGS_PARTY_SHARE, "share"), L.SETTINGS_PARTY_SHARE_TOOLTIP)
+	Settings.CreateCheckbox(page, option(SHARE, L.SETTINGS_PARTY_SHARE, "share", false), L.SETTINGS_PARTY_SHARE_TOOLTIP)
 
 	local show =
-		Settings.CreateCheckbox(page, option(SHOW, L.SETTINGS_PARTY_SHOW, "show"), L.SETTINGS_PARTY_SHOW_TOOLTIP)
+		Settings.CreateCheckbox(page, option(SHOW, L.SETTINGS_PARTY_SHOW, "show", false), L.SETTINGS_PARTY_SHOW_TOOLTIP)
 	greys(show, notCozy)
 	for _, kind in ipairs(ns.PARTY_KINDS) do
 		local setting = Settings.RegisterProxySetting(
@@ -90,7 +92,7 @@ function ns.PartySettingsRows(page, layout)
 
 	local sounds = Settings.CreateCheckbox(
 		page,
-		option(SOUNDS, L.SETTINGS_PARTY_SOUNDS, "sounds"),
+		option(SOUNDS, L.SETTINGS_PARTY_SOUNDS, "sounds", true),
 		L.SETTINGS_PARTY_SOUNDS_TOOLTIP
 	)
 	greys(sounds, notCozy)
