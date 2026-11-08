@@ -521,7 +521,7 @@ SLASH_SKIPPED_TAKEN = "Pagle: {module}'s /pagle {name} is skipped: {owners} alre
 DEV_ON = "Pagle dev: dev commands are on."
 DEV_OFF = "Pagle dev: dev commands are off."
 DEV_IS_OFF = "Pagle dev: dev commands are off; /pagle dev on turns them on."
-DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | stage <count> | glyphs | tour [module | list | stop] | probe | fonts | pseudo on | off | onboarding <command> | content | views | pastetest <KB>"
+DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | stage <count> | glyphs | tour [module | list | stop] | probe | fonts | pseudo on | off | onboarding <command> | content | views | pastetest <KB> | sign <look> [kind] [more]"
 # /pagle dev party (ANN-R109, from 1.5.2): its usage, and what it queued.
 DEV_PARTY_USAGE = "Pagle dev: /pagle dev party <kind | all | cheer [1-4]>, where kind is one of {kinds}"
 DEV_PARTY_QUEUED = "Pagle dev: a party toast from {name} is queued: {kind}."
@@ -955,3 +955,34 @@ PREVIEW_EX_LIBRIS = "Ex Libris"
 PREVIEW_CREST_NOTE = "On the Fish Journal's bookplate."
 # A binding's preview (wallet-and-shop.md › UI): its closed book, then what wears it (ADR 0015).
 PREVIEW_BINDING_NOTE = "Every book of yours wears it."
+
+# The Morning Tide, the news sign (core/news-sign.md, SIGN-R12): each kind's name over its headline, the headline, the line under it,
+# the region headline's kicker and the "+N more" line. {name} is an Angler's public name, never a character's
+# (SIGN-R11); {region} a region's code (EU); {fish}, {legend}, {species} and {variety} item and variety names; {zone} a
+# zone's name; {hunt} a Hunt's name; {rank} a Prestige numeral; {length} a length in the player's unit.
+SIGN_KICKER.first = "First report"
+SIGN_KICKER.legend = "Legend"
+SIGN_KICKER.prestige = "Prestige"
+SIGN_KICKER.ledger = "The Ledger"
+SIGN_KICKER.colour = "Rare colour"
+SIGN_KICKER.hunt = "Hunt gold"
+SIGN_KICKER.zone = "Zone Master"
+SIGN_KICKER.monster = "Monster"
+SIGN_KICKER.region = "Region news · {region}"
+SIGN_HEAD.first = "First in {region} to land {fish}"
+SIGN_HEAD.legend = "{name} landed a Legend"
+SIGN_HEAD.prestige = "{name} reached Prestige {rank}"
+SIGN_HEAD.ledger = "{name} completed the Ledger"
+SIGN_HEAD.colour = "{name} caught a rare colour"
+SIGN_HEAD.hunt = "{name} took gold"
+SIGN_HEAD.zone = "{name} became Master of {zone}"
+SIGN_HEAD.monster = "{name} landed a Monster"
+SIGN_HEAD.region = "First in {region} this month to land {fish}"
+SIGN_DETAIL_COLOUR = "{variety} {species}"
+SIGN_DETAIL_MONSTER = "{species}, {length}"
+SIGN_MORE.one = "+{count:0} more from your anglers"
+SIGN_MORE.other = "+{count:0} more from your anglers"
+# /pagle dev sign (SIGN-R60): drops the news sign with sample news; dev text stays English.
+DEV_SIGN_USAGE = "Pagle dev: /pagle dev sign <look> [kind] [more], where look is one of {looks} and kind one of {kinds}"
+DEV_SIGN_DROPPED = "Pagle dev: dropping the {look} sign with sample {kind} news; hover holds it, a right click sends it up."
+DEV_SIGN_WAITING = "Pagle dev: the sign drops once combat and restriction end."

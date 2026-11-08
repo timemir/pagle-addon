@@ -100,6 +100,9 @@ ns.Locale("esES", function(L)
 	L.DEV_SAMPLE_VARIETY_NAME = "Coral"
 	L.DEV_SAMPLE_WRITE_UP = "Tu Libro de registro se redactó a partir de 2.340 Lances"
 	L.DEV_SESSION_ENDED = "Pagle dev: la Sesión terminó, como si hubiera pasado su pausa."
+	L.DEV_SIGN_DROPPED = "Pagle dev: cae el cartel {look} con una noticia de ejemplo {kind}; el ratón encima lo sujeta, un clic derecho lo sube."
+	L.DEV_SIGN_USAGE = "Pagle dev: /pagle dev sign <estilo> [tipo] [more], estilo uno de {looks} y tipo uno de {kinds}"
+	L.DEV_SIGN_WAITING = "Pagle dev: el cartel caerá cuando acaben el combate y la restricción."
 	L.DEV_SKILL_CLEARED = "Pagle dev: la habilidad de Pesca vuelve a marcar lo que dice el cliente."
 	L.DEV_SKILL_NOT_SET = "Pagle dev: la habilidad de Pesca marca lo que dice el cliente; /pagle dev skill <rango> la sustituye."
 	L.DEV_SKILL_REMINDER = "Pagle dev: la habilidad de Pesca está sustituida por {rank}/{max} (/pagle dev skill off para quitarlo)."
@@ -137,7 +140,7 @@ ns.Locale("esES", function(L)
 	L.DEV_TOUR_STOPPING = "Pagle dev: el recorrido se detiene cuando se oculte esta parada."
 	L.DEV_TOUR_STOPS = { many = "{count} paradas", one = "1 parada", other = "{count} paradas" }
 	L.DEV_UNKNOWN_AREA = "Pagle dev: {areaText} no es un área del catálogo de Pagle."
-	L.DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <tipo> | stage <número> | glyphs | tour [module | list | stop] | probe | fonts | pseudo on | off | onboarding <comando> | content | views | pastetest <KB>"
+	L.DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <tipo> | stage <número> | glyphs | tour [module | list | stop] | probe | fonts | pseudo on | off | onboarding <comando> | content | views | pastetest <KB> | sign <estilo> [tipo] [more]"
 	L.DEV_VIEWS_ABSENT = "Pagle dev: {name} no está: {reason}."
 	L.DEV_VIEWS_ANGLERS = "Pagle dev: generatedAt de Pagle_Anglers {generatedAt}, bloques {dev_views_anglers_2}."
 	L.DEV_VIEWS_EXPIRED = "Pagle dev: {name} ha caducado: se generó hace {age} s, la edad de caducidad es {viewExpiryAge} s."
@@ -553,6 +556,11 @@ ns.Locale("esES", function(L)
 	L.SHOP_TAG_SEPARATOR = " · "
 	L.SHOP_USE = "Usar"
 	L.SHOP_USE_NOW = "Usarlo ya"
+	L.SIGN_DETAIL_COLOUR = "{species} {variety}"
+	L.SIGN_DETAIL_MONSTER = "{species}, {length}"
+	L.SIGN_HEAD = { colour = "{name} ha pescado un color raro", first = "Primero en {region} en pescar {fish}", hunt = "{name} se lleva el oro", ledger = "{name} ha completado el Libro", legend = "{name} ha pescado una Leyenda", monster = "{name} ha pescado un Monstruo", prestige = "{name} ha alcanzado Prestigio {rank}", region = "Primero en {region} este mes en pescar {fish}", zone = "{name} es Maestro de zona de {zone}" }
+	L.SIGN_KICKER = { colour = "Color raro", first = "Primer aviso", hunt = "Oro en Caza", ledger = "El Libro", legend = "Leyenda", monster = "Monstruo", prestige = "Prestigio", region = "Noticias de la región · {region}", zone = "Maestro de zona" }
+	L.SIGN_MORE = { many = "+{count:0} más de tus pescadores", one = "+{count:0} más de tus pescadores", other = "+{count:0} más de tus pescadores" }
 	L.SIZE_BANDS = { "Pececillo", "Decente", "Robusto", "Descomunal", "Monstruo" }
 	L.SLASH_CORE_HELP = {
 		{ help = "abre los ajustes de Pagle (también /pagle solo)", name = "settings" },

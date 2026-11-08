@@ -16,6 +16,7 @@ Core is the `Pagle` addon. This file covers how Modules attach to it, the whole 
 | [varieties.md](varieties.md) | `VAR` | Fish varieties, their rarity, Core's variety projection and the fish crests |
 | [book-binding.md](book-binding.md) | `BIND` | The book binding: `Pagle.NewBookBinding`, which draws the `core.binding` look on every book and changes it |
 | [book.md](book.md) | `BOOK` | The book shell: `Pagle.NewBook`, the window, pages, strip, buttons, ribbons, router and page turn every book is built on |
+| [news-sign.md](news-sign.md) | `SIGN` | The Morning Tide, the news sign: news about followed Anglers dropped in at login in one of six looks, and `/pagle dev sign` |
 
 Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunables table.
 
