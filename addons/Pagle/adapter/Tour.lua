@@ -70,12 +70,10 @@ do
 		return ns.RenderText(ns.L.DEV_TOUR_ANNOUNCE, { kind = "hp" })
 	end, function()
 		sample = ns.PartyHuntToastOf({
-			type = "hunt",
-			kind = ns.PARTY_HUNT_KIND,
 			what = "run",
 			id = "darkshore_moonlight",
-			catch = "tour",
-			catcher = "tour",
+			source = "Player-4701-0A1B2C3D-1791731700-0:1",
+			catcher = "Player-4701-0A1B2C3D",
 		}, { "Kukli Emnabi", "Arwen Tull", "Dela Marsh", "Bram" }, GetServerTime() + 120)
 		ns.lanes:Push(sample)
 	end, function()

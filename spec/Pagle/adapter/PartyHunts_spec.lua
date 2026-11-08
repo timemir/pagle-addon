@@ -7,12 +7,11 @@
 local TRADE_FISHING = "Interface\\Icons\\Trade_Fishing"
 -- A Party Catch's entry ID: the receiver's own header (LOG-R115), here the player's GUID.
 local G1 = "Player-1-00000001-1791731700-0"
--- A groupmate's source Catch ID (LOG-R116), item 1 of their Cast at 1791731700, and as an hp message writes it
--- (1791731700 in base 36: tmr110).
+-- A groupmate's source Catch ID (LOG-R116), item 1 of their Cast at 1791731700.
 local SOURCE = "Player-4701-0A1B2C3D-1791731700-0:1"
-local THEIRS = "4701:0a1b2c3d:tmr110:0:1"
--- A source Catch of the player's own, as a groupmate's hp names it: PLAYER_GUID is "Player-1-00000001".
-local MINE = "1:00000001:tmr110:0:1"
+local THEIRS = SOURCE
+-- A source Catch ID of the player's own, as a groupmate's hp names it: PLAYER_GUID is "Player-1-00000001".
+local MINE = "Player-1-00000001-1791731700-0:1"
 
 -- A party of two groupmates, Kukli (with Forever's surname) and Arwen.
 local function party()
@@ -40,32 +39,45 @@ local function loggedIn(group)
 	return loaded, M
 end
 
--- The texts Core sent on the prefix Pagle, in order, and forgets them.
+-- The texts Core sent on either prefix, as "<prefix> <text>", in order, and forgets them.
 local function sent(loaded)
 	local texts = {}
 	for _, message in ipairs(loaded.client.addonMessages) do
-		assert.are.equal("Pagle", message.prefix)
 		assert.are.equal("PARTY", message.chatType)
-		texts[#texts + 1] = message.text
+		texts[#texts + 1] = message.prefix .. " " .. message.text
 	end
 	loaded.client.addonMessages = {}
 	return texts
 end
 
--- Only the hp messages of `sent`.
+-- Only the hp messages of `sent`, each on the prefix PagleCatch (LOG-R110), as their text.
 local function sentHp(loaded)
 	local texts = {}
 	for _, text in ipairs(sent(loaded)) do
-		if text:find("^1:hp:") then
-			texts[#texts + 1] = text
+		local hp = text:match("^PagleCatch (hp|.*)$")
+		assert.is_nil(text:find("^Pagle hp|"))
+		if hp then
+			texts[#texts + 1] = hp
 		end
 	end
 	return texts
 end
 
--- A message arriving on the prefix Pagle from `sender` (Kukli on the player's realm by default), on the party channel.
-local function receive(loaded, text, sender)
-	loaded.client.fire("CHAT_MSG_ADDON", "Pagle", text, "PARTY", sender or "Kukli-Testrealm", "", 0, 0, "", 0)
+-- A message arriving on the prefix PagleCatch (or `prefix`) from `sender` (Kukli on the player's realm by default), on
+-- the party channel.
+local function receive(loaded, text, sender, prefix)
+	loaded.client.fire(
+		"CHAT_MSG_ADDON",
+		prefix or "PagleCatch",
+		text,
+		"PARTY",
+		sender or "Kukli-Testrealm",
+		"",
+		0,
+		0,
+		"",
+		0
+	)
 end
 
 -- In a party, past the hello at login; `profile` set over PagleDB.profile first, one key at a time.
@@ -191,24 +203,27 @@ describe("the Angler's own moments for a Party Catch (ANN-R110)", function()
 end)
 
 describe("sending Completed for the party (ANN-R111)", function()
-	it("sends 1:hp once for a live moment that carries partyCatch: h with its Hunt, w with its run", function()
-		local loaded, M = inParty()
-		raise(loaded, M, completed())
-		assert.are.same({ "1:hp:h:mackerelZrun:" .. THEIRS }, sentHp(loaded))
-		raise(
-			loaded,
-			M,
-			completed({
-				kind = "wagerSettled",
-				title = "Wager settled",
-				partyHunt = false,
-				partyEvent = "darkshore_moonlight",
-			})
-		)
-		assert.are.same({ "1:hp:w:darkshoreZmoonlight:" .. THEIRS }, sentHp(loaded))
-		loaded.client.advance(30)
-		assert.are.same({}, sentHp(loaded))
-	end)
+	it(
+		"sends hp|1 once on PagleCatch for a live moment that carries partyCatch: h with its Hunt, w with its run (LOG-R110)",
+		function()
+			local loaded, M = inParty()
+			raise(loaded, M, completed())
+			assert.are.same({ "hp|1|h|mackerel_run|" .. THEIRS }, sentHp(loaded))
+			raise(
+				loaded,
+				M,
+				completed({
+					kind = "wagerSettled",
+					title = "Wager settled",
+					partyHunt = false,
+					partyEvent = "darkshore_moonlight",
+				})
+			)
+			assert.are.same({ "hp|1|w|darkshore_moonlight|" .. THEIRS }, sentHp(loaded))
+			loaded.client.advance(30)
+			assert.are.same({}, sentHp(loaded))
+		end
+	)
 
 	it("sends it while Cozy mode keeps the moment off the player's screen, and with no hello answered yet", function()
 		local loaded, M = inParty({ announcements = { cozy = true } })
@@ -249,7 +264,7 @@ end)
 describe("receiving Completed for the party (ANN-R111)", function()
 	it("shows a groupmate's as one compact party toast: Completed for the party, the Hunt for them, no mug", function()
 		local loaded = inParty()
-		receive(loaded, "1:hp:h:mackerelZrun:" .. THEIRS)
+		receive(loaded, "hp|1|h|mackerel_run|" .. THEIRS)
 		loaded.client.advance(5)
 		assert.are.same({ "COMPLETED FOR THE PARTY", "Mackerel Run · for Kukli Stonebrew" }, reads(loaded))
 		local toast = assert(partyToast(loaded))
@@ -265,37 +280,37 @@ describe("receiving Completed for the party (ANN-R111)", function()
 
 	it("tells the catcher it was their Catch: Your catch", function()
 		local loaded = inParty()
-		receive(loaded, "1:hp:h:mackerelZrun:" .. MINE)
+		receive(loaded, "hp|1|h|mackerel_run|" .. MINE)
 		loaded.client.advance(5)
 		assert.are.same({ "YOUR CATCH", "Mackerel Run · for Kukli Stonebrew" }, reads(loaded))
 	end)
 
 	it("names a settled run from the player's lore, or a Pagle Wager it doesn't know, and a Hunt it doesn't", function()
 		local loaded = inParty()
-		receive(loaded, "1:hp:w:darkshoreZmoonlight:" .. THEIRS)
+		receive(loaded, "hp|1|w|darkshore_moonlight|" .. THEIRS)
 		loaded.client.advance(5)
 		assert.are.same(
 			{ "COMPLETED FOR THE PARTY", "Grouper by Moonlight settled · for Kukli Stonebrew" },
 			reads(loaded)
 		)
 		loaded.client.advance(10)
-		receive(loaded, "1:hp:w:pZelsewhere:" .. THEIRS)
+		receive(loaded, "hp|1|w|p_elsewhere|" .. THEIRS)
 		loaded.client.advance(5)
 		assert.are.same({ "COMPLETED FOR THE PARTY", "a Pagle Wager settled · for Kukli Stonebrew" }, reads(loaded))
 		loaded.client.advance(10)
-		receive(loaded, "1:hp:h:nowhere:" .. THEIRS)
+		receive(loaded, "hp|1|h|nowhere|" .. THEIRS)
 		loaded.client.advance(5)
 		assert.are.same({ "COMPLETED FOR THE PARTY", "a Hunt · for Kukli Stonebrew" }, reads(loaded))
 	end)
 
 	it("merges one Catch and Hunt's toasts that arrive within 5 s into one, naming every groupmate", function()
 		local loaded = inParty()
-		receive(loaded, "1:hp:h:mackerelZrun:" .. MINE, "Kukli-Testrealm")
+		receive(loaded, "hp|1|h|mackerel_run|" .. MINE, "Kukli-Testrealm")
 		loaded.client.advance(3)
 		assert.is_nil(partyToast(loaded))
-		receive(loaded, "1:hp:h:mackerelZrun:" .. MINE, "Arwen-Testrealm")
+		receive(loaded, "hp|1|h|mackerel_run|" .. MINE, "Arwen-Testrealm")
 		-- Another Hunt of the same Catch is a toast of its own.
-		receive(loaded, "1:hp:w:darkshoreZmoonlight:" .. MINE, "Arwen-Testrealm")
+		receive(loaded, "hp|1|w|darkshore_moonlight|" .. MINE, "Arwen-Testrealm")
 		loaded.client.advance(2)
 		assert.are.same({ "YOUR CATCH", "Mackerel Run · for Kukli Stonebrew and Arwen" }, reads(loaded))
 		loaded.client.advance(10)
@@ -304,10 +319,10 @@ describe("receiving Completed for the party (ANN-R111)", function()
 
 	it("makes a new toast of one that arrives after the merge window, and of another Catch", function()
 		local loaded = inParty()
-		receive(loaded, "1:hp:h:mackerelZrun:" .. THEIRS, "Kukli-Testrealm")
-		receive(loaded, "1:hp:h:mackerelZrun:4701:0a1b2c3d:tmr110:0:2", "Arwen-Testrealm")
+		receive(loaded, "hp|1|h|mackerel_run|" .. THEIRS, "Kukli-Testrealm")
+		receive(loaded, "hp|1|h|mackerel_run|Player-4701-0A1B2C3D-1791731700-0:2", "Arwen-Testrealm")
 		loaded.client.advance(6)
-		receive(loaded, "1:hp:h:mackerelZrun:" .. THEIRS, "Arwen-Testrealm")
+		receive(loaded, "hp|1|h|mackerel_run|" .. THEIRS, "Arwen-Testrealm")
 		local lines, last = {}, nil
 		for _ = 1, 40 do
 			local toast = partyToast(loaded)
@@ -333,14 +348,14 @@ describe("receiving Completed for the party (ANN-R111)", function()
 				{ party = { kinds = { hp = false } } },
 			}) do
 				local loaded = inParty(profile)
-				receive(loaded, "1:hp:h:mackerelZrun:" .. THEIRS)
+				receive(loaded, "hp|1|h|mackerel_run|" .. THEIRS)
 				loaded.client.advance(10)
 				assert.is_nil(partyToast(loaded))
 				assert.is_nil(nodShown(loaded))
 			end
 			-- The other kinds' switches don't touch it.
 			local loaded = inParty({ party = { kinds = { gold = false, legend = false } } })
-			receive(loaded, "1:hp:h:mackerelZrun:" .. THEIRS)
+			receive(loaded, "hp|1|h|mackerel_run|" .. THEIRS)
 			loaded.client.advance(5)
 			assert.is_not_nil(partyToast(loaded))
 		end
@@ -348,7 +363,7 @@ describe("receiving Completed for the party (ANN-R111)", function()
 
 	it("goes nowhere in Cozy mode (ANN-R106, ANN-R40)", function()
 		local loaded = inParty({ announcements = { cozy = true } })
-		receive(loaded, "1:hp:h:mackerelZrun:" .. THEIRS)
+		receive(loaded, "hp|1|h|mackerel_run|" .. THEIRS)
 		loaded.client.advance(10)
 		assert.is_nil(partyToast(loaded))
 		assert.is_nil(nodShown(loaded))
@@ -357,7 +372,7 @@ describe("receiving Completed for the party (ANN-R111)", function()
 	it("waits out combat, and is dropped once it has waited 120 s (ANN-R106, ANN-R35, ANN-R45)", function()
 		local loaded = inParty()
 		setCombat(loaded, true)
-		receive(loaded, "1:hp:h:mackerelZrun:" .. THEIRS)
+		receive(loaded, "hp|1|h|mackerel_run|" .. THEIRS)
 		loaded.client.advance(30)
 		assert.is_nil(partyToast(loaded))
 		setCombat(loaded, false)
@@ -366,7 +381,7 @@ describe("receiving Completed for the party (ANN-R111)", function()
 
 		local late = inParty()
 		setCombat(late, true)
-		receive(late, "1:hp:h:mackerelZrun:" .. THEIRS)
+		receive(late, "hp|1|h|mackerel_run|" .. THEIRS)
 		late.client.advance(121)
 		setCombat(late, false)
 		late.client.advance(3)
@@ -376,7 +391,7 @@ describe("receiving Completed for the party (ANN-R111)", function()
 	it("waits behind the player's own toast (ANN-R106)", function()
 		local loaded, M = inParty()
 		raise(loaded, M, { rung = "toast", kind = "spec", title = "New Species", text = "Nightfin Snapper" })
-		receive(loaded, "1:hp:h:mackerelZrun:" .. THEIRS)
+		receive(loaded, "hp|1|h|mackerel_run|" .. THEIRS)
 		loaded.client.advance(5)
 		assert.is_nil(partyToast(loaded))
 		loaded.client.advance(10)
@@ -387,9 +402,12 @@ describe("receiving Completed for the party (ANN-R111)", function()
 		"takes a groupmate's hp messages 4 at once, then one per 10 s, and ignores one from outside the party",
 		function()
 			local loaded = inParty()
-			receive(loaded, "1:hp:h:mackerelZrun:" .. THEIRS, "Stranger-Testrealm")
+			receive(loaded, "hp|1|h|mackerel_run|" .. THEIRS, "Stranger-Testrealm")
+			-- On 1.5.2's prefix it isn't one, and a malformed one is nothing.
+			receive(loaded, "hp|1|h|mackerel_run|" .. THEIRS, nil, "Pagle")
+			receive(loaded, "hp|1|h|mackerel_run|Player-4701-0A1B2C3D", nil)
 			for n = 1, 5 do
-				receive(loaded, "1:hp:h:mackerelZrun:4701:0a1b2c3d:tmr110:0:" .. n)
+				receive(loaded, "hp|1|h|mackerel_run|Player-4701-0A1B2C3D-1791731700-0:" .. n)
 			end
 			local count = 0
 			for _ = 1, 80 do

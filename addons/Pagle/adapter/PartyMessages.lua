@@ -101,9 +101,6 @@ local function readHunt(text)
 	return (text:gsub("Z", "_"))
 end
 
--- `n` in base 36, below (the moment ids' digits).
-local base36
-
 -- A colour's rarity as written and as read.
 local RARITY_CODE = { rare = "r", epic = "e" }
 local RARITY_OF = { r = "rare", e = "epic" }
@@ -154,50 +151,39 @@ local function read(name, text)
 	return value
 end
 
--- "Completed for the party" (ANN-R111, from 1.6): the hp message, `1:hp:<what>:<id>:<source>`, in this envelope. `what`
--- is `h` for a Standing Hunt completed or `w` for a run settled, `id` the Hunt's or the event's ID written as a gold
--- moment's Hunt is (each `_` as `Z`), and `source` the groupmate's source Catch ID (LOG-R116), `Player-<realm>-<ID>-
--- <time>-<tie>:<n>`, as five fields: the realm, the GUID's hex ID in lower case, the time in base 36, the tie and the
--- item's n. So the catcher knows its own GUID in it (the first two fields), and one Catch's hp messages match.
+-- "Completed for the party" (ANN-R111, from 1.6): the hp message, `hp|1|<what>|<id>|<sourceCatchId>`. Not in this
+-- envelope: like the party catch message it rides the prefix PagleCatch, whole, in at most 255 bytes (catch-log.md
+-- LOG-R110). `what` is `h` for a Standing Hunt completed or `w` for a run settled, `id` the Hunt's or the event's ID as
+-- it is, and `sourceCatchId` the groupmate's source Catch ID (LOG-R116), `<guid>-<time>-<tie>:<n>`.
 
---- The hp message's kind (ANN-R111).
+--- The hp message's kind and the one version this Core reads (ANN-R111, LOG-R110).
 ns.PARTY_HUNT_KIND = "hp"
+ns.PARTY_HUNT_VERSION = "1"
 
 local WHAT_CODE = { hunt = "h", run = "w" }
 local WHAT_OF = { h = "hunt", w = "run" }
+-- A Hunt's or an event's ID: lower-case letters, digits and `_`, at most 64.
+local HP_ID_MAX = 64
 
--- What `catchId` is written as (the five source fields), or nil for one that isn't a player's Catch ID.
----@param catchId any
----@return string?
-local function writeSource(catchId)
-	if type(catchId) ~= "string" then
-		return nil
-	end
-	local realm, hex, time, tie, n = catchId:match("^Player%-(%d+)%-(%x+)%-(%d+)%-(%d+):(%d+)$")
-	if not realm or #realm > 9 or #hex > 16 or #time > 10 or #tie > 9 or #n > 2 or tonumber(n) == 0 then
-		return nil
-	end
-	return table.concat({
-		realm,
-		hex:lower(),
-		base36(tonumber(time) --[[@as integer]]),
-		tie,
-		n,
-	}, ":")
+---@param id any
+---@return boolean
+local function isHuntOrEventId(id)
+	return type(id) == "string" and #id <= HP_ID_MAX and id:find("^[a-z0-9_]+$") ~= nil
 end
 
---- A GUID as an hp message's catcher is written (ANN-R111): `<realm>:<hex ID>`, or nil for one that isn't a player's.
----@param guid any
+-- The GUID a source Catch ID opens with (`Player-<realm>-<ID>`), or nil for a text that isn't a player's Catch ID:
+-- `<guid>-<time>-<tie>:<n>`, every part in range.
+---@param source any
 ---@return string?
-function ns.PartyGuidText(guid)
-	if type(guid) ~= "string" then
+local function catcherOf(source)
+	if type(source) ~= "string" then
 		return nil
 	end
-	local realm, hex = guid:match("^Player%-(%d+)%-(%x+)$")
-	if not realm or #realm > 9 or #hex > 16 then
+	local guid, time, tie, n = source:match("^(Player%-%d+%-%x+)%-(%d+)%-(%d+):(%d+)$")
+	if not guid or #guid > 64 or #time > 10 or #tie > 9 or #n > 2 or tonumber(n) == 0 then
 		return nil
 	end
-	return realm .. ":" .. hex:lower()
+	return guid
 end
 
 --- What "Completed for the party" shares (ANN-R111): a Hunt completed or a run settled, its Hunt's or event's ID, and
@@ -206,6 +192,11 @@ end
 ---@field what "hunt"|"run"
 ---@field id string
 ---@field source string
+
+--- An hp message read (ANN-R111): what it was, the ID, the source Catch ID (what one Catch's hp messages share) and the
+--- GUID it opens with, its catcher's.
+---@class PaglePartyHunt: PaglePartyHuntShare
+---@field catcher string
 
 --- What a raised moment shares as "Completed for the party" (ANN-R111): one with `partyCatch` (HNT-R185), a run with
 --- `partyEvent`, else a Hunt with `partyHunt`. Nil for any other moment.
@@ -223,51 +214,36 @@ function ns.PartyHuntShareOf(moment)
 	return nil
 end
 
---- The hp message for `share` (ANN-R111), or nil when its ID or source Catch can't be written or it comes to more than
---- PARTY_MAX_BYTES, when it isn't sent at all.
+--- The hp message for `share` (ANN-R111), or nil when its ID or source Catch ID isn't one, or it would pass the addon
+--- message limit, when it isn't sent at all.
 ---@param share PaglePartyHuntShare
 ---@return string?
 function ns.PartyHuntText(share)
 	local what = WHAT_CODE[share.what]
-	local id = share.id ~= nil and writeHunt(share.id) or nil
-	local source = writeSource(share.source)
-	if not what or not id or not source then
+	if not what or not isHuntOrEventId(share.id) or not catcherOf(share.source) then
 		return nil
 	end
-	local text = table.concat({ ns.PARTY_VERSION, ns.PARTY_HUNT_KIND, what, id, source }, ":")
-	return #text <= ns.PARTY_MAX_BYTES and text or nil
+	local text = table.concat({ ns.PARTY_HUNT_KIND, ns.PARTY_HUNT_VERSION, what, share.id, share.source }, "|")
+	return #text <= ns.ADDON_MESSAGE_LIMIT and text or nil
 end
 
--- The hp message's fields after its kind, read (ANN-R111), or nil for any that isn't one.
----@param fields string[]
----@return PaglePartyMessage?
-local function readHuntFields(fields)
-	if #fields ~= 9 then
+--- `text` read as an hp message (ANN-R111), or nil for anything that isn't exactly one: kind hp, version 1, five fields,
+--- `h` or `w`, an ID and a player's Catch ID. A later version is ignored, as LOG-R110 has every `<kind>|<v>|` message.
+---@param text any
+---@return PaglePartyHunt?
+function ns.ParsePartyHuntText(text)
+	if type(text) ~= "string" or #text > ns.ADDON_MESSAGE_LIMIT then
 		return nil
 	end
-	local what, id = WHAT_OF[fields[3]], readHunt(fields[4])
-	local realm, hex, time, tie, n = fields[5], fields[6], fields[7], fields[8], fields[9]
-	local good = what
-		and id
-		and realm:find("^%d%d?%d?%d?%d?%d?%d?%d?%d?$")
-		and hex:find("^[0-9a-f]+$")
-		and #hex <= 16
-		and time:find("^[0-9a-z]+$")
-		and #time <= 7
-		and tie:find("^%d%d?%d?%d?%d?%d?%d?%d?%d?$")
-		and n:find("^[1-9]%d?$")
-	if not good then
+	local kind, version, code, id, source = text:match("^([^|]*)|([^|]*)|([^|]*)|([^|]*)|([^|]*)$")
+	if kind ~= ns.PARTY_HUNT_KIND or version ~= ns.PARTY_HUNT_VERSION then
 		return nil
 	end
-	---@cast id string
-	return {
-		type = "hunt",
-		kind = ns.PARTY_HUNT_KIND,
-		what = what,
-		id = id,
-		catch = table.concat(fields, ":", 5, 9),
-		catcher = realm .. ":" .. hex,
-	}
+	local what, catcher = WHAT_OF[code], catcherOf(source)
+	if not what or not isHuntOrEventId(id) or not catcher then
+		return nil
+	end
+	return { what = what, id = id, source = source, catcher = catcher }
 end
 
 --- A hello (ANN-R103): `1:H:1` asks for an answer, `1:H:0` is one.
@@ -319,16 +295,11 @@ function ns.PartyMomentText(id, share)
 	return table.concat(fields, ":")
 end
 
---- A message read (ANN-R105): a hello, a moment with its id and kind's arguments, a cheer, or from 1.6 an hp (ANN-R111):
---- `what` it was, the Hunt's or event's `id`, the source Catch as written (`catch`, what one Catch's hp messages share)
---- and its `catcher`'s GUID as ns.PartyGuidText writes it.
+--- A message read (ANN-R105): a hello, a moment with its id and kind's arguments, or a cheer.
 ---@class PaglePartyMessage: PagleSharedMoment
----@field type "hello"|"moment"|"cheer"|"hunt"
+---@field type "hello"|"moment"|"cheer"
 ---@field ask boolean?
 ---@field id string?
----@field what ("hunt"|"run")?
----@field catch string?
----@field catcher string?
 
 --- `text` read as a party message, or nil for anything that isn't exactly one (ANN-R105): at most PARTY_MAX_BYTES of
 --- letters, digits and colons, this version, a known type with exactly its fields, a known kind, numbers whole and in
@@ -357,8 +328,6 @@ function ns.ParsePartyText(text)
 			return { type = "cheer", id = fields[3] }
 		end
 		return nil
-	elseif kind == ns.PARTY_HUNT_KIND then
-		return readHuntFields(fields)
 	elseif kind ~= "M" or #fields < 4 then
 		return nil
 	end
@@ -473,7 +442,7 @@ local DIGITS = "0123456789abcdefghijklmnopqrstuvwxyz"
 -- `n` (a whole number from 0) in base 36.
 ---@param n integer
 ---@return string
-function base36(n)
+local function base36(n)
 	local out = ""
 	repeat
 		local digit = n % 36
@@ -584,14 +553,14 @@ end
 
 --- An hp toast's line (ANN-R111): "{Hunt} · for {groupmates}" or "{event} settled · for {groupmates}", named from the
 --- player's own lore, "a Hunt" or "a Pagle Wager" for one it doesn't know.
----@param message PaglePartyMessage
+---@param message PaglePartyHuntShare
 ---@param senders string[]
 ---@param lookups PaglePartyHuntLookups|PaglePartyLookups
 ---@return string
 function ns.PartyHuntLine(message, senders, lookups)
 	local L = ns.L
 	local who = ns.PartySendersText(senders)
-	local id = message.id --[[@as string]]
+	local id = message.id
 	if message.what == "run" then
 		local event = lookups.eventName and lookups.eventName(id) or L.PARTY_HP_SOME_RUN
 		return ns.RenderText(L.PARTY_HP_RUN, { event = event, senders = who })

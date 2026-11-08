@@ -20,9 +20,7 @@ local OWNER = "Pagle party"
 -- Tunables (announcements.md › Tunables).
 local HELLO_DELAY, HELLO_GAP = 2, 10
 local SEND_BURST, SEND_EVERY, SEND_WAITING = 3, 1, 8
--- From 1.6, hp (ANN-R111): 4 at once, since one Party Catch can complete Hunts and settle a run together, then one per
--- 10 s.
-local LIMITS = { hello = { 2, 30 }, moment = { 3, 20 }, cheer = { 6, 5 }, hunt = { 4, 10 } }
+local LIMITS = { hello = { 2, 30 }, moment = { 3, 20 }, cheer = { 6, 5 } }
 local EXPIRY = 120
 local CHEER_GATHER = 3
 local IDS_KEPT, IDS_FOR = 20, 600
@@ -320,12 +318,6 @@ local function send(text, options)
 	pump()
 end
 ns.SendPartyMessage = send
-
---- Sends `text` through the party's one queue (ANN-R103): "Completed for the party" (adapter/PartyHunts.lua, ANN-R111).
----@param text string
-function ns.SendPartyText(text)
-	send(text)
-end
 
 ---@param ask boolean
 local function sayHello(ask)
@@ -639,8 +631,6 @@ Pagle.RegisterEvent(OWNER, "CHAT_MSG_ADDON", function(_, prefix, text, channel, 
 		end
 	elseif message.type == "moment" then
 		received(message, member.name)
-	elseif message.type == "hunt" then
-		ns.ReceivePartyHunt(message, member.name, member.key)
 	else
 		cheered(message.id --[[@as string]], member)
 	end

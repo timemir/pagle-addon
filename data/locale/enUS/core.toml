@@ -148,7 +148,6 @@ SETTINGS_PARTY_KINDS.gold = "Gold tier in a Hunt"
 SETTINGS_PARTY_KINDS.zone = "Zone Master"
 SETTINGS_PARTY_KINDS.prestige = "Prestige"
 SETTINGS_PARTY_KINDS.ledger = "Ledger 100%"
-# From 1.6 (SET-R35, ANN-R111): the hp toast's switch, after the moment kinds.
 SETTINGS_PARTY_KINDS.hp = "Completed for the party"
 SETTINGS_PARTY_SOUNDS = "Cheers sounds"
 SETTINGS_PARTY_SOUNDS_TOOLTIP = "A clink when a groupmate's toast arrives, when you raise a mug, and when someone raises one to you."

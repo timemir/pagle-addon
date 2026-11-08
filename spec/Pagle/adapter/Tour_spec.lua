@@ -121,7 +121,7 @@ describe("Core's own tour stops (CORE-R65, CORE-R68)", function()
 		pagle(loaded, "dev tour core")
 		loaded.client.advance(90)
 
-		assert.are.equal(22, #shown)
+		assert.are.equal(23, #shown)
 		for i, n in ipairs(shown) do
 			assert(n > 0, "stop " .. i .. " showed nothing")
 		end
@@ -136,11 +136,11 @@ describe("Core's own tour stops (CORE-R65, CORE-R68)", function()
 		loaded.client.advance(90)
 
 		assert.are.equal(0, added(onScreen(loaded), before))
-		assert.are.equal(22, loaded.client.screenshots)
+		assert.are.equal(23, loaded.client.screenshots)
 		assert.are.same(saved, loaded.env.PagleDB)
-		assert.are.equal("Pagle dev: tour 1/22: core.onboarding.letter", loaded.printed[2])
-		assert.are.equal("Pagle dev: tour 22/22: core.onboarding.step.off", loaded.printed[23])
-		assert.are.equal("Pagle dev: the tour is done at ", loaded.printed[24]:sub(1, 31))
+		assert.are.equal("Pagle dev: tour 1/23: core.onboarding.letter", loaded.printed[2])
+		assert.are.equal("Pagle dev: tour 23/23: core.onboarding.step.off", loaded.printed[24])
+		assert.are.equal("Pagle dev: the tour is done at ", loaded.printed[25]:sub(1, 31))
 	end)
 
 	it("leave open a window that was open before its stop", function()
