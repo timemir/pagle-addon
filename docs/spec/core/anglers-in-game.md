@@ -38,7 +38,7 @@ Part of [Core](README.md). The Companion brings Published Anglers into the game 
   | Line | Left | Right |
   |---|---|---|
   | gap | a small blank gap | |
-  | header | the Pagle favicon (the minimap icon's gilt "P") and "Pagle Angler", in Pagle teal | "Following", in green, only for a Followed Angler |
+  | header | the Pagle favicon (the compartment entry's gilt "P", CORE-R50) and "Pagle Angler", in Pagle teal | "Following", in green, only for a Followed Angler |
   | title | the title, in gold, without angle brackets so it can't be mistaken for the guild line; left out when there is none | |
   | level | "Angler Level", in parchment | "{L}"; with " · {emblem} Prestige {I–X}" at ranks 1–10, and " · {emblem} Master Prestige {n}" from rank 11, `n` being rank − 10 (LED-R34); `{emblem}` is the rank's Prestige emblem at 22, the Master's from rank 11, inline before its words (LED-R152, `Pagle.PrestigeEmblemMarkup`). At rank 0 the line is "{L}" alone, with no emblem and no space kept for one |
   | ledger | "Ledger" | "{p}%" |

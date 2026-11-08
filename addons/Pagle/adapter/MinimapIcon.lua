@@ -18,24 +18,22 @@ local Pagle = Pagle
 -- frames, so no other Core file's registration replaces it.
 local OWNER = "Pagle minimap icon"
 
--- The favicon (logic/MinimapIcon.lua).
-local ICON = ns.PAGLE_ICON
--- The usual minimap-button look, from the client's own textures, each listed in build 70338's ManifestInterfaceData
--- (CORE-R9): the round mask the icon is drawn through (130924, Interface\CHARACTERFRAME\TempPortraitAlphaMask.blp),
--- the tracking-border ring round it (136430, Interface\MINIMAP\minimap-trackingborder.blp), the dark disc behind
--- it (136467, Interface\MINIMAP\UI-Minimap-Background.blp) and the glow while the mouse is over it (136477,
--- Interface\MINIMAP\UI-Minimap-ZoomButton-Highlight.blp).
-local MASK = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
-local RING = "Interface\\Minimap\\MiniMap-TrackingBorder"
-local BACKGROUND = "Interface\\Minimap\\UI-Minimap-Background"
-local HIGHLIGHT = "Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight"
+-- The Ledger, Pagle's own art (CORE-R53), in three textures stacked on the button, each the same square centred on
+-- it: the frame (night water in a gilt-bronze ring; nothing goes between the two, so they are one texture), the book
+-- over it (a leather-bound Ledger with a gilt "P", its own texture so a press can push it in) and, in the HIGHLIGHT
+-- layer the client shows while the mouse is over the button or LockHighlight holds it, the glow, added on (ADD).
+-- Each is a lossless BLP with its mip chain (scripts/encode-blp.py --raw): the frame and the book 128 x 128, the glow
+-- 64 x 64.
+local FRAME = "Interface\\AddOns\\Pagle\\media\\minimap\\Ledger-Frame"
+local BOOK = "Interface\\AddOns\\Pagle\\media\\minimap\\Ledger-Book"
+local GLOW = "Interface\\AddOns\\Pagle\\media\\minimap\\Ledger-Glow"
 
--- Its sizes, in the minimap's units: the button, the ring's texture (the ring fills the top left of its square
--- texture, so the texture hangs from the button's top left), and the disc and the icon, both centred.
+-- Its sizes, in the minimap's units: the button, which takes the clicks, and the art's square, centred on it. The
+-- ring's outside is 33 across, about as wide as the client's tracking-border ring on its own buttons.
 local SIZE = 31
-local RING_SIZE = 50
-local BACKGROUND_SIZE = 24
-local ICON_SIZE = 18
+local ART_SIZE = 34
+-- How far a press pushes the book: right and down, a unit each.
+local PRESS = 1
 -- How far past the minimap's edge the button's centre sits.
 local OUTSIDE = 5
 
@@ -169,11 +167,25 @@ local function applyMode()
 	button:SetFrameLevel(8)
 end
 
--- Ends a drag: the button stops following the cursor, and keeps the place it was last put at.
+-- The book texture, made with the button.
+---@type table?
+local book
+
+-- Pushes the book in while the mouse is down on the button, or lets it up (CORE-R53).
+---@param pressed boolean
+local function press(pressed)
+	if book then
+		local offset = pressed and PRESS or 0
+		book:SetPoint("CENTER", button, "CENTER", offset, -offset)
+	end
+end
+
+-- Ends a drag: the button stops following the cursor, and keeps the place it was last put at. The book comes up.
 ---@param self table the button
 local function stopDragging(self)
 	self:SetScript("OnUpdate", nil)
 	self:UnlockHighlight()
+	press(false)
 end
 
 -- Each frame of a drag: the button follows the cursor and saves where it is, round the edge or, detached, anywhere on
@@ -233,8 +245,20 @@ local function onClick(self, mouseButton)
 	end
 end
 
--- The button in the usual minimap-button look: the dark disc, the favicon through the round mask, the ring over
--- both, and the glow while the mouse is over it (CORE-R53).
+-- A texture of the Ledger's art (FRAME, BOOK or GLOW) on `made`, in draw layer `layer`, the art's square centred on it.
+---@param made table the button
+---@param file string
+---@param layer string
+---@return table
+local function art(made, file, layer)
+	local texture = made:CreateTexture(nil, layer)
+	texture:SetTexture(file)
+	texture:SetSize(ART_SIZE, ART_SIZE)
+	texture:SetPoint("CENTER", made, "CENTER", 0, 0)
+	return texture
+end
+
+-- The button, drawn as the Ledger: the frame, the book on it, and the glow while the mouse is over it (CORE-R53).
 ---@return table
 local function makeButton()
 	local made = CreateFrame("Button", "PagleMinimapButton", Minimap)
@@ -243,29 +267,17 @@ local function makeButton()
 	made:SetFrameLevel(8)
 	made:RegisterForClicks("AnyUp")
 	made:RegisterForDrag("LeftButton")
-	made:SetHighlightTexture(HIGHLIGHT)
 
-	local background = made:CreateTexture(nil, "BACKGROUND")
-	background:SetTexture(BACKGROUND)
-	background:SetSize(BACKGROUND_SIZE, BACKGROUND_SIZE)
-	background:SetPoint("CENTER")
-
-	local icon = made:CreateTexture(nil, "ARTWORK")
-	icon:SetTexture(ICON)
-	icon:SetSize(ICON_SIZE, ICON_SIZE)
-	icon:SetPoint("CENTER")
-	local mask = made:CreateMaskTexture()
-	mask:SetTexture(MASK, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-	mask:SetAllPoints(icon)
-	icon:AddMaskTexture(mask)
-
-	local ring = made:CreateTexture(nil, "OVERLAY")
-	ring:SetTexture(RING)
-	ring:SetSize(RING_SIZE, RING_SIZE)
-	ring:SetPoint("TOPLEFT")
+	art(made, FRAME, "BACKGROUND")
+	book = art(made, BOOK, "ARTWORK")
+	art(made, GLOW, "HIGHLIGHT"):SetBlendMode("ADD")
 
 	made:SetScript("OnMouseDown", function()
 		dragging = false
+		press(true)
+	end)
+	made:SetScript("OnMouseUp", function()
+		press(false)
 	end)
 	made:SetScript("OnClick", onClick)
 	made:SetScript("OnDragStart", startDragging)

@@ -101,7 +101,7 @@ function ns.UpdateCompartmentText()
 	end
 end
 
--- At login, once: the entry, with Pagle's icon, the minimap icon's favicon (ns.PAGLE_ICON, CORE-R50, CORE-R53), opening
+-- At login, once: the entry, with Pagle's icon, the favicon (ns.PAGLE_ICON, CORE-R50), opening
 -- the menu when clicked and showing the menu's tooltip while the mouse is over it. The compartment draws `icon`
 -- through SetTexture, 16 x 16 at the row's right, with no mask (Blizzard_Minimap's AddonCompartment.lua).
 Pagle.RegisterEvent(OWNER, "PLAYER_LOGIN", function()

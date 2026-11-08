@@ -3,13 +3,11 @@
 -- settings.md SET-R10 row 10; onboarding.md ONB-R13, ONB-R52, ONB-R108). The compartment's menu itself:
 -- Menu_spec.lua; the icon's angles: spec/Pagle/logic/MinimapIcon_spec.lua.
 
--- The textures the icon is drawn with: the favicon, and the client's own minimap-button parts, each listed in build
--- 70338's ManifestInterfaceData (CORE-R9).
-local ICON = "Interface\\AddOns\\Pagle\\media\\minimap\\Pagle"
-local MASK = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
-local RING = "Interface\\Minimap\\MiniMap-TrackingBorder"
-local BACKGROUND = "Interface\\Minimap\\UI-Minimap-Background"
-local HIGHLIGHT = "Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight"
+-- The textures the icon is drawn with, the Ledger's (CORE-R53): the frame (the water and the gilt ring), the book, and
+-- the glow while the mouse is over it.
+local FRAME = "Interface\\AddOns\\Pagle\\media\\minimap\\Ledger-Frame"
+local BOOK = "Interface\\AddOns\\Pagle\\media\\minimap\\Ledger-Book"
+local GLOW = "Interface\\AddOns\\Pagle\\media\\minimap\\Ledger-Glow"
 
 -- How far the icon's centre sits from the minimap's: half the fake minimap's 198 units, and 5 more.
 local RADIUS = 104
@@ -144,34 +142,60 @@ describe("The minimap icon", function()
 		assert.is_nil(loaded.env.LibStub("LibDBIcon-1.0", true))
 	end)
 
-	it("draws the favicon in a round mask inside the client's tracking-border ring (CORE-R53, CORE-R9)", function()
-		local _, button = loggedIn()
+	it(
+		"draws the Ledger: the gilt ring over night water, the book on it, the glow under the mouse (CORE-R53)",
+		function()
+			local _, button = loggedIn()
 
-		local textures = texturesOf(button)
-		local icon = assert(textures[ICON])
-		assert.are.equal(1, #icon.masks)
-		assert.are.equal(MASK, icon.masks[1].texture)
-		assert.are.same(
-			{ "ARTWORK", "OVERLAY", "BACKGROUND" },
-			{ icon.layer, assert(textures[RING]).layer, assert(textures[BACKGROUND]).layer }
-		)
-		assert.are.equal(HIGHLIGHT, button.highlightTexture)
-		assert.are.same({ "LeftButton" }, button.dragButtons)
-	end)
-
-	it("shows the favicon from a 64 x 64 BLP in Pagle's media/minimap (CORE-R53)", function()
-		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
-		local file = assert(io.open("addons/Pagle/media/minimap/Pagle.blp", "rb"))
-		local header = file:read(20)
-		file:close()
-		-- BLP2's magic, type, four encoding bytes, then its width and height.
-		assert.are.equal("BLP2", header:sub(1, 4))
-		local function u32(offset)
-			local a, b, c, d = header:byte(offset, offset + 3)
-			return a + b * 256 + c * 65536 + d * 16777216
+			local textures = texturesOf(button)
+			local frame, book, glow = assert(textures[FRAME]), assert(textures[BOOK]), assert(textures[GLOW])
+			assert.are.same({ "BACKGROUND", "ARTWORK", "HIGHLIGHT" }, { frame.layer, book.layer, glow.layer })
+			assert.are.equal("ADD", glow.blendMode)
+			for _, texture in ipairs({ frame, book, glow }) do
+				assert.are.same({ 34, 34 }, { texture.width, texture.height })
+				assert.are.same({ { "CENTER", button, "CENTER", 0, 0 } }, texture.points)
+				assert.are.same({}, texture.masks or {})
+			end
+			assert.is_nil(button.highlightTexture)
+			assert.are.same({ "LeftButton" }, button.dragButtons)
 		end
-		assert.are.same({ 64, 64 }, { u32(13), u32(17) })
-	end)
+	)
+
+	it(
+		"draws it from BLPs in Pagle's media/minimap: the frame and the book 128 x 128, the glow 64 x 64 (CORE-R53)",
+		function()
+			for name, size in pairs({ ["Ledger-Frame"] = 128, ["Ledger-Book"] = 128, ["Ledger-Glow"] = 64 }) do
+				---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
+				local file = assert(io.open("addons/Pagle/media/minimap/" .. name .. ".blp", "rb"))
+				local header = file:read(20)
+				file:close()
+				-- BLP2's magic, type, four encoding bytes, then its width and height.
+				assert.are.equal("BLP2", header:sub(1, 4))
+				local function u32(offset)
+					local a, b, c, d = header:byte(offset, offset + 3)
+					return a + b * 256 + c * 65536 + d * 16777216
+				end
+				assert.are.same({ name, size, size }, { name, u32(13), u32(17) })
+			end
+		end
+	)
+
+	it(
+		"presses the book in a unit while the mouse is down, and lets it up on release or as a drag ends (CORE-R53)",
+		function()
+			local loaded, button = loggedIn()
+			local book = assert(texturesOf(button)[BOOK])
+
+			button:GetScript("OnMouseDown")(button, "LeftButton")
+			assert.are.same({ { "CENTER", button, "CENTER", 1, -1 } }, book.points)
+			button:GetScript("OnMouseUp")(button, "LeftButton")
+			assert.are.same({ { "CENTER", button, "CENTER", 0, 0 } }, book.points)
+
+			button:GetScript("OnMouseDown")(button, "LeftButton")
+			drag(loaded, button, { 1700, 1000 })
+			assert.are.same({ { "CENTER", button, "CENTER", 0, 0 } }, book.points)
+		end
+	)
 
 	it("is shown by default at the minimap's bottom left, 225 degrees round (CORE-R53, CORE-R56)", function()
 		local loaded, button = loggedIn()

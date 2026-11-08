@@ -1,5 +1,13 @@
 # Pagle
 
+## 1.5.1 (unreleased)
+
+A new look for the Pagle button.
+
+### Changed
+
+- The Pagle button on the minimap is now drawn as the Ledger: a leather-bound book with a gilt P, on night water inside a gilt ring. It lights up when your mouse is over it, and the book presses in when you click it. Pagle's entry in the game's add-on button keeps the small P.
+
 ## 1.5.0 (2026-11-08)
 
 Put the Pagle button anywhere.
