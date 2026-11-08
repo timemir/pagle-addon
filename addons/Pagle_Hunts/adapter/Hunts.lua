@@ -9,12 +9,34 @@ local ns = select(2, ...)
 -- Hunts' AceAddon (HNT-R135). Core's libraries come through LibStub; Hunts embeds none (CORE-R6).
 ns.Hunts = LibStub("AceAddon-3.0"):NewAddon(addonName)
 
+-- A Hunt's gold tier is marked for the player's party (announcements.md ANN-R104, from 1.5.2, #640): the moment of
+-- the tier whose trim is the first gold one (logic/Qualify.lua's ns.Trim, HNT-R86) carries `party = "gold"` and the
+-- Hunt's ID, which a groupmate's Hunts names. It wraps logic/Moments.lua's ns.HuntTierMoment here, adding only the
+-- mark, as a 1.5.2 patch changes no hashed file; what the moment says is unchanged.
+local tierMoment = ns.HuntTierMoment
+---@diagnostic disable-next-line: duplicate-set-field -- the wrap is the point: logic/ can't change in a patch
+function ns.HuntTierMoment(hunt, k, huntTier)
+	local moment = tierMoment(hunt, k, huntTier)
+	if k > 1 and ns.Trim(k) == "gold" and ns.Trim(k - 1) ~= "gold" then
+		moment.party = "gold"
+		moment.partyHunt = hunt.id
+	end
+	return moment
+end
+
 --- AceAddon calls it once, at Hunts' ADDON_LOADED, after Core's (CORE-R10).
 function ns.Hunts.OnInitialize()
 	--- Hunts' Module handle: the calls that act for Hunts (CORE-R12). Nil while Hunts is inert.
-	ns.Module = Pagle.RegisterModule(ns.ModuleDef(function()
+	local def = ns.ModuleDef(function()
 		ns.ToggleBoard()
-	end))
+	end)
+	-- A groupmate's Hunt gold names its Hunt in the player's language (announcements.md ANN-R106, from 1.5.2, #640):
+	-- the Hunt's name from its lore, or nil for one this Hunts doesn't know.
+	def.partyHuntName = function(huntID)
+		local name = ns.hunts and ns.hunts:HuntName(huntID)
+		return name ~= huntID and name or nil
+	end
+	ns.Module = Pagle.RegisterModule(def)
 	-- An inert Module must stop (CORE-R13).
 	if not ns.Module then
 		return

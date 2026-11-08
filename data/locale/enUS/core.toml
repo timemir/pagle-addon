@@ -131,6 +131,22 @@ SETTINGS_TRACKERS_WHILE_FISHING_TOOLTIP = "Shows the trackers while a fishing po
 SETTINGS_TOAST_POSITION = "Toast position"
 SETTINGS_TOAST_RESET = "Reset"
 SETTINGS_TOAST_RESET_TOOLTIP = "Shift-drag a toast to move the toasts and Nods, or the Session summary to move it. This puts them all back where they started."
+# The Party block on the Announcements page (SET-R36, ANN-R103–R108, from 1.5.2): its header, its rows' labels and
+# tooltips, and each kind's switch.
+SETTINGS_PARTY = "Party"
+SETTINGS_PARTY_SHARE = "Share my moments with my party"
+SETTINGS_PARTY_SHARE_TOOLTIP = "When you catch a Legend, set a Monster-size record and the like, groupmates who run Pagle get a small toast of it. Only the moment is sent, never where you are. Not in a raid."
+SETTINGS_PARTY_SHOW = "Show my party's moments"
+SETTINGS_PARTY_SHOW_TOOLTIP = "A small toast when a groupmate who runs Pagle has a moment, with a mug you can raise to cheer them. It waits behind your own toasts and keeps to your interruption budget. Greyed out in Cozy mode, which shows nothing."
+SETTINGS_PARTY_KINDS.legend = "Legends"
+SETTINGS_PARTY_KINDS.colour = "Rare colours"
+SETTINGS_PARTY_KINDS.monster = "Monster-size records"
+SETTINGS_PARTY_KINDS.gold = "Gold tier in a Hunt"
+SETTINGS_PARTY_KINDS.zone = "Zone Master"
+SETTINGS_PARTY_KINDS.prestige = "Prestige"
+SETTINGS_PARTY_KINDS.ledger = "Ledger 100%"
+SETTINGS_PARTY_SOUNDS = "Cheers sounds"
+SETTINGS_PARTY_SOUNDS_TOOLTIP = "A clink when a groupmate's toast arrives, when you raise a mug, and when someone raises one to you."
 SETTINGS_NO_MODULE = "Recording your Catches. Enable a Module to see them."
 SETTINGS_MODULES = "Modules"
 SETTINGS_MODULES_NOTE = "Turn Modules on or off in the AddOns list."
@@ -255,6 +271,31 @@ CARD_COINS = 'Pagle Coins +{coins} |TInterface\MoneyFrame\UI-GoldIcon:0|t'
 CARD_CLOSE = "Close"
 # The shared hint where a Shift-drag moves something: the card (ANN-R102), the toasts (ANN-R98).
 SHIFT_DRAG_HINT = "Shift-drag to move"
+# A party toast's line (ANN-R106, UI › Party toast, from 1.5.2): what the groupmate did, then " · " and what it was
+# about when Pagle can name it (an item, a variety, a record's item and length).
+PARTY_LINES.legend = "Caught a Legend"
+PARTY_LINES.rare = "Caught a rare colour"
+PARTY_LINES.epic = "Caught an epic colour"
+PARTY_LINES.monster = "Monster-size record"
+PARTY_LINES.gold = "Took gold in a Hunt"
+PARTY_LINES.zone = "Zone Master"
+PARTY_LINES.ledger = "Ledger 100%"
+PARTY_PRESTIGE = "Prestige {rank:0}"
+PARTY_ZONE = "Became Master of {zone}"
+PARTY_GOLD = "Took gold in {hunt}"
+# A groupmate's name on a party toast and a cheer's Nod (ANN-R105): first name and Forever's surname, as the website
+# writes it (pagle-backend ANG-R13); the first name alone without one.
+PARTY_FULL_NAME = "{name} {surname}"
+PARTY_DETAIL = "{what} · {detail}"
+PARTY_RECORD = "{item} · {length}"
+# The mug on a party toast (ANN-R108): its tooltip before and after it is raised.
+PARTY_MUG = "Raise a mug"
+PARTY_MUG_RAISED = "You raised a mug"
+# A cheer's Nod (ANN-R108): one groupmate, two, or a count from three.
+PARTY_CHEER_NAME = "{name} raised a mug"
+PARTY_CHEER_NAMES = "{name} and {other} raised a mug"
+PARTY_CHEER_COUNT.one = "{count} raised a mug"
+PARTY_CHEER_COUNT.other = "{count} raised a mug"
 # A toast style's sample on the Curio Shop's preview stage (wallet-and-shop.md › UI, ANN-R80): its headline, its
 # one stamp, and the button that shows it through the lanes.
 TOAST_SAMPLE_TITLE = "New Species"
@@ -478,6 +519,10 @@ DEV_ON = "Pagle dev: dev commands are on."
 DEV_OFF = "Pagle dev: dev commands are off."
 DEV_IS_OFF = "Pagle dev: dev commands are off; /pagle dev on turns them on."
 DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | stage <count> | glyphs | tour [module | list | stop] | probe | fonts | pseudo on | off | onboarding <command> | content | views | pastetest <KB>"
+# /pagle dev party (ANN-R109, from 1.5.2): its usage, and what it queued.
+DEV_PARTY_USAGE = "Pagle dev: /pagle dev party <kind | all | cheer [1-4]>, where kind is one of {kinds}"
+DEV_PARTY_QUEUED = "Pagle dev: a party toast from {name} is queued: {kind}."
+DEV_PARTY_CHEERED = "Pagle dev: {count:0} cheers for a moment of yours are on their way."
 # /pagle dev pseudo on | off (#524): the development pseudo-locale, its usage and the line it prints once the flag is
 # saved; the text changes at the next /reload. Dev text stays English, pseudo-locale on or off.
 DEV_PSEUDO_USAGE = "Pagle dev: /pagle dev pseudo on | off"

@@ -44,6 +44,23 @@ for _, kind in ipairs({ "toast", "nod", "banner", "splash" }) do
 	end)
 end
 
+-- A party toast (ANN-R107, from 1.5.2): a Legend from a made-up groupmate, Kukli Emnabi, put straight in the lanes as the
+-- forms above are, so the layout harness measures the party style; its hide takes it back off screen.
+do
+	---@type PagleAnnouncement?
+	local sample
+	add("announce.party", function()
+		return ns.RenderText(ns.L.DEV_TOUR_ANNOUNCE, { kind = "party" })
+	end, function()
+		sample = ns.PartyToastOf({ type = "moment", id = "tour1", kind = "legend", item = 19805 }, "Kukli Emnabi")
+		ns.lanes:Push(sample)
+	end, function()
+		if sample then
+			ns.lanes:Withdraw(sample)
+		end
+	end)
+end
+
 -- Each card, in the card frame: a Session summary card and a Write-up, closed as the player would. Closing a sample
 -- removes nothing stored, and a card it replaced shows again (ns.cards:Close).
 ---@param kind string "session" or "writeup"
