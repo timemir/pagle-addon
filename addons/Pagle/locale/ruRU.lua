@@ -517,7 +517,7 @@ ns.Locale("ruRU", function(L)
 	L.SHOP_CRATE_CONFIRM = "Открыть ящик диковин?"
 	L.SHOP_CRATE_FINE = "Один облик, которого у вас ещё нет, — наудачу; шансы указаны на ящике."
 	L.SHOP_CRATE_KIND = "Ящик обликов"
-	L.SHOP_CRATE_KINDS = { binding = "Переплёт", crest = "Герб", soundset = "Набор звуков", toaststyle = "Стиль плашек", trackerframe = "Рамка трекера" }
+	L.SHOP_CRATE_KINDS = { binding = "Переплёт", crest = "Герб", newssign = "Табличка новостей", soundset = "Набор звуков", toaststyle = "Стиль плашек", trackerframe = "Рамка трекера" }
 	L.SHOP_CRATE_LEFT = "Осталось: {left:0}"
 	L.SHOP_CRATE_NEW_LOOK = "Новый облик"
 	L.SHOP_CRATE_ONLY_NOTE = "Только в ящике диковин, не продаётся"
@@ -579,6 +579,7 @@ ns.Locale("ruRU", function(L)
 	L.SLOT_CREST = "Гербы"
 	L.SLOT_CREST_FISH = "Рыбьи гербы"
 	L.SLOT_CREST_ZONES = "Гербы зон"
+	L.SLOT_NEWS_SIGN = "Табличка новостей"
 	L.SLOT_SOUND_SET = "Набор звуков"
 	L.SLOT_TOAST_STYLE = "Стиль плашек"
 	L.TOAST_SAMPLE_STAMP = "Здесь впервые"

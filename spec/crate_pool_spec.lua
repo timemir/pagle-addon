@@ -5,13 +5,14 @@
 -- the registry; a new good needs one row in the pool and nothing else.
 
 -- The kind of emblem each slot's goods have (SHOP-R50), by the last part of the slot's ID: a tracker frame slot of any
--- Module is "tracker frame".
+-- Module is "tracker frame"; the news sign's looks are "news sign" (SHOP-R62).
 local KIND_OF_SLOT = {
 	toaststyle = "toaststyle",
 	soundset = "soundset",
 	crest = "crest",
 	binding = "binding",
 	trackerframe = "trackerframe",
+	newssign = "newssign",
 }
 
 -- The goods for sale and crate only in the registry, in the shop's order (SHOP-R53): Core's slots, then each Module's
@@ -141,7 +142,7 @@ describe("the Curio crate's pool", function()
 		"holds every good for sale and every crate-only good, each at its price tier, kind and place (SHOP-R50, SHOP-R53)",
 		function()
 			assert.are.same({}, problems(pool, shop))
-			assert.are.equal(102, #shop)
+			assert.are.equal(107, #shop)
 		end
 	)
 

@@ -239,6 +239,7 @@ local EXPECTED = {
 			{ "header", "Announcements" },
 			{ "slot", "Toast style" },
 			{ "slot", "Sound set" },
+			{ "slot", "News sign" }, -- from 1.6 (SET-R50, SHOP-R60)
 			{ "header", "Crests" },
 			{ "slot", "Crests" },
 			{ "header", "Books" },
@@ -989,6 +990,7 @@ describe("Each page's Defaults button", function()
 				"Book binding",
 				"Crests",
 				"Hunts tracker frame",
+				"News sign",
 				"Sound set",
 				"Stats tracker frame",
 				"Tackle Board tracker frame",

@@ -158,6 +158,9 @@ describe("The reel's cards (SHOP-R55, Motion row)", function()
 			end
 			assert.are.equal("coin", ns.CrateEmblem("crest"))
 			assert.is_not_nil(ns.ATLASES.Crate.sprites["emblem-coin"])
+			-- The news sign's looks, from 1.6 (SHOP-R62), have a sign of their own.
+			assert.is_true(kinds.newssign)
+			assert.are.equal("sign", ns.CrateEmblem("newssign"))
 		end
 	)
 

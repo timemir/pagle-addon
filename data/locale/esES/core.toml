@@ -928,11 +928,13 @@ en = "It shows here once its Module is on."
 [SHOP_CRATE_KINDS]
 value.binding = "Encuadernación"
 value.crest = "Blasón"
+value.newssign = "Cartel de noticias"
 value.soundset = "Juego de sonidos"
 value.toaststyle = "Estilo de aviso emergente"
 value.trackerframe = "Marco de rastreador"
 en.binding = "Binding"
 en.crest = "Crest"
+en.newssign = "News sign"
 en.soundset = "Sound set"
 en.toaststyle = "Toast style"
 en.trackerframe = "Tracker frame"
@@ -1963,6 +1965,11 @@ en = "Crests"
 [SLOT_BOOK_BINDING]
 value = "Encuadernación"
 en = "Book binding"
+
+# Machine-drafted (Claude) for the news sign's looks (SHOP-R60); awaits a native speaker's review.
+[SLOT_NEWS_SIGN]
+value = "Cartel de noticias"
+en = "News sign"
 
 [SLOT_CREST_ZONES]
 value = "Blasones de zona"

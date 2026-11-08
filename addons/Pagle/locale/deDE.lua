@@ -517,7 +517,7 @@ ns.Locale("deDE", function(L)
 	L.SHOP_CRATE_CONFIRM = "Eine Kuriositätenkiste öffnen?"
 	L.SHOP_CRATE_FINE = "Eine Optik, die du noch nicht hast, per Zufall; die Chancen stehen auf der Kiste."
 	L.SHOP_CRATE_KIND = "Eine Kiste voller Optiken"
-	L.SHOP_CRATE_KINDS = { binding = "Einband", crest = "Wappen", soundset = "Klangset", toaststyle = "Einblendungsstil", trackerframe = "Trackerrahmen" }
+	L.SHOP_CRATE_KINDS = { binding = "Einband", crest = "Wappen", newssign = "Nachrichtenschild", soundset = "Klangset", toaststyle = "Einblendungsstil", trackerframe = "Trackerrahmen" }
 	L.SHOP_CRATE_LEFT = "{left:0} übrig"
 	L.SHOP_CRATE_NEW_LOOK = "Eine neue Optik"
 	L.SHOP_CRATE_ONLY_NOTE = "Nur in einer Kuriositätenkiste, nie im Verkauf"
@@ -579,6 +579,7 @@ ns.Locale("deDE", function(L)
 	L.SLOT_CREST = "Wappen"
 	L.SLOT_CREST_FISH = "Fischwappen"
 	L.SLOT_CREST_ZONES = "Gebietswappen"
+	L.SLOT_NEWS_SIGN = "Nachrichtenschild"
 	L.SLOT_SOUND_SET = "Klangset"
 	L.SLOT_TOAST_STYLE = "Einblendungsstil"
 	L.TOAST_SAMPLE_STAMP = "Neu hier"

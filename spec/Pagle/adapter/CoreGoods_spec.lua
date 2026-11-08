@@ -32,7 +32,7 @@ describe("Core's slots and goods", function()
 	end)
 
 	it(
-		"register the four slots first, in the Curio Shop's categories, with every good's tier in SHOP-R25's order, the"
+		"register the five slots first, in the Curio Shop's categories, with every good's tier in SHOP-R25's order, the"
 			.. " crest slot holding Plain then the fish crests, earned, by Species ID, and the binding slot Field Leather"
 			.. " then every binding for sale by tier (SHOP-R22, SHOP-R25, VAR-R12, ADR 0015)",
 		function()
@@ -144,6 +144,21 @@ describe("Core's slots and goods", function()
 					crests,
 				},
 				{ "core.binding", "Book binding", "Books", "Core", bindings },
+				-- From 1.6, after the other four (SHOP-R60).
+				{
+					"core.newssign",
+					"News sign",
+					"Announcements",
+					"Core",
+					{
+						"core.newssign.wood default",
+						"core.newssign.scroll tier 3",
+						"core.newssign.lantern tier 3",
+						"core.newssign.kraken tier 5",
+						"core.newssign.astro tier 4",
+						"core.newssign.coral tier 4",
+					},
+				},
 			}, slots)
 			assert.are.same({ false, false }, {
 				Pagle.IsOwned("core.toaststyle.ripple"),
@@ -151,13 +166,14 @@ describe("Core's slots and goods", function()
 			})
 			assert.are.equal("core.binding.field", Pagle.GetEquipped("core.binding"))
 			assert.is_false(Pagle.IsOwned("core.binding.birch"))
-			-- All four are open to other Modules' earned goods: the earned toast styles and sound sets, the Ledger's
-			-- zone crests, and the Ledger's and Hunts' earned bindings (SHOP-R23, SHOP-R25).
+			-- The first four are open to other Modules' earned goods: the earned toast styles and sound sets, the
+			-- Ledger's zone crests, and the Ledger's and Hunts' earned bindings (SHOP-R23, SHOP-R25); the news sign's
+			-- isn't (SHOP-R60).
 			local open = {}
 			for _, slot in ipairs(goods:Slots()) do
 				open[#open + 1] = slot.openToEarned == true
 			end
-			assert.are.same({ true, true, true, true }, open)
+			assert.are.same({ true, true, true, true, false }, open)
 		end
 	)
 
@@ -243,7 +259,7 @@ describe("Core's slots and goods", function()
 				end
 			end
 
-			assert.are.same({ 54 + #FISH_CREST_SPECIES + 34, {} }, { count, without })
+			assert.are.same({ 54 + #FISH_CREST_SPECIES + 34 + 6, {} }, { count, without })
 		end
 	)
 end)

@@ -10,8 +10,9 @@ local Pagle = Pagle
 
 -- The news sign, The Morning Tide to players (core/news-sign.md): one piece of news about the Anglers the player follows, or a region headline,
 -- drops in from the top of the screen in one of six looks, hangs about 8 s and goes back up. This file is the sign's
--- frame and its drawing kit; adapter/NewsSignLooks.lua has the six looks' motion. Nothing raises it yet but
--- `/pagle dev sign` with sample news (SIGN-R60): the news itself, its Settings and the looks' unlocking are to come.
+-- frame and its drawing kit; adapter/NewsSignLooks.lua has the six looks' motion. It wears the look equipped in Core's
+-- slot `core.newssign` (SIGN-R57); the Curio Shop's preview draws a look still here too, and its Show on screen drops
+-- one with sample news (SHOP-R61), as `/pagle dev sign` does (SIGN-R60).
 --
 -- One frame, PagleNewsSign, sits where the sign rests (SIGN-R20); every region is placed from its top left each frame,
 -- in UI units with y growing down, as the design kit's canvas (engine.js) draws it. Three child frames stack the
@@ -804,7 +805,8 @@ local function makeFrame()
 			self.dragged = false
 			return
 		end
-		if button == "LeftButton" then
+		-- the Curio Shop's sample opens nothing (SIGN-R42, SHOP-R61)
+		if button == "LeftButton" and not (drop and drop.sample) then
 			ns.OpenNewsSignNews()
 		end
 		ns.SendNewsSignUp()
@@ -828,9 +830,21 @@ end
 
 local kits = {}
 
--- Starts a drop now: the frame takes the look's size and its spot, the words are set, and the clock starts.
-local function start(lookKey, news)
-	local look = assert(ns.NEWS_SIGN_LOOKS[lookKey], lookKey)
+--- The look the sign wears (SIGN-R57): the key of the look equipped in Core's slot `core.newssign`, which is Wood while
+--- the one stored isn't owned (SHOP-R32), and Wood for any look the sign doesn't have.
+---@return string
+function ns.EquippedNewsSignLook()
+	local key = ns.NewsSignLookOf(Pagle.GetEquipped(ns.NEWS_SIGN_SLOT))
+	if ns.NEWS_SIGN_LOOKS[key] then
+		return key
+	end
+	return ns.NewsSignLookOf(ns.NEWS_SIGN_DEFAULT)
+end
+
+-- Starts a drop now: the frame takes the look's size and its spot, the words are set, and the clock starts. With no
+-- look named, it wears the one equipped now (SIGN-R57), so a change of look applies from the next drop.
+local function start(lookKey, news, options)
+	local look = assert(ns.NEWS_SIGN_LOOKS[lookKey or ns.EquippedNewsSignLook()], lookKey)
 	if drop then
 		finish()
 	end
@@ -861,6 +875,7 @@ local function start(lookKey, news)
 		hangLeft = ns.NEWS_SIGN_HANG,
 		cues = {},
 		top = screenTop(),
+		sample = options and options.sample == true,
 	}
 	d.words = kit:words(news, look, "clip")
 	drop = d
@@ -907,19 +922,66 @@ local function start(lookKey, news)
 	end)
 end
 
---- Drops the sign (SIGN-R40): `look` is a key of ns.NEWS_SIGN_LOOKS, `news` what it shows. Never in combat or while
---- restricted: it waits until both end, and only the last one asked for waits.
----@param lookKey string
+--- Drops the sign (SIGN-R40): `look` is a key of ns.NEWS_SIGN_LOOKS, or nil for the look equipped when it drops
+--- (SIGN-R57), `news` what it shows. Never in combat or while restricted: it waits until both end, and only the last
+--- one asked for waits. `options.sample`: the Curio Shop's Show on screen (SHOP-R61), which opens nothing on a left
+--- click (SIGN-R42).
+---@param lookKey string?
 ---@param news PagleNewsSignNews
-function ns.DropNewsSign(lookKey, news)
-	waiting = { look = lookKey, news = news }
+---@param options { sample: boolean? }?
+function ns.DropNewsSign(lookKey, news, options)
+	waiting = { look = lookKey, news = news, options = options }
 	ns.RunWhenUnrestricted(function()
 		local w = waiting
 		waiting = nil
 		if w then
-			start(w.look, w.news)
+			start(w.look, w.news, w.options)
 		end
 	end)
+end
+
+-- Each still's host's kits, by look, made once as the sign's are. Weak, so a host that goes takes its kits.
+---@type table<Frame, table<string, PagleNewsSignKit>>
+local stills = setmetatable({}, { __mode = "k" })
+
+--- Draws the sign in `lookKey` on `host`, still and at rest, as with Animations off (SIGN-R43), with `news`: the Curio
+--- Shop's and the Collection's preview of a look (SHOP-R61). `host` takes the look's size, its top left the sign's;
+--- the caller scales and places it. `top` is where the screen's top would be, in units above the sign's top (negative),
+--- which a look's ropes, chain or line reach up to. It draws only SignCommon's sprites and the look's own atlas's, so
+--- only that look's atlas loads (SIGN-R57). Each look's kit is made on `host` once and drawn again after.
+---@param host Frame
+---@param lookKey string
+---@param news PagleNewsSignNews
+---@param top number
+function ns.DrawNewsSignStill(host, lookKey, news, top)
+	local look = assert(ns.NEWS_SIGN_LOOKS[lookKey], lookKey)
+	local own = stills[host]
+	if not own then
+		own = {}
+		stills[host] = own
+	end
+	for key, other in pairs(own) do
+		if key ~= look.key then
+			for _, name in ipairs({ "back", "clip", "front" }) do
+				other[name]:Hide()
+			end
+		end
+	end
+	host:SetSize(look.w, look.h)
+	local kit = own[look.key]
+	if kit then
+		for _, name in ipairs({ "back", "clip", "front" }) do
+			kit[name]:Show()
+		end
+	else
+		kit = newKit(host, look.atlas)
+		own[look.key] = kit
+	end
+	local s = { look = look, news = news, kit = kit, hover = 0, hovering = false, top = top, static = true }
+	s.words = kit:words(news, look, "clip")
+	kit:begin()
+	look.draw(kit, look.rest or look.enter + 1, s)
+	kit:finish()
 end
 
 --- The drop showing, for the specs and the dev command: its look key, time and state.

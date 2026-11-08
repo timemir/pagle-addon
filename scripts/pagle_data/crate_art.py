@@ -311,7 +311,7 @@ def card_parts(root: Path) -> list[Sprite]:
 
 # ---------- the emblems ----------
 
-EMBLEMS = ("toast", "book", "sound", "tracker", "coin")
+EMBLEMS = ("toast", "book", "sound", "tracker", "sign", "coin")
 HL_ELEMENT = re.compile(r"<[a-z]+\b[^>]*\bclass=\"hl\"[^>]*/>")
 # The prototype paints each emblem's metal with one gradient per element (x1 0, y1 0, x2 .6, y2 1) from the tier's light
 # (mix(c, 255, .75)) at 0 through the tier (c) at .45 to its dark (mix(c, 0, .45)) at 1, and its engraving in mix(c, 0, .72).

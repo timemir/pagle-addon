@@ -23,13 +23,14 @@ ns.CRATE_REEL = {
 }
 
 --- The kind of emblem a card shows for each kind of pool good (SHOP-R50); the coin card's is "coin". A kind with no good
---- in the pool needs none (the crest, today).
+--- in the pool needs none (the crest, today). The news sign's looks join from 1.6 (SHOP-R62).
 ---@type table<string, string>
 ns.CRATE_EMBLEMS = {
 	toaststyle = "toast",
 	soundset = "sound",
 	binding = "book",
 	trackerframe = "tracker",
+	newssign = "sign",
 }
 
 --- The emblem for a pool good's kind: the coin's for a kind that has none.

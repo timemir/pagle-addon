@@ -31,13 +31,20 @@ local TWO_32 = 2 ^ 32
 ---@class PagleCratePoolGood
 ---@field id string
 ---@field tier 1|2|3|4|5|6|"curio"
----@field kind "toaststyle"|"soundset"|"binding"|"trackerframe"|"crest"
+---@field kind "toaststyle"|"soundset"|"binding"|"trackerframe"|"crest"|"newssign"
 ---@field since? integer   -- the server time of the release that added it: a candidate only for crates bought from
 --- then on (SHOP-R53); nil for the pool's first goods
 
+--- The server time of 1.6's release (SHOP-R53, SHOP-R62): the news sign's five looks join the pool from it, so only a
+--- crate bought from then on can give one. 1.6's release commit sets it, in Unix seconds, no earlier than the release
+--- is out; until then it is math.huge, so no crate gives one and no crate already in the log changes. A nil here would
+--- put them in the pool from 1.0 (the pool's first rows' `since`), re-drawing past crates: never leave it nil.
+ns.RELEASE_1_6 = math.huge
+
 --- The crate pool (SHOP-R50, Tunables): every good for sale and every crate-only good at 1.0, in the shop's order
 --- (SHOP-R53): Core's slots as SHOP-R25 lists them (toast styles, sound sets, crests, bindings), then each Module's by
---- def.order, each slot's goods in registration order. A good joins only at the end, with `since`. A repo check
+--- def.order, each slot's goods in registration order. A good joins only at the end, with `since`: 1.6's news sign
+--- looks (SHOP-R62). A repo check
 --- (spec/crate_pool_spec.lua) fails when a good for sale or crate only is missing from it, or a row's tier
 --- or kind isn't its good's. A good in it need not be registered: the draw reads the log alone, so a crate can still
 --- give it, and the shop shows it once it registers (SHOP-R50).
@@ -145,6 +152,12 @@ ns.CRATE_POOL = {
 	{ id = "tackleboard.trackerframe.bamboo", tier = 1, kind = "trackerframe" },
 	{ id = "tackleboard.trackerframe.tin", tier = 2, kind = "trackerframe" },
 	{ id = "tackleboard.trackerframe.bobber", tier = 2, kind = "trackerframe" },
+	-- 1.6: the news sign's five looks, in registration order (SHOP-R60, SHOP-R62).
+	{ id = "core.newssign.scroll", tier = 3, kind = "newssign", since = ns.RELEASE_1_6 },
+	{ id = "core.newssign.lantern", tier = 3, kind = "newssign", since = ns.RELEASE_1_6 },
+	{ id = "core.newssign.kraken", tier = 5, kind = "newssign", since = ns.RELEASE_1_6 },
+	{ id = "core.newssign.astro", tier = 4, kind = "newssign", since = ns.RELEASE_1_6 },
+	{ id = "core.newssign.coral", tier = 4, kind = "newssign", since = ns.RELEASE_1_6 },
 }
 
 --- What a crate gave (SHOP-R51): the crate tier it rolled, and the good, or, with no candidate left in that tier, the

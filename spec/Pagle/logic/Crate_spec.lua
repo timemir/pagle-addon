@@ -15,6 +15,9 @@ end
 
 local realHash, realPool, realTierPrices = ns.SizeHash, ns.CRATE_POOL, { unpack(ns.TIER_PRICES) }
 
+-- The pool's rows at 1.0 (SHOP-R53): every later row joins after them.
+local FIRST_ROWS = 102
+
 -- The hash of the entry ID "e" is `tierHash`, of "e/good" `goodHash`: LOG-R66's frozen hash over 2^32, stubbed.
 local function hashes(tierHash, goodHash)
 	ns.SizeHash = function(id)
@@ -84,20 +87,25 @@ describe("The Curio crate's tunables", function()
 	)
 
 	it(
-		"pool the whole shop: 102 rows, 28 / 35 / 27 / 9 / 2 by price tier, none in tier 6, Prize Foil crate only (SHOP-R50)",
+		"pool the whole shop: 1.0's 102 rows, 28 / 35 / 27 / 9 / 2 by price tier, none in tier 6, Prize Foil crate only,"
+			.. " then 1.6's five news sign looks: 106 for sale, 28 / 35 / 29 / 11 / 3 (SHOP-R50, SHOP-R53, SHOP-R62)",
 		function()
-			local byTier, kinds = {}, {}
-			for _, row in ipairs(realPool) do
+			local byTier, kinds, first = {}, {}, 0
+			for i, row in ipairs(realPool) do
 				byTier[row.tier] = (byTier[row.tier] or 0) + 1
 				kinds[row.kind] = (kinds[row.kind] or 0) + 1
-				assert(row.since == nil, row.id .. " is one of the pool's first rows")
+				if i <= FIRST_ROWS then
+					assert(row.since == nil, row.id .. " is one of the pool's first rows")
+					first = first + 1
+				end
 			end
-			assert.are.equal(102, #realPool)
+			assert.are.equal(102, first)
+			assert.are.equal(107, #realPool)
 			assert.are.same(
-				{ 28, 35, 27, 9, 2, nil, 1 },
+				{ 28, 35, 29, 11, 3, nil, 1 },
 				{ byTier[1], byTier[2], byTier[3], byTier[4], byTier[5], byTier[6], byTier.curio }
 			)
-			assert.are.same({ toaststyle = 24, soundset = 26, binding = 33, trackerframe = 19 }, kinds)
+			assert.are.same({ toaststyle = 24, soundset = 26, binding = 33, trackerframe = 19, newssign = 5 }, kinds)
 			local crateOnly = {}
 			for _, row in ipairs(realPool) do
 				if row.tier == "curio" then
@@ -105,6 +113,116 @@ describe("The Curio crate's tunables", function()
 				end
 			end
 			assert.are.same({ "core.toaststyle.foil" }, crateOnly)
+		end
+	)
+end)
+
+describe("The news sign's looks in the Curio crate (SHOP-R62)", function()
+	-- The pool as 1.0 shipped it: its first 102 rows, which 1.6 only appends to.
+	local function poolAtOneZero()
+		local rows = {}
+		for i = 1, FIRST_ROWS do
+			rows[i] = realPool[i]
+		end
+		return rows
+	end
+
+	-- The real pool with the five's `since` at `time`, as 1.6's release commit sets it.
+	local function poolReleasedAt(time)
+		local rows = {}
+		for i, row in ipairs(realPool) do
+			rows[i] = { id = row.id, tier = row.tier, kind = row.kind, since = row.since and time or nil }
+		end
+		return rows
+	end
+
+	-- A history of `n` crates bought one after another from server time `from`, as the wallet projection opens them:
+	-- each crate's result, the goods it gave owned from then on, and the dry count of SHOP-R52.
+	local function history(pool, from, n)
+		ns.CRATE_POOL = pool
+		local owned, dry, results = {}, 0, {}
+		for t = 0, n - 1 do
+			local roll = ns.CrateRoll(crateID(t), owned, dry, from + t * 60, PRICE)
+			results[#results + 1] = roll
+			if roll.good then
+				owned[roll.good] = true
+			end
+			dry = roll.crateOnly and 0 or dry + 1
+		end
+		ns.CRATE_POOL = realPool
+		return results
+	end
+
+	local RELEASE = 1800000000
+
+	it("join the pool at its end, in registration order, at their price tiers, as kind newssign (SHOP-R62)", function()
+		local added = {}
+		for i = FIRST_ROWS + 1, #realPool do
+			local row = realPool[i]
+			added[#added + 1] = { row.id, row.tier, row.kind }
+		end
+		assert.are.same({
+			{ "core.newssign.scroll", 3, "newssign" },
+			{ "core.newssign.lantern", 3, "newssign" },
+			{ "core.newssign.kraken", 5, "newssign" },
+			{ "core.newssign.astro", 4, "newssign" },
+			{ "core.newssign.coral", 4, "newssign" },
+		}, added)
+	end)
+
+	it(
+		"join with 1.6's release time as their `since`, so they wait for the release commit to set it (SHOP-R53)",
+		function()
+			assert.is_number(ns.RELEASE_1_6)
+			for i = FIRST_ROWS + 1, #realPool do
+				assert.are.equal(ns.RELEASE_1_6, realPool[i].since, realPool[i].id)
+			end
+			-- No crate bought before it can give one: until the release sets it, however late a crate is bought.
+			local before = math.min(4102444800, ns.RELEASE_1_6 - 1)
+			for _, tier in ipairs({ 3, 4, 5 }) do
+				for _, row in ipairs(ns.CrateCandidates(tier, {}, before)) do
+					assert(not row.id:find("^core%.newssign%."), row.id .. " is a candidate before 1.6's release")
+				end
+			end
+		end
+	)
+
+	it(
+		"leave every crate already in the log as it was: the same goods and paybacks before 1.6's release (SHOP-R53)",
+		function()
+			local before = history(poolAtOneZero(), 1791731700, 400)
+			assert.are.same(before, history(realPool, 1791731700, 400))
+			assert.are.same(before, history(poolReleasedAt(RELEASE), 1791731700, 400))
+			-- One crate a second until the release's own second, which is the first crate that can give one.
+			assert.are.same(
+				history(poolAtOneZero(), RELEASE - 120, 2),
+				history(poolReleasedAt(RELEASE), RELEASE - 120, 2)
+			)
+		end
+	)
+
+	it(
+		"change only a tier 3, 4 or 5 crate bought from 1.6's release on, and only to give one of the five (SHOP-R51)",
+		function()
+			local old = history(poolAtOneZero(), RELEASE, 400)
+			local new = history(poolReleasedAt(RELEASE), RELEASE, 400)
+			local changed, gave = 0, {}
+			for i, roll in ipairs(new) do
+				assert.are.equal(old[i].tier, roll.tier, "crate " .. i .. "'s tier")
+				if roll.tier == 1 or roll.tier == 2 or roll.tier == 6 or roll.tier == "curio" then
+					-- Once an earlier crate gave one of the five, later ones may differ only by what that crate didn't give.
+					if changed == 0 then
+						assert.are.same(old[i], roll, "crate " .. i)
+					end
+				elseif not (old[i].good == roll.good and old[i].payback == roll.payback) then
+					changed = changed + 1
+					if roll.good and roll.good:find("^core%.newssign%.") then
+						gave[roll.good] = true
+					end
+				end
+			end
+			assert(changed > 0, "some crate from the release on gives a news sign look")
+			assert(next(gave), "a changed crate gives one of the five")
 		end
 	)
 end)
