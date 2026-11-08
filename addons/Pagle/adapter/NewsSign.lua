@@ -10,8 +10,9 @@ local Pagle = Pagle
 
 -- The news sign, The Morning Tide to players (core/news-sign.md): one piece of news about the Anglers the player follows, or a region headline,
 -- drops in from the top of the screen in one of six looks, hangs about 8 s and goes back up. This file is the sign's
--- frame and its drawing kit; adapter/NewsSignLooks.lua has the six looks' motion. Nothing raises it yet but
--- `/pagle dev sign` with sample news (SIGN-R60): the news itself, its Settings and the looks' unlocking are to come.
+-- frame and its drawing kit, and when a drop may start: out of combat and restriction, and with no letter on screen
+-- (SIGN-R40, ONB-R17). adapter/NewsSignLooks.lua has the six looks' motion, adapter/NewsSignDev.lua `/pagle dev sign`
+-- (SIGN-R60), and adapter/NewsSignDrop.lua the once-a-session drop with the news (SIGN-R14–R19).
 --
 -- One frame, PagleNewsSign, sits where the sign rests (SIGN-R20); every region is placed from its top left each frame,
 -- in UI units with y growing down, as the design kit's canvas (engine.js) draws it. Three child frames stack the
@@ -40,6 +41,7 @@ local LIFETIME = 600
 ---@field detail string? the line under it
 ---@field plate string? the region headline's plate
 ---@field more string? the "+N more" line
+---@field id string? the news item shown, by its id (VIEW-R41), for SIGN-R42; none for a sample
 ---@field emblem table how the kind's emblem draws (SIGN-R13)
 
 ---@class PagleNewsSignLook
@@ -537,11 +539,17 @@ function Kit:emblem(news, cx, cy, o)
 	if alpha <= 0 or size <= 0.5 then
 		return
 	end
-	local function file(key, path, w, h, coords)
+	-- `dark`: drawn as a dark silhouette, as the varieties spread draws an uncaught variety (VAR-R24, VAR-R27)
+	local function file(key, path, w, h, coords, dark)
 		local t = self:texture("emblem:" .. key, on)
 		t:SetTexture(path)
 		t:SetTexCoord(unpack(coords or { 0, 1, 0, 1 }))
-		t:SetVertexColor(1, 1, 1)
+		t:SetDesaturated(dark == true)
+		if dark then
+			t:SetVertexColor(0, 0, 0)
+		else
+			t:SetVertexColor(1, 1, 1)
+		end
 		t:SetBlendMode("BLEND")
 		t:SetAlpha(alpha)
 		if t.SetRotation then
@@ -606,12 +614,13 @@ function Kit:emblem(news, cx, cy, o)
 		local at = art and art[e.variety.position]
 		local A = ns.VARIETY_ART_SIZE
 		if at and A then
+			-- a variety the player hasn't caught is never coloured on the sign (SIGN-R13, VAR-R27)
 			file("variety", ns.VARIETY_ATLASES[at[1]], size, size / 2, {
 				at[2] / A.atlas,
 				(at[2] + A.w) / A.atlas,
 				at[3] / A.atlas,
 				(at[3] + A.h) / A.atlas,
-			})
+			}, e.variety.silhouette == true)
 		end
 	elseif e.file then
 		file("file", e.file, size * (e.fill or 1), size * (e.fill or 1))
@@ -634,7 +643,7 @@ end
 local frame
 ---@type table? the drop showing: look, news, kit, words, t, exitAt, hover, hanging, hangLeft, cues, top
 local drop
----@type table? a drop waiting for combat and restriction to end
+---@type table? a drop waiting for combat, restriction and a letter to end: { look?, news, onStart? }
 local waiting
 
 -- The saved spot, or the default (SIGN-R20).
@@ -691,6 +700,10 @@ local function finish()
 	drop = nil
 	assert(frame):Hide()
 	Pagle.UnregisterEvent(OWNER, "PLAYER_REGEN_DISABLED")
+	-- a letter that came due while the sign showed follows it, LETTER_DELAY on (ONB-R17)
+	if ns.letter then
+		ns.letter:SetSignShowing(false)
+	end
 end
 
 --- Sends the sign up now: its exit plays, then it hides (SIGN-R42). With Animations off it hides at once.
@@ -864,6 +877,9 @@ local function start(lookKey, news)
 	}
 	d.words = kit:words(news, look, "clip")
 	drop = d
+	if ns.letter then
+		ns.letter:SetSignShowing(true) -- no letter shows while the sign does (ONB-R17)
+	end
 	Pagle.RegisterEvent(OWNER, "PLAYER_REGEN_DISABLED", function()
 		ns.SendNewsSignUp()
 	end)
@@ -907,19 +923,51 @@ local function start(lookKey, news)
 	end)
 end
 
---- Drops the sign (SIGN-R40): `look` is a key of ns.NEWS_SIGN_LOOKS, `news` what it shows. Never in combat or while
---- restricted: it waits until both end, and only the last one asked for waits.
----@param lookKey string
+--- The look the sign wears (SIGN-R57): the one equipped in Core's slot `core.newssign` (Pagle.GetEquipped, SHOP-R32),
+--- its key the good ID's last part; Wood, the default, while the slot has no goods (a Core before SHOP-R60's) or for
+--- a look the sign doesn't know.
+---@return string
+function ns.EquippedNewsSignLook()
+	local id = Pagle.GetEquipped and Pagle.GetEquipped("core.newssign")
+	local key = type(id) == "string" and id:match("^core%.newssign%.(%w+)$")
+	if key and ns.NEWS_SIGN_LOOKS[key] then
+		return key
+	end
+	return "wood"
+end
+
+-- Starts the drop waiting, unless a letter is on screen (SIGN-R40, ONB-R17): then it waits on, and
+-- ns.NewsSignLetterGone tries again as the letter goes.
+local function tryWaiting()
+	local w = waiting
+	if not w or (ns.letter and ns.letter:IsShowing()) then
+		return
+	end
+	waiting = nil
+	start(w.look or ns.EquippedNewsSignLook(), w.news)
+	if w.onStart then
+		w.onStart()
+	end
+end
+
+--- Drops the sign (SIGN-R40): `look` is a key of ns.NEWS_SIGN_LOOKS, or nil for the look equipped as it drops
+--- (SIGN-R57); `news` is what it shows; `onStart`, if given, is called as its entrance starts (SIGN-R17's marking).
+--- Never in combat or while restricted, and never while a letter shows: it waits until all have ended, keeping its
+--- words, and only the last one asked for waits.
+---@param lookKey string?
 ---@param news PagleNewsSignNews
-function ns.DropNewsSign(lookKey, news)
-	waiting = { look = lookKey, news = news }
-	ns.RunWhenUnrestricted(function()
-		local w = waiting
-		waiting = nil
-		if w then
-			start(w.look, w.news)
-		end
-	end)
+---@param onStart fun()?
+function ns.DropNewsSign(lookKey, news, onStart)
+	waiting = { look = lookKey, news = news, onStart = onStart }
+	ns.RunWhenUnrestricted(tryWaiting)
+end
+
+--- A letter left the screen (adapter/Letter.lua's hide: answered, or hidden by a restriction or an instance): a drop
+--- waiting for it starts, once unrestricted (SIGN-R40).
+function ns.NewsSignLetterGone()
+	if waiting then
+		ns.RunWhenUnrestricted(tryWaiting)
+	end
 end
 
 --- The drop showing, for the specs and the dev command: its look key, time and state.

@@ -18,14 +18,6 @@
 	<Frame name="PagleSettingsKeyRowTemplate" mixin="PagleSettingsKeyRowMixin" virtual="true">
 		<Size x="280" y="26"/>
 	</Frame>
-	<!-- The news sign (core/news-sign.md): its art's atlases, its frame and drawing kit, its six looks, and its dev
-	command. Loaded here because the TOC's file lines are hashed by pagle-backend's ranked policy (PRJ-R64), so a new
-	file there would need a new rule set; an XML file's <Script> lines aren't. Nothing in them runs before login but
-	the tables they define. -->
-	<Script file="..\data\NewsSignArt.lua"/>
-	<Script file="NewsSign.lua"/>
-	<Script file="NewsSignLooks.lua"/>
-	<Script file="NewsSignDev.lua"/>
 	<!-- Party toasts and cheers (announcements.md ANN-R103–R109, ANN-R112, settings.md SET-R36; from 1.5.2, #640) load here, after
 	adapter/Settings.lua: a patch can't add a file to the TOC, whose file list is hashed, and every file in logic/ is
 	hashed too. Their messages' pure Lua first, then the client's side, the party toast's frame and the Party block.
