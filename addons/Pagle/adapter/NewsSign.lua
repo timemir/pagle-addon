@@ -42,7 +42,7 @@ local LIFETIME = 600
 ---@field plate string? the region headline's plate
 ---@field more string? the "+N more" line
 ---@field id string? the news item shown, by its id (VIEW-R41), for SIGN-R42; none for a sample
----@field emblem table how the kind's emblem draws (SIGN-R13)
+---@field emblem table how the kind's emblem draws (SIGN-R13); `variety.silhouette` true draws an uncaught one dark (VAR-R27)
 
 ---@class PagleNewsSignLook
 ---@field key string

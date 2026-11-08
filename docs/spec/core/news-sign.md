@@ -109,7 +109,8 @@ ns.EquippedNewsSignLook()        -- from 1.6: the look key SIGN-R57 wears, Wood 
 ---@field head string
 ---@field detail string?
 ---@field more string?
----@field emblem table    -- SIGN-R13: { sign = name } | { atlas, sprite } | { legend, item } | { variety = { species, position } } | { file, fill, tape? }
+---@field emblem table    -- SIGN-R13: { sign = name } | { atlas, sprite } | { legend, item } | { variety = { species, position, silhouette? } } | { file, fill, tape? }
+                         -- silhouette: true for a variety the player hasn't caught, drawn dark (VAR-R27, from 1.6)
 ```
 
 *From 1.6,* the words of an item are `Pagle.NewsWords(item)` (VIEW-R45, SIGN-R19), which gives a `PagleNewsSignNews` without its more line; the decision adds the more line (SIGN-R16).
