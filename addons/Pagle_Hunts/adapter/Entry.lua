@@ -221,6 +221,7 @@ end
 ---@field diamonds BoardDiamondView[]
 ---@field thresholds FontString[]
 ---@field whens FontString[]
+---@field partyTips EntryPartyTipView[]   -- over a party tier's words, for its tooltip (HNT-R186)
 ---@field bar BoardInkBarView
 ---@field ladderUpdating FontString
 ---@field effort FontString
@@ -243,7 +244,7 @@ local function newView(page)
 		end
 		return made
 	end
-	local view = { page = page, chips = {}, diamonds = {}, thresholds = {}, whens = {} }
+	local view = { page = page, chips = {}, diamonds = {}, thresholds = {}, whens = {}, partyTips = {} }
 	view.back = CreateFrame("Button", nil, page) --[[@as EntryBackView]]
 	view.back:SetSize(200, HAND_SIZE + 4)
 	view.hand = ns.NewBoardHand(view.back, HAND_SIZE)
@@ -303,7 +304,7 @@ local function hideAll(view)
 	}) do
 		widget:Hide()
 	end
-	for _, pool in ipairs({ view.chips, view.diamonds, view.thresholds, view.whens }) do
+	for _, pool in ipairs({ view.chips, view.diamonds, view.thresholds, view.whens, view.partyTips }) do
 		for _, widget in ipairs(pool) do
 			widget:Hide()
 		end
@@ -356,9 +357,21 @@ local function layChips(view, chips, y, width, oneLine)
 	return y + rowHeight
 end
 
+--- A party tier's hover area (HNT-R186): an empty frame over its words, its tooltip what a party tier is.
+---@class EntryPartyTipView: Frame
+---@field tooltip string[]?
+
+---@param page Frame
+---@return EntryPartyTipView
+local function newPartyTip(page)
+	local tip = CreateFrame("Frame", nil, page) --[[@as EntryPartyTipView]]
+	withTooltip(tip)
+	return tip
+end
+
 -- Lays out the tier ladder from `y` down (HNT-R64, HNT-R18): each tier's mark in its trim's ink, filled once
--- reached, its threshold in gilt and its date and zone (or "not yet" in italic), then the ink bar with its words; or
--- the updating line (HNT-R69). Returns the y below it.
+-- reached, its threshold in gilt and its date and zone (or "not yet" in italic), a party tier's with its tooltip over
+-- them (HNT-R186), then the ink bar with its words; or the updating line (HNT-R69). Returns the y below it.
 ---@param view EntryView
 ---@param ladder HuntEntryLadder
 ---@param y number
@@ -370,6 +383,7 @@ local function layLadder(view, ladder, y, same, again)
 		return line(view.ladderUpdating, ladder.updating, y)
 	end
 	local page, fonts = view.page, ns.BoardFonts()
+	local tips = 0
 	for k, step in ipairs(ladder.tiers or {}) do
 		local mark = ns.BoardPooled(view.diamonds, k, function()
 			return ns.NewBoardDiamond(page, MARK_SIZE)
@@ -395,8 +409,19 @@ local function layLadder(view, ladder, y, same, again)
 		inkText(when, step.when and LOOK.small or LOOK.note)
 		when:ClearAllPoints()
 		when:SetPoint("TOPLEFT", WHEN_X, -(y + 2))
+		if step.tooltip then
+			tips = tips + 1
+			local tip = ns.BoardPooled(view.partyTips, tips, function()
+				return newPartyTip(page)
+			end)
+			tip.tooltip = step.tooltip
+			tip:ClearAllPoints()
+			tip:SetPoint("TOPLEFT", WHEN_X, -y)
+			tip:SetSize(math.max(1, math.min(when:GetStringWidth(), page:GetWidth() - WHEN_X)), STEP_HEIGHT)
+		end
 		y = y + STEP_HEIGHT
 	end
+	ns.BoardHideFrom(view.partyTips, tips)
 	local bar = ladder.bar
 	if bar then
 		local grew = not again and same and bar.fill > view.bar.value

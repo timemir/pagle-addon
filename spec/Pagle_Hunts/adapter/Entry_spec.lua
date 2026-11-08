@@ -97,6 +97,38 @@ describe("a Hunt's entry on the board", function()
 		end)
 
 		it(
+			"writes 'party' after a tier a groupmate's Catch reached, its tooltip saying what it is (HNT-R186)",
+			function()
+				local run = start()
+				local made = progress(10, 96, 11, 2)
+				made.reached[2].party = true
+				run.state.hunts.fixture_snapper = made
+
+				local _, view = open(run, { mode = "board", hunt = "fixture_snapper" })
+
+				assert.are.same(
+					{ "12 Oct, Darkshore", "12 Oct, Darkshore · party", "not yet" },
+					{ view.whens[1]:GetText(), view.whens[2]:GetText(), view.whens[3]:GetText() }
+				)
+				-- one hover area, over the party tier's words
+				local tip = view.partyTips[1]
+				assert.are.same({ true, nil }, { tip:IsShown(), view.partyTips[2] })
+				tip:GetScript("OnEnter")(tip)
+				assert.are.same({
+					"A groupmate's catch, while you fished the same water.",
+					"On pagle.app it counts once your groupmate has uploaded their Catch log too.",
+				}, run.loaded.client.tooltipLines())
+				tip:GetScript("OnLeave")(tip)
+				assert.is_false(run.loaded.env.GameTooltip.shown)
+
+				-- a Hunt with no party tier shows none
+				run.state.hunts.fixture_snapper = progress(10, 96, 11, 2)
+				run.ns.board:Draw()
+				assert.is_false(tip:IsShown())
+			end
+		)
+
+		it(
 			"keeps the effort counter on the page when a longer language runs the entry past its foot (HNT-R64)",
 			function()
 				local run = start()

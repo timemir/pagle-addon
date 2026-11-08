@@ -660,8 +660,8 @@ describe("Hunt Events' runs in Hunts' projection", function()
 		end)
 	end)
 
-	describe("rules version 4 and the fingerprint (HNT-R136, HNT-R138)", function()
-		it("is version 4 (3 before the Refreshes), and rebuilds a projection stored under version 1", function()
+	describe("rules version 5 and the fingerprint (HNT-R136, HNT-R138, HNT-R187)", function()
+		it("is version 5 (4 before Party Catches, 3 before the Refreshes), and rebuilds one stored under 1", function()
 			local first, fake = login(function(fake)
 				append(fake, { cast(0, NIGHT, AUBERDINE, { C.NIGHTFIN }) })
 			end, {
@@ -673,9 +673,9 @@ describe("Hunt Events' runs in Hunts' projection", function()
 
 			local info, state, next = again(fake, first)
 
-			assert.are.equal(4, next.ns.HUNTS_RULES_VERSION)
+			assert.are.equal(5, next.ns.HUNTS_RULES_VERSION)
 			assert.is_true(info.rebuilt)
-			assert.are.same({ 4, 500 }, { next.env.PagleHuntsDB.global.projection.rulesVersion, state.xp })
+			assert.are.same({ 5, 500 }, { next.env.PagleHuntsDB.global.projection.rulesVersion, state.xp })
 		end)
 
 		it(

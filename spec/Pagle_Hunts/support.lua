@@ -474,6 +474,69 @@ function support.runPayload(event, start, end_, source)
 	return ("%s|%d|%d|%s"):format(event, start, end_, source or "r")
 end
 
+-- Party Catches (LOG-R114–R117, from 1.6), as Core's codec writes and reads them (#644): the groupmate's Cast is
+-- written in a Catch log of the groupmate's own, its copy taken from that `C1` entry as Core's sender takes it
+-- (LOG-R111), and the Party Catch is the `G1` record the receiver's log would make of that copy (LOG-R115, LOG-R116).
+
+--- The groupmate's character GUID in the live party catch message (LOG-R111), never stored (LOG-R115).
+support.GROUPMATE_GUID = "Player-1-0BEEF000"
+--- The groupmate's full name at receipt (LOG-R116's live `name`), never stored.
+support.GROUPMATE_NAME = "Kukli-Testrealm"
+
+-- The groupmate's own Catch log, and a receiver's empty one to draft Party Catches on, made the first time a Party
+-- Catch needs them.
+local groupmate, receiver
+
+--- The copy of the groupmate's Cast `groupmateCast` (as support.cast makes it), as Core's sender writes it in the party
+--- catch message (LOG-R111): its entry's `time` and `tie`, then its `C1` fields from `minute` to `items`, except
+--- `uiMap` and `instance`, byte for byte; and its entry ID, the live record's `sourceId` (LOG-R116).
+---@param groupmateCast table
+---@return string copy
+---@return string sourceId
+function support.partyCopy(groupmateCast)
+	if not groupmate then
+		groupmate = newFakePagle()
+		groupmate.setCatalogue(catalogue.base())
+		groupmate.catchLog.data.characters[1] = { guid = support.GROUPMATE_GUID }
+	end
+	---@type table
+	local appended = groupmate.catchLog:Append(groupmateCast)
+	-- C1|char|time|tie|outcome|minute|uiMap|instance|zone|subzone|rank|mod|lure|events|auras|items
+	local f = {}
+	for field in (groupmate.catchLog:Get(appended.seq) .. "|"):gmatch("([^|]*)|") do
+		f[#f + 1] = field
+	end
+	local copy = table.concat({ f[3], f[4], f[6], f[9], f[10], f[11], f[12], f[13], f[14], f[15], f[16] }, "|")
+	return copy, appended.id
+end
+
+--- A Party Catch record (LOG-R116) of the groupmate's Cast `groupmateCast`, received at server time `received` (its
+--- time and a second by default), as Core's codec makes it of the `G1` it appends for the player's character: its
+--- `copy`, `catchTime`, `catchTie`, `conditions` (`time` = `catchTime`) and items with their Party Catch IDs, no size.
+--- It is the record of a log where nothing else of the player's character has that server time; `seq` is the log's.
+--- With `live`, it also carries the live-only `name` and `sourceId` (LOG-R116). support.append-like logs append it as
+--- `{ kind = "party", char, time, copy }`.
+---@param groupmateCast table
+---@param received integer?
+---@param live boolean?
+---@return table
+function support.partyCatch(groupmateCast, received, live)
+	local copy, sourceId = support.partyCopy(groupmateCast)
+	if not receiver then
+		receiver = newFakePagle()
+		receiver.setCatalogue(catalogue.base())
+		receiver.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+	end
+	received = received or tonumber(copy:match("^(%d+)")) + 1
+	---@type table
+	local record = support.deepCopy(receiver.catchLog:Draft({ kind = "party", char = 1, time = received, copy = copy }))
+	record.seq = nil
+	if live then
+		record.name, record.sourceId = support.GROUPMATE_NAME, sourceId
+	end
+	return record
+end
+
 --- Moves the live conditions to realm `minute` in `where`, with `auras` up (none by default).
 ---@param fake table
 ---@param minute integer
