@@ -1,0 +1,50 @@
+# Stats's lore in French (frFR), over the English of addons/Pagle_Stats/data/Lore.lua (DATA-R113, DATA-R114).
+# Machine-drafted: written by an AI model (Claude) for 1.5.3 and not yet reviewed by a native French speaker.
+
+[statsgood."stats.trackerframe.abacus"]
+description.value = "Un cadre à compter, les perles poussées aux extrémités, et la somme écrite simplement entre elles."
+description.en = "A counting frame with the beads pushed to the ends, and the sum written plainly between them."
+name.value = "Boulier"
+name.en = "Abacus"
+
+[statsgood."stats.trackerframe.astrolabe"]
+description.value = "Une carte du ciel d’un bleu profond sous des anneaux de laiton, pour un pêcheur qui calcule ses chances d’après le ciel."
+description.en = "A star map in deep blue under brass rings, for an angler who reckons the odds by the sky."
+name.value = "Astrolabe"
+name.en = "Astrolabe"
+
+[statsgood."stats.trackerframe.brass"]
+description.value = "Un mince cadre de laiton, riveté à chaque coin comme un compas de marine. Il garde son éclat par tous les temps."
+description.en = "A thin brass rim, riveted at each corner like a ship's compass. It keeps its shine in any weather."
+name.value = "Laiton de navire"
+name.en = "Ship's Brass"
+
+[statsgood."stats.trackerframe.chalkboard"]
+description.value = "Un tableau d’école vert dans un cadre de pin, avec encore les bâtons de comptage de quelqu’un dans le coin."
+description.en = "A green schoolroom board in a pine frame, with somebody’s tally marks still in the corner."
+name.value = "Tableau d’école"
+name.en = "Chalkboard"
+
+[statsgood."stats.trackerframe.greenbar"]
+description.value = "Du papier de comptes à bandes vert pâle, pour qu’une longue colonne de chiffres ne perde jamais sa place."
+description.en = "Tally paper banded in pale green, so a long column of numbers never loses its place."
+name.value = "Papier à bandes vertes"
+name.en = "Green-Bar Paper"
+
+[statsgood."stats.trackerframe.logbook"]
+description.value = "Un parchemin réglé de colonnes pâles, comme le registre d’un capitaine de port. Chaque chiffre reste sur sa ligne."
+description.en = "Parchment ruled in faint columns, like a harbourmaster's log. Every figure keeps to its line."
+name.value = "Livre de bord"
+name.en = "Logbook"
+
+[statsgood."stats.trackerframe.none"]
+description.value = "Les chiffres seuls, sans bordure. Rien à polir, et rien à mouiller."
+description.en = "The figures on their own, with no border. Nothing to polish, and nothing to get wet."
+name.value = "Sans cadre"
+name.en = "No Frame"
+
+[statsgood."stats.trackerframe.tidegauge"]
+description.value = "Du verre bleu mer derrière une échelle de marée en laiton, graduée pour que les chiffres montent et descendent comme l’eau."
+description.en = "Sea-blue glass behind a brass tide staff, marked off so the numbers rise and fall like water."
+name.value = "Échelle de marée"
+name.en = "Tide Gauge"

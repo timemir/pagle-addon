@@ -1,0 +1,1128 @@
+# Ledger's lore in French (frFR), over the English of addons/Pagle_Ledger/data/Lore.lua (DATA-R113, DATA-R114).
+# Machine-drafted: written by an AI model (Claude) for 1.5.3 and not yet reviewed by a native French speaker.
+
+[crest.alterac]
+description.value = "Une tour brisée sur un pic glacé. Le royaume a disparu. Les ruisseaux sont toujours bons."
+description.en = "A broken tower on a cold peak. The kingdom is gone. The streams are still good."
+name.value = "La tour brisée"
+name.en = "The Broken Tower"
+
+[crest.arathi]
+description.value = "De vieilles pierres levées dans l’herbe des hautes terres, plus vieilles que tous ceux qui se disputent à leur sujet."
+description.en = "Old standing stones on the highland grass, older than anyone who argues about them."
+name.value = "Les pierres levées"
+name.en = "The Standing Stones"
+
+[crest.ashenvale]
+description.value = "Un feu follet qui dérive entre les arbres sombres. La forêt remarque chaque pêcheur qui s’attarde trop."
+description.en = "A wisp drifting between dark trees. The forest notices every angler who stays too long."
+name.value = "Le feu follet"
+name.en = "The Wisp"
+
+[crest.azshara]
+description.value = "Une colonne d’un ancien empire, que la mer escalade. Quelque chose nage encore dans ces ruines."
+description.en = "A column of an old empire, the sea climbing it. Something still swims in those ruins."
+name.value = "La colonne tombée"
+name.en = "The Fallen Column"
+
+[crest.badlands]
+description.value = "Une arche de pierre que le vent a mis dix mille ans à achever. Apportez votre propre eau."
+description.en = "A stone arch the wind took ten thousand years to finish. Bring your own water."
+name.value = "L’arche de pierre"
+name.en = "The Stone Arch"
+
+[crest.barrens]
+description.value = "Un arbre au sommet plat dans les plaines arides. Chaque oasis, là-bas, est le coin préféré de quelqu’un."
+description.en = "A flat-topped tree on the dry plains. Every oasis out there is somebody's favourite spot."
+name.value = "L’acacia"
+name.en = "The Acacia"
+
+[crest.blackrock]
+description.value = "Une montagne noire, du feu dans ses failles et des chaînes en travers de sa porte. Pêchez dans les bassins de lave à vos risques et périls."
+description.en = "A black mountain with fire in its cracks and chains across its gate. Fish the lava pools at your own risk."
+name.value = "La flèche noire"
+name.en = "The Black Spire"
+
+[crest.blastedlands]
+description.value = "Une porte de pierre noire avec un feu vert à l’intérieur. Personne n’y pêche pour la vue."
+description.en = "A gate of black stone with green fire in it. Nobody fishes there for the view."
+name.value = "La porte ardente"
+name.en = "The Burning Gate"
+
+[crest.burningsteppes]
+description.value = "Une montagne en feu sous un ciel de cendre. L’eau y est assez chaude pour cuisiner."
+description.en = "A mountain on fire under an ash sky. The water is warm enough to cook in."
+name.value = "Le pic ardent"
+name.en = "The Burning Peak"
+
+[crest.darkshore]
+description.value = "Un croissant de lune au-dessus de l’eau grise, pour les pêcheurs qui pêchent la nuit."
+description.en = "A crescent over grey water, for anglers who fish after dark."
+name.value = "Le croissant"
+name.en = "The Crescent"
+
+[crest.darnassus]
+description.value = "Un puits à la lueur argentée sous un grand arbre. Le lac qui l’entoure abrite les poissons de la cité."
+description.en = "A well glowing silver under a great tree. The lake around it holds the city's fish."
+name.value = "Le puits d’argent"
+name.en = "The Silver Well"
+
+[crest.deadwind]
+description.value = "Une haute tour dans une vallée morte. Les bassins sont calmes. Trop calmes, disent certains, avant de repartir."
+description.en = "A tall tower in a dead valley. The pools are quiet. Too quiet, some say, and leave."
+name.value = "La tour solitaire"
+name.en = "The Lonely Tower"
+
+[crest.desolace]
+description.value = "Un grand crâne cornu venu d’un vieux cimetière. La côte est plus clémente que l’intérieur des terres."
+description.en = "A great horned skull from an old graveyard. The coast is kinder than the inland."
+name.value = "Le crâne cornu"
+name.en = "The Horned Skull"
+
+[crest.dunmorogh]
+description.value = "Des cornes enroulées au-dessus d’un champ de neige. Les béliers de là-haut ont leur avis sur les étrangers."
+description.en = "Curled horns over a snowfield. The rams up there have opinions about strangers."
+name.value = "Le bélier"
+name.en = "The Ram"
+
+[crest.durotar]
+description.value = "Un scorpide sur la terre rouge. La côte est de meilleure compagnie que les scorpides."
+description.en = "A scorpid on red earth. The coast is better company than the scorpids."
+name.value = "Le scorpide"
+name.en = "The Scorpid"
+
+[crest.duskwood]
+description.value = "Deux yeux entre les arbres noirs. Là-bas, les pêcheurs gardent la lanterne allumée et la ligne courte."
+description.en = "Two eyes between black trees. Anglers there keep the lantern lit and the line short."
+name.value = "Des yeux dans les bois"
+name.en = "Eyes in the Wood"
+
+[crest.dustwallow]
+description.value = "Une lanterne restée allumée sur la cabane d’un pêcheur, dans la brume du marais."
+description.en = "A lantern left burning on a fisherman's hut in the marsh fog."
+name.value = "La lanterne"
+name.en = "The Lantern"
+
+[crest.easternplague]
+description.value = "Une petite chapelle qui garde sa lumière face à la flétrissure. De la bonne eau coule à côté."
+description.en = "A small chapel holding its light against the blight. Good water lies beside it."
+name.value = "La chapelle"
+name.en = "The Chapel"
+
+[crest.elwynn]
+description.value = "Le premier lac que la plupart des pêcheurs aient jamais vu, et le chêne sous lequel ils se sont assis."
+description.en = "The first lake most anglers ever saw, and the oak they sat under."
+name.value = "Le vieux chêne"
+name.en = "The Old Oak"
+
+[crest.felwood]
+description.value = "Un arbre tordu, le feu vert dans les veines. Lavez chaque prise venue de là-bas. Deux fois."
+description.en = "A twisted tree with green fire in its veins. Wash every catch from there. Twice."
+name.value = "L’arbre souillé"
+name.en = "The Tainted Tree"
+
+[crest.feralas]
+description.value = "De l’eau qui tombe entre les arbres géants, pour les pêcheurs qui prennent le chemin le plus long."
+description.en = "Water falling between the giant trees, for anglers who take the long way."
+name.value = "Les chutes"
+name.en = "The Falls"
+
+[crest.hillsbrad]
+description.value = "Trois pommes des vergers des contreforts. Les truites sous le moulin s’engraissent des fruits tombés."
+description.en = "Three apples from the foothill orchards. The trout below the mill are fat on windfalls."
+name.value = "Trois pommes"
+name.en = "Three Apples"
+
+[crest.hinterlands]
+description.value = "De grandes plumes des collines sauvages, où de grands oiseaux nichent au-dessus des rivières."
+description.en = "Great feathers from the wild hills, where big birds nest above the rivers."
+name.value = "Trois plumes"
+name.en = "Three Feathers"
+
+[crest.hyjal]
+description.value = "Une pousse verte qui sort de vieilles braises. La montagne guérit, et ses ruisseaux avec elle."
+description.en = "A green shoot rising out of old embers. The mountain is mending, and its streams with it."
+name.value = "La pousse"
+name.en = "The Sapling"
+
+[crest.hyjalcrater]
+description.value = "Une eau dormante dans un anneau brisé de pierre noire. Quelque chose a brûlé ici, autrefois ; le lac n’en a rien dit."
+description.en = "Still water in a broken ring of black stone. Something burned here once; the lake has kept quiet about it."
+name.value = "Le lac du cratère"
+name.en = "The Crater Lake"
+
+[crest.ironforge]
+description.value = "Une enclume devant la forge de la montagne. Il y a un lac là-dessous, et des nains y pêchent."
+description.en = "An anvil before the mountain's forge. There is a lake under there, and dwarves fish it."
+name.value = "L’enclume"
+name.en = "The Anvil"
+
+[crest.lochmodan]
+description.value = "Un barrage qui retient un lac des hautes terres. Les nains l’ont bâti pour durer, et il a duré."
+description.en = "A dam holding back a highland lake. Dwarves built it to last, and it has."
+name.value = "Le grand barrage"
+name.en = "The Great Dam"
+
+[crest.lordamere]
+description.value = "Une île boisée sur un vaste lac gris, une barque tirée sur sa rive. De l’eau calme, et en quantité."
+description.en = "A wooded island on a wide grey lake, a boat drawn up on its shore. Quiet water, and plenty of it."
+name.value = "L’île du lac"
+name.en = "The Lake Isle"
+
+[crest.moonglade]
+description.value = "Des bois de cerf au-dessus d’un lac immobile, sous la lune. Un endroit calme, tenu calme exprès."
+description.en = "Antlers over a still lake, under the moon. A quiet place, kept quiet on purpose."
+name.value = "Les bois de cerf"
+name.en = "The Antlers"
+
+[crest.mulgore]
+description.value = "Un totem sculpté dans les longues plaines herbeuses, où les ruisseaux descendent clairs des collines."
+description.en = "A carved totem on the long grass plains, where the streams run clear from the hills."
+name.value = "Le totem"
+name.en = "The Totem"
+
+[crest.orgrimmar]
+description.value = "Une porte hérissée de pointes dans un canyon rouge. Les bassins de la cité sont plus profonds qu’il n’y paraît."
+description.en = "A spiked gate in a red canyon. The city's pools are deeper than they look."
+name.value = "La porte hérissée"
+name.en = "The Spiked Gate"
+
+[crest.redridge]
+description.value = "Trois pics rouges dressés dans un lac de montagne, et chacun s’y reflète."
+description.en = "Three red peaks standing in a mountain lake, and every one of them reflected."
+name.value = "Trois pics"
+name.en = "Three Peaks"
+
+[crest.riverglades]
+description.value = "Une péniche sur une rivière sinueuse entre des collines vertes. Le commerce arrive par l’eau, et les poissons aussi."
+description.en = "A barge on a winding river between green hills. Trade comes by water there, and so do fish."
+name.value = "La péniche"
+name.en = "The Barge"
+
+[crest.searinggorge]
+description.value = "Un creuset qui déverse de l’or en fusion. Pêcher là-bas, c’est pêcher dans la lave : prévoyez de la patience et une longue canne."
+description.en = "A crucible pouring molten gold. Fishing there means lava, so bring patience and a long rod."
+name.value = "Le creuset"
+name.en = "The Crucible"
+
+[crest.shendralas]
+description.value = "Un livre ouvert sur un piédestal brisé, gardé par des gens qui n’ont jamais cessé de lire."
+description.en = "An open book on a broken pedestal, kept by people who never stopped reading."
+name.value = "Le tome ouvert"
+name.en = "The Open Tome"
+
+[crest.silithus]
+description.value = "Un scarabée sur le sable du désert. Les lacs y sont petits et suspects."
+description.en = "A scarab on desert sand. The lakes there are small and suspicious."
+name.value = "Le scarabée"
+name.en = "The Scarab"
+
+[crest.silverpine]
+description.value = "Des pins argentés sur la rive d’un lac sombre. Quelque chose hurle là-bas presque toutes les nuits."
+description.en = "Silver pines on a dark lake shore. Something howls out there most nights."
+name.value = "Pins argentés"
+name.en = "Silver Pines"
+
+[crest.stonetalon]
+description.value = "Une grande serre agrippée à une pierre. De l’eau de montagne, froide et vive."
+description.en = "A great talon gripping a stone. Mountain water, cold and quick."
+name.value = "La serre"
+name.en = "The Talon"
+
+[crest.stormwind]
+description.value = "Des murs blancs et une porte au-dessus des canaux. La cité pêche dans ses propres voies d’eau, poliment."
+description.en = "White walls and a gate over the canals. The city fishes its own waterways, politely."
+name.value = "Le donjon blanc"
+name.en = "The White Keep"
+
+[crest.stranglethorn]
+description.value = "Un poisson qui jaillit au-dessus des vagues de la jungle, comme s’il avait entendu parler du concours."
+description.en = "A fish leaping clear of the jungle surf, as if it heard about the contest."
+name.value = "Le bond"
+name.en = "The Leap"
+
+[crest.swampofsorrows]
+description.value = "Un toit de temple qui perce l’eau du marais. Ce qui est dessous reste dessous."
+description.en = "A temple roof breaking the swamp water. What is under it stays under it."
+name.value = "Le sanctuaire noyé"
+name.en = "The Drowned Shrine"
+
+[crest.tanaris]
+description.value = "Un soleil de désert au-dessus de la seule ombre à des lieues à la ronde : le rivage."
+description.en = "A desert sun over the only shade for miles: the shoreline."
+name.value = "Le soleil du désert"
+name.en = "The Desert Sun"
+
+[crest.teldrassil]
+description.value = "Un arbre si haut que sa cime touche les étoiles. Ses racines boivent une eau très ancienne."
+description.en = "A tree so tall its crown is in the stars. Its roots drink from very old water."
+name.value = "La couronne étoilée"
+name.en = "The Starlit Crown"
+
+[crest.thousandneedles]
+description.value = "Des aiguilles de pierre qui jaillissent de la plaine. Pêchez dans leur ombre, et gardez votre chapeau."
+description.en = "Stone needles rising from the flats. Fish in their shadows, and keep your hat on."
+name.value = "Les aiguilles"
+name.en = "The Needles"
+
+[crest.thunderbluff]
+description.value = "Une haute mesa avec une tente au sommet. Les bassins en contrebas recueillent les chutes, et les poissons avec."
+description.en = "A high mesa with a tent on top. The pools below catch the falls, and the fish with them."
+name.value = "La mesa"
+name.en = "The Mesa"
+
+[crest.tirisfal]
+description.value = "Une chauve-souris devant une lune maladive. Même les poissons ont l’air un peu fatigués, là-bas."
+description.en = "A bat across a sickly moon. Even the fish there look a little tired."
+name.value = "La chauve-souris"
+name.en = "The Bat"
+
+[crest.undercity]
+description.value = "Une couronne brisée au-dessus de canaux verts. La cour a disparu. Les canaux, eux, ont encore des poissons."
+description.en = "A broken crown over green canals. The court is gone. The canals still hold fish."
+name.value = "La couronne brisée"
+name.en = "The Broken Crown"
+
+[crest.ungoro]
+description.value = "Une empreinte de la taille d’une barque. Le cratère a de plus grands soucis que les poissons."
+description.en = "A footprint the size of a rowing boat. The crater has bigger worries than fish."
+name.value = "L’empreinte"
+name.en = "The Footprint"
+
+[crest.veiledsea]
+description.value = "Un navire à demi perdu dans un banc de brume marine. Ici, les poissons remontent de très profond, et tout le reste aussi."
+description.en = "A ship half lost in a bank of sea fog. Out here the fish come up from very deep, and so does everything else."
+name.value = "Le banc de brume"
+name.en = "The Fog Bank"
+
+[crest.westernplague]
+description.value = "Un corbeau sur un arbre mort, au-dessus des champs vides. Les fermiers sont partis. Pas les poissons."
+description.en = "A crow on a dead tree over empty fields. The farmers left. The fish did not."
+name.value = "Le corbeau"
+name.en = "The Crow"
+
+[crest.westfall]
+description.value = "Des ailes qui tournent au-dessus de la route côtière. La mer est plus proche que les fermiers ne l’admettent."
+description.en = "Sails turning over the coast road. The sea is closer than the farmers admit."
+name.value = "Le moulin"
+name.en = "The Windmill"
+
+[crest.wetlands]
+description.value = "L’ancre d’un port, remontée de la vase. Elle en garde encore une légère odeur."
+description.en = "A harbour's anchor, hauled up from the mud. Still smells faintly of it."
+name.value = "L’ancre"
+name.en = "The Anchor"
+
+[crest.winterspring]
+description.value = "Un flocon de neige au-dessus d’une eau immobile, là où la pêche sous la glace est de la vraie pêche."
+description.en = "A snowflake over still water, where ice fishing is real fishing."
+name.value = "Le givre"
+name.en = "The Frost"
+
+[crest.zephras]
+description.value = "Une île qui flotte sur les nuages, son navire amarré à la pierre. L’eau est très loin en dessous."
+description.en = "An island floating on cloud, its ship tied to the stone. The water is a long way down."
+name.value = "L’île flottante"
+name.en = "The Floating Isle"
+
+[family.1]
+name.value = "Lutjan"
+name.en = "Mud Snapper"
+
+[family.2]
+name.value = "Poisson-chat"
+name.en = "Catfish"
+
+[family.3]
+name.value = "Mérou"
+name.en = "Yellowtail"
+
+[family.4]
+name.value = "Rouget"
+name.en = "Redgill"
+
+[family.5]
+name.value = "Saumon"
+name.en = "Salmon"
+
+[family.6]
+name.value = "Homard"
+name.en = "Lobster"
+
+[family.7]
+name.value = "Barracuda"
+name.en = "Mightfish"
+
+[ledgergood."ledger.binding.abyssal"]
+description.value = "Noir comme l’eau profonde, avec une pâle lueur qui ondule sous la surface. Pour les pêcheurs qui sont allés au fond dix fois, et en sont revenus."
+description.en = "Black as deep water, with a pale glow coiling under the surface. For anglers who have been to the bottom ten times and back."
+name.value = "Noir abyssal"
+name.en = "Abyssal Black"
+
+[ledgergood."ledger.binding.carapace"]
+description.value = "La carapace d’un crabe qui se croyait plus gros que le bateau, et qui l’était presque. Elle pince encore les pages pour les tenir fermées."
+description.en = "The shell of a crab that thought it was bigger than the boat, and very nearly was. It still pinches the pages shut."
+name.value = "Carapace de crabe"
+name.en = "Crab Carapace"
+
+[ledgergood."ledger.binding.ember"]
+description.value = "Des écailles de quelque chose qui a vécu trop près de la forge, encore chaudes au cœur. Ne la laissez pas sur la table de chevet."
+description.en = "Scales from something that lived too near the forge, still warm at the heart. Do not leave it on the bedside table."
+name.value = "Écaille de braise"
+name.en = "Ember Scale"
+
+[ledgergood."ledger.binding.flywallet"]
+description.value = "De la toile cirée avec une laine sur le devant, et dans la laine, les mouches qui ont marché. Celles qui n’ont pas marché sont au fond du lac."
+description.en = "Waxed canvas with a fleece in the front, and in the fleece the flies that worked. The ones that did not are at the bottom of the lake."
+name.value = "Portefeuille à mouches"
+name.en = "Fly Wallet"
+
+[ledgergood."ledger.binding.heartwood"]
+description.value = "Deux planches de vieux chêne, un poisson profondément sculpté sur le devant, et un lierre que personne n’a planté là et qu’on ne convaincra pas de partir."
+description.en = "Two boards of old oak, a fish carved deep into the front, and ivy that was never planted there and will not be talked out of it."
+name.value = "Cœur de chêne sculpté"
+name.en = "Carved Heartwood"
+
+[ledgergood."ledger.binding.iridescent"]
+description.value = "Des écailles de toutes les couleurs que l’eau a jamais livrées, posées l’une sur l’autre. Elle n’a jamais deux fois le même aspect."
+description.en = "Scales in every colour the water ever gave up, laid one over the next. It never looks the same twice."
+name.value = "Écaille irisée"
+name.en = "Iridescent Scale"
+
+[ledgergood."ledger.binding.keeper"]
+description.value = "Un vélin crème presque enseveli sous l’or. Réservé au pêcheur dont le livre n’a plus rien à trouver."
+description.en = "Cream vellum all but buried in gold. Kept for the angler whose book has nothing left to find."
+name.value = "L’or du gardien"
+name.en = "Keeper's Gold"
+
+[ledgergood."ledger.binding.knit"]
+description.value = "Une couverture tricotée dans la même laine que le pull du pêcheur, brandebourgs compris. Elle sent un peu la pluie et tient plus chaud qu’elle n’en a le droit."
+description.en = "A cover knitted from the same wool as the angler's jumper, toggles and all. It smells faintly of rain and is warmer than it has any right to be."
+name.value = "Tricot torsadé"
+name.en = "Cable Knit"
+
+[ledgergood."ledger.binding.lacquer"]
+description.value = "Trente couches de laque noire, deux koï posées à l’or, et un dos cousu de soie rouge. Il faut un an pour la faire et une seconde pour y laisser une empreinte."
+description.en = "Thirty coats of black lacquer, two koi laid in gold, and a spine sewn with red silk. It takes a year to make and a second to fingerprint."
+name.value = "Koï sur laque noire"
+name.en = "Black Lacquer Koi"
+
+[ledgergood."ledger.binding.legend"]
+description.value = "Du cuir bleu gaufré d’écailles, et sur le plat trois poissons dorés qui se poursuivent dans le même cercle."
+description.en = "Blue leather embossed with scales, and on the cover three gilt fish chasing one another round the same circle."
+name.value = "Trois poissons dorés"
+name.en = "Three Gilt Fish"
+
+[ledgergood."ledger.binding.level10"]
+description.value = "Une peau plus claire et plus souple, polie aux coins par quelques saisons de pouces mouillés."
+description.en = "Lighter, softer hide, worn smooth at the corners by a few seasons of wet thumbs."
+name.value = "Peau tannée"
+name.en = "Tanned Hide"
+
+[ledgergood."ledger.binding.level20"]
+description.value = "Un cuir bleu profond aux filets d’argent, couleur de port au crépuscule."
+description.en = "Deep blue leather with silver rules, the colour of a harbour at dusk."
+name.value = "Bleu des marées"
+name.en = "Tidewater Blue"
+
+[ledgergood."ledger.binding.level30"]
+description.value = "Un cuir vert sombre, doré couleur de roseau sec, avec une légère odeur de berge."
+description.en = "Dark green leather, gilt the colour of dry reeds, and a faint smell of riverbank."
+name.value = "Vert roseau"
+name.en = "Reed Green"
+
+[ledgergood."ledger.binding.level40"]
+description.value = "Un cuir rouge profond et une dorure lourde. Le sang de poisson s’y voit à peine."
+description.en = "Deep red leather and heavy gilt. Fish blood barely shows on it."
+name.value = "Sang-de-bœuf"
+name.en = "Oxblood"
+
+[ledgergood."ledger.binding.level50"]
+description.value = "Un cuir gris ardoise aux fers d’argent, pour les jours où personne d’autre ne sort."
+description.en = "Slate-grey leather with silver tooling, for the days nobody else goes out."
+name.value = "Gris d’orage"
+name.en = "Storm Grey"
+
+[ledgergood."ledger.binding.level60"]
+description.value = "Un cuir presque noir et un or éclatant. À peu près ce qui se fait de mieux pour le livre d’un pêcheur."
+description.en = "Near-black leather and bright gold. About as fine as an angler's book gets."
+name.value = "La reliure de Nat"
+name.en = "Nat's Own"
+
+[ledgergood."ledger.binding.logbook"]
+description.value = "Des plats de toile et des coins en veau, une boussole incrustée dans la couverture et une sangle contre les embruns. La tache d’eau était offerte."
+description.en = "Canvas boards and calfskin corners, a compass let into the cover and a strap to keep the spray out. The water stain came free."
+name.value = "Journal de capitaine"
+name.en = "Captain's Logbook"
+
+[ledgergood."ledger.binding.monster"]
+description.value = "Une peau écailleuse de quelque chose qui ne voulait pas être pris, fermée par l’une de ses propres dents."
+description.en = "Scaled hide from something that did not want to be landed, shut with one of its own teeth."
+name.value = "Peau de monstre"
+name.en = "Monster Hide"
+
+[ledgergood."ledger.binding.stormglass"]
+description.value = "Des plats de fer, des pentures et une fenêtre avec une tempête enfermée dedans. Personne ne se souvient d’y avoir mis le poisson."
+description.en = "Iron boards, strap hinges and a window with a storm kept in it. Nobody remembers putting the fish in there."
+name.value = "Reliquaire de verre-tempête"
+name.en = "Stormglass Reliquary"
+
+[ledgergood."ledger.binding.wave"]
+description.value = "Du maroquin bleu frappé d’une seule grande vague, sa crête rehaussée d’or. Quelque part sur son épaule, un tout petit bateau."
+description.en = "Blue morocco with one great wave pressed into it, its crest picked out in gold. Somewhere on its shoulder is a very small boat."
+name.value = "La vague"
+name.en = "Breaking Wave"
+
+[ledgergood."ledger.soundset.choir"]
+description.value = "Des voix graves qui montent des eaux profondes, et quelque chose de très grand qui chante avec elles, en dessous."
+description.en = "Low voices swelling up from deep water, and something very large singing along underneath."
+name.value = "Chœur des profondeurs"
+name.en = "Choir of the Deep"
+
+[ledgergood."ledger.soundset.concertina"]
+description.value = "Une phrase de concertina tirée d’un chant de marin que tout le monde connaît à moitié, jouée par quelqu’un qui le connaît en entier."
+description.en = "A squeezebox phrase from a sea song everyone half-knows, played by somebody who knows all of it."
+name.value = "Concertina du vieux loup de mer"
+name.en = "Old Salt's Concertina"
+
+[ledgergood."ledger.toaststyle.blueprint"]
+description.value = "Tracé à l’atelier entre trois autres inventions et un petit feu. Échelle un pour un, tolérances facultatives, prise garantie (non garantie)."
+description.en = "Drawn up in the workshop between three other inventions and a small fire. Scale one to one, tolerances optional, catch guaranteed (not guaranteed)."
+name.value = "Plan du bricoleur"
+name.en = "Tinker's Blueprint"
+
+[ledgergood."ledger.toaststyle.cartographer"]
+description.value = "Une carte qui n’est jamais finie. Chaque eau que vous connaissez par cœur y est encrée : côte, collines, sondes au large. Le reste demeure au crayon, en attente."
+description.en = "A chart that is never finished. Every water you have learned by heart is inked in: coast, hills, the soundings offshore. The rest stays in pencil, waiting."
+name.value = "Portfolio du cartographe"
+name.en = "Cartographer's Folio"
+
+[ledgergood."ledger.toaststyle.crier"]
+description.value = "Lue sur la place à midi, entre le prix du pain et le chevalier qu’on vient d’adouber. Chaque mot en est vrai, à un pouce près."
+description.en = "Read out in the square at noon, between the price of bread and the knight who was knighted. Every word of it true, give or take an inch."
+name.value = "Proclamation du crieur public"
+name.en = "Town Crier's Proclamation"
+
+[ledgergood."ledger.toaststyle.deep"]
+description.value = "Écrit à la seule lumière du fond du lac. Quelque chose, là-dessous, tient la prise entre ses dents et n’est pas pressé de la lâcher."
+description.en = "Written by the only light at the bottom of the lake. Something down there holds the catch in its teeth and is in no hurry to let go."
+name.value = "Le leurre des profondeurs"
+name.en = "The Deep Lure"
+
+[ledgergood."ledger.toaststyle.drum"]
+description.value = "Tendu sur un cadre près du feu, peint de la main du clan et frappé assez fort pour réveiller la vallée voisine. Un coup pour chaque poisson qui mérite d’être raconté."
+description.en = "Stretched over a frame by the fire, painted with the clan’s hand and beaten loud enough to wake the next valley. One beat for every fish worth telling."
+name.value = "Tambour de clan"
+name.en = "Clan Drum"
+
+[ledgergood."ledger.toaststyle.gala"]
+description.value = "Le soir du grand concours, quand tout le port suspend ses lumières et que personne ne rentre avant le feu d’artifice. Celui-ci est pour les pêcheurs qui ont rapporté les trois."
+description.en = "The night of the great contest, when the whole harbour strings up its lights and nobody goes home before the fireworks. This one is for the anglers who brought back all three."
+name.value = "Gala du concours"
+name.en = "Extravaganza Gala"
+
+[ledgergood."ledger.toaststyle.glade"]
+description.value = "Écrit au clair de lune au bord d’un bassin sacré, où l’eau se souvient de tout ce qui y a jamais nagé. Les feux follets sont venus lire par-dessus votre épaule."
+description.en = "Written by moonlight at the edge of a sacred pool, where the water remembers everything that ever swam in it. The wisps came to read over your shoulder."
+name.value = "Clairière étoilée"
+name.en = "Starlit Glade"
+
+[ledgergood."ledger.toaststyle.glass"]
+description.value = "Une fenêtre d’une chapelle au bord de l’eau, sertie de plomb à la main. Les mots tiennent dans le seul carreau clair ; le reste est rubis, cobalt et couleur de lumière tardive."
+description.en = "A window from a chapel by the water, leaded by hand. The words sit in the one clear pane; the rest is ruby, cobalt and the colour of late light."
+name.value = "Vitrail de chapelle"
+name.en = "Chapel Glass"
+
+[ledgergood."ledger.toaststyle.hall"]
+description.value = "Taillé dans la roche vive sous la montagne et incrusté par un forgeron qui a mesuré deux fois et s’en est vanté trois. Les runes gardent la forge au chaud."
+description.en = "Cut from the living rock under the mountain and inlaid by a smith who measured twice and boasted three times. The runes keep the forge warm."
+name.value = "Salle de la montagne"
+name.en = "Mountain Hall"
+
+[ledgergood."ledger.toaststyle.hex"]
+description.value = "Assemblé par un sorcier-docteur sur une île où les poissons mordent en retour. Le masque a vu votre avenir : encore des poissons. Le masque a vu pire."
+description.en = "Lashed together by a witch doctor on an island where the fish bite back. The mask has seen your future: more fish. The mask has seen worse."
+name.value = "Maléfice de la jungle"
+name.en = "Jungle Hex"
+
+[ledgergood."ledger.toaststyle.ice"]
+description.value = "Un demi-pied de bonne glace noire, un trou et beaucoup d’attente. Quand le fanion se lève, vous courez, et le froid ne vous gêne plus."
+description.en = "Six inches of good black ice, one hole and a lot of waiting. When the flag goes up you run, and you do not mind the cold."
+name.value = "À travers la glace"
+name.en = "Through the Ice"
+
+[ledgergood."ledger.toaststyle.koi"]
+description.value = "Un rouleau d’un peintre qui n’a jamais peint que des poissons, et les a bien peints. Le cercle autour de la prise a tenu en un souffle."
+description.en = "A scroll from a painter who only ever painted fish, and painted them well. The circle round the catch took one breath."
+name.value = "Encre et koï"
+name.en = "Ink and Koi"
+
+[ledgergood."ledger.toaststyle.legend"]
+description.value = "Réservé aux prises dont on discute sur les quais pendant des années. Bordure dorée, soie bleue, un vrai sceau."
+description.en = "Kept for the catches people argue about at the docks for years. Gilt border, blue silk, a proper seal."
+name.value = "L’histoire à dormir debout"
+name.en = "The Tall Tale"
+
+[ledgergood."ledger.toaststyle.lion"]
+description.value = "Taillée dans la pierre blanche d’une cité portuaire qui ne cesse jamais de bâtir, et scellée sous le lion de ses rois. Les bannières ne flottent que pour une prise digne des trompettes."
+description.en = "Cut from the white stone of a harbour city that never stops building, and sealed under the lion of its kings. The banners only fly for a catch worth the trumpets."
+name.value = "Charte du lion"
+name.en = "Lion's Charter"
+
+[ledgergood."ledger.toaststyle.prestige"]
+description.value = "Un vélin sang-de-bœuf et des lauriers dorés, pour un pêcheur qui a tout recommencé et l’a refait en entier."
+description.en = "Oxblood vellum and gilt laurels, for an angler who started over and did it all again."
+name.value = "Vélin sang-de-bœuf"
+name.en = "Oxblood Vellum"
+
+[ledgergood."ledger.toaststyle.shroud"]
+description.value = "Arraché au drap dans lequel on vous a enterré, et recousu quand vous en êtes sorti pour aller pêcher. La prise s’en moque. La prise n’en sait rien."
+description.en = "Torn from the cloth they buried you in, and stitched back up when you climbed out to go fishing. The catch doesn’t mind. The catch doesn’t know."
+name.value = "Linceul"
+name.en = "Grave Shroud"
+
+[ledgergood."ledger.toaststyle.slate"]
+description.value = "Écrite à la craie ce matin, sur la glace à midi. Le prix, c’est ce que le poissonnier pense que vous pouvez supporter."
+description.en = "Chalked up this morning, on ice by noon. The price is whatever the fishmonger thinks you can bear."
+name.value = "Ardoise du poissonnier"
+name.en = "Fishmonger's Slate"
+
+[ledgergood."ledger.toaststyle.stitch"]
+description.value = "Brodé par quelqu’un de patient pendant les longues nuits entre les saisons. Chaque poisson a pris une soirée ; l’aiguille y est encore."
+description.en = "Stitched by someone patient on the long nights between seasons. Every fish in it took an evening; the needle is still in."
+name.value = "Abécédaire au point de croix"
+name.en = "Cross-Stitch Sampler"
+
+[ledgergood."ledger.toaststyle.totem"]
+description.value = "Peint sur une peau près d’un feu, sous un très grand ciel, par quelqu’un qui croit que chaque poisson est un don de la Terre. Dites merci."
+description.en = "Painted on a hide by a fire under a very large sky, by someone who believes every fish is a gift from the Earth. Say thank you."
+name.value = "Totem des plaines"
+name.en = "Plains Totem"
+
+[ledgergood."ledger.toaststyle.trophy"]
+description.value = "Noyer, laiton et quatre bonnes vis. Le genre de chose qu’on accroche au-dessus de la cheminée et qu’on montre du doigt le reste de la soirée."
+description.en = "Walnut, brass and four good screws. The sort of thing that goes over the fireplace and gets pointed at for the rest of the evening."
+name.value = "Trophée monté"
+name.en = "Mounted Trophy"
+
+[ledgergood."ledger.toaststyle.warband"]
+description.value = "Martelé sous un ciel rouge, dans une cité bâtie de fer et de rancunes. Les braseros brûlent pour le clan ; les marques de griffes sont pour quiconque a douté de la prise."
+description.en = "Hammered out under a red sky in a city built of iron and grudges. The braziers burn for the clan; the claw-marks are for whoever doubted the catch."
+name.value = "Bande de guerre de fer"
+name.en = "Iron Warband"
+
+[legend.19803]
+blurb.value = "La plupart des pêcheurs n’en voient jamais que le sillage. Celui-ci a ralenti assez longtemps pour être pris."
+blurb.en = "Most anglers only ever see its wake. This one slowed down long enough to be landed."
+title.value = "Chasseur de tassergal"
+title.en = "Racer-Chaser"
+
+[legend.19805]
+blurb.value = "Bien trop beau pour une table de concours, et il semble le savoir."
+blurb.en = "Far too handsome for a contest table, and it seems to know it."
+title.value = "Rival de Keefer"
+title.en = "Keefer's Rival"
+
+[legend.19806]
+blurb.value = "Porte beau comme un prince, et se bat comme s’il avait une couronne à perdre."
+blurb.en = "Carries itself like royalty, and fights as if it had a crown to lose."
+title.value = "Attrape-reine"
+title.en = "Queen-Catcher"
+
+[line.uncaughtjunk]
+text.value = "Le socle est épousseté et prêt. La pièce exposée est en retard."
+text.en = "The plinth is dusted and ready. The exhibit is late."
+
+[line.uncaughtlegend]
+text.value = "Certains poissons ne se prennent qu’une fois de loin en loin. Cette page en attend un."
+text.en = "Some fish are only caught once in a long while. This page waits for one."
+
+[line.uncaughttreasure]
+text.value = "Quelque chose de scellé, pas encore trouvé."
+text.en = "Something sealed, not yet found."
+
+[line.unchartedwaters]
+text.value = "Eaux inexplorées. Aucune carte de celles-ci pour l’instant."
+text.en = "Uncharted waters. No map of these yet."
+
+[prestigeframe.castoff]
+description.value = "Le plat-bord d’une barque à clins, épais de trois couches de peinture, les avirons rentrés en travers."
+description.en = "The rail of a clinker-built rowboat, three coats of paint deep, with the oars shipped across it."
+name.value = "Larguer les amarres"
+name.en = "Casting Off"
+
+[prestigeframe.constellation]
+description.value = "Passé le dixième, on vous met dans le ciel : un pêcheur d’étoiles avec une canne et une ligne, et un poisson au bout. Une étoile de plus à la couronne pour chaque Prestige de maître."
+description.en = "Past the tenth, they put you in the sky: an angler of stars with a rod and a line, and a fish on the end of it. One more star in the crown for every Master Prestige."
+name.value = "La constellation du pêcheur"
+name.en = "The Angler’s Constellation"
+
+[prestigeframe.coral]
+description.value = "Un anneau de nacre dans un récif : du corail rouge d’un côté, une gorgone de l’autre, et toujours quelqu’un qui passe à la nage."
+description.en = "A ring of mother-of-pearl in a reef: red coral up one side, a sea fan on the other, and somebody always swimming past."
+name.value = "Les jardins de corail"
+name.en = "The Coral Gardens"
+
+[prestigeframe.dive]
+description.value = "Un casque de scaphandrier en cuivre, boulonné et gonflé d’air. Le pêcheur est passé par-dessus bord pour regarder le poisson dans les yeux."
+description.en = "A copper diving helmet, bolted down and pumped full of air. The angler has gone over the side to look the fish in the eye."
+name.value = "La plongée"
+name.en = "The Dive"
+
+[prestigeframe.jetty]
+description.value = "Des planches de la vieille jetée, liées en anneau, qui sentent encore le goudron et la marée basse."
+description.en = "Planks off the old jetty, lashed into a ring, still smelling of tar and low tide."
+name.value = "La jetée"
+name.en = "The Jetty"
+
+[prestigeframe.leviathan]
+description.value = "Le serpent au fond de toutes les histoires de marin, enroulé autour d’un anneau de vieil or, la queue dans la gueule."
+description.en = "The serpent at the bottom of every sailor’s story, coiled round a ring of old gold with its own tail in its mouth."
+name.value = "Le léviathan"
+name.en = "The Leviathan"
+
+[prestigeframe.lighthouse]
+description.value = "La salle de la lanterne au bout de la pointe, vitrée tout autour, la lumière filant sur l’eau."
+description.en = "The lamp room at the end of the point, glass all round and the light going out over the water."
+name.value = "Le phare"
+name.en = "The Lighthouse"
+
+[prestigeframe.midnight]
+description.value = "Du verre noir venu de là où aucune lumière ne descend, éclairé par ce qui vit là-bas. L’un d’eux s’intéresse à vous."
+description.en = "Black glass from where no light comes down, lit by the things that live there. One of them has taken an interest."
+name.value = "La zone de minuit"
+name.en = "The Midnight Zone"
+
+[prestigeframe.none]
+description.value = "Un anneau à l’encre, et une supposition au crayon de ce qui viendra autour."
+description.en = "A ring in ink, and a pencilled guess at what will go round it."
+name.value = "Non écrit"
+name.en = "Unwritten"
+
+[prestigeframe.opensea]
+description.value = "Une rose des vents tirée d’une carte de navigateur, chaque pointe juste, le nord couronné d’or."
+description.en = "A compass rose off a navigator’s chart, every point of it true, the north crowned in gold."
+name.value = "La haute mer"
+name.en = "The Open Sea"
+
+[prestigeframe.starward]
+description.value = "Là où finit la mer commence le ciel : une sphère armillaire d’or et d’argent sous la nuit, et les vieux poissons parmi les étoiles."
+description.en = "Where the sea runs out the sky begins: an armillary of gold and silver under the night, and the old fish among the stars."
+name.value = "La mer vers les étoiles"
+name.en = "The Starward Sea"
+
+[prestigeframe.storm]
+description.value = "La barre d’un ketch en plein coup de vent : acajou, laiton et huit bons rayons, et le ciel qui se déchire au-dessus."
+description.en = "The helm of a ketch in a full gale: mahogany, brass and eight good spokes, and the sky coming apart overhead."
+name.value = "La tempête"
+name.en = "The Storm"
+
+[species.12238]
+blurb.value = "Large, lent et gris comme la côte dont il porte le nom. Il fait un meilleur ragoût qu’une première impression."
+blurb.en = "Broad, slow and grey as the coast it's named for. It makes a better stew than a first impression."
+riddle.value = "Eau grise sous de vieux arbres sur une côte au clair de lune, ou loin au sud, dans le désert."
+riddle.en = "Grey water under old trees on a moonlit coast, or far south in the desert."
+
+[species.13422]
+blurb.value = "Les armuriers paient bien les écailles. L’anguille n’est pas d’accord avec l’arrangement."
+blurb.en = "Armourers pay well for the scales. The eel disagrees with the arrangement."
+riddle.value = "Un essaim qui se tord en eau de mer profonde, au large des côtes les plus sauvages."
+riddle.en = "A writhing swarm in deep sea water off the wilder coasts."
+
+[species.13754]
+blurb.value = "Assez lourd pour que certains pêcheurs le pêchent assis."
+blurb.en = "Heavy enough that some anglers fish it sitting down."
+riddle.value = "Haute mer au large des côtes lointaines, assez profonde pour les lourds."
+riddle.en = "Open sea off the far coasts, deep enough for the heavy ones."
+
+[species.13755]
+blurb.value = "Arrive avec le givre. Plus de bras qu’un pêcheur ne peut raisonnablement en démêler."
+blurb.en = "Arrives with the frost. More arms than an angler can reasonably untangle."
+riddle.value = "Rivages chauds, une fois que l’année tourne au froid."
+riddle.en = "Warm shores, once the year turns cold."
+
+[species.13756]
+blurb.value = "Arrive avec les longues journées et repart au premier vent froid."
+blurb.en = "Turns up with the long days and leaves with the first cold wind."
+riddle.value = "Rivages chauds, pendant la moitié chaude de l’année."
+riddle.en = "Warm shores in the warm half of the year."
+
+[species.13757]
+blurb.value = "Ça picote. Ne la léchez pas."
+blurb.en = "Tingles. Don't lick it."
+riddle.value = "Un crépitement dans des eaux lointaines et sauvages, du lever du soleil jusque tard le soir."
+riddle.en = "A crackle in far, wild waters, from sunrise into the late evening."
+
+[species.13758]
+blurb.value = "Des ouïes comme des braises. Mord comme s’il le pensait vraiment."
+blurb.en = "Gills like embers. Bites like it means it."
+riddle.value = "Eaux intérieures des terres les plus sauvages, de jour comme de nuit."
+riddle.en = "Inland waters of the wilder lands, by day or by night."
+
+[species.13759]
+blurb.value = "Se nourrit à la lumière des étoiles. Les pêcheurs qui le veulent apprennent à aimer le noir."
+blurb.en = "Feeds by starlight. Anglers who want it learn to like the dark."
+riddle.value = "Eaux sauvages loin des rivages paisibles, après le coucher du soleil."
+riddle.en = "Wild waters far from the gentle shores, after the sun goes down."
+
+[species.13760]
+blurb.value = "Se lève avec le soleil et veille tard. Personne ne sait où il va avant l’aube."
+blurb.en = "Rises with the sun and keeps late hours. Nobody knows where it goes before dawn."
+riddle.value = "Rivières et lacs lointains, chauds ou froids, tant que le soleil est levé."
+riddle.en = "Far rivers and lakes, warm or cold, while the sun is up."
+
+[species.13888]
+blurb.value = "Pince d’abord, et ne pose jamais de questions."
+blurb.en = "Pinches first, asks questions never."
+riddle.value = "Eaux rocheuses et profondes, aux confins du monde."
+riddle.en = "Deep rocky waters at the far edges of the world."
+
+[species.13889]
+blurb.value = "Pâle comme le givre. Meilleur mangé le jour même, ce qui est rarement possible."
+blurb.en = "Pale as frost. Best eaten the day it's caught, which is rarely possible."
+riddle.value = "Les eaux les plus lointaines qui soient, des lacs gelés aux collines brûlées."
+riddle.en = "The farthest waters there are, from frozen lakes to scorched hills."
+
+[species.13890]
+blurb.value = "Porte son armure à l’extérieur et son caractère à l’intérieur. Prévoyez un couteau plus lourd."
+blurb.en = "Wears its armour on the outside and its temper on the inside. Bring a heavier knife."
+riddle.value = "Quelque chose de lourd dans les eaux les plus lointaines, après le coucher du soleil."
+riddle.en = "Something heavy in the farthest waters, after the sun goes down."
+
+[species.13893]
+blurb.value = "Le grand cousin. Il vous faudra les deux mains, et sans doute un ami."
+blurb.en = "The big cousin. You will need both hands and probably a friend."
+riddle.value = "Eau profonde au large d’une côte lointaine et oubliée."
+riddle.en = "Deep water off a far and forgotten coast."
+
+[species.1467]
+blurb.value = "Un petit poisson joyeux qui n’a aucune idée du nombre de cuisiniers qui l’attendent."
+blurb.en = "A cheerful little fish with no idea how many cooks are waiting for it."
+riddle.value = "Un calme lac de colline, en pays de fermes paisibles."
+riddle.en = "A calm hill lake in settled farming country."
+
+[species.16967]
+blurb.value = "Gros, rapide et bon à manger. La plupart sont pêchés pour rendre service à quelqu’un d’autre, ce qui semble du gâchis."
+blurb.en = "Big, quick and good eating. Most are caught as a favour for someone else, which seems a waste."
+riddle.value = "Un large fleuve à travers une forêt humide et envahie, dans le lointain ouest."
+riddle.en = "A broad river through wet, overgrown forest in the far west."
+
+[species.16968]
+blurb.value = "Frappe l’appât comme s’il attendait une dispute depuis le matin."
+blurb.en = "Hits the bait like it's been waiting all day for an argument."
+riddle.value = "Un rivage morne et gris, sur une côte occidentale sèche et vide."
+riddle.en = "A bleak, grey shore on a dry and empty western coast."
+
+[species.16969]
+blurb.value = "Cette voile, c’est pour la frime, et il le sait. Se bat comme s’il avait un public."
+blurb.en = "That sail is for show, and it knows it. Fights like it has an audience."
+riddle.value = "Hauts-fonds chauds de la jungle, où la mer monte jusqu’aux arbres."
+riddle.en = "Warm jungle shallows, where the sea runs right up to the trees."
+
+[species.16970]
+blurb.value = "Vif comme un oiseau de la jungle, et deux fois plus pénible au bout de la ligne."
+blurb.en = "Bright as a jungle bird and twice as much trouble on the line."
+riddle.value = "Hauts-fonds chauds et troubles, là où un marais rejoint la mer."
+riddle.en = "Warm, murky shallows where a swamp meets the sea."
+
+[species.19807]
+blurb.value = "Poisson de concours. A le goût de la victoire, ou au moins d’un long après-midi à essayer."
+blurb.en = "Tournament fish. Tastes of victory, or at least of a long afternoon trying."
+riddle.value = "Seulement pendant le grand concours de la jungle."
+riddle.en = "Only while the jungle's great contest is on."
+
+[species.19975]
+blurb.value = "Sent exactement ce que son nom promet. Quelqu’un, quelque part, en veut encore une douzaine."
+blurb.en = "Smells exactly as the name promises. Somebody, somewhere, still wants a dozen."
+riddle.value = "Eau brune et agitée, au cœur de la jungle fumante."
+riddle.en = "Churning brown water, deep in the steaming jungle."
+
+[species.21071]
+blurb.value = "Sent les collines le long desquelles il nage."
+blurb.en = "Smells like the hills it swims past."
+riddle.value = "Petits bancs dans les collines et les forêts, au léger parfum d’herbes."
+riddle.en = "Small schools in the hills and forests, smelling faintly of herbs."
+
+[species.21153]
+blurb.value = "La petite a grandi."
+blurb.en = "The sage grew up."
+riddle.value = "Des bancs plus grands au parfum d’herbes, dans les collines enneigées et la jungle fumante."
+riddle.en = "Bigger herb-scented schools, in snowy hills and steaming jungle."
+
+[species.251524]
+blurb.value = "Nouveau dans ces eaux, et personne ne sait trop comment il est arrivé là."
+blurb.en = "New to these waters, and nobody's quite sure how it got here."
+riddle.value = "De nouveaux bancs éclatants sur un lac tranquille des collines de l’est."
+riddle.en = "Bright new schools on a quiet lake in the eastern hills."
+
+[species.4603]
+blurb.value = "Rapide, brillant, et très content de lui."
+blurb.en = "Fast, bright, and very pleased with itself."
+riddle.value = "Côtes salées au nord et au sud, des deux côtés de la mer."
+riddle.en = "Salt coasts north and south, on both sides of the sea."
+
+[species.6289]
+blurb.value = "Il mord à tout, y compris, une fois, à la botte d’un gnome."
+blurb.en = "It bites anything, including, once, a gnome's boot."
+riddle.value = "Rivières paresseuses des terres où les héros commencent."
+riddle.en = "Lazy rivers in the lands where heroes begin."
+
+[species.6291]
+blurb.value = "Petit, brillant et partout. Le livre de tout pêcheur commence ici, et personne n’avoue combien il en a relâché."
+blurb.en = "Small, bright and everywhere. Every angler's book starts here, and nobody admits how many they threw back."
+riddle.value = "La toute première chose à tirer sur la ligne d’un débutant, dans les eaux les plus douces qui soient."
+riddle.en = "The very first thing to tug a beginner's line, in the gentlest waters of all."
+
+[species.6299]
+blurb.value = "Mauvaise mine, pire odeur, et une fois cuit, quelque chose qu’un raptor mangerait."
+blurb.en = "Looks bad, smells worse, cooks into something a raptor would eat."
+riddle.value = "Eau grise et lasse dans le nord lugubre, des deux côtés de la mer."
+riddle.en = "Tired, grey water in the gloomy north, on both sides of the sea."
+
+[species.6303]
+blurb.value = "Glissant comme personne. Frit bien mieux qu’il n’en a le droit."
+blurb.en = "Slippery enough to earn the name. Fries up better than it has any right to."
+riddle.value = "Côtes peu profondes, où pataugent les nouveaux aventuriers."
+riddle.en = "Shallow coasts, where new adventurers wade."
+
+[species.6308]
+blurb.value = "Tout en moustaches et en rancune. Il boude au fond jusqu’à ce qu’il décide de se battre."
+blurb.en = "All whiskers and grudge. It sulks on the bottom until it decides to fight."
+riddle.value = "Rivières troubles, des deux côtés de la mer."
+riddle.en = "Murky rivers on both sides of the sea."
+
+[species.6317]
+blurb.value = "Nommé par des nains, qui nomment tout d’après la façon dont ça se comporte quand on essaie de le tenir."
+blurb.en = "Named by dwarves, who name everything after how it behaves when you try to hold it."
+riddle.value = "Eau froide d’un lac des hautes terres, en pays nain."
+riddle.en = "Cold highland lake water, in dwarf country."
+
+[species.6358]
+blurb.value = "Les alchimistes en veulent l’huile. Les cuisiniers n’en veulent rien du tout."
+blurb.en = "Alchemists want the oil. Cooks want nothing to do with it."
+riddle.value = "Un banc qui laisse une nappe sur les eaux côtières."
+riddle.en = "A school that leaves a slick on coastal waters."
+
+[species.6359]
+blurb.value = "Tiède au toucher, même hors de l’eau."
+blurb.en = "Warm to the touch, even out of the water."
+riddle.value = "Des bancs tourbillonnants couleur de braise, au large des côtes du nord et du sud."
+riddle.en = "Swirling schools the colour of embers, off coasts north and south."
+
+[species.6361]
+blurb.value = "Les couleurs s’effacent dans l’heure qui suit la prise. Regardez vite."
+blurb.en = "The colours fade within an hour of landing. Look quickly."
+riddle.value = "Côte ouverte, un peu plus loin du rivage que d’habitude."
+riddle.en = "Open coast, a little further from shore than you're used to."
+
+[species.6362]
+blurb.value = "Têtue au bout de la ligne, douce dans l’assiette."
+blurb.en = "Stubborn on the line, sweet on the plate."
+riddle.value = "Côtes marines, du nord brumeux au sud brûlant, là où le fond plonge."
+riddle.en = "Sea coasts from the misty north to the hot south, where the bottom drops away."
+
+[species.6458]
+blurb.value = "Moins un poisson qu’un avertissement sur l’eau. Lavez-le deux fois, puis réfléchissez encore."
+blurb.en = "Less a fish than a warning about the water. Wash it twice, then think again."
+riddle.value = "Eau souillée, là où les gobelins forent les collines et les plaines desséchées."
+riddle.en = "Fouled water where goblins drill the parched hills and plains."
+
+[species.6522]
+blurb.value = "À manger à vos risques et périls. Pas deux pêcheurs qui en ont mangé ne racontent la même histoire de l’heure qui a suivi."
+blurb.en = "Eat one at your own risk. No two anglers who did tell the same story about the hour after."
+riddle.value = "D’étranges bancs dans les plaines arides, là où l’eau elle-même semble malade."
+riddle.en = "Strange schools out on the dry plains, where the water itself seems unwell."
+
+[species.8365]
+blurb.value = "La tête brille vraiment. Non, ce n’est pas du mithril. Arrêtez de demander au forgeron."
+blurb.en = "The head really does shine. No, it isn't mithril. Stop asking the smith."
+riddle.value = "Lacs et rivières en pays plus rude, de la forêt profonde au désert nu."
+riddle.en = "Lakes and rivers in rougher country, from deep forest to bare desert."
+
+[sub.13874]
+plaque.value = "Trop lourde pour flotter et trop lourde pour être portée loin. Quelqu’un a essayé les deux."
+plaque.en = "Too heavy to float and too heavy to carry far. Someone tried both."
+
+[sub.13875]
+plaque.value = "Cerclé de fer et verrouillé en plus. Ce qu’il y a dedans valait l’inquiétude."
+plaque.en = "Bound in iron and locked besides. Whatever's inside was worth the worry."
+
+[sub.13881]
+plaque.value = "Trop gourmand pour arrêter de manger, et trop plein pour s’enfuir à la nage."
+plaque.en = "Too greedy to stop eating, and too full to swim away."
+
+[sub.13918]
+plaque.value = "Renforcé, verrouillé, et coulé quand même. Certaines cargaisons n’ont jamais de chance."
+plaque.en = "Reinforced, locked, and sunk anyway. Some cargo never gets a break."
+
+[sub.20708]
+plaque.value = "Scellée si bien que l’eau n’y est jamais entrée. Le propriétaire non plus, semble-t-il."
+plaque.en = "Sealed so tight the water never got in. Neither, it seems, did the owner."
+
+[sub.21113]
+plaque.value = "Étanche, comme promis. Personne n’avait promis qu’elle flotterait."
+plaque.en = "Watertight, as promised. Nobody promised it would float."
+
+[sub.21150]
+plaque.value = "Le fer a tenu. Le navire d’où elle vient, non."
+plaque.en = "The iron held. The ship it came off did not."
+
+[sub.21162]
+plaque.value = "Enflé, visqueux et plein de la chance de quelqu’un d’autre. Lavez-vous les mains après."
+plaque.en = "Swollen, slick and full of someone else's luck. Wash your hands after."
+
+[sub.21164]
+plaque.value = "Têtue jusqu’au bout. Elle n’a rendu ce qu’elle avait avalé qu’au couteau."
+plaque.en = "Stubborn to the last. It gave up what it swallowed only to a knife."
+
+[sub.21228]
+plaque.value = "Cerclée de mithril. Qui l’a emballée s’attendait à des ennuis, et en a eu."
+plaque.en = "Bound in mithril. Whoever packed it expected trouble, and got some."
+
+[sub.21243]
+plaque.value = "Assez gros pour avaler une bourse entière, et il l’a fait."
+plaque.en = "Big enough to swallow a purse whole, and it did."
+
+[sub.6297]
+plaque.value = "Don de l’eau. Propriétaire inconnu, et de préférence qu’il le reste."
+plaque.en = "Donated by the water. Owner unknown, and preferably staying that way."
+
+[sub.6301]
+plaque.value = "Appartenait à quelqu’un qui menait des chariots. On dirait qu’il en attend encore un."
+plaque.en = "Belonged to someone who drove wagons. Still looks like it's waiting for one."
+
+[sub.6307]
+plaque.value = "L’encre a coulé il y a longtemps. Le bouchon, à son honneur, a tenu."
+plaque.en = "The ink ran long ago. The cork, to its credit, held."
+
+[sub.6351]
+plaque.value = "Tombée une fois, à première vue, puis une autre pour faire bonne mesure."
+plaque.en = "Dropped once, by the look of it, and then again for good measure."
+
+[sub.6352]
+plaque.value = "Emballée pour un voyage au sec. Elle ne l’a pas eu."
+plaque.en = "Packed for a dry voyage. It did not get one."
+
+[sub.6353]
+plaque.value = "Assez petit pour être perdu par-dessus bord. Quelqu’un l’a prouvé."
+plaque.en = "Small enough to lose over the side. Someone proved it."
+
+[sub.6354]
+plaque.value = "Petit, verrouillé, et plus pénible à ouvrir qu’il ne l’a jamais été à porter."
+plaque.en = "Small, locked, and more trouble to open than it ever was to carry."
+
+[sub.6355]
+plaque.value = "Conçu pour survivre à tout. La mer met l’affirmation à l’épreuve."
+plaque.en = "Built to survive anything. The sea has been testing the claim."
+
+[sub.6356]
+plaque.value = "Quelqu’un l’a verrouillé, quelqu’un l’a coulé, et ni l’un ni l’autre n’est revenu le chercher."
+plaque.en = "Someone locked it, someone sank it, and neither came back for it."
+
+[sub.6357]
+plaque.value = "Scellée contre l’eau. L’eau a été patiente."
+plaque.en = "Sealed tight against the water. The water was patient."
+
+[sub.6455]
+plaque.value = "Où est passé le chariot fait toujours l’objet d’une enquête."
+plaque.en = "Where the wagon went is still under investigation."
+
+[sub.6456]
+plaque.value = "Prière de ne pas toucher la pièce exposée."
+plaque.en = "Please do not touch the exhibit."
+
+[sub.6457]
+plaque.value = "Un gnome appellerait ça « presque en état de marche »."
+plaque.en = "A gnome would call this 'nearly working'."
+
+[sub.6643]
+plaque.value = "Un petit poisson au grand appétit, sans aucune idée de ce qui compte comme nourriture."
+plaque.en = "A small fish with a large appetite and no sense of what counts as food."
+
+[sub.6645]
+plaque.value = "Il a mordu dans quelque chose de bien trop gros pour l’avaler, et l’a avalé quand même."
+plaque.en = "It bit something far too big to swallow, and swallowed it anyway."
+
+[sub.6647]
+plaque.value = "Nourri au fond, là où finit tout ce que les gens laissent tomber."
+plaque.en = "Fed off the bottom, where everyone's dropped things end up."
+
+[sub.6717]
+plaque.value = "Les pièces de rechange d’un bricoleur, tombées par-dessus bord en plein travail. Il jure que le bateau fuyait avant."
+plaque.en = "A tinker's spare parts, dropped over the side mid-job. He insists the boat leaked first."
+
+[sub.6718]
+plaque.value = "Des pièces pour un leurre de canard mécanique, du genre qui explose. Tenues bien à l’écart des vrais canards."
+plaque.en = "Parts for a clockwork duck decoy, the kind that explodes. Kept well away from the real ducks."
+
+[sub.7973]
+plaque.value = "Ne dit rien de ce qu’elle contient. Ouvrez-la quand même ; parfois, c’est une perle."
+plaque.en = "Says nothing about what's inside. Open it anyway; sometimes it's a pearl."
+
+[sub.8366]
+plaque.value = "A mangé quelque chose de brillant. Peut-être même du mithril, cette fois."
+plaque.en = "Ate something shiny. Possibly even mithril, this time."
+
+[title."complete.junk"]
+text.value = "Collectionneur de bottes"
+text.en = "Collector of Boots"
+
+[title."complete.ledger"]
+text.value = "Pêcheur d’Azeroth"
+text.en = "Angler of Azeroth"
+
+[title."complete.treasure"]
+text.value = "Gardien des cargaisons perdues"
+text.en = "Keeper of Lost Cargo"
+
+[title."complete.trophy"]
+text.value = "Fait-pencher-la-balance"
+text.en = "Tipper of Scales"
+
+[title."complete.varieties"]
+text.value = "Gardien de toutes les couleurs"
+text.en = "Keeper of Every Colour"
+
+[title.level1]
+text.value = "Vairon"
+text.en = "Minnow"
+
+[title.level10]
+text.value = "Barboteur"
+text.en = "Dabbler"
+
+[title.level20]
+text.value = "Lanceur de ligne"
+text.en = "Line-Caster"
+
+[title.level30]
+text.value = "Pêcheur confirmé"
+text.en = "Fisher"
+
+[title.level40]
+text.value = "Vieux loup de mer"
+text.en = "Old Salt"
+
+[title.level50]
+text.value = "Liseur de marées"
+text.en = "Tide-Reader"
+
+[title.level60]
+text.value = "Pair de Nat"
+text.en = "Nat's Peer"
+
+[title.prestige1]
+text.value = "Retour de marée"
+text.en = "Returning Tide"
+
+[title.prestige10]
+text.value = "Laisse de haute mer"
+text.en = "High-Water Mark"
+
+[title.prestige5]
+text.value = "Contre-courant"
+text.en = "Undertow"
+
+[title.zonemaster]
+text.value = "Gardien des eaux : {zone}"
+text.en = "Warden of {zone} Waters"

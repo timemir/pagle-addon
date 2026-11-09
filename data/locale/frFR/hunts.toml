@@ -1,0 +1,1196 @@
+# Pagle's interface text in French (frFR), over data/locale/enUS/hunts.toml (DATA-R114). `value` is the
+# translation, `en` the English it was translated from.
+#
+# Machine-drafted: written by an AI model (Claude) and not yet reviewed by a native French speaker. Strings that are
+# only textures, codes or the name Pagle carry the English as it is, so the Locale covers every key of the interface.
+
+[TITLE]
+value = "Chasses"
+en = "Hunts"
+
+[BOARD]
+value = "Chasses"
+en = "Hunts"
+
+[BOARD_SLASH_HELP]
+value = "Ouvrir ou fermer le tableau des chasses"
+en = "Open or close the Hunts board"
+
+[SLOT_TRACKER_FRAME]
+value = "Cadre du suivi des chasses"
+en = "Hunts tracker frame"
+
+[PREVIEW_TRACKER_HUNTS]
+value = [["Virée nocturne", "dans 37 min"], ["L’heure des casiers", "à la demande"]]
+en = [["Night Run", "in 37m"], ["Rack Hour", "on demand"]]
+
+[EARNED_TEXT]
+value.anySetTitle = "Terminer une série de chasses"
+value.deepTrench = "Palier 3 dans chaque chasse du pari du homard"
+value.everySetTitle = "Terminer toutes les séries de chasses"
+value.nightTide = "Palier 3 dans trois chasses nocturnes des paris"
+value.wagerCentury = "{earnedRuns:0} paris menés à bien"
+value.wagerRuns = "{earnedRuns:0} paris menés à bien"
+en.anySetTitle = "Finish a Hunt set"
+en.deepTrench = "Tier 3 in every Hunt of the lobster Wager"
+en.everySetTitle = "Finish every Hunt set"
+en.nightTide = "Tier 3 in three night Wager Hunts"
+en.wagerCentury = "{earnedRuns:0} Wager runs completed"
+en.wagerRuns = "{earnedRuns:0} Wager runs completed"
+
+[WINDOW_MOMENTS_SETTING]
+value = "Annoncer l’ouverture des chasses"
+en = "Announce open Hunt windows"
+
+[WINDOW_MOMENTS_TOOLTIP]
+value = "Un discret clin d’œil quand la fenêtre d’une chasse épinglée s’ouvre. Il s’efface quand elle se ferme."
+en = "A quiet Nod when a pinned Hunt's window opens. It fades when the window closes."
+
+[WINDOW_OPEN]
+value = "{name} est ouverte"
+en = "{name} is open"
+
+[WINDOW_OPENED]
+value = "Fenêtre de {name} ouverte {from}"
+en = "{name} window opened {from}"
+
+[WINDOW_OPENED_UNTIL]
+value = "Fenêtre de {name} ouverte {from}–{window_opened_until_3}"
+en = "{name} window opened {from}–{window_opened_until_3}"
+
+[NAME_UNKNOWN]
+value = "…"
+en = "…"
+
+[DURATION_MINUTES]
+value = "{minutes:0} min"
+en = "{minutes:0}m"
+
+[DURATION_HOURS]
+value = "{hours:0} h"
+en = "{hours:0}h"
+
+[DURATION_HOURS_MINUTES]
+value = "{hours:0} h {rest:0} min"
+en = "{hours:0}h {rest:0}m"
+
+[DURATION_DAYS]
+value = "{days:0} j"
+en = "{days:0}d"
+
+[DURATION_DAYS_HOURS]
+value = "{days:0} j {hours:0} h"
+en = "{days:0}d {hours:0}h"
+
+[CLOCK]
+value = "{hour}:{minute}"
+en = "{hour}:{minute}"
+
+[WEEKDAY_CLOCK]
+value = "{weekday} {time}"
+en = "{weekday} {time}"
+
+[DATE_SHORT]
+value = "{day:0} {monthsShort}"
+en = "{day:0} {monthsShort}"
+
+[DATE_FULL]
+value = "{shortDate} {year}"
+en = "{shortDate} {year}"
+
+[WEEKDAYS_SHORT]
+value = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."]
+en = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
+[WEEKDAYS_PLURAL]
+value = ["dimanches", "lundis", "mardis", "mercredis", "jeudis", "vendredis", "samedis"]
+en = ["Sundays", "Mondays", "Tuesdays", "Wednesdays", "Thursdays", "Fridays", "Saturdays"]
+
+[MONTHS_SHORT]
+value = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."]
+en = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+[MONTHS]
+value = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
+en = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+
+[LABEL_NEED]
+value = "requiert {need:0}"
+en = "need {need:0}"
+
+[TRACKER_NEED]
+value = "requiert {need:0}"
+en = "needs {need:0}"
+
+[LABEL_UP_NOW]
+value = "en cours"
+en = "up now"
+
+[LABEL_ON_DEMAND]
+value = "à la demande"
+en = "on demand"
+
+[LABEL_ANY_TIME]
+value = "à toute heure"
+en = "any time"
+
+[LABEL_WHILE_EVENT]
+value = "pendant l’évènement"
+en = "while the event runs"
+
+[TRACKER_NOW]
+value = "maintenant"
+en = "now"
+
+[LABEL_UNTIL]
+value = "jusqu’à {realmWhen}"
+en = "until {realmWhen}"
+
+[TRACKER_ENDS_IN]
+value = "finit dans {duration}"
+en = "ends in {duration}"
+
+[LABEL_IN]
+value = "dans {duration}"
+en = "in {duration}"
+
+[LABEL_BACK_IN]
+value = "de retour en {monthOf}"
+en = "back in {monthOf}"
+
+[LABEL_NO_DATE]
+value = "date inconnue"
+en = "no date known"
+
+[LINE_UP_NOW]
+value = "Ouverte en ce moment."
+en = "Up now."
+
+[LINE_ON_DEMAND]
+value = "Dès que j’installe {aura}."
+en = "Whenever I set up {aura}."
+
+[LINE_ANY_TIME]
+value = "Ouverte à toute heure."
+en = "Open any time."
+
+[LINE_WHILE_EVENT]
+value = "Ouverte pendant l’évènement."
+en = "Open while the event runs."
+
+[LINE_CLOSES]
+value = "Ouverte maintenant. Ferme dans {duration}, à {realmWhen}."
+en = "Open now. Closes in {duration}, at {realmWhen}."
+
+[LINE_UNTIL]
+value = "Ouverte maintenant, jusqu’en {monthOf}."
+en = "Open now, until {monthOf}."
+
+[LINE_SOON]
+value = "Ouvre dans {duration}, à {realmWhen}."
+en = "Opens in {duration}, at {realmWhen}."
+
+[LINE_OPENS_AT]
+value = "Ouvre à {realmWhen}."
+en = "Opens at {realmWhen}."
+
+[LINE_OPENS_ON]
+value = "Ouvre {realmWhen}."
+en = "Opens {realmWhen}."
+
+[LINE_BACK]
+value = "De retour en {monthOf}."
+en = "Back in {monthOf}."
+
+[LINE_NO_DATE]
+value = "Date inconnue."
+en = "No date known."
+
+[LINE_NEEDS]
+value = "Requiert {need:0} ; mon meilleur est {best:0}."
+en = "Needs {need:0}; my best is {best:0}."
+
+[LINE_JOIN]
+value = " "
+en = " "
+
+[LINE_LURE]
+value = "Un appât m’y amène."
+en = "A lure gets me there."
+
+[JOIN_FIELDS]
+value = " · "
+en = " · "
+
+[JOIN_RANGES]
+value = ", "
+en = ", "
+
+[JOIN_OR]
+value = " ou "
+en = " or "
+
+[TIME_RANGE]
+value = "{clock}–{time_range_2}"
+en = "{clock}–{time_range_2}"
+
+[SEASON_RANGE]
+value = "{dayOfYear} – {season_range_2}"
+en = "{dayOfYear} – {season_range_2}"
+
+[CONDITION_NIGHT]
+value = "Nuit {ranges}"
+en = "Night {ranges}"
+
+[CONDITION_DAY]
+value = "Jour {ranges}"
+en = "Day {ranges}"
+
+[CONDITION_TIME]
+value = "Heure du royaume {ranges}"
+en = "Realm time {ranges}"
+
+[CONDITION_SEASON]
+value = "{season} ({ranges})"
+en = "{season} ({ranges})"
+
+[SEASONS]
+value.autumn = "Automne"
+value.spring = "Printemps"
+value.summer = "Été"
+value.winter = "Hiver"
+en.autumn = "Autumn"
+en.spring = "Spring"
+en.summer = "Summer"
+en.winter = "Winter"
+
+[CONDITION_EVENT]
+value = "{name}, les {weekdaysPlural} à {clock} pendant {duration}"
+en = "{name}, {weekdaysPlural} {clock} for {duration}"
+
+[EVENT_UNKNOWN]
+value = "un évènement du calendrier"
+en = "a calendar event"
+
+[CONDITION_AREAS]
+value = "Lieu : {joined}"
+en = "In {joined}"
+
+[CONDITION_AURAS]
+value = "Tant que {joined} est actif"
+en = "While {joined} is up"
+
+[CONDITION_LURE]
+value = "Avec un appât"
+en = "With a lure on"
+
+[CONDITION_SKILL]
+value = "Compétence {min:0} ou plus (les appâts comptent)"
+en = "Skill {min:0} or more (lures count)"
+
+[TARGET_UNCOMMON]
+value = "Toute prise inhabituelle ou mieux"
+en = "Any uncommon-or-better Catch"
+
+[TARGET_RARE]
+value = "Toute prise rare ou mieux"
+en = "Any rare-or-better Catch"
+
+[TARGET_ANY]
+value = "N’importe quel poisson"
+en = "Any fish"
+
+[TARGET_MIN_BAND]
+value = "{line}, {bandName} ou mieux"
+en = "{line}, {bandName} or better"
+
+[TIMELINE_TITLE]
+value = "Ce qui mord, et quand"
+en = "What's biting, and when"
+
+[GROUP_HEADINGS]
+value.later = "Plus tard : ouvre ensuite, ou requiert plus de compétence"
+value.now = "Maintenant : ouvert en ce moment"
+value.onDemand = "À la demande : commence quand vous le décidez"
+value.soon = "Bientôt : ouvre d’ici 3 heures"
+value.wagers = "Paris : ouverts des jours, pas des heures"
+en.later = "Later: opens after that, or needs more skill"
+en.now = "Now: open right now"
+en.onDemand = "On demand: starts when you do"
+en.soon = "Soon: opens within 3 hours"
+en.wagers = "Wagers: on for days, not hours"
+
+[GROUP_NAMES]
+value.later = "Plus tard"
+value.now = "Maintenant"
+value.onDemand = "À la demande"
+value.soon = "Bientôt"
+value.wagers = "Paris"
+en.later = "Later"
+en.now = "Now"
+en.onDemand = "On demand"
+en.soon = "Soon"
+en.wagers = "Wagers"
+
+[GROUP_NOTES]
+value.later = "ouvre ensuite, ou requiert plus de compétence"
+value.now = "ouvert en ce moment"
+value.onDemand = "commence quand vous le décidez"
+value.soon = "ouvre d’ici 3 heures"
+value.wagers = "ouverts des jours, pas des heures"
+en.later = "opens after that, or needs more skill"
+en.now = "open right now"
+en.onDemand = "starts when you do"
+en.soon = "opens within 3 hours"
+en.wagers = "on for days, not hours"
+
+[TIMELINE_LEGEND]
+value = "Hachuré : ouvert · Tirets : fenêtre non confirmée · Crayon : requiert plus de compétence · Bleu : votre camp est installé"
+en = "Hatched: open · Dashed: window unconfirmed · Pencil: needs more skill · Blue: your camp is up"
+
+[LEGEND_ITEMS]
+value.camp = "votre camp est installé"
+value.dashed = "fenêtre non confirmée"
+value.hatched = "ouvert"
+value.pencil = "requiert plus de compétence"
+en.camp = "your camp is up"
+en.dashed = "window unconfirmed"
+en.hatched = "open"
+en.pencil = "needs more skill"
+
+[TIMELINE_KICKER]
+value = "Le tableau"
+en = "The Board"
+
+[SET_KICKER]
+value = "Série de chasses"
+en = "Hunt set"
+
+[SET_HUNTS_HEADING]
+value = "Chasses de cette série"
+en = "Hunts in this set"
+
+[RULER_REALM_TIME]
+value = "Heure du royaume"
+en = "Realm time"
+
+[RULER_NEXT]
+value = "prochaines {ruler_next:0} h"
+en = "next {ruler_next:0}h"
+
+[RULER_HOUR]
+value = "{hour}"
+en = "{hour}"
+
+[RULER_HOUR_12]
+value.am = "{ruler_hour_12:0}a"
+value.pm = "{ruler_hour_12:0}p"
+en.am = "{ruler_hour_12:0}a"
+en.pm = "{ruler_hour_12:0}p"
+
+[OUT_OF_SEASON]
+value = "hors saison"
+en = "out of season"
+
+[SET_HEADING_EARNS]
+value = "{name} : rapporte {title}"
+en = "{name}: earns {title}"
+
+[SET_HEADING_EARNED]
+value = "{name} : {title}"
+en = "{name}: {title}"
+
+[NO_HUNTS]
+value = "Pas encore de chasses."
+en = "No Hunts yet."
+
+[WEEKDAY_DATE]
+value = "{weekday} {shortDate}"
+en = "{weekday} {shortDate}"
+
+[CLOCK_PAUSED]
+value = "{line} (en pause pendant le combat)"
+en = "{line} (paused in combat)"
+
+[SHOW_COMPLETED]
+value = "afficher les terminées"
+en = "show completed"
+
+[TRACKER_EMPTY]
+value = "Épinglez une chasse pour la garder ici."
+en = "Pin a Hunt to keep it here."
+
+[TRACKER_MORE]
+value = "+{more:0} de plus"
+en = "+{more:0} more"
+
+[TRACKER_FIRST]
+value = "{huntName} · {label}"
+en = "{huntName} · {label}"
+
+[TRACKER_JOIN]
+value = " · "
+en = " · "
+
+[TRACKER_HERE]
+value = "vous y êtes"
+en = "you're here"
+
+[TRACKER_PROGRESS]
+value = "{progress:0} / {tiers:0}"
+en = "{progress:0} / {tiers:0}"
+
+[TRACKER_ALL_TIERS]
+value = "tous les paliers"
+en = "all tiers"
+
+[TRACKER_UPDATING]
+value = "mise à jour…"
+en = "updating…"
+
+[TRACKER_SETTLED]
+value = "tenu"
+en = "settled"
+
+[TRACKER_FIRST_MARKS]
+value = "{done:0} premières marques sur {total:0}"
+en = "{done:0} of {total:0} first marks"
+
+[TRACKER_CLOSEST]
+value = "{huntName} : {tracker_closest_2:0} / {tracker_closest_3:0}"
+en = "{huntName}: {tracker_closest_2:0} / {tracker_closest_3:0}"
+
+[TRACKER_WAGERS_MORE]
+value = "+{more:0} autres paris sur la table"
+en = "+{more:0} more wagers on the table"
+
+[SETTING_SHOW_TRACKER]
+value = "Afficher le suivi des chasses"
+en = "Show the Hunts tracker"
+
+[SETTING_SHOW_TRACKER_TOOLTIP]
+value = "Un petit suivi sous la minicarte, avec les chasses que vous avez épinglées sur le tableau."
+en = "A small tracker under the minimap with the Hunts you've pinned on the board."
+
+[HUNT_COMPLETE]
+value = "Chasse terminée"
+en = "Hunt complete"
+
+[HUNT_COMPLETE_STAMP]
+value = "Chasse"
+en = "Hunt"
+
+[HUNT_TIER]
+value = "Palier {trim}"
+en = "{trim} tier"
+
+[HUNT_TIER_TEXT]
+value = "{name} · {tiers:0} pris"
+en = "{name} · {tiers:0} caught"
+
+[TRIMS]
+value.bronze = "Bronze"
+value.gold = "Or"
+value.silver = "Argent"
+en.bronze = "Bronze"
+en.gold = "Gold"
+en.silver = "Silver"
+
+[TITLE_EARNED]
+value = "Titre obtenu"
+en = "Title earned"
+
+[TITLE_EARNED_STAMP]
+value = "Titre"
+en = "Title"
+
+[WAGER_MARK]
+value = "Paris Pagle"
+en = "Pagle Wagers"
+
+[WAGER_MARK_TEXT]
+value = "{name} · première marque"
+en = "{name} · first mark"
+
+[WAGER_MARK_STAMP]
+value = "Marque"
+en = "Mark"
+
+[WAGER_TIER]
+value = "Marque {trim}"
+en = "{trim} mark"
+
+[WAGER_SETTLED]
+value = "Pari tenu"
+en = "Wager settled"
+
+[WAGER_SETTLED_STAMP]
+value = "Tenu"
+en = "Settled"
+
+[WRITE_UP_FIRST_BUILD]
+value.one = "Vos chasses ont été rédigées à partir de {count:n} lancer"
+value.many = "Vos chasses ont été rédigées à partir de {count:n} de lancers"
+value.other = "Vos chasses ont été rédigées à partir de {count:n} lancers"
+en.one = "Your Hunts were written up from {count:n} Cast"
+en.other = "Your Hunts were written up from {count:n} Casts"
+
+[WRITE_UP_WHILE_OFF]
+value = "Pendant que les Chasses étaient désactivées"
+en = "While Hunts was off"
+
+[WRITE_UP_COMPLETED]
+value.one = "{count:n} chasse terminée"
+value.many = "{count:n} de chasses terminées"
+value.other = "{count:n} chasses terminées"
+en.one = "{count:n} Hunt completed"
+en.other = "{count:n} Hunts completed"
+
+[WRITE_UP_FURTHER]
+value.one = "{count:n} palier de plus"
+value.many = "{count:n} de paliers de plus"
+value.other = "{count:n} paliers de plus"
+en.one = "{count:n} further tier"
+en.other = "{count:n} further tiers"
+
+[WRITE_UP_SETTLED]
+value.one = "{count:n} pari tenu"
+value.many = "{count:n} de paris tenus"
+value.other = "{count:n} paris tenus"
+en.one = "{count:n} wager settled"
+en.other = "{count:n} wagers settled"
+
+[WRITE_UP_TITLE]
+value = "Titre : {title}"
+en = "Title: {title}"
+
+[WRITE_UP_COINS]
+value = "Pièces Pagle +{write_up_coins}"
+en = "Pagle Coins +{write_up_coins}"
+
+[WRITE_UP_XP]
+value = "XP de pêcheur +{write_up_xp}"
+en = "Angler XP +{write_up_xp}"
+
+[SUMMARY_LINE]
+value = "Chasses : {summary_line_1} sur {summary_line_2} terminées · {titles}"
+en = "Hunts: {summary_line_1} of {summary_line_2} done · {titles}"
+
+[SUMMARY_LINE_SETTLED]
+value = "Chasses : {summary_line_settled_1} sur {summary_line_settled_2} terminées · {titles} · {runs}"
+en = "Hunts: {summary_line_settled_1} of {summary_line_settled_2} done · {titles} · {runs}"
+
+[SUMMARY_TITLES]
+value.one = "{count:n} titre"
+value.many = "{count:n} de titres"
+value.other = "{count:n} titres"
+en.one = "{count:n} title"
+en.other = "{count:n} titles"
+
+[SUMMARY_SETTLED]
+value.one = "{count:n} pari tenu"
+value.many = "{count:n} de paris tenus"
+value.other = "{count:n} paris tenus"
+en.one = "{count:n} wager settled"
+en.other = "{count:n} wagers settled"
+
+[ENTRY_KICKER]
+value = "{name} · {kind}"
+en = "{name} · {kind}"
+
+[ENTRY_NATURAL]
+value = "Naturelle"
+en = "Natural"
+
+[ENTRY_IMPOSED]
+value = "Imposée"
+en = "Imposed"
+
+[ENTRY_RETIRED]
+value = "Retirée le {fullDate}"
+en = "Retired {fullDate}"
+
+[ENTRY_BACK]
+value = "retour à {name}"
+en = "back to {name}"
+
+[ENTRY_PIN]
+value = "Épingler au suivi"
+en = "Pin to the tracker"
+
+[ENTRY_UNPIN]
+value = "Désépingler"
+en = "Unpin"
+
+[SEAL_HUNTED]
+value = "Accomplie le {fullDate}"
+en = "Hunted {fullDate}"
+
+[SEAL_NOT_YET]
+value = "pas encore"
+en = "not yet"
+
+[SEAL_HUNTED_WORD]
+value = "Accomplie"
+en = "Hunted"
+
+[ENTRY_PINNED]
+value = "Épinglée"
+en = "Pinned"
+
+[ENTRY_PIN_WORD]
+value = "Épingler"
+en = "Pin"
+
+[LADDER_NOT_YET]
+value = "pas encore"
+en = "not yet"
+
+[LADDER_WHEN_ZONE]
+value = "{date}, {areaName}"
+en = "{date}, {areaName}"
+
+[LADDER_PROGRESS]
+value = "{ladder_progress_1:0} / {ladder_progress_2:0}"
+en = "{ladder_progress_1:0} / {ladder_progress_2:0}"
+
+[LADDER_CAUGHT]
+value = "{ladder_caught:0} pris"
+en = "{ladder_caught:0} caught"
+
+[EFFORT_CASTS]
+value.one = "{count:0} lancer"
+value.many = "{count:0} de lancers"
+value.other = "{count:0} lancers"
+en.one = "{count:0} Cast"
+en.other = "{count:0} Casts"
+
+[EFFORT]
+value = "{casts} dans ces conditions."
+en = "{casts} under these conditions."
+
+[EFFORT_SINCE]
+value = "{casts} dans ces conditions, {sinceLast:0} depuis ma dernière prise."
+en = "{casts} under these conditions, {sinceLast:0} since my last one."
+
+[EFFORT_ODDS]
+value = "Les chances sont dans Stats."
+en = "Odds live in Stats."
+
+[SET_LINE]
+value = "{name} : {done:0} sur {current:0} · {earned}"
+en = "{name}: {done:0} of {current:0} · {earned}"
+
+[SET_EARNS]
+value = "rapporte {title}"
+en = "earns {title}"
+
+[SET_EARNED]
+value = "{title} obtenu"
+en = "earned {title}"
+
+[SET_LINE_UPDATING]
+value = "{name} : {updating}"
+en = "{name}: {updating}"
+
+[CHIP_HERE]
+value = "vous y êtes"
+en = "you're here"
+
+[CHIP_MORE]
+value = "+{rest:0} de plus"
+en = "+{rest:0} more"
+
+[CHIP_SKILL]
+value = "compétence {need:0}"
+en = "skill {need:0}"
+
+[CHIP_SHORT]
+value = "requiert {need:0}, meilleur : {best:0}"
+en = "needs {need:0}, best: {best:0}"
+
+[CHIP_LURE]
+value = "requiert un appât"
+en = "needs a lure"
+
+[CHIP_UNCONFIRMED]
+value = "non confirmé"
+en = "unconfirmed"
+
+[UNCONFIRMED_WINDOW]
+value = "Cette fenêtre est une estimation."
+en = "This window is an estimate."
+
+[UNCONFIRMED_GATING]
+value = "Pas encore vu mordre uniquement dans cette fenêtre."
+en = "Not yet seen biting only in this window."
+
+[ENTRY_ALL_DONE]
+value = "Toutes les chasses ici sont terminées. Cochez « afficher les terminées » pour les revoir."
+en = "Every Hunt here is done. Tick \"show completed\" to see them again."
+
+[RIBBON_BOARD]
+value = "Tableau"
+en = "Board"
+
+[CRUMB_HUNTS]
+value = "Chasses"
+en = "Hunts"
+
+[UPDATING]
+value = "Mise à jour depuis votre journal des prises…"
+en = "Updating from your Catch log…"
+
+[NAMEPLATE]
+value = "{countText} · {nameplate_2}"
+en = "{countText} · {nameplate_2}"
+
+[NAMEPLATE_DONE]
+value.one = "{count} chasse terminée"
+value.many = "{count} de chasses terminées"
+value.other = "{count} chasses terminées"
+en.one = "{count} Hunt done"
+en.other = "{count} Hunts done"
+
+[NAMEPLATE_TITLE]
+value = "{title}, obtenu le {fullDate}"
+en = "{title}, earned {fullDate}"
+
+[SET_PAGE_EARNS]
+value = "Rapporte le titre {title}"
+en = "Earns the title {title}"
+
+[SET_PAGE_EARNED]
+value = "Obtenu : {title}"
+en = "Earned: {title}"
+
+[SET_SEAL]
+value = "Titre obtenu le {fullDate}"
+en = "Title earned {fullDate}"
+
+[SET_SEAL_WORD]
+value = "Obtenu"
+en = "Earned"
+
+[SET_PROGRESS]
+value = "{done:0} sur {current:0} terminées"
+en = "{done:0} of {current:0} done"
+
+[SET_RULE]
+value = "Le premier palier de chaque chasse rapporte le titre."
+en = "The first tier of every Hunt earns the title."
+
+[SET_RETIRED]
+value = "Retirée"
+en = "Retired"
+
+[TOUR_BOARD]
+value = "le tableau des chasses : le tableau, sur la chasse qu’il choisit"
+en = "the Hunts board: the Board, on the Hunt it picks"
+
+[TOUR_BOARD_NOW]
+value = "le tableau des chasses : une chasse dans Maintenant"
+en = "the Hunts board: a Hunt in Now"
+
+[TOUR_BOARD_SOON]
+value = "le tableau des chasses : une chasse dans Bientôt"
+en = "the Hunts board: a Hunt in Soon"
+
+[TOUR_BOARD_LATER]
+value = "le tableau des chasses : une chasse dans Plus tard"
+en = "the Hunts board: a Hunt in Later"
+
+[TOUR_BOARD_ON_DEMAND]
+value = "le tableau des chasses : une chasse dans À la demande"
+en = "the Hunts board: a Hunt in On demand"
+
+[TOUR_BOARD_WAGERS]
+value = "le tableau des chasses : la bande des paris et le groupe PARIS, l’entrée d’un pari"
+en = "the Hunts board: the wager strip and the WAGERS group, a run's entry"
+
+[TOUR_WAGERS]
+value = "le tableau des chasses : la double page des Paris Pagle, ses tickets et son échelle"
+en = "the Hunts board: the Pagle Wagers spread, its tickets and ladder"
+
+[TOUR_SET]
+value = "le tableau des chasses : la page d’une série, son titre obtenu"
+en = "the Hunts board: a set's page, its title earned"
+
+[TOUR_SET_ENTRY]
+value = "le tableau des chasses : une entrée ouverte depuis la page de sa série"
+en = "the Hunts board: an entry opened from its set's page"
+
+[TOUR_RETIRED]
+value = "le tableau des chasses : l’entrée d’une chasse retirée"
+en = "the Hunts board: a Retired Hunt's entry"
+
+[TOUR_TRACKER]
+value = "le suivi des chasses dans le dock, avec trois épingles"
+en = "the Hunts tracker in the dock, with three pins"
+
+[TOUR_BINDING]
+value = "le tableau des chasses avec la reliure {good}"
+en = "the Hunts board in the {good} binding"
+
+[TOUR_TRACKER_FRAME]
+value = "le suivi des chasses avec le cadre {good}"
+en = "the Hunts tracker in the {good} frame"
+
+[WAGERS_KICKER]
+value = "Paris Pagle"
+en = "Pagle Wagers"
+
+[JOIN_ZONES]
+value = " et "
+en = " & "
+
+[STRIP_CLOSES]
+value = "ferme dans {duration}"
+en = "closes in {duration}"
+
+[STRIP_MORE]
+value = "+{strip_more:0} de plus sur la table"
+en = "+{strip_more:0} more on the table"
+
+[RUN_KICKER_ROTATION]
+value = "De la rotation · eaux de niveau {bands}"
+en = "From the rotation · {bands} waters"
+
+[BANDS]
+value.high = "élevé"
+value.low = "bas"
+value.mid = "moyen"
+en.high = "high"
+en.low = "low"
+en.mid = "mid"
+
+[RUN_KICKER_PUSHED]
+value = "Envoyé par le Companion"
+en = "Sent by the companion"
+
+[RUN_SETTLED_OPEN]
+value = "tenu, et toujours ouvert"
+en = "settled, and still open"
+
+[RUN_OPENS]
+value = "ouvre {realmWeekdayClock}"
+en = "opens {realmWeekdayClock}"
+
+[RUN_UNTIL_ALL]
+value = "jusqu’à {untilWhen} · {length} en tout"
+en = "until {untilWhen} · {length} in all"
+
+[RUN_UNTIL_TABLE]
+value = "jusqu’à {untilWhen} · {length} sur la table"
+en = "until {untilWhen} · {length} on the table"
+
+[SEAL_SETTLED_WORD]
+value = "Tenu"
+en = "Settled"
+
+[SHAPES]
+value.big = "Gros poissons"
+value.haul = "Quantité"
+value.named = "Poisson précis"
+value.quality = "Qualité"
+value.timed = "À horaire"
+en.big = "Big ones"
+en.haul = "Haul"
+en.named = "Named fish"
+en.quality = "Quality"
+en.timed = "Timed"
+
+[RUN_HUNT_LINE]
+value = "{shapes} · {target}"
+en = "{shapes} · {target}"
+
+[RUN_TARGET_TIME]
+value = "{target}, {ranges}"
+en = "{target}, {ranges}"
+
+[RUN_HUNT_PROGRESS]
+value = "{run_hunt_progress_1} / {run_hunt_progress_2:0}"
+en = "{run_hunt_progress_1} / {run_hunt_progress_2:0}"
+
+[RUN_HUNT_CAUGHT]
+value = "{run_hunt_caught} pris"
+en = "{run_hunt_caught} caught"
+
+[RUN_WINDOW_OPEN]
+value = "ouvert maintenant, jusqu’à {clock}"
+en = "open now, until {clock}"
+
+[RUN_WINDOW_SHUT]
+value = "ouvre à {clock}, dans {duration}"
+en = "opens at {clock}, in {duration}"
+
+[RUN_CASTS]
+value.one = "{count} lancer dans ces eaux pendant ce pari · {done:0} premières marques sur {total:0}"
+value.many = "{count} de lancers dans ces eaux pendant ce pari · {done:0} premières marques sur {total:0}"
+value.other = "{count} lancers dans ces eaux pendant ce pari · {done:0} premières marques sur {total:0}"
+en.one = "{count} Cast in these waters this run · {done:0} of {total:0} first marks"
+en.other = "{count} Casts in these waters this run · {done:0} of {total:0} first marks"
+
+[PAY_SO_FAR]
+value = "Payé jusqu’ici"
+en = "Paid so far"
+
+[PAY_AMOUNT]
+value = "+{xpRun:0} XP · {coins:0} pièces"
+en = "+{xpRun:0} XP · {coins:0} Coins"
+
+[PAY_SETTLE]
+value = "Le remporter"
+en = "Settle it"
+
+[PAY_SETTLED]
+value = "Tenu"
+en = "Settled"
+
+[PAY_PAID_OUT]
+value = "versé"
+en = "paid out"
+
+[RUN_PAY_RULE]
+value = "La première marque de chaque chasse rapporte +{xpEvent:0} XP et {coinsEvent:0} pièces, chaque palier suivant +{run_pay_rule_3:0} XP et {run_pay_rule_4:0} pièces, et remporter le pari +{xpRun:0} XP et {coinsRun:0} pièces de plus."
+en = "Each Hunt's first mark pays +{xpEvent:0} XP and {coinsEvent:0} Coins, each tier after it +{run_pay_rule_3:0} XP and {run_pay_rule_4:0} Coins, and settling the wager +{xpRun:0} XP and {coinsRun:0} Coins more."
+
+[PAY_REFRESH]
+value.one = "+{count} renouvellement"
+value.many = "+{count} de renouvellements"
+value.other = "+{count} renouvellements"
+en.one = "+{count} Refresh"
+en.other = "+{count} Refreshes"
+
+[REFRESH]
+value.one = "{count} renouvellement"
+value.many = "{count} de renouvellements"
+value.other = "{count} renouvellements"
+en.one = "{count} Refresh"
+en.other = "{count} Refreshes"
+
+[RUN_PAY_RULE_REFRESH_BOTH]
+value = " La troisième marque d’une chasse rapporte aussi {countText}, et remporter le pari {settle:0} de plus."
+en = " A Hunt's third mark also pays {countText}, and settling the wager {settle:0} more."
+
+[RUN_PAY_RULE_REFRESH_TIER]
+value = " La troisième marque d’une chasse rapporte aussi {countText}."
+en = " A Hunt's third mark also pays {countText}."
+
+[RUN_PAY_RULE_REFRESH_RUN]
+value = " Remporter le pari rapporte aussi {countText}."
+en = " Settling the wager also pays {countText}."
+
+[ENTRY_NONE_TITLE]
+value = "Rien à lire pour l’instant"
+en = "Nothing to read yet"
+
+[ENTRY_NONE_HAND]
+value = "Quand un pari sera proposé, il sera écrit ici : ses eaux, ses chasses et ce qu’il rapporte."
+en = "When a wager goes up it will be written here: its waters, its Hunts and what it pays."
+
+[RIBBON_ON]
+value = "{runsOn:0} en cours"
+en = "{runsOn:0} on"
+
+[SPREAD_TITLE]
+value = "Sur la table"
+en = "On the table"
+
+[SPREAD_NOTE]
+value.one = "Un pari en cours. Décrochez la première marque de chaque chasse avant sa fermeture."
+value.many = "{count} de paris en cours. Décrochez la première marque de chaque chasse avant la fermeture de son pari."
+value.other = "{count} paris en cours. Décrochez la première marque de chaque chasse avant la fermeture de son pari."
+en.one = "One wager on. Land every Hunt's first mark before it closes."
+en.other = "{count} wagers on. Land every Hunt's first mark before its wager closes."
+
+[SPREAD_NOTE_AHEAD]
+value = "Rien en cours pour l’instant. Le prochain pari ouvre {realmWeekdayClock}."
+en = "Nothing on just now. The next wager opens {realmWeekdayClock}."
+
+[SPREAD_NOTE_NONE]
+value = "Rien sur la table, et rien d’affiché pour l’instant."
+en = "Nothing on the table, and nothing posted yet."
+
+[SPREAD_CLOSING]
+value = "{name} ferme dans {duration} !"
+en = "{name} closes in {duration}!"
+
+[SPREAD_ON_NOW]
+value = "En cours"
+en = "On now"
+
+[SPREAD_AHEAD]
+value = "À venir"
+en = "Ahead"
+
+[SPREAD_AHEAD_CAPTION]
+value = "affiché, et peut changer avant l’ouverture"
+en = "posted, and may change before it opens"
+
+[SPREAD_EMPTY]
+value = "Aucun pari sur la table, et aucun affiché à l’avance. La rotation en propose un au prochain tour."
+en = "No wagers on the table, and none posted ahead. The rotation puts one on at the next turn."
+
+[TICKET_LINE]
+value = "{eventZonesText} · {ticket_line_2}"
+en = "{eventZonesText} · {ticket_line_2}"
+
+[TICKET_CLOSED_AT]
+value = "fermé {realmWhen}"
+en = "closed {realmWhen}"
+
+[TICKET_CLOSED]
+value = "fermé"
+en = "closed"
+
+[TICKET_MARKS]
+value = "{done:0} premières marques sur {hunts:0}"
+en = "{done:0} of {hunts:0} first marks"
+
+[TICKET_UPDATING]
+value = "mise à jour…"
+en = "updating…"
+
+[NEEDS_SKILL]
+value = "requiert la compétence {need:0}"
+en = "needs skill {need:0}"
+
+[AHEAD_OPENS]
+value = "ouvre {realmWeekdayClock}"
+en = "opens {realmWeekdayClock}"
+
+[AHEAD_FOR]
+value = "pour {duration}"
+en = "for {duration}"
+
+[LADDER_LABEL]
+value = "L’échelle"
+en = "The ladder"
+
+[HOLIDAYS]
+value.hallows_end = "Sanssaint"
+value.harvest_festival = "Fête des moissons"
+value.lunar_festival = "Fête lunaire"
+value.midsummer = "Fête du Feu du solstice d’été"
+value.noblegarden = "Le Jardin des nobles"
+value.stv_extravaganza = "Concours de pêche de Strangleronce"
+value.winter_veil = "Fête du Voile d’hiver"
+en.hallows_end = "Hallow's End"
+en.harvest_festival = "Harvest Festival"
+en.lunar_festival = "Lunar Festival"
+en.midsummer = "Midsummer Fire Festival"
+en.noblegarden = "Noblegarden"
+en.stv_extravaganza = "Stranglethorn Fishing Extravaganza"
+en.winter_veil = "Feast of Winter Veil"
+
+[WAGERS_SETTLED]
+value.one = "{shown} pari tenu"
+value.many = "{shown} de paris tenus"
+value.other = "{shown} paris tenus"
+en.one = "{shown} wager settled"
+en.other = "{shown} wagers settled"
+
+[WAGERS_LADDER_LINE]
+value = "{wagers_ladder_line_1} · encore {wagers_ladder_line_2:0} pour {title}"
+en = "{wagers_ladder_line_1} · {wagers_ladder_line_2:0} more for {title}"
+
+[GUIDE_BLURB]
+value = "Les poissons qui ne mordent que la nuit, en hiver ou pendant la foire, et ceux qui mordent en ce moment."
+en = "Fish that only bite at night, in winter or at the fair, and which of them bite right now."
+
+[LOOK_TITLE]
+value = "Chasses"
+en = "Hunts"
+
+[LOOK_GROUPS]
+value = "*Maintenant*, *Bientôt* et *Plus tard* : ce qui est ouvert, ce qui ouvre d’ici trois heures, et le reste."
+en = "*Now*, *Soon* and *Later*: what’s open, what opens within three hours, and the rest."
+
+[LOOK_NOW_LINE]
+value = "La ligne rouge, c’est *maintenant*, à l’heure du royaume. Les barres hachurées indiquent quand chaque chasse est ouverte."
+en = "The red line is *now*, in realm time. Hatched bars are when each Hunt is open."
+
+[LOOK_NATURAL]
+value = "*Naturelle* signifie que le jeu lui-même limite ce poisson à ses horaires. Les chasses imposées sont les règles propres à Pagle."
+en = "*Natural* means the game itself keeps this fish to its hours. Imposed Hunts are Pagle’s own rules."
+
+[LOOK_PIN]
+value = "*Épinglez* une chasse pour la garder dans votre suivi pendant que vous pêchez."
+en = "*Pin* a Hunt to keep it on your tracker while you fish."
+
+[LOOK_SETS]
+value = "Chaque ruban est une *série de chasses*. Terminez toutes les chasses d’une série et son titre est à vous. *Paris Pagle* contient les paris actuellement sur la table."
+en = "Each ribbon is a *Hunt set*. Finish every Hunt in one and its title is yours. *Pagle Wagers* holds the wagers on the table now."
+
+[LOOK_HELP]
+value = "?"
+en = "?"
+
+[LOOK_AGAIN]
+value = "Réafficher les notes de cette page"
+en = "Show the notes for this page again"
+
+[HINT_MISSING]
+value = "De nouveaux paris vous attendent. Le Pagle Companion les apporte : plus d’XP, plus de pièces, et le style de bandeau Sonar Scope."
+en = "New wagers are out there. The Pagle companion brings them: more XP, more Coins, and the Sonar Scope toast style."
+
+[HINT_NOD]
+value = "De nouveaux paris vous attendent. Le Pagle Companion les apporte : plus d’XP, plus de pièces."
+en = "New wagers are out there. The Pagle companion brings them: more XP, more Coins."
+
+[HINT_FIRST_INSTALL]
+value = "Vous venez de l’installer ? Revenez une fois à la sélection des personnages."
+en = "Installed it just now? Log out to character select once."
+
+[HINT_NOT_RUNNING]
+value = "Le Pagle Companion n’est pas lancé. Démarrez-le pour recevoir les paris de la semaine."
+en = "The Pagle companion isn't running. Start it to get this week's wagers."
+
+[HINT_GET_IT]
+value = "L’obtenir"
+en = "Get it"
+
+[HINT_DISMISS]
+value = "Ignorer"
+en = "Dismiss"
+
+[HINT_ADDRESS_KICKER]
+value = "Le Pagle Companion"
+en = "The Pagle companion"
+
+[HINT_ADDRESS_COPY]
+value = "Ctrl+C pour copier"
+en = "Ctrl+C to copy"
+
+[HINT_ADDRESS_CLOSE]
+value = "Fermer"
+en = "Close"
+
+[TRACKER_HINT_MISSING]
+value = "De nouveaux paris avec le Pagle Companion"
+en = "New wagers with the Pagle companion"
+
+[TRACKER_HINT_NOT_RUNNING]
+value = "Pagle Companion non lancé"
+en = "Pagle companion not running"
+
+[TRACKER_HINT_WHY]
+value = "pourquoi ?"
+en = "why?"
+
+[COMPANION_HINT_SETTING]
+value = "Me rappeler le Pagle Companion"
+en = "Remind me about the Pagle companion"
+
+[COMPANION_HINT_TOOLTIP]
+value = "Une ligne sur le tableau des chasses, et un clin d’œil une fois par semaine, tant que le Pagle Companion ne vous apporte pas de nouveaux paris."
+en = "A line on the Hunts board, and a Nod once a week, while the Pagle companion isn't bringing you new wagers."
+
+[RUN_LOG_EVENT_IGNORED]
+value = "Chasses : la définition poussée de {run_log_event_ignored_1} est ignorée : {problem} (HNT-R140)"
+en = "Hunts: the pushed definition of {run_log_event_ignored_1} is ignored: {problem} (HNT-R140)"
+
+[RUN_LOG_RUN_IGNORED]
+value = "Chasses : un pari poussé de {event} est ignoré : il lui faut un ID d’évènement et des horaires début < fin (HNT-R151)"
+en = "Hunts: a pushed run of {event} is ignored: it needs an event ID and times start < end (HNT-R151)"

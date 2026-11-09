@@ -1,0 +1,814 @@
+# Pagle's interface text in French (frFR), over data/locale/enUS/tackleboard.toml (DATA-R114). `value` is the
+# translation, `en` the English it was translated from.
+#
+# Machine-drafted: written by an AI model (Claude) and not yet reviewed by a native French speaker. Strings that are
+# only textures, codes or the name Pagle carry the English as it is, so the Locale covers every key of the interface.
+
+[TITLE]
+value = "Panneau de pêche"
+en = "Tackle Board"
+
+[BOARD]
+value = "Panneau de pêche"
+en = "Tackle Board"
+
+[BOARD_SLASH_HELP]
+value = "Ouvrir ou fermer le Panneau de pêche"
+en = "Open or close the Tackle Board"
+
+[START_MY_BOARD]
+value = "Monter mon panneau"
+en = "Start my board"
+
+[OPEN_BOARD]
+value = "Ouvrir le Panneau de pêche"
+en = "Open Tackle Board"
+
+[EMPTY_SLIP]
+value = "Trois avis sont affichés chaque jour, et une expédition chaque semaine. Pêchez comme bon vous semble : ils se remplissent au fil de l’eau. Rien n’est jamais retiré pour cause de retard."
+en = "Three Notices go up each day and an Expedition each week. Fish as you like: they fill in as you go. Nothing is ever taken down for being late."
+
+[UPDATING]
+value = "Mise à jour…"
+en = "Updating…"
+
+[UPDATING_NOTE]
+value = "Relecture de chaque lancer depuis la création du panneau. Retirer des objectifs attendra la fin."
+en = "Reading back every Cast since the board went up. Taking goals down waits until it's done."
+
+[NAME_UNKNOWN]
+value = "…"
+en = "…"
+
+[AREA_UNKNOWN]
+value = "Zone {id}"
+en = "Area {id}"
+
+[CONTINENT_UNKNOWN]
+value = "Continent {id}"
+en = "Continent {id}"
+
+[CONTINENT_NAMES]
+value.0 = "Royaumes de l’Est"
+value.1 = "Kalimdor"
+en.0 = "Eastern Kingdoms"
+en.1 = "Kalimdor"
+
+[GOAL_TEXT]
+value.e.collector.one = "Un objet de sous-collection que vous n’avez pas"
+value.e.collector.many = "{count} d’objets de sous-collection que vous n’avez pas"
+value.e.collector.other = "{count} objets de sous-collection que vous n’avez pas"
+value.e.haul.one = "{count} prise, {zone}"
+value.e.haul.many = "{count} de prises, {zone}"
+value.e.haul.other = "{count} prises, {zone}"
+value.e.rarity.2.one = "Une prise d’une variété inhabituelle ou mieux"
+value.e.rarity.2.many = "{count} de prises d’une variété inhabituelle ou mieux"
+value.e.rarity.2.other = "{count} prises d’une variété inhabituelle ou mieux"
+value.e.rarity.3.one = "Une prise d’une variété rare ou mieux"
+value.e.rarity.3.many = "{count} de prises d’une variété rare ou mieux"
+value.e.rarity.3.other = "{count} prises d’une variété rare ou mieux"
+value.e.variety = "Toutes les espèces : {zone}"
+value.e.wanderer.one = "Des prises dans {count} zone ({continent})"
+value.e.wanderer.many = "Des prises dans {count} de zones ({continent})"
+value.e.wanderer.other = "Des prises dans {count} zones ({continent})"
+value.n.collector = "Un rebut et un contenant aujourd’hui"
+value.n.haul.one = "{count} prise, {zone}"
+value.n.haul.many = "{count} de prises, {zone}"
+value.n.haul.other = "{count} prises, {zone}"
+value.n.lure.one = "Une prise avec un appât"
+value.n.lure.many = "{count} de prises avec un appât"
+value.n.lure.other = "{count} prises avec un appât"
+value.n.rarity.2.one = "Une prise d’une variété inhabituelle ou mieux"
+value.n.rarity.2.many = "{count} de prises d’une variété inhabituelle ou mieux"
+value.n.rarity.2.other = "{count} prises d’une variété inhabituelle ou mieux"
+value.n.rarity.3.one = "Une prise d’une variété rare ou mieux"
+value.n.rarity.3.many = "{count} de prises d’une variété rare ou mieux"
+value.n.rarity.3.other = "{count} prises d’une variété rare ou mieux"
+value.n.species = "{count} {species}"
+value.n.variety.one = "{count} espèce, {zone}"
+value.n.variety.many = "{count} d’espèces différentes, {zone}"
+value.n.variety.other = "{count} espèces différentes, {zone}"
+value.n.wanderer.one = "Des prises dans {count} zone aujourd’hui"
+value.n.wanderer.many = "Des prises dans {count} de zones aujourd’hui"
+value.n.wanderer.other = "Des prises dans {count} zones aujourd’hui"
+en.e.collector.one = "A Sub-collection item you don't have"
+en.e.collector.other = "{count} Sub-collection items you don't have"
+en.e.haul.one = "{count} Catch in {zone}"
+en.e.haul.other = "{count} Catches in {zone}"
+en.e.rarity.2.one = "A Catch of an uncommon variety or better"
+en.e.rarity.2.other = "{count} Catches of an uncommon variety or better"
+en.e.rarity.3.one = "A Catch of a rare variety or better"
+en.e.rarity.3.other = "{count} Catches of a rare variety or better"
+en.e.variety = "Every Species of {zone}"
+en.e.wanderer.one = "Catches in {count} zone of {continent}"
+en.e.wanderer.other = "Catches in {count} zones of {continent}"
+en.n.collector = "A junk item and a container today"
+en.n.haul.one = "{count} Catch in {zone}"
+en.n.haul.other = "{count} Catches in {zone}"
+en.n.lure.one = "A Catch with a lure on"
+en.n.lure.other = "{count} Catches with a lure on"
+en.n.rarity.2.one = "A Catch of an uncommon variety or better"
+en.n.rarity.2.other = "{count} Catches of an uncommon variety or better"
+en.n.rarity.3.one = "A Catch of a rare variety or better"
+en.n.rarity.3.other = "{count} Catches of a rare variety or better"
+en.n.species = "{count} {species}"
+en.n.variety.one = "{count} Species in {zone}"
+en.n.variety.other = "{count} different Species in {zone}"
+en.n.wanderer.one = "Catches in {count} zone today"
+en.n.wanderer.other = "Catches in {count} zones today"
+
+[KINDS]
+value.collector = "Collection"
+value.haul = "Quantité"
+value.lure = "Appât"
+value.rarity = "Rareté"
+value.species = "Espèce"
+value.variety = "Variété"
+value.wanderer = "Vagabond"
+en.collector = "Collector"
+en.haul = "Haul"
+en.lure = "Lure"
+en.rarity = "Rarity"
+en.species = "Species"
+en.variety = "Variety"
+en.wanderer = "Wanderer"
+
+[WHEREVER_IT_BITES]
+value = "là où il mord"
+en = "wherever it bites"
+
+[ANYWHERE]
+value = "n’importe où"
+en = "anywhere"
+
+[WHERE_TODAY]
+value = "aujourd’hui · {where}"
+en = "today · {where}"
+
+[WHERE_HERE]
+value = "{where} · ici"
+en = "{where} · here"
+
+[POSTED]
+value = "Affiché le {weekday} {day} {month}, {time}"
+en = "Posted {weekday} {day} {month}, {time}"
+
+[WEEKDAYS]
+value = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."]
+en = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
+[MONTHS]
+value = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."]
+en = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+[HOURS_LEFT]
+value = "{n} h"
+en = "{n}h"
+
+[MINUTES_LEFT]
+value = "{n} min"
+en = "{n}m"
+
+[TAKE_DOWN_TITLE]
+value.e = "Retirer cette expédition ?"
+value.n = "Retirer cet avis ?"
+en.e = "Take down this Expedition?"
+en.n = "Take down this Notice?"
+
+[TAKE_DOWN_TEXT]
+value = "Sa progression ({progress}) est perdue, et le nouvel objectif ne pourra pas être retiré aujourd’hui."
+en = "Its progress ({progress}) is lost, and the new one can't be taken down again today."
+
+[TAKE_DOWN_PROGRESS]
+value = "{n}/{need}"
+en = "{n}/{need}"
+
+[TAKE_DOWN_YES]
+value = "Le retirer"
+en = "Take it down"
+
+[TAKE_DOWN_NO]
+value = "Le garder"
+en = "Keep it"
+
+[POST_TITLE]
+value.e = "Afficher une nouvelle expédition ?"
+value.n = "Afficher un nouvel avis ?"
+en.e = "Post a new Expedition?"
+en.n = "Post a new Notice?"
+
+[POST_TEXT]
+value = "Cela utilise {cost}, et c’est irréversible. Le nouvel objectif pourra être retiré une fois par jour, comme les autres."
+en = "This uses {cost}, and it can't be undone. The new goal can be taken down once a day, like any other."
+
+[POST_YES]
+value = "L’afficher"
+en = "Post it"
+
+[POST_TIP_TITLE]
+value.e = "Afficher une expédition maintenant"
+value.n = "Afficher un avis maintenant"
+en.e = "Post an Expedition now"
+en.n = "Post a Notice now"
+
+[POST_TIP]
+value.e = "Cliquez pour épingler ici une nouvelle expédition au lieu d’attendre la réinitialisation hebdomadaire."
+value.n = "Cliquez pour épingler ici un nouvel avis au lieu d’attendre la prochaine réinitialisation."
+en.e = "Click to pin a fresh Expedition here instead of waiting for the weekly reset."
+en.n = "Click to pin a fresh Notice here instead of waiting for the next reset."
+
+[POST_TIP_COST]
+value = "Cela utilise 1 renouvellement. Vous en avez {held}."
+en = "It uses 1 Refresh. You hold {held}."
+
+[CATCHES]
+value.one = "{n} prise"
+value.many = "{n} de prises"
+value.other = "{n} prises"
+en.one = "{n} Catch"
+en.other = "{n} Catches"
+
+[REFRESHES]
+value.one = "{count} renouvellement"
+value.many = "{count} de renouvellements"
+value.other = "{count} renouvellements"
+en.one = "{count} Refresh"
+en.other = "{count} Refreshes"
+
+[REFRESHES_HELD]
+value.one = "{count} renouvellement en réserve"
+value.many = "{count} de renouvellements en réserve"
+value.other = "{count} renouvellements en réserve"
+en.one = "{count} Refresh held"
+en.other = "{count} Refreshes held"
+
+[REFRESH_TIP_TITLE]
+value = "Renouvellements"
+en = "Refreshes"
+
+[REFRESH_TIP]
+value = "Chacun affiche un nouvel avis ou une nouvelle expédition dans un emplacement vide du panneau. Cliquez sur un emplacement vide pour en utiliser un."
+en = "Each one posts a fresh Notice or Expedition in an empty slot on the board. Click an empty slot to use one."
+
+[REFRESH_TIP_SOURCE]
+value = "Les Paris Pagle en rapportent."
+en = "Pagle Wagers earn them."
+
+[COINS]
+value.one = "{count} pièce"
+value.many = "{count} de pièces"
+value.other = "{count} pièces"
+en.one = "{count} Coin"
+en.other = "{count} Coins"
+
+[PROGRESS]
+value = "{n} sur {need}"
+en = "{n} of {need}"
+
+[PROGRESS_TODAY]
+value = "{n} sur {need} aujourd’hui"
+en = "{n} of {need} today"
+
+[PAYS]
+value.one = "rapporte {count} pièce"
+value.many = "rapporte {count} de pièces"
+value.other = "rapporte {count} pièces"
+en.one = "pays {count} Coin"
+en.other = "pays {count} Coins"
+
+[PAYS_WORD]
+value = "rapporte"
+en = "pays"
+
+[EXPEDITION]
+value = "Expédition"
+en = "Expedition"
+
+[EXPEDITION_SEPARATOR]
+value = "   ·   "
+en = "   ·   "
+
+[IM_HERE]
+value = "J’y suis"
+en = "I'm here"
+
+[NO_LONGER_CATCHABLE]
+value = "plus pêchable"
+en = "no longer catchable"
+
+[TAKE_IT_DOWN]
+value = "le retirer"
+en = "take it down"
+
+[TAKE_DOWN_TIP_TITLE]
+value = "Le retirer"
+en = "Take it down"
+
+[TAKE_DOWN_TIP]
+value.e = "Épingle à sa place une nouvelle expédition d’un autre type. Toute progression sur celle-ci est perdue."
+value.n = "Épingle à sa place un nouvel avis d’un autre type. Toute progression sur celui-ci est perdue."
+en.e = "Pin a fresh Expedition of another kind in its place. Any progress on this one is lost."
+en.n = "Pin a fresh Notice of another kind in its place. Any progress on this one is lost."
+
+[TAKE_DOWN_TIP_ONCE]
+value = "Le nouvel objectif ne pourra pas être retiré avant la réinitialisation quotidienne (dans {time}), sauf s’il cesse d’être pêchable."
+en = "The new one can't be taken down again until the daily reset (in {time}), unless it stops being catchable."
+
+[TAKE_DOWN_TIP_STRANDED]
+value = "Celui-ci n’est plus pêchable : il peut être retiré même s’il a été réaffiché aujourd’hui."
+en = "This one is no longer catchable, so it can come down even though it was re-posted today."
+
+[TAKE_DOWN_TIP_STRANDED_FIRST]
+value = "Celui-ci n’est plus pêchable : il ne pourra jamais être terminé là où il est accroché."
+en = "This one is no longer catchable: it can never be finished where it hangs."
+
+[TAKE_DOWN_TIP_UPDATING]
+value = "Pas pendant la mise à jour du panneau. Il pourra être retiré une fois celle-ci terminée."
+en = "Not while the board is updating. It can come down once that's done."
+
+[REPOSTED]
+value = "RÉAFFICHÉ"
+en = "RE-POSTED"
+
+[REPOSTED_HOVER]
+value = "Réaffiché aujourd’hui. Il pourra être retiré de nouveau à la réinitialisation quotidienne (dans {time})."
+en = "Re-posted today. It can be taken down again at the daily reset (in {time})."
+
+[ONLY_SINCE]
+value = "Seules mes prises depuis comptent"
+en = "Only my Catches since then count"
+
+[ONLY_SINCE_TODAY]
+value = "Seules mes prises depuis comptent, toutes sur un même jour du panneau"
+en = "Only my Catches since then count, all on one board day"
+
+[EMPTY_NOTICE]
+value = "Un nouvel avis à la réinitialisation (dans {time})"
+en = "A fresh Notice at reset (in {time})"
+
+[EMPTY_NOTICE_LATER]
+value = "D’autres avis aux réinitialisations suivantes"
+en = "More Notices at later resets"
+
+[EMPTY_EXPEDITION]
+value = "Prochaine expédition à la réinitialisation hebdomadaire ({weekday})"
+en = "Next Expedition at the weekly reset ({weekday})"
+
+[EMPTY_EXPEDITION_LATER]
+value = "Une autre à la réinitialisation hebdomadaire suivante"
+en = "Another at the weekly reset after"
+
+[OVERFLOW_CHIP]
+value = "{kind} : {text}"
+en = "{kind}: {text}"
+
+[OVERFLOW_MORE]
+value = "+{n} en attente d’une épingle"
+en = "+{n} more waiting for a pin"
+
+[SPIKE_DONE]
+value = "{n} faits aujourd’hui. Le feu est allumé."
+en = "{n} done today. The fire's lit."
+
+[SPIKE_EMPTY]
+value = "Les objectifs faits vont sur la pique."
+en = "Done ones go on the spike."
+
+[SPIKE_HEAD]
+value = "Faits aujourd’hui"
+en = "Done today"
+
+[SPIKE_NOTE]
+value = "+{coins} · {fly}"
+en = "+{coins} · {fly}"
+
+[SPIKE_NOTE_PLAIN]
+value = "+{coins}"
+en = "+{coins}"
+
+[SPIKE_COINS]
+value.one = "A rapporté {count} pièce"
+value.many = "A rapporté {count} de pièces"
+value.other = "A rapporté {count} pièces"
+en.one = "Paid {count} Coin"
+en.other = "Paid {count} Coins"
+
+[SPIKE_FLY]
+value = "Montée pour votre boîte à mouches : {fly}"
+en = "Tied for your Fly Box: {fly}"
+
+[CAMPFIRE_OUT]
+value = "Éteint"
+en = "Gone out"
+
+[CAMPFIRE_UNLIT]
+value = "Pas encore allumé"
+en = "Not lit yet"
+
+[CAMPFIRE_LONGEST]
+value = "record {n}"
+en = "longest {n}"
+
+[DAYS_WORD]
+value.one = "jour"
+value.many = "de jours"
+value.other = "jours"
+en.one = "day"
+en.other = "days"
+
+[CARD_DATE]
+value = "{weekday} {day} {month}"
+en = "{weekday} {day} {month}"
+
+[CARD_DAYS]
+value.before = "avant le panneau"
+value.burned = "Bûchette brûlée"
+value.lit = "allumé"
+value.out = "éteint"
+value.today = "aujourd’hui"
+value.unlit = "pas allumé"
+en.before = "before the board"
+en.burned = "Kindling burned"
+en.lit = "lit"
+en.out = "went out"
+en.today = "today"
+en.unlit = "not lit"
+
+[CARD_NEEDS]
+value.campfire = "un feu de camp de {n} jours"
+value.flybox = "tous les modèles de la boîte à mouches montés"
+value.tally = "{n} objectifs faits"
+en.campfire = "a Campfire of {n} days"
+en.flybox = "every Fly Box pattern tied"
+en.tally = "{n} goals done"
+
+[FLY_BOX_TIED]
+value = "{n} sur {total} montées"
+en = "{n} of {total} tied"
+
+[FLY_UNTIED]
+value = "pas encore montée"
+en = "not tied yet"
+
+[FLY_TIED]
+value = "Montée le {date}"
+en = "Tied {date}"
+
+[FLY_GOAL]
+value = "par : {goal}"
+en = "by: {goal}"
+
+[FLY_RARE]
+value = "montée uniquement par les expéditions"
+en = "tied only by Expeditions"
+
+[TALLY_PLATE]
+value = "{notices} · {expeditions}"
+en = "{notices} · {expeditions}"
+
+[TALLY_NO_TITLE]
+value = "pas encore de titre"
+en = "no title yet"
+
+[SHOP_LINK]
+value = "Les pièces vont à la Boutique de curiosités"
+en = "Coins go to the Curio Shop"
+
+[CARD_TITLE]
+value = "Le Feu de camp"
+en = "The Campfire"
+
+[CARD_FIRE]
+value = "{fire} · {longest} · {kindling}"
+en = "{fire} · {longest} · {kindling}"
+
+[KINDLING]
+value = "Bûchettes : {count}"
+en = "{count} Kindling"
+
+[FLY_BOX]
+value = "Boîte à mouches"
+en = "Fly Box"
+
+[CARD_WEEKS]
+value = "Les quatre dernières semaines"
+en = "The last four weeks"
+
+[CARD_WEEKS_NOTE]
+value = "jours du panneau, heure du royaume"
+en = "board days, realm time"
+
+[CARD_SHORT_DATE]
+value = "{day} {month}"
+en = "{day} {month}"
+
+[CARD_MILESTONES]
+value = "Paliers"
+en = "Milestones"
+
+[CARD_MILESTONES_NOTE]
+value = "chacun paie une fois"
+en = "each pays once"
+
+[CARD_TITLES]
+value = "Titres"
+en = "Titles"
+
+[CARD_TITLES_NOTE]
+value = "affichés sur le panneau uniquement"
+en = "shown on the board only"
+
+[CARD_LABELS]
+value.campfire = "{n} jours"
+value.flybox = "Boîte à mouches"
+value.tally = "{n} objectifs"
+en.campfire = "{n} days"
+en.flybox = "Fly Box"
+en.tally = "{n} goals"
+
+[CARD_MORE_CAMPFIRE]
+value.one = "encore {count} jour"
+value.many = "encore {count} de jours"
+value.other = "encore {count} jours"
+en.one = "{count} more day"
+en.other = "{count} more days"
+
+[CARD_MORE_TALLY]
+value.one = "encore {count} objectif"
+value.many = "encore {count} d’objectifs"
+value.other = "encore {count} objectifs"
+en.one = "{count} more goal"
+en.other = "{count} more goals"
+
+[CARD_MORE_FLYBOX]
+value.one = "encore {count} modèle"
+value.many = "encore {count} de modèles"
+value.other = "encore {count} modèles"
+en.one = "{count} more pattern"
+en.other = "{count} more patterns"
+
+[CLOSE_MARK]
+value = "×"
+en = "×"
+
+[DAYS]
+value.one = "{count} jour"
+value.many = "{count} de jours"
+value.other = "{count} jours"
+en.one = "{count} day"
+en.other = "{count} days"
+
+[NOTICE_COMPLETE]
+value = "Avis terminé"
+en = "Notice complete"
+
+[EXPEDITION_COMPLETE]
+value = "Expédition terminée"
+en = "Expedition complete"
+
+[TIED_FOR_FLY_BOX]
+value = "{goal}. Montée pour votre boîte à mouches : {fly}"
+en = "{goal}. Tied for your Fly Box: {fly}"
+
+[NOTICE_DONE]
+value = "Avis fait"
+en = "Notice done"
+
+[EXPEDITION_DONE]
+value = "Expédition faite"
+en = "Expedition done"
+
+[CAMPFIRE_MILESTONE]
+value = "Feu de camp : {n} jours"
+en = "Campfire: {n} days"
+
+[TALLY_TITLE]
+value = "{n} objectifs faits"
+en = "{n} goals done"
+
+[FLY_BOX_COMPLETE]
+value = "Tous les modèles montés"
+en = "Every pattern tied"
+
+[TITLE_LINE]
+value = "Titre : {title}"
+en = "Title: {title}"
+
+[KINDLING_AWAY]
+value = "Votre feu de camp a continué de brûler pendant votre absence (bûchettes utilisées : {k}) ; toujours {count}."
+en = "Your Campfire kept burning while you were away: {k} Kindling used, still {count}."
+
+[KINDLING_BURNED]
+value = "Un jour sans objectif (bûchettes utilisées : {k}). Feu de camp toujours à {count}."
+en = "A day went by without a goal: {k} Kindling used. Campfire still {count}."
+
+[FIRE_OUT_AWAY]
+value = "Votre feu de camp s’est éteint pendant votre absence. Votre record, {longest}, est gardé pour toujours. N’importe quel objectif en allume un nouveau, avec 2 bûchettes neuves."
+en = "Your Campfire went out while you were away. Your longest, {longest}, is kept for good. Any goal lights a new one, with 2 fresh Kindling."
+
+[FIRE_OUT]
+value = "Votre feu de camp s’est éteint. Votre record, {longest}, est gardé pour toujours. N’importe quel objectif en allume un nouveau, avec 2 bûchettes neuves."
+en = "Your Campfire went out. Your longest, {longest}, is kept for good. Any goal lights a new one, with 2 fresh Kindling."
+
+[WRITE_UP_FIRST]
+value.one = "Votre Panneau de pêche a été rédigé à partir de {count:n} lancer"
+value.many = "Votre Panneau de pêche a été rédigé à partir de {count:n} de lancers"
+value.other = "Votre Panneau de pêche a été rédigé à partir de {count:n} lancers"
+en.one = "Your Tackle Board was written up from {count:n} Cast"
+en.other = "Your Tackle Board was written up from {count:n} Casts"
+
+[WRITE_UP_WHILE_OFF]
+value = "Pendant que le Panneau de pêche était désactivé"
+en = "While Tackle Board was off"
+
+[NOTICES]
+value.one = "{count} avis"
+value.many = "{count} d’avis"
+value.other = "{count} avis"
+en.one = "{count} Notice"
+en.other = "{count} Notices"
+
+[EXPEDITIONS]
+value.one = "{count} expédition"
+value.many = "{count} d’expéditions"
+value.other = "{count} expéditions"
+en.one = "{count} Expedition"
+en.other = "{count} Expeditions"
+
+[GOALS_AND]
+value = "{notices} et {expeditions}"
+en = "{notices} and {expeditions}"
+
+[GOALS_DONE]
+value = "{goals} faits"
+en = "{goals} done"
+
+[COINS_LINE]
+value = "Pièces Pagle +{coins}"
+en = "Pagle Coins +{coins}"
+
+[XP_LINE]
+value = "XP de pêcheur +{xp}"
+en = "Angler XP +{xp}"
+
+[FLIES_TIED]
+value.one = "{count} mouche montée pour votre boîte à mouches"
+value.many = "{count} de mouches montées pour votre boîte à mouches"
+value.other = "{count} mouches montées pour votre boîte à mouches"
+en.one = "{count} fly tied for your Fly Box"
+en.other = "{count} flies tied for your Fly Box"
+
+[CAMPFIRE_DAYS]
+value.one = "Feu de camp : {count} jour"
+value.many = "Feu de camp : {count} de jours"
+value.other = "Feu de camp : {count} jours"
+en.one = "Campfire {count} day"
+en.other = "Campfire {count} days"
+
+[CAMPFIRE_BURNED]
+value = "{campfire} · bûchettes brûlées : {k}"
+en = "{campfire} · {k} Kindling burned"
+
+[CAMPFIRE_WENT_OUT]
+value = "Votre feu de camp s’est éteint ; votre record, {longest}, est gardé"
+en = "Your Campfire went out; your longest, {longest}, is kept"
+
+[SUMMARY_LINE]
+value = "Panneau de pêche : {done} · {campfire}"
+en = "Tackle Board: {done} · {campfire}"
+
+[SUMMARY_LINE_NOTHING_DONE]
+value = "Panneau de pêche : {campfire}"
+en = "Tackle Board: {campfire}"
+
+[DONE_TODAY]
+value = "{count} faits aujourd’hui"
+en = "{count} done today"
+
+[CAMPFIRE_NOT_LIT]
+value = "Feu de camp pas allumé"
+en = "Campfire not lit"
+
+[SLOT_TRACKER_FRAME]
+value = "Cadre du suivi du Panneau de pêche"
+en = "Tackle Board tracker frame"
+
+[GOOD_EARNED_CAMPFIRE]
+value = "Feu de camp : {days} jours"
+en = "Campfire: {days} days"
+
+[TRACKER_OPEN]
+value = "{count} ouverts"
+en = "{count} open"
+
+[TRACKER_FIRE_OPEN]
+value = "{fire} · {open}"
+en = "{fire} · {open}"
+
+[TRACKER_COUNT]
+value = "{count}/{need}"
+en = "{count}/{need}"
+
+[TRACKER_EXPEDITION]
+value = "Expédition : {text}"
+en = "Expedition: {text}"
+
+[TRACKER_MORE]
+value = "+{n} de plus sur le panneau (ailleurs)"
+en = "+{n} more on the board (elsewhere)"
+
+[TRACKER_ALL_DONE]
+value = "Tout est fait. Nouveaux avis à la réinitialisation."
+en = "All done. Fresh Notices at reset."
+
+[TRACKER_COMPLETE]
+value = "Terminé"
+en = "Complete"
+
+[SETTINGS_TRACKER]
+value = "Afficher les objectifs réalisables ici"
+en = "Show goals workable here"
+
+[SETTINGS_TRACKER_TOOLTIP]
+value = "Liste les objectifs que vous pouvez faire là où vous êtes. Avant de monter votre panneau, utilisez Monter mon panneau sur la page Pagle."
+en = "Lists the goals you can work on where you are. Before your board is started, use Start my board on the Pagle page."
+
+[GUIDE_BLURB]
+value = "De petits objectifs épinglés sur un panneau de liège, si vous en voulez. Ils attendent pendant votre absence."
+en = "Small goals pinned to a cork board, if you want them. They wait while you’re away."
+
+[GUIDE_RIBBON]
+value = "Panneau de pêche"
+en = "Tackle Board"
+
+[GUIDE_SKIP]
+value = "Pas maintenant"
+en = "Not now"
+
+[GUIDE_KICKER]
+value = "Le Panneau de pêche"
+en = "The Tackle Board"
+
+[GUIDE_TITLE]
+value = "Des objectifs qui attendent"
+en = "Goals that wait for you"
+
+[GUIDE_BODY]
+value = "De petits avis épinglés sur un panneau de liège : un poisson à trouver, une eau à visiter. Pêchez quand vous voulez ; ils seront toujours là."
+en = "Small Notices pinned to a cork board: a fish to find, a water to visit. Fish when you like; they’ll still be there."
+
+[GUIDE_CAMPFIRE]
+value = "{campfire} grandit chaque jour où vous terminez un avis. Un jour manqué, et ce sont des {kindling} qui brûlent à la place ; il ne s’éteint pas."
+en = "{campfire} grows with each day you finish a Notice. Miss a day and {kindling} burns instead; it isn’t put out."
+
+[GUIDE_CAMPFIRE_TERM]
+value = "Votre feu de camp"
+en = "Your Campfire"
+
+[GUIDE_KINDLING_TERM]
+value = "bûchettes"
+en = "Kindling"
+
+[GUIDE_FLY_BOX]
+value = "Chaque avis terminé monte une mouche pour votre {flybox}."
+en = "Each Notice you finish ties one fly for your {flybox}."
+
+[GUIDE_ASK_KICKER]
+value = "Si vous en voulez un"
+en = "Only if you want one"
+
+[GUIDE_ASK_TITLE]
+value = "Je vous monte un panneau ?"
+en = "Shall I put up a board?"
+
+[GUIDE_FACTS]
+value = ["Trois avis par jour, et une expédition plus grande par semaine.", "Aucun n’expire. Une absence ? Jusqu’à six avis et deux expéditions vous attendent.", "L’un d’eux ne vous plaît pas ? Chacun peut être retiré pour un nouveau, une fois par jour.", "Ils rapportent des pièces Pagle, {shop}"]
+en = ["Three Notices a day, and one bigger Expedition a week.", "None of them expire. Away a while? Up to six Notices and two Expeditions wait for you.", "Don’t fancy one? Each can be taken down for a fresh one, once a day.", "They pay Pagle Coins, {shop}"]
+
+[GUIDE_FACT_SHOP]
+value = "qui achètent des apparences dans la Boutique de curiosités."
+en = "which buy looks in the Curio Shop."
+
+[BOARD_IS_UP]
+value = "Votre panneau est monté"
+en = "Your board is up"
+
+[GUIDE_LEAVE]
+value = "Ou laissez cela pour plus tard. Le panneau attend sous Panneau de pêche dans le menu Pagle, et dans les réglages."
+en = "Or leave it for now. The board waits under Tackle Board in the Pagle menu, and in Settings."
+
+[LOOK_TITLE]
+value = "le Panneau de pêche"
+en = "the Tackle Board"
+
+[LOOK_NOTES]
+value = [{ term = "Les expéditions", text = "{term} sont les plus grands objectifs, une par semaine. Elles attendent aussi, jusqu’à deux." }, { term = "n’expire jamais", text = "Un avis {term}. Il ne vous plaît pas ? Retirez-le, une fois par jour, pour un autre." }, { term = "feu de camp", text = "Votre {term} : les jours d’affilée avec un objectif fait. Un jour manqué brûle des bûchettes à la place." }, { term = "boîte à mouches", text = "Chaque objectif fait monte une mouche pour votre {term}." }, { term = "pièces Pagle", text = "Ils rapportent des {term}, dépensées en apparences dans la Boutique de curiosités." }]
+en = [{ term = "Expeditions", text = "{term} are the bigger weekly ones. They wait too, up to two." }, { term = "never expires", text = "A Notice {term}. Don’t fancy it? Take it down, once a day, for another." }, { term = "Campfire", text = "Your {term}: days in a row with one done. A missed day burns Kindling instead." }, { term = "Fly Box", text = "Each one done ties a fly for your {term}." }, { term = "Pagle Coins", text = "They pay {term}, spent on looks in the Curio Shop." }]
+
+[LOOK_AGAIN_MARK]
+value = "?"
+en = "?"
+
+[LOOK_AGAIN]
+value = "Réafficher les notes de cette page"
+en = "Show the notes for this page again"
