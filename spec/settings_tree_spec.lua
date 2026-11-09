@@ -808,11 +808,12 @@ describe("Greying in the Settings tree", function()
 			KeyBindingFrameBindingTemplate = true,
 		}
 
-		local drawnOn = {}
+		local drawnOn, checked = {}, {}
 		for _, category in ipairs(loaded.client.settings.categories) do
 			for _, initializer in ipairs(category.layout.initializers) do
 				local template = initializer:GetTemplate()
 				local row = category.name .. " › " .. tostring(initializer:GetName()) .. " on " .. tostring(template)
+				checked[row] = (checked[row] or 0) + 1
 				assert(not blizzards[template], row)
 				assert(template:match("^Pagle") and loaded.client.templates[template], row)
 				-- a native row's tooltip is a string, so no Pagle function runs in Settings.InitTooltip
@@ -836,6 +837,36 @@ describe("Greying in the Settings tree", function()
 			"PagleSettingsSlotRowTemplate",
 		}) do
 			assert(drawnOn[template], "no row on " .. template)
+		end
+		-- 1.6's rows are among those checked, each on its own kind of Pagle template: Party Hunts and "Completed for the
+		-- party" in the Party block (SET-R35, ANN-R111), The Morning Tide's section with its News sign look dropdown
+		-- (SET-R37, SHOP-R60), and the look's dropdown on Look and Feel (SET-R50). Legends, Prestige and Zone Master are
+		-- kind rows of both the Party block and The Morning Tide.
+		local HEADER, CHECKBOX, SLOT =
+			"PagleSettingsListSectionHeaderTemplate",
+			"PagleSettingsCheckboxControlTemplate",
+			"PagleSettingsSlotRowTemplate"
+		for _, want in ipairs({
+			{ "Announcements", "Party", HEADER },
+			{ "Announcements", "Party Hunts", CHECKBOX },
+			{ "Announcements", "Completed for the party", CHECKBOX },
+			{ "Announcements", "The Morning Tide", HEADER },
+			{ "Announcements", "Show news at login", CHECKBOX },
+			{ "Announcements", "First reported", CHECKBOX },
+			{ "Announcements", "Legends", CHECKBOX, 2 },
+			{ "Announcements", "Prestige", CHECKBOX, 2 },
+			{ "Announcements", "Ledger completed", CHECKBOX },
+			{ "Announcements", "Rare varieties", CHECKBOX },
+			{ "Announcements", "Hunt gold", CHECKBOX },
+			{ "Announcements", "Zone Master", CHECKBOX, 2 },
+			{ "Announcements", "Monster records", CHECKBOX },
+			{ "Announcements", "Region headlines", CHECKBOX },
+			{ "Announcements", "Mute the sign", CHECKBOX },
+			{ "Announcements", "News sign", SLOT },
+			{ "Look and Feel", "News sign", SLOT },
+		}) do
+			local row = want[1] .. " › " .. want[2] .. " on " .. want[3]
+			assert.are.equal(want[4] or 1, checked[row] or 0, row)
 		end
 	end)
 

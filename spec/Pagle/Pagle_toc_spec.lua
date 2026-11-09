@@ -125,6 +125,31 @@ describe("Pagle.toc", function()
 		end
 	)
 
+	-- Every page builds its rows when the tree is registered, after every file has loaded, so this order is for reading:
+	-- the creators sit with the templates they draw on, ahead of the sections that call them.
+	it(
+		"loads SettingsControls.lua from a TOC line of its own right after Settings.xml, its templates, and before the"
+			.. " Party, Morning Tide, Announcements and Look and Feel builders (SET-R7)",
+		function()
+			local at, count = {}, {}
+			for index, file in ipairs(addonFiles("Pagle")) do
+				at[file] = at[file] or index
+				count[file] = (count[file] or 0) + 1
+			end
+
+			assert.are.equal(1, count["adapter/SettingsControls.lua"])
+			assert.are.equal(at["adapter/Settings.xml"] + 1, at["adapter/SettingsControls.lua"])
+			for _, builder in ipairs({
+				"adapter/PartySettings.lua",
+				"adapter/NewsSignSettings.lua",
+				"adapter/AnnouncementSettings.lua",
+				"adapter/LookAndFeel.lua",
+			}) do
+				assert(at[builder] > at["adapter/SettingsControls.lua"], builder)
+			end
+		end
+	)
+
 	it("lists its generated Lore.lua right after locale/enUS.lua, the file that creates ns.L (DATA-R75)", function()
 		local at = {}
 		for index, file in ipairs(addonFiles("Pagle")) do
