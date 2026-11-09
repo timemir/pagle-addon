@@ -16,12 +16,12 @@ local ROSTER = {
 
 -- What each row's template is, as the tree's tables name its kind (SET-R2, SET-R5).
 local KINDS = {
-	SettingsListSectionHeaderTemplate = "header",
-	SettingsCheckboxControlTemplate = "checkbox",
-	SettingsSliderControlTemplate = "slider",
-	SettingsCheckboxSliderControlTemplate = "checkboxSlider",
-	SettingsDropdownControlTemplate = "dropdown",
-	SettingButtonControlTemplate = "button",
+	PagleSettingsListSectionHeaderTemplate = "header",
+	PagleSettingsCheckboxControlTemplate = "checkbox",
+	PagleSettingsSliderControlTemplate = "slider",
+	PagleSettingsCheckboxSliderControlTemplate = "checkboxSlider",
+	PagleSettingsDropdownControlTemplate = "dropdown",
+	PagleSettingButtonControlTemplate = "button",
 	PagleSettingsKeyRowTemplate = "keybinding",
 	PagleSettingsSlotRowTemplate = "slot",
 	PagleStatsWatchedRowTemplate = "custom",
@@ -456,7 +456,7 @@ local function asWritten(loaded, row, top)
 		else
 			out = coreRowAsWritten(settings, frame, texts)
 		end
-	elseif template == "SettingButtonControlTemplate" then
+	elseif template == "PagleSettingButtonControlTemplate" then
 		local label = initializer:GetData().name
 		out = { "button", label ~= "" and label or nil, caption = frame.Button.text }
 	else
@@ -783,6 +783,114 @@ describe("Greying in the Settings tree", function()
 				assert(#initializer.shownPredicates == 0, category.name .. " › " .. tostring(initializer:GetName()))
 			end
 		end
+	end)
+
+	-- The list pools its row frames by template name (Blizzard_SettingsList.lua's Factory, ScrollUtil.lua's
+	-- ScrollBoxFactoryInitializerMixin, Pools.lua's GetPoolKey), and a frame Pagle's row drew in keeps Pagle's taint in
+	-- its callback handles: a Blizzard row reusing it, such as Nameplates' "Nameplate style", then sets its CVar as
+	-- Pagle's, and every nameplate after errors until /reload. So every row of Pagle's is drawn on a template Pagle's
+	-- own XML defines, with its own pool, never on one of Blizzard's (SET-R7).
+	it("draws every row on every page on a template of Pagle's own, none on Blizzard's shared ones (SET-R7)", function()
+		local loaded = ready()
+		local blizzards = {
+			SettingsListSectionHeaderTemplate = true,
+			SettingsCheckboxControlTemplate = true,
+			SettingsSliderControlTemplate = true,
+			SettingsDropdownControlTemplate = true,
+			SettingButtonControlTemplate = true,
+			SettingsColorSwatchControlTemplate = true,
+			SettingsCheckboxWithButtonControlTemplate = true,
+			SettingsCheckboxSliderControlTemplate = true,
+			SettingsCheckboxDropdownControlTemplate = true,
+			SettingsCheckboxWithColorSwatchControlTemplate = true,
+			SettingsExpandableSectionTemplate = true,
+			SettingsAddOnDisabledLabelTemplate = true,
+			KeyBindingFrameBindingTemplate = true,
+		}
+
+		local drawnOn, checked = {}, {}
+		for _, category in ipairs(loaded.client.settings.categories) do
+			for _, initializer in ipairs(category.layout.initializers) do
+				local template = initializer:GetTemplate()
+				local row = category.name .. " › " .. tostring(initializer:GetName()) .. " on " .. tostring(template)
+				checked[row] = (checked[row] or 0) + 1
+				assert(not blizzards[template], row)
+				assert(template:match("^Pagle") and loaded.client.templates[template], row)
+				-- a native row's tooltip is a string, so no Pagle function runs in Settings.InitTooltip
+				local data = initializer:GetData()
+				for _, key in ipairs({ "tooltip", "cbTooltip", "sliderTooltip" }) do
+					assert(data[key] == nil or type(data[key]) == "string", row .. " " .. key)
+				end
+				drawnOn[template] = true
+			end
+		end
+		-- every kind of row is there to check: each control, the header and Core's own rows
+		for _, template in ipairs({
+			"PagleSettingsListSectionHeaderTemplate",
+			"PagleSettingsCheckboxControlTemplate",
+			"PagleSettingsSliderControlTemplate",
+			"PagleSettingsDropdownControlTemplate",
+			"PagleSettingButtonControlTemplate",
+			"PagleSettingsCheckboxSliderControlTemplate",
+			"PagleSettingsRowTemplate",
+			"PagleSettingsKeyRowTemplate",
+			"PagleSettingsSlotRowTemplate",
+		}) do
+			assert(drawnOn[template], "no row on " .. template)
+		end
+		-- 1.6's rows are among those checked, each on its own kind of Pagle template: Party Hunts and "Completed for the
+		-- party" in the Party block (SET-R35, ANN-R111), The Morning Tide's section with its News sign look dropdown
+		-- (SET-R37, SHOP-R60), and the look's dropdown on Look and Feel (SET-R50). Legends, Prestige and Zone Master are
+		-- kind rows of both the Party block and The Morning Tide.
+		local HEADER, CHECKBOX, SLOT =
+			"PagleSettingsListSectionHeaderTemplate",
+			"PagleSettingsCheckboxControlTemplate",
+			"PagleSettingsSlotRowTemplate"
+		for _, want in ipairs({
+			{ "Announcements", "Party", HEADER },
+			{ "Announcements", "Party Hunts", CHECKBOX },
+			{ "Announcements", "Completed for the party", CHECKBOX },
+			{ "Announcements", "The Morning Tide", HEADER },
+			{ "Announcements", "Show news at login", CHECKBOX },
+			{ "Announcements", "First reported", CHECKBOX },
+			{ "Announcements", "Legends", CHECKBOX, 2 },
+			{ "Announcements", "Prestige", CHECKBOX, 2 },
+			{ "Announcements", "Ledger completed", CHECKBOX },
+			{ "Announcements", "Rare varieties", CHECKBOX },
+			{ "Announcements", "Hunt gold", CHECKBOX },
+			{ "Announcements", "Zone Master", CHECKBOX, 2 },
+			{ "Announcements", "Monster records", CHECKBOX },
+			{ "Announcements", "Region headlines", CHECKBOX },
+			{ "Announcements", "Mute the sign", CHECKBOX },
+			{ "Announcements", "News sign", SLOT },
+			{ "Look and Feel", "News sign", SLOT },
+		}) do
+			local row = want[1] .. " › " .. want[2] .. " on " .. want[3]
+			assert.are.equal(want[4] or 1, checked[row] or 0, row)
+		end
+	end)
+
+	-- A Pagle dropdown's options open in Blizzard's menu, whose element frames are shared by every dropdown in the game,
+	-- the Nameplates page's among them. Each option of Pagle's is drawn on Pagle's own element template, so Pagle's
+	-- options never draw in, or add to, the frames Blizzard's own dropdowns reuse (SET-R7).
+	it("opens every native dropdown's options on Pagle's own menu element template (SET-R7)", function()
+		local loaded = ready()
+		local settings = loaded.client.settings
+
+		local dropdowns = 0
+		for _, category in ipairs(settings.categories) do
+			for _, row in ipairs(settings.show(category)) do
+				if row.initializer:GetTemplate() == "PagleSettingsDropdownControlTemplate" then
+					dropdowns = dropdowns + 1
+					local templates = settings.menuTemplatesOf(row)
+					assert(#templates > 0, row.initializer:GetName())
+					for _, template in ipairs(templates) do
+						assert.are.equal("PagleMenuDropdownHighlightButtonTemplate", template)
+					end
+				end
+			end
+		end
+		assert(dropdowns > 0, "no native dropdown")
 	end)
 
 	it("greys a channel's slider while its box is unticked, keeping its volume, and shows it (SET-R31)", function()
@@ -1385,7 +1493,7 @@ local function collectStrings(loaded, strings, seen)
 				end
 				add(written.caption, "row")
 				add(written.tip, "text")
-				if template ~= "SettingButtonControlTemplate" then
+				if template ~= "PagleSettingButtonControlTemplate" then
 					for _, text in ipairs(settings.textsOf(row.frame)) do
 						add(text, "text")
 					end

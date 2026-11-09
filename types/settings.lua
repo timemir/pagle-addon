@@ -39,6 +39,8 @@
 --- and dependent controls update together (SettingMixin:SetValue in Blizzard_Settings.lua).
 ---@class SettingsProxySetting
 ---@field SetValue fun(self: SettingsProxySetting, value: any)
+---@field GetName fun(self: SettingsProxySetting): string
+---@field GetVariableType fun(self: SettingsProxySetting): string
 
 --- SettingsSliderOptionsMixin.
 ---@class SettingsSliderOptions
@@ -86,31 +88,11 @@ function Settings.OpenToCategory(categoryID, scrollToElementName) end
 ---@return SettingsProxySetting
 function Settings.RegisterProxySetting(category, variable, variableType, name, defaultValue, getValue, setValue) end
 
----@param category SettingsCategory
----@param setting SettingsProxySetting
----@param tooltip? string
----@return SettingsInitializer
-function Settings.CreateCheckbox(category, setting, tooltip) end
-
 ---@param minValue number
 ---@param maxValue number
 ---@param rate number
 ---@return SettingsSliderOptions
 function Settings.CreateSliderOptions(minValue, maxValue, rate) end
-
----@param category SettingsCategory
----@param setting SettingsProxySetting
----@param options SettingsSliderOptions
----@param tooltip? string
----@return SettingsInitializer
-function Settings.CreateSlider(category, setting, options, tooltip) end
-
----@param category SettingsCategory
----@param setting SettingsProxySetting
----@param options fun(): table[]
----@param tooltip? string
----@return SettingsInitializer
-function Settings.CreateDropdown(category, setting, options, tooltip) end
 
 ---@return SettingsControlTextContainer
 function Settings.CreateControlTextContainer() end
@@ -120,31 +102,40 @@ function Settings.CreateControlTextContainer() end
 ---@return SettingsInitializer
 function Settings.CreateElementInitializer(frameTemplate, data) end
 
----@param name string
+-- From 1.5.3 (SET-R7), Pagle builds its native rows on templates of its own (adapter/SettingsControls.lua) through
+-- the creators that take a template, and Blizzard's creators that name their own template (Settings.CreateCheckbox,
+-- CreateSlider, CreateDropdown, CreateSettingsListSectionHeaderInitializer, CreateSettingsButtonInitializer,
+-- CreateSettingsCheckboxSliderInitializer) aren't declared. Source: wow-ui-source branch forever, 1.60.1 (70862).
+
+--- CreateSettingInitializerData's data ({ setting, name, options, tooltip }) on `frameTemplate`, tagged for search with
+--- the setting's name; not added to a layout.
+---@param frameTemplate string
+---@param setting SettingsProxySetting
+---@param options any
 ---@param tooltip? string
 ---@return SettingsInitializer
-function CreateSettingsListSectionHeaderInitializer(name, tooltip) end
+function Settings.CreateControlInitializer(frameTemplate, setting, options, tooltip) end
 
----@param name string
----@param buttonText string|fun(): string a function is called each time the row is shown
---- (Blizzard_SettingControls.lua, SettingsButtonControlMixin:EvaluateName)
----@param buttonClick fun()
----@param tooltip string?
----@param addSearchTags boolean
+--- A setting row's initializer on `frameTemplate`, tagged for search with `data.setting`'s name when it has one.
+---@param frameTemplate string
+---@param data table
 ---@return SettingsInitializer
-function CreateSettingsButtonInitializer(name, buttonText, buttonClick, tooltip, addSearchTags) end
+function Settings.CreateSettingInitializer(frameTemplate, data) end
 
---- A checkbox with a slider beside it, the slider live only while the box is ticked
---- (Blizzard_SettingControls.lua, SettingsCheckboxSliderControlMixin).
----@param cb SettingsProxySetting the box's setting
----@param cbLabel string
----@param cbTip string?
----@param slider SettingsProxySetting the slider's setting
----@param options SettingsSliderOptions
----@param sliderLabel string
----@param sliderTip string?
----@return SettingsInitializer
-function CreateSettingsCheckboxSliderInitializer(cb, cbLabel, cbTip, slider, options, sliderLabel, sliderTip) end
+--- The function that inserts a dropdown's options into its root menu description, as a highlight radio each.
+---@param setting SettingsProxySetting
+---@param optionsFunc fun(): table[]
+---@param initializer SettingsInitializer
+---@return fun(setting: SettingsProxySetting, rootDescription: table)
+function Settings.CreateDropdownOptionInserter(setting, optionsFunc, initializer) end
+
+--- Sets up a dropdown button's menu (its generator calls `elementInserter`), tooltip and enter and leave scripts.
+---@param dropdown table
+---@param setting SettingsProxySetting
+---@param elementInserter fun(setting: SettingsProxySetting, rootDescription: table)
+---@param initTooltip fun()
+---@param initializer SettingsInitializer
+function Settings.InitDropdown(dropdown, setting, elementInserter, initTooltip, initializer) end
 
 --- The Settings panel (Blizzard_SettingsPanel.xml).
 ---@type Frame

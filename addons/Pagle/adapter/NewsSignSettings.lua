@@ -115,7 +115,7 @@ end
 ---@param layout SettingsLayout
 function ns.NewsSignSettingsRows(page, layout)
 	local Boolean = Settings.VarType.Boolean
-	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_NEWS))
+	layout:AddInitializer(ns.CreateSettingsListSectionHeaderInitializer(L.SETTINGS_NEWS))
 
 	-- A switch over option `key`, on by default.
 	local function option(variable, label, key)
@@ -127,7 +127,7 @@ function ns.NewsSignSettingsRows(page, layout)
 	end
 
 	-- Greyed in Cozy mode, which holds the sign (SIGN-R14).
-	local show = Settings.CreateCheckbox(page, option(SHOW, L.SETTINGS_NEWS_SHOW, "show"), L.SETTINGS_NEWS_SHOW_TOOLTIP)
+	local show = ns.CreateCheckbox(layout, option(SHOW, L.SETTINGS_NEWS_SHOW, "show"), L.SETTINGS_NEWS_SHOW_TOOLTIP)
 	greys(show, notCozy)
 
 	-- The followed kinds in the sign's rank (SIGN-R10, logic/NewsSign.lua's ns.NEWS_FOLLOWED_KINDS), then
@@ -146,15 +146,15 @@ function ns.NewsSignSettingsRows(page, layout)
 				setKind(kind, value)
 			end
 		)
-		local row = Settings.CreateCheckbox(page, setting)
+		local row = ns.CreateCheckbox(layout, setting)
 		row:SetParentInitializer(show)
 		greys(row, kindsLive)
 	end
 	for _, kind in ipairs(ns.NEWS_FOLLOWED_KINDS) do
 		kindRow(kind)
 	end
-	local headlines = Settings.CreateCheckbox(
-		page,
+	local headlines = ns.CreateCheckbox(
+		layout,
 		option(HEADLINES, L.SETTINGS_NEWS_HEADLINES, "headlines"),
 		L.SETTINGS_NEWS_HEADLINES_TOOLTIP
 	)
@@ -164,7 +164,7 @@ function ns.NewsSignSettingsRows(page, layout)
 	-- Mute the sign and the look are never greyed: they are kept for when the sign shows.
 	local mute =
 		Settings.RegisterProxySetting(page, MUTE, Boolean, L.SETTINGS_NEWS_MUTE, false, ns.NewsSignMuted, setMute)
-	Settings.CreateCheckbox(page, mute, L.SETTINGS_NEWS_MUTE_TOOLTIP)
+	ns.CreateCheckbox(layout, mute, L.SETTINGS_NEWS_MUTE_TOOLTIP)
 
 	-- The look: Core's slot dropdown, Wood and the looks owned (SET-R51), over `core.newssign`, which Core's goods
 	-- register with Wood and the five looks for sale (SHOP-R60).

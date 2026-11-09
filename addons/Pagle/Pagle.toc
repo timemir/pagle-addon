@@ -153,6 +153,7 @@ adapter\Sessions.lua
 adapter\Onboarding.lua
 adapter\Settings.lua
 adapter\Settings.xml
+adapter\SettingsControls.lua
 adapter\PartyMessages.lua
 adapter\Party.lua
 adapter\PartyToast.lua

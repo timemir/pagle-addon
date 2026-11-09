@@ -1,6 +1,6 @@
 # Pagle
 
-## 1.5.3 (unreleased)
+## 1.5.3 (2026-11-09)
 
 Party sharing now asks first.
 
@@ -9,6 +9,10 @@ Party sharing now asks first.
 - Party sharing now asks first, through a letter. Party toasts and cheers are off until you say yes. When Pagle sees a groupmate who also runs Pagle fishing in the same zone as you, a letter arrives: "Fish together" turns on sharing your best catches, your party's toasts and cheers; "Not now" asks again another day; "No thanks" never asks again. Every switch stays in Settings › Announcements › Party, and turning one on there yourself counts as your answer. (#655)
 - If you already changed a party setting in 1.5.2, you keep your choice and the letter won't ask you. (#655)
 - Pagle still says a quiet hello to your party so it can tell who runs Pagle. The hello carries no catches and no location. (#655)
+
+### Fixed
+
+- Changing Blizzard's own settings (such as Nameplates) after opening Pagle's settings no longer causes nameplate errors until a /reload.
 
 ### TRANSLATORS
 

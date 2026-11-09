@@ -126,7 +126,8 @@ end
 --- as Game default. It has no default, so the root's Defaults button leaves it (SET-R13), as it leaves the minimap
 --- icon: a Defaults click never asks for a reload.
 ---@param category SettingsCategory
-function ns.LanguageRow(category)
+---@param layout SettingsLayout
+function ns.LanguageRow(category, layout)
 	local L = ns.L
 	local language = Settings.RegisterProxySetting(
 		category,
@@ -146,7 +147,7 @@ function ns.LanguageRow(category)
 			end
 		end
 	)
-	Settings.CreateDropdown(category, language, function()
+	ns.CreateDropdown(layout, language, function()
 		local container = Settings.CreateControlTextContainer()
 		for _, choice in ipairs(ns.LanguageChoices(GetLocale())) do
 			container:Add(choice.value, choice.label)

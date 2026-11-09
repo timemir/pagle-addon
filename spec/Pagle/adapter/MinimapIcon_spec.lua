@@ -385,11 +385,11 @@ describe("Show the minimap icon", function()
 
 			assert.are.equal("Pagle website", website:GetName())
 			assert.are.same(
-				{ "Pagle menu", "SettingsListSectionHeaderTemplate" },
+				{ "Pagle menu", "PagleSettingsListSectionHeaderTemplate" },
 				{ header:GetName(), header.template }
 			)
 			assert.are.same(
-				{ "Show the minimap icon", "SettingsCheckboxControlTemplate" },
+				{ "Show the minimap icon", "PagleSettingsCheckboxControlTemplate" },
 				{ row:GetName(), row.template }
 			)
 			assert.are.equal(
@@ -540,7 +540,7 @@ describe("Detach from the minimap", function()
 			local _, shown, row, _, _, website = menuRows(loaded)
 
 			assert.are.same(
-				{ "Detach from the minimap", "SettingsCheckboxControlTemplate" },
+				{ "Detach from the minimap", "PagleSettingsCheckboxControlTemplate" },
 				{ row:GetName(), row.template }
 			)
 			assert.are.equal(
@@ -1171,7 +1171,7 @@ describe("Minimap button style and Minimap button size", function()
 			local _, shown, _, style, size, website = menuRows(loaded)
 
 			assert.are.same(
-				{ "Minimap button style", "SettingsDropdownControlTemplate", shown, {} },
+				{ "Minimap button style", "PagleSettingsDropdownControlTemplate", shown, {} },
 				{ style:GetName(), style.template, style:GetParentInitializer(), style.shownPredicates }
 			)
 			assert.are.equal(
@@ -1186,7 +1186,7 @@ describe("Minimap button style and Minimap button size", function()
 			assert.are.same({ { "classic", "Classic" }, { "ledger", "Ledger" }, { "bobber", "Bobber" } }, labels)
 
 			assert.are.same(
-				{ "Minimap button size", "SettingsSliderControlTemplate", shown, {} },
+				{ "Minimap button size", "PagleSettingsSliderControlTemplate", shown, {} },
 				{ size:GetName(), size.template, size:GetParentInitializer(), size.shownPredicates }
 			)
 			assert.are.equal(
