@@ -71,7 +71,7 @@ local function lines(rows, settings)
 	local out = {}
 	for _, row in ipairs(rows) do
 		local initializer, frame = row.initializer, row.frame
-		if initializer.template == "SettingsListSectionHeaderTemplate" then
+		if initializer.template == "PagleSettingsListSectionHeaderTemplate" then
 			out[#out + 1] = "# " .. initializer:GetName()
 		elseif initializer.template == "PagleSettingsSlotRowTemplate" then
 			out[#out + 1] = ("%s = %s"):format(initializer:GetName(), tostring(settings.dropdownOf(row).selected))
@@ -79,7 +79,7 @@ local function lines(rows, settings)
 				out[#out + 1] = "  " .. text
 			end
 		elseif
-			initializer.template == "SettingButtonControlTemplate"
+			initializer.template == "PagleSettingButtonControlTemplate"
 			or (initializer:GetName() and settings.buttonsOf(frame)[1])
 		then
 			out[#out + 1] = ("%s [%s]"):format(initializer:GetName(), settings.buttonsOf(frame)[1]:GetText())

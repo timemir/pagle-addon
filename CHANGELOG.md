@@ -10,6 +10,10 @@ Party sharing now asks first.
 - If you already changed a party setting in 1.5.2, you keep your choice and the letter won't ask you. (#655)
 - Pagle still says a quiet hello to your party so it can tell who runs Pagle. The hello carries no catches and no location. (#655)
 
+### Fixed
+
+- Changing Blizzard's own settings (such as Nameplates) after opening Pagle's settings no longer causes nameplate errors until a /reload.
+
 ### TRANSLATORS
 
 - Español: fmartingr

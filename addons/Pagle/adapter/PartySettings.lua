@@ -47,7 +47,7 @@ end
 ---@param layout SettingsLayout
 function ns.PartySettingsRows(page, layout)
 	local Boolean = Settings.VarType.Boolean
-	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_PARTY))
+	layout:AddInitializer(ns.CreateSettingsListSectionHeaderInitializer(L.SETTINGS_PARTY))
 
 	-- Party Hunts (SET-R35, LOG-R121): PagleDB.profile.partyHunts, off until the party letter is accepted (ANN-R113,
 	-- adapter/Party.lua's ns.PartyHuntsOn), never greyed: it governs what is shared and what counts, not what pops up.
@@ -56,7 +56,7 @@ function ns.PartySettingsRows(page, layout)
 	end, function(value)
 		ns.SetPartyHunts(value == true)
 	end)
-	Settings.CreateCheckbox(page, hunts, L.SETTINGS_PARTY_HUNTS_TOOLTIP)
+	ns.CreateCheckbox(layout, hunts, L.SETTINGS_PARTY_HUNTS_TOOLTIP)
 
 	-- A row over option `key`, defaulting to `default`.
 	local function option(variable, label, key, default)
@@ -67,10 +67,10 @@ function ns.PartySettingsRows(page, layout)
 		end)
 	end
 
-	Settings.CreateCheckbox(page, option(SHARE, L.SETTINGS_PARTY_SHARE, "share", false), L.SETTINGS_PARTY_SHARE_TOOLTIP)
+	ns.CreateCheckbox(layout, option(SHARE, L.SETTINGS_PARTY_SHARE, "share", false), L.SETTINGS_PARTY_SHARE_TOOLTIP)
 
 	local show =
-		Settings.CreateCheckbox(page, option(SHOW, L.SETTINGS_PARTY_SHOW, "show", false), L.SETTINGS_PARTY_SHOW_TOOLTIP)
+		ns.CreateCheckbox(layout, option(SHOW, L.SETTINGS_PARTY_SHOW, "show", false), L.SETTINGS_PARTY_SHOW_TOOLTIP)
 	greys(show, notCozy)
 	-- The moment kinds, then from 1.6 "Completed for the party" (SET-R35, ANN-R111), which isn't one a moment is shared as.
 	local kinds = { unpack(ns.PARTY_KINDS) }
@@ -89,7 +89,7 @@ function ns.PartySettingsRows(page, layout)
 				ns.SetPartyKind(kind, value)
 			end
 		)
-		local row = Settings.CreateCheckbox(page, setting)
+		local row = ns.CreateCheckbox(layout, setting)
 		row:SetParentInitializer(show)
 		if kind == ns.PARTY_HUNT_KIND then
 			-- It does nothing while Party Hunts is off (ANN-R111), so it greys then too.
@@ -102,8 +102,8 @@ function ns.PartySettingsRows(page, layout)
 		end
 	end
 
-	local sounds = Settings.CreateCheckbox(
-		page,
+	local sounds = ns.CreateCheckbox(
+		layout,
 		option(SOUNDS, L.SETTINGS_PARTY_SOUNDS, "sounds", true),
 		L.SETTINGS_PARTY_SOUNDS_TOOLTIP
 	)

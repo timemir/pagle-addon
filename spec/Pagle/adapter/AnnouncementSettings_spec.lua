@@ -127,7 +127,7 @@ describe("The Announcements page", function()
 
 		local motion = row(loaded, MOTION)
 		assert.are.same({
-			"SettingsCheckboxControlTemplate",
+			"PagleSettingsCheckboxControlTemplate",
 			"Toasts slide in and stamp themselves, banners drop their seal, and the rays behind a banner or a Legend turn. Off, each appears "
 				.. "as it settles.",
 			true,
@@ -142,11 +142,11 @@ describe("The Announcements page", function()
 			local budget = row(loaded, BUDGET)
 
 			assert.are.same({
-				"SettingsCheckboxControlTemplate",
-				"SettingsCheckboxControlTemplate",
-				"SettingsSliderControlTemplate",
-				"SettingsSliderControlTemplate",
-				"SettingsCheckboxControlTemplate",
+				"PagleSettingsCheckboxControlTemplate",
+				"PagleSettingsCheckboxControlTemplate",
+				"PagleSettingsSliderControlTemplate",
+				"PagleSettingsSliderControlTemplate",
+				"PagleSettingsCheckboxControlTemplate",
 			}, {
 				row(loaded, COZY).template,
 				budget.template,

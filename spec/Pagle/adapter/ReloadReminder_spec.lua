@@ -92,8 +92,8 @@ describe("The root's Saving section", function()
 
 		assert.are.equal("Units", initializers[n + 1]:GetName())
 		assert.are.equal("Saving", header:GetName())
-		assert.are.equal("SettingsListSectionHeaderTemplate", header.template)
-		assert.are.equal("SettingsCheckboxControlTemplate", row.template)
+		assert.are.equal("PagleSettingsListSectionHeaderTemplate", header.template)
+		assert.are.equal("PagleSettingsCheckboxControlTemplate", row.template)
 		assert.are.equal(TOOLTIP, row.data.tooltip)
 	end)
 

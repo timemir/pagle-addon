@@ -27,7 +27,8 @@ end)
 --- Defaults button restores (SET-R13), and stores none: PagleDB.profile.clockFormat is nil while it follows. A pick
 --- notes the format, so a shown book's clock redraws in it at once.
 ---@param category SettingsCategory
-function ns.ClockRow(category)
+---@param layout SettingsLayout
+function ns.ClockRow(category, layout)
 	local L = ns.L
 	local clock = Settings.RegisterProxySetting(
 		category,
@@ -44,7 +45,7 @@ function ns.ClockRow(category)
 			ns.NoteClockFormat()
 		end
 	)
-	Settings.CreateDropdown(category, clock, function()
+	ns.CreateDropdown(layout, clock, function()
 		local container = Settings.CreateControlTextContainer()
 		for _, choice in ipairs(ns.CLOCK_CHOICES) do
 			container:Add(choice, L.SETTINGS_CLOCK_CHOICES[choice])

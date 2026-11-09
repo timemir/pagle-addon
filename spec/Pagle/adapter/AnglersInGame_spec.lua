@@ -656,11 +656,11 @@ describe("the Companion's data addons", function()
 				local header, row = websiteRows(loaded)
 
 				assert.are.same(
-					{ "Pagle website", "SettingsListSectionHeaderTemplate" },
+					{ "Pagle website", "PagleSettingsListSectionHeaderTemplate" },
 					{ header:GetName(), header.template }
 				)
 				assert.are.same(
-					{ "Show other Anglers on player tooltips", "SettingsCheckboxControlTemplate" },
+					{ "Show other Anglers on player tooltips", "PagleSettingsCheckboxControlTemplate" },
 					{ row:GetName(), row.template }
 				)
 				assert.are.equal(

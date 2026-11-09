@@ -59,8 +59,8 @@ describe("The root's Units section", function()
 		local reminder, header, row = lastRows(loaded)
 
 		assert.are.equal("Remind me to /reload when Casts are unsaved", reminder:GetName())
-		assert.are.same({ "Units", "SettingsListSectionHeaderTemplate" }, { header:GetName(), header.template })
-		assert.are.same({ "Length unit", "SettingsDropdownControlTemplate" }, { row:GetName(), row.template })
+		assert.are.same({ "Units", "PagleSettingsListSectionHeaderTemplate" }, { header:GetName(), header.template })
+		assert.are.same({ "Length unit", "PagleSettingsDropdownControlTemplate" }, { row:GetName(), row.template })
 		assert.are.equal(
 			"How Pagle shows the length of your Catches. Records are kept in millimetres, so switching changes only what"
 				.. " you see.",
