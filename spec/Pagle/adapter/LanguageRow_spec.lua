@@ -98,7 +98,7 @@ describe("The Language dropdown's choices", function()
 		local row, clock = languageRow(core())
 
 		assert.are.equal("Clock", clock:GetName())
-		assert.are.same({ "Language", "SettingsDropdownControlTemplate" }, { row:GetName(), row.template })
+		assert.are.same({ "Language", "PagleSettingsDropdownControlTemplate" }, { row:GetName(), row.template })
 		assert.are.equal(
 			"The language Pagle is written in, on every character. A change takes effect after a /reload. Names the"
 				.. " game supplies, such as items, zones and item quality, stay in the game's language.",

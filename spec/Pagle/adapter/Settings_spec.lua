@@ -871,7 +871,7 @@ describe("A Module's value rows", function()
 			local data = row.initializer:GetData()
 
 			assert.are.same(
-				{ "SettingsCheckboxSliderControlTemplate", "Music", "While you fish.", "Music", "While you fish." },
+				{ "PagleSettingsCheckboxSliderControlTemplate", "Music", "While you fish.", "Music", "While you fish." },
 				{ row.initializer:GetTemplate(), data.cbLabel, data.cbTooltip, data.sliderLabel, data.sliderTooltip }
 			)
 			assert.are.same({ false, 40, "40%", false }, {
@@ -983,7 +983,7 @@ describe("A Module's button row", function()
 			end,
 		})
 
-		assert.are.equal("SettingButtonControlTemplate", initializer.template)
+		assert.are.equal("PagleSettingButtonControlTemplate", initializer.template)
 		assert.are.same({ "Button position", "Reset" }, settings.textsOf(frame))
 		assert.are.same({ "BUTTON POSITION", "RESET" }, initializer.searchTags)
 		settings.buttonsOf(frame)[1]:Click()

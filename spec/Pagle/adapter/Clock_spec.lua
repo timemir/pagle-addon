@@ -107,7 +107,7 @@ describe("The root's Clock row", function()
 		local row, lengthUnit = clockRow(core("1"))
 
 		assert.are.equal("Length unit", lengthUnit:GetName())
-		assert.are.same({ "Clock", "SettingsDropdownControlTemplate" }, { row:GetName(), row.template })
+		assert.are.same({ "Clock", "PagleSettingsDropdownControlTemplate" }, { row:GetName(), row.template })
 		assert.are.equal(
 			"How Pagle writes a time of day, such as the realm time at the top of the Hunts board. Following the game"
 				.. " uses the minimap clock's 24-hour mode.",

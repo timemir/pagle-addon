@@ -75,14 +75,14 @@ ns.CoreSettingsRows.announcements = function(page, layout)
 		stored().cozy = value
 	end)
 	ns.cozySetting = cozy
-	Settings.CreateCheckbox(page, cozy, L.SETTINGS_COZY_TOOLTIP)
+	ns.CreateCheckbox(layout, cozy, L.SETTINGS_COZY_TOOLTIP)
 
 	local budgetOn = Settings.RegisterProxySetting(page, BUDGET, Boolean, L.SETTINGS_BUDGET, true, function()
 		return stored().budget.on
 	end, function(value)
 		stored().budget.on = value
 	end)
-	local budget = Settings.CreateCheckbox(page, budgetOn, L.SETTINGS_BUDGET_TOOLTIP)
+	local budget = ns.CreateCheckbox(layout, budgetOn, L.SETTINGS_BUDGET_TOOLTIP)
 	greys(budget, notCozy)
 
 	local countSetting = Settings.RegisterProxySetting(page, COUNT, Number, L.SETTINGS_BUDGET_COUNT, 40, function()
@@ -90,7 +90,7 @@ ns.CoreSettingsRows.announcements = function(page, layout)
 	end, function(value)
 		stored().budget.count = value
 	end)
-	local count = Settings.CreateSlider(page, countSetting, sliderOptions(COUNT_MIN, COUNT_MAX, tostring))
+	local count = ns.CreateSlider(layout, countSetting, sliderOptions(COUNT_MIN, COUNT_MAX, tostring))
 	count:SetParentInitializer(budget)
 	greys(count, slidersLive)
 
@@ -100,8 +100,8 @@ ns.CoreSettingsRows.announcements = function(page, layout)
 	end, function(value)
 		stored().budget.window = value * SECONDS_PER_MINUTE
 	end)
-	local window = Settings.CreateSlider(
-		page,
+	local window = ns.CreateSlider(
+		layout,
 		windowSetting,
 		sliderOptions(WINDOW_MIN, WINDOW_MAX, function(value)
 			return ns.RenderText(L.MINUTES, { value = value })
@@ -124,7 +124,7 @@ ns.CoreSettingsRows.announcements = function(page, layout)
 			stored().everyCatch = value
 		end
 	)
-	greys(Settings.CreateCheckbox(page, everyCatch, L.SETTINGS_EVERY_CATCH_TOOLTIP), notCozy)
+	greys(ns.CreateCheckbox(layout, everyCatch, L.SETTINGS_EVERY_CATCH_TOOLTIP), notCozy)
 
 	-- The announcements' motion: off, each appears as it settles. Never greyed: Cozy mode still shows a splash.
 	local motion = Settings.RegisterProxySetting(page, MOTION, Boolean, L.SETTINGS_MOTION, true, function()
@@ -132,7 +132,7 @@ ns.CoreSettingsRows.announcements = function(page, layout)
 	end, function(value)
 		stored().motion = value
 	end)
-	Settings.CreateCheckbox(page, motion, L.SETTINGS_MOTION_TOOLTIP)
+	ns.CreateCheckbox(layout, motion, L.SETTINGS_MOTION_TOOLTIP)
 
 	-- Toast style and Sound set: the same equipped looks as on Look and Feel, which this page's Defaults button
 	-- restores too (SET-R30, SET-R33, SET-R51).
@@ -143,10 +143,12 @@ ns.CoreSettingsRows.announcements = function(page, layout)
 	-- Where toasts and Nods appear (ANN-R98) and the card (ANN-R102): a button that puts the column back at the bottom
 	-- of the screen and the card back in the centre. Never greyed out; pressed while restricted it does nothing. A
 	-- button row isn't a value row, so Defaults leaves it alone (SET-R60).
-	layout:AddInitializer(CreateSettingsButtonInitializer(L.SETTINGS_TOAST_POSITION, L.SETTINGS_TOAST_RESET, function()
-		ns.ResetToastColumn()
-		ns.ResetCard()
-	end, L.SETTINGS_TOAST_RESET_TOOLTIP, true))
+	layout:AddInitializer(
+		ns.CreateSettingsButtonInitializer(L.SETTINGS_TOAST_POSITION, L.SETTINGS_TOAST_RESET, function()
+			ns.ResetToastColumn()
+			ns.ResetCard()
+		end, L.SETTINGS_TOAST_RESET_TOOLTIP, true)
+	)
 
 	-- The Party block after Core's rows (SET-R36, from 1.5.2): adapter/PartySettings.lua's.
 	ns.PartySettingsRows(page, layout)

@@ -42,6 +42,18 @@ local FORBIDDEN = {
 	-- open: OpenToCategory then calls SmartNavigation:EnterFocusGroup, which prints "Interface action failed because
 	-- of an AddOn" when insecure (#598).
 	{ "[%.:]AddShownPredicate%f[^%w_]", "SET-R6: Pagle adds no shown predicate" },
+	-- Blizzard's creators that draw the row on Blizzard's own template, whose frames the list pools by template name
+	-- and shares with Blizzard's rows. A frame Pagle's row drew in keeps Pagle's taint in its callback handles, and a
+	-- Blizzard row drawn in it next runs as Pagle's: Nameplates' "Nameplate style" then set its CVar so, and every
+	-- nameplate errored until /reload. Pagle's twins on its own templates are adapter/SettingsControls.lua's.
+	{ "%f[%w_]Settings%.CreateCheckbox", "SET-R7: Pagle draws no row on Blizzard's shared templates" },
+	{ "%f[%w_]Settings%.CreateSlider%f[^%w_]", "SET-R7: Pagle draws no row on Blizzard's shared templates" },
+	{ "%f[%w_]Settings%.CreateSliderInitializer", "SET-R7: Pagle draws no row on Blizzard's shared templates" },
+	{ "%f[%w_]Settings%.CreateDropdown%f[^%w_]", "SET-R7: Pagle draws no row on Blizzard's shared templates" },
+	{ "%f[%w_]Settings%.CreateDropdownInitializer", "SET-R7: Pagle draws no row on Blizzard's shared templates" },
+	{ "%f[%w_]Settings%.CreateColorSwatch", "SET-R7: Pagle draws no row on Blizzard's shared templates" },
+	{ "%f[%w_]Settings%.Setup[%w_]+", "SET-R7: Pagle draws no row on Blizzard's shared templates" },
+	{ "%f[%w_%.]Create[%w_]*Initializer%f[^%w_]", "SET-R7: Pagle draws no row on Blizzard's shared templates" },
 }
 
 -- Each forbidden thing the code says, as "<why>: <match>".
@@ -84,6 +96,17 @@ describe("Pagle and Blizzard's Settings list (SET-R6, #246)", function()
 			{ 'hooksecurefunc("SettingsPanel_EscapePressed", f)', "SET-R6: Pagle hooks nothing of Settings" },
 			{ "KeybindListener:StartListening(action, 1)", "SET-R6: Pagle never drives Blizzard's key-binding" },
 			{ "initializer:AddShownPredicate(setting.isEnabled)", "SET-R6: Pagle adds no shown predicate" },
+			{ "Settings.CreateCheckbox(page, setting, tip)", "SET-R7: Pagle draws no row on Blizzard's shared" },
+			{ "Settings.CreateCheckboxInitializer(setting)", "SET-R7: Pagle draws no row on Blizzard's shared" },
+			{ "Settings.CreateSlider(page, setting, options)", "SET-R7: Pagle draws no row on Blizzard's shared" },
+			{ "Settings.CreateDropdown(page, setting, options)", "SET-R7: Pagle draws no row on Blizzard's shared" },
+			{ "Settings.CreateDropdownInitializer(setting, f)", "SET-R7: Pagle draws no row on Blizzard's shared" },
+			{ "Settings.CreateSliderInitializer(setting, o)", "SET-R7: Pagle draws no row on Blizzard's shared" },
+			{ "Settings.SetupCVarCheckbox(page, cvar, label)", "SET-R7: Pagle draws no row on Blizzard's shared" },
+			{ "CreateSettingsListSectionHeaderInitializer(L.X)", "SET-R7: Pagle draws no row on Blizzard's shared" },
+			{ "CreateSettingsButtonInitializer(a, b, f, t, true)", "SET-R7: Pagle draws no row on Blizzard's shared" },
+			{ "CreateSettingsCheckboxSliderInitializer(a, b)", "SET-R7: Pagle draws no row on Blizzard's shared" },
+			{ "CreateKeybindingEntryInitializer(index, true)", "SET-R7: Pagle draws no row on Blizzard's shared" },
 		}
 		for _, case in ipairs(planted) do
 			it(case[1], function()
@@ -100,6 +123,13 @@ describe("Pagle and Blizzard's Settings list (SET-R6, #246)", function()
 			assert.are.same({}, offences("HideUIPanel(SettingsPanel)"))
 			assert.are.same({}, offences("local initializer = Settings.CreateElementInitializer(TEMPLATE, data)"))
 			assert.are.same({}, offences("initializer:SetParentInitializer(parent)"))
+			-- Pagle's twins on its own templates, and Blizzard's creators that take the template (SET-R7)
+			assert.are.same({}, offences("ns.CreateCheckbox(layout, setting, tip)"))
+			assert.are.same({}, offences("ns.CreateSettingsListSectionHeaderInitializer(L.X)"))
+			assert.are.same({}, offences("Settings.CreateControlInitializer(CHECKBOX, setting, nil, tip)"))
+			assert.are.same({}, offences("Settings.CreateSettingInitializer(CHECKBOX_SLIDER, data)"))
+			assert.are.same({}, offences("Settings.CreateSliderOptions(1, 10, 1)"))
+			assert.are.same({}, offences("Settings.CreateDropdownOptionInserter(setting, options, initializer)"))
 		end)
 	end)
 end)

@@ -38,12 +38,10 @@ stds.wow = {
 			},
 		},
 		"UnitGUID",
-		-- The Settings tree (CORE-R40–R44, settings.md); the Settings table itself is in stds.wow_variables.
-		"CreateSettingsListSectionHeaderInitializer",
-		"CreateSettingsButtonInitializer",
-		-- A checkboxSlider row (CORE-R42): Blizzard_Settings_Shared/Blizzard_SettingControls.lua at the forever 1.60.1
-		-- commit, as Controls' mouse speed row uses it.
-		"CreateSettingsCheckboxSliderInitializer",
+		-- The Settings tree (CORE-R40–R44, settings.md); the Settings table itself is in stds.wow_variables. Blizzard's
+		-- CreateSettingsListSectionHeaderInitializer, CreateSettingsButtonInitializer and
+		-- CreateSettingsCheckboxSliderInitializer aren't listed: each draws its row on Blizzard's shared template, so
+		-- Pagle builds its rows on its own (adapter/SettingsControls.lua, SET-R7), and a call to one fails the lint.
 		C_KeyBindings = { fields = { "GetBindingIndex" } },
 		-- A Module's keybinding row, Core's own (SET-R20, #120): it binds as Blizzard's KeybindListener does, through
 		-- the client's SetBinding, SaveBindings and GetCurrentBindingSet (GetBindingKey and GetBindingText are listed
@@ -276,12 +274,18 @@ stds.wow_variables = {
 				"RegisterAddOnCategory",
 				"OpenToCategory",
 				"RegisterProxySetting",
-				"CreateCheckbox",
-				"CreateSlider",
 				"CreateSliderOptions",
-				"CreateDropdown",
 				"CreateControlTextContainer",
 				"CreateElementInitializer",
+				-- From 1.5.3 (SET-R7): the creators that take the row's template, so Pagle's native rows draw on
+				-- templates of its own (adapter/SettingsControls.lua), and a dropdown's menu set up as Blizzard's
+				-- SettingsDropdownControlMixin:SetupDropdownMenu does. Gethe/wow-ui-source branch forever, 1.60.1 (70862),
+				-- Interface/AddOns/Blizzard_Settings_Shared/Blizzard_Settings.lua. CreateCheckbox, CreateSlider and
+				-- CreateDropdown aren't listed: each draws its row on Blizzard's shared template.
+				"CreateControlInitializer",
+				"CreateSettingInitializer",
+				"CreateDropdownOptionInserter",
+				"InitDropdown",
 			},
 		},
 		-- A FrameXML table the dump doesn't list (SET-R30: Per's "{n} min" label). Gethe/wow-ui-source branch forever at
@@ -383,6 +387,7 @@ files["addons/Pagle/adapter/Slash.lua"] = { globals = { "SLASH_PAGLE1" } }
 files["addons/Pagle_Stats/adapter/Settings.lua"] = { globals = { "PagleStatsWatchedRowMixin" } }
 -- The mixin of Core's own Settings rows, which adapter/Settings.xml's template names (SET-R5, SET-R6).
 files["addons/Pagle/adapter/Settings.lua"] = { globals = { "Pagle", "PagleSettingsRowMixin" } }
+files["addons/Pagle/adapter/SettingsControls.lua"] = { globals = { "Pagle", "PagleSettingsDropdownControlMixin" } }
 files["addons/Pagle/adapter/LookAndFeel.lua"] = { globals = { "Pagle", "PagleSettingsSlotRowMixin" } }
 files["addons/Pagle/adapter/KeyBindingRow.lua"] = { globals = { "Pagle", "PagleSettingsKeyRowMixin" } }
 -- A Module's adapter/ reads Pagle through stds.pagle above. Its logic/ and locale/ files read it only in their CORE-R11

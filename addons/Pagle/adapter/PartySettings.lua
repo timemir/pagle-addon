@@ -43,7 +43,7 @@ end
 ---@param layout SettingsLayout
 function ns.PartySettingsRows(page, layout)
 	local Boolean = Settings.VarType.Boolean
-	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_PARTY))
+	layout:AddInitializer(ns.CreateSettingsListSectionHeaderInitializer(L.SETTINGS_PARTY))
 
 	-- A row over option `key`.
 	local function option(variable, label, key)
@@ -54,10 +54,9 @@ function ns.PartySettingsRows(page, layout)
 		end)
 	end
 
-	Settings.CreateCheckbox(page, option(SHARE, L.SETTINGS_PARTY_SHARE, "share"), L.SETTINGS_PARTY_SHARE_TOOLTIP)
+	ns.CreateCheckbox(layout, option(SHARE, L.SETTINGS_PARTY_SHARE, "share"), L.SETTINGS_PARTY_SHARE_TOOLTIP)
 
-	local show =
-		Settings.CreateCheckbox(page, option(SHOW, L.SETTINGS_PARTY_SHOW, "show"), L.SETTINGS_PARTY_SHOW_TOOLTIP)
+	local show = ns.CreateCheckbox(layout, option(SHOW, L.SETTINGS_PARTY_SHOW, "show"), L.SETTINGS_PARTY_SHOW_TOOLTIP)
 	greys(show, notCozy)
 	for _, kind in ipairs(ns.PARTY_KINDS) do
 		local setting = Settings.RegisterProxySetting(
@@ -73,15 +72,12 @@ function ns.PartySettingsRows(page, layout)
 				ns.SetPartyKind(kind, value)
 			end
 		)
-		local row = Settings.CreateCheckbox(page, setting)
+		local row = ns.CreateCheckbox(layout, setting)
 		row:SetParentInitializer(show)
 		greys(row, kindsLive)
 	end
 
-	local sounds = Settings.CreateCheckbox(
-		page,
-		option(SOUNDS, L.SETTINGS_PARTY_SOUNDS, "sounds"),
-		L.SETTINGS_PARTY_SOUNDS_TOOLTIP
-	)
+	local sounds =
+		ns.CreateCheckbox(layout, option(SOUNDS, L.SETTINGS_PARTY_SOUNDS, "sounds"), L.SETTINGS_PARTY_SOUNDS_TOOLTIP)
 	greys(sounds, notCozy)
 end
