@@ -707,7 +707,7 @@ ns.catalogue = {
 			hasData = true,
 			parent = 0,
 			skillBase = -70,
-			skillBaseConfirmed = false,
+			skillBaseConfirmed = true,
 		},
 		[86] = {
 			catches = {
@@ -1033,13 +1033,13 @@ ns.catalogue = {
 		[161] = { catches = {}, continent = 0, hasData = true, parent = 85, skillBaseConfirmed = false },
 		[162] = {
 			catches = {
-				{ confirmed = false, itemID = 6289 },
-				{ confirmed = false, itemID = 6291 },
+				{ confirmed = true, itemID = 6289 },
+				{ confirmed = true, itemID = 6291 },
 				{ confirmed = false, itemID = 6292 },
 				{ confirmed = false, itemID = 6294 },
 				{ confirmed = false, itemID = 6295 },
 				{ confirmed = false, itemID = 6297 },
-				{ confirmed = false, itemID = 6299 },
+				{ confirmed = true, itemID = 6299 },
 				{ confirmed = false, itemID = 6301 },
 				{ confirmed = false, itemID = 6643 },
 			},
@@ -3062,12 +3062,12 @@ ns.catalogue = {
 		[809] = { catches = {}, continent = 0, hasData = true, parent = 1, skillBaseConfirmed = false },
 		[810] = {
 			catches = {
-				{ confirmed = false, itemID = 6289 },
-				{ confirmed = false, itemID = 6291 },
+				{ confirmed = true, itemID = 6289 },
+				{ confirmed = true, itemID = 6291 },
 				{ confirmed = false, itemID = 6292 },
 				{ confirmed = false, itemID = 6294 },
-				{ confirmed = false, itemID = 6297 },
-				{ confirmed = false, itemID = 6299 },
+				{ confirmed = true, itemID = 6297 },
+				{ confirmed = true, itemID = 6299 },
 				{ confirmed = false, itemID = 6301 },
 			},
 			continent = 0,
@@ -6011,7 +6011,7 @@ ns.catalogue = {
 	events = {
 		[301] = { confirmed = false, duration = 120, start = 840, weekday = 1 },
 	},
-	fingerprint = "817e7223e087ec0a",
+	fingerprint = "09b9192642c94ed3",
 	fishingSpells = { 7620, 7731, 7732, 18248, 1240948, 1240959, 1240970, 1240983, 1283866 },
 	items = {
 		[118] = { category = "other", legend = false, noise = true, pool = false, quality = 1, removed = false },
