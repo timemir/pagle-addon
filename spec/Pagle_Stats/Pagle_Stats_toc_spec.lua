@@ -83,6 +83,7 @@ describe("Pagle_Stats.toc", function()
 				["data/Lore.lua"] = true,
 				["data/Lore.deDE.lua"] = true,
 				["data/Lore.esES.lua"] = true,
+				["data/Lore.frFR.lua"] = true,
 				["data/Lore.ruRU.lua"] = true,
 			}
 			local folders, handWrittenData = {}, {}

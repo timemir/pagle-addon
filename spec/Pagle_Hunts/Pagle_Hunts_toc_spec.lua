@@ -83,6 +83,7 @@ describe("Pagle_Hunts.toc", function()
 				["data/Lore.lua"] = true,
 				["data/Lore.deDE.lua"] = true, -- a Locale's Lore (DATA-R104), beside its interface file
 				["data/Lore.esES.lua"] = true,
+				["data/Lore.frFR.lua"] = true,
 				["data/Lore.ruRU.lua"] = true,
 			}
 			local folders, handWrittenData = {}, {}

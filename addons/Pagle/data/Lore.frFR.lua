@@ -407,7 +407,7 @@ ns.Locale("frFR", function(L)
 	L["variety.13758.redfin.name"] = "Nageoire-rouge"
 	L["variety.13758.spotted.description"] = "Des taches au lieu des bandes. Même caractère."
 	L["variety.13758.spotted.name"] = "Tacheté"
-	L["variety.13758.yellow.description"] = "Jaune doré aux bandes sombres. Brillant comme une lampe dans l’eau verte."
+	L["variety.13758.yellow.description"] = "Jaune doré aux bandes sombres. Luisant comme une lampe dans l’eau verte."
 	L["variety.13758.yellow.name"] = "Jaune"
 	L["variety.13759.crescent-marked.description"] = "Un croissant pâle sur chaque flanc, comme si la lune y avait laissé une empreinte."
 	L["variety.13759.crescent-marked.name"] = "Marqué du croissant"
