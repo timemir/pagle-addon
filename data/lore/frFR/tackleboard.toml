@@ -1,0 +1,208 @@
+# Tackleboard's lore in French (frFR), over the English of addons/Pagle_TackleBoard/data/Lore.lua (DATA-R113, DATA-R114).
+# Machine-drafted: written by an AI model (Claude) for 1.5.3 and not yet reviewed by a native French speaker.
+
+[boardgood."tackleboard.toaststyle.ember"]
+description.value = "Une page qui a failli finir en petit bois. Les bords rougeoient encore quand un beau poisson arrive."
+description.en = "A page that was nearly kindling once. The edges still glow when a good fish comes in."
+name.value = "Braise de l’âtre"
+name.en = "Hearth Ember"
+
+[boardgood."tackleboard.trackerframe.bamboo"]
+description.value = "Des lattes de bambou liées à la ficelle, le genre de chose qu’on roule et qu’on fourre dans le sac de pêche."
+description.en = "Bamboo slats lashed with cord, the sort of thing you roll up and stuff in the tackle bag."
+name.value = "Lattes de bambou"
+name.en = "Bamboo Slats"
+
+[boardgood."tackleboard.trackerframe.bobber"]
+description.value = "Rouge sur blanc comme un bon flotteur, avec l’un d’eux qui flotte dans le coin, ligne comprise."
+description.en = "Red over white like a good bobber, with one floating at the corner, line and all."
+name.value = "Flotteur"
+name.en = "Bobber"
+
+[boardgood."tackleboard.trackerframe.corkboard"]
+description.value = "Une plaque de liège criblée de trous d’épingles, souvenirs de tâches finies depuis longtemps. Il reste toujours de la place pour une de plus."
+description.en = "A slab of cork, pocked with pinholes from jobs long finished. There is always room for one more."
+name.value = "Panneau de liège"
+name.en = "Corkboard"
+
+[boardgood."tackleboard.trackerframe.driftwood"]
+description.value = "Une planche gris-mer, polie par la marée et clouée près du quai. Elle a voyagé plus loin que la plupart des bateaux."
+description.en = "A sea-grey plank, worn smooth by the tide and nailed up by the dock. It has travelled further than most boats."
+name.value = "Planche usée par la marée"
+name.en = "Tideworn Plank"
+
+[boardgood."tackleboard.trackerframe.embers"]
+description.value = "Du bois flotté calciné, le feu encore vivant dans ses fissures. Une année de feux est passée par celui-ci."
+description.en = "Charred driftwood with the fire still living in its cracks. A year of fires went into this one."
+name.value = "Braises vives"
+name.en = "Live Embers"
+
+[boardgood."tackleboard.trackerframe.net"]
+description.value = "Un carré de vieux filet tendu sur les lignes, ses flotteurs de liège encore attachés en haut."
+description.en = "A square of old net hung over the lines, its cork floats still tied along the top."
+name.value = "Filet de pêche"
+name.en = "Fishing Net"
+
+[boardgood."tackleboard.trackerframe.none"]
+description.value = "La liste seule, sans rien d’épinglé derrière. Elle ne gondole jamais à l’humidité."
+description.en = "The list on its own, with nothing pinned behind it. It never warps in the damp."
+name.value = "Sans cadre"
+name.en = "No Frame"
+
+[boardgood."tackleboard.trackerframe.tin"]
+description.value = "Une boîte de pêche en émail vert, cabossée et écaillée, au couvercle en relief et à la charnière un peu rouillée."
+description.en = "A green enamel tackle tin, dented and chipped, its lid embossed and its hinge a little rusty."
+name.value = "Boîte à pêche"
+name.en = "Tackle Tin"
+
+[boardtitle.campfire_100]
+text.value = "Gardien du foyer"
+text.en = "Hearthwarden"
+
+[boardtitle.campfire_30]
+text.value = "Garde-feu"
+text.en = "Firekeeper"
+
+[boardtitle.campfire_365]
+text.value = "Gardien du long feu"
+text.en = "Keeper of the Long Fire"
+
+[boardtitle.campfire_7]
+text.value = "Allumeur"
+text.en = "Kindler"
+
+[boardtitle.flybox]
+text.value = "Monteur de mouches"
+text.en = "Fly-Tier"
+
+[boardtitle.tally_100]
+text.value = "Main sûre"
+text.en = "Steady Hand"
+
+[boardtitle.tally_25]
+text.value = "Bricoleur"
+text.en = "Odd-Jobber"
+
+[boardtitle.tally_500]
+text.value = "Pilier du ponton"
+text.en = "Pillar of the Pier"
+
+[fly.ashenvale_olive]
+name.value = "Olive des vieilles forêts"
+name.en = "Old-Growth Olive"
+
+[fly.barrens_dun]
+name.value = "Subimago des savanes"
+name.en = "Savanna Dun"
+
+[fly.bloodsail_streamer]
+name.value = "Streamer de la Voile sanglante"
+name.en = "Bloodsail Streamer"
+
+[fly.booty_bay_bucktail]
+name.value = "Bucktail du boucanier"
+name.en = "Buccaneer Bucktail"
+
+[fly.darkshore_dun]
+name.value = "Subimago des brumes marines"
+name.en = "Sea-Mist Dun"
+
+[fly.deepwater_duchess]
+name.value = "Duchesse des grands fonds"
+name.en = "Deepwater Duchess"
+
+[fly.desolace_drifter]
+name.value = "Dérivante desséchée"
+name.en = "Bone-Dry Drifter"
+
+[fly.duskwood_shadow]
+name.value = "Ombre du crépuscule"
+name.en = "Gloaming Shadow"
+
+[fly.elwynn_royal]
+name.value = "Royale des bois verts"
+name.en = "Greenwood Royal"
+
+[fly.feralas_fern]
+name.value = "Fougère des fourrés"
+name.en = "Thicket Fern"
+
+[fly.gnomish_whirligig]
+name.value = "Virevolteur gnome"
+name.en = "Gnomish Whirligig"
+
+[fly.goldshire_gnat]
+name.value = "Moucheron de mousse tombale"
+name.en = "Gravemoss Gnat"
+
+[fly.grimtotem_hackle]
+name.value = "Hackle Totem-sinistre"
+name.en = "Grimtotem Hackle"
+
+[fly.kodo_hair_caddis]
+name.value = "Sedge en poil de kodo"
+name.en = "Kodo-Hair Caddis"
+
+[fly.kraken_ink_streamer]
+name.value = "Streamer à l’encre de kraken"
+name.en = "Kraken Ink Streamer"
+
+[fly.lakeshire_coachman]
+name.value = "Coachman de caravane"
+name.en = "Caravan Coachman"
+
+[fly.moonwell_silverwing]
+name.value = "Aile-d’argent au clair de lune"
+name.en = "Moonlight Silverwing"
+
+[fly.mudsnout_woolly]
+name.value = "Woolly Groin-de-vase"
+name.en = "Mudsnout Woolly"
+
+[fly.murloc_nymph]
+name.value = "Nymphe murloc"
+name.en = "Murloc Nymph"
+
+[fly.nats_golden_doctor]
+name.value = "Docteur doré de Nat"
+name.en = "Nat's Golden Doctor"
+
+[fly.needles_ant]
+name.value = "Fourmi des mesas"
+name.en = "Mesa Ant"
+
+[fly.phoenix_hackle]
+name.value = "Hackle de phénix"
+name.en = "Phoenix Hackle"
+
+[fly.raptor_quill]
+name.value = "Plume de raptor"
+name.en = "Raptor Quill"
+
+[fly.redridge_ember]
+name.value = "Braise de roche rouge"
+name.en = "Red Rock Ember"
+
+[fly.silverpine_spinner]
+name.value = "Spinner des pins gris"
+name.en = "Grey Pine Spinner"
+
+[fly.swamp_midge]
+name.value = "Chironome des marais"
+name.en = "Swamp Midge"
+
+[fly.tanaris_sandfly]
+name.value = "Mouche des sables Gentepression"
+name.en = "Steamwheedle Sandfly"
+
+[fly.tarnished_spoon]
+name.value = "Cuiller ternie"
+name.en = "Tarnished Spoon"
+
+[fly.thunderhead_tiger]
+name.value = "Tigre des nuées d’orage"
+name.en = "Thunderhead Tiger"
+
+[fly.westfall_wheatwing]
+name.value = "Aile-de-blé des moissons"
+name.en = "Harvest Wheatwing"

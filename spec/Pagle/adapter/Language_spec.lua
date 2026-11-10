@@ -35,21 +35,25 @@ local function login(setting, client, extra, replace)
 end
 
 describe("the shipped locale list", function()
-	it("registers deDE, esES and ruRU listed, and applies none while the setting is Game default on enUS", function()
-		local loaded = loadAddon("Pagle", FOREVER_GLOBALS)
+	it(
+		"registers deDE, esES, frFR and ruRU listed, and applies none while the setting is Game default on enUS",
+		function()
+			local loaded = loadAddon("Pagle", FOREVER_GLOBALS)
 
-		-- fmartingr's Spanish (#510, #528) and the machine-drafted Russian, both listed for 1.1 by the maintainer, and the
-		-- machine-drafted German, listed for 1.1.1.
-		assert.are.same(
-			{ code = "esES", name = "Español", listed = true, translators = { "fmartingr" } },
-			loaded.ns.LocaleInfo("esES")
-		)
-		assert.are.same({ code = "ruRU", name = "Русский", listed = true }, loaded.ns.LocaleInfo("ruRU"))
-		assert.are.same({ code = "deDE", name = "Deutsch", listed = true }, loaded.ns.LocaleInfo("deDE"))
-		assert.is_nil(loaded.ns.LocaleInfo("frFR"))
-		assert.are.equal("enUS", loaded.env.Pagle.GetLanguage())
-		assert.are.equal("A collection worth keeping", loaded.ns.L.TRAILER_CAPTION_JOURNAL)
-	end)
+			-- fmartingr's Spanish (#510, #528) and the machine-drafted Russian, both listed for 1.1 by the maintainer, and the
+			-- machine-drafted German, listed for 1.1.1; Ikar-Rahl's French (#679), listed for 1.6.1.
+			assert.are.same(
+				{ code = "esES", name = "Español", listed = true, translators = { "fmartingr" } },
+				loaded.ns.LocaleInfo("esES")
+			)
+			assert.are.same({ code = "ruRU", name = "Русский", listed = true }, loaded.ns.LocaleInfo("ruRU"))
+			assert.are.same({ code = "deDE", name = "Deutsch", listed = true }, loaded.ns.LocaleInfo("deDE"))
+			assert.are.same({ code = "frFR", name = "Français", listed = true }, loaded.ns.LocaleInfo("frFR"))
+			assert.is_nil(loaded.ns.LocaleInfo("itIT"))
+			assert.are.equal("enUS", loaded.env.Pagle.GetLanguage())
+			assert.are.equal("A collection worth keeping", loaded.ns.L.TRAILER_CAPTION_JOURNAL)
+		end
+	)
 end)
 
 describe("Core's Language at ADDON_LOADED", function()
@@ -141,7 +145,7 @@ describe("Core's Language at ADDON_LOADED", function()
 		end)
 
 		it("is English with Game default when the client's Locale is not registered at all", function()
-			assert.are.equal("enUS", login("default", "frFR").env.Pagle.GetLanguage())
+			assert.are.equal("enUS", login("default", "itIT").env.Pagle.GetLanguage())
 		end)
 
 		it("never applies an unlisted Locale chosen by the setting", function()

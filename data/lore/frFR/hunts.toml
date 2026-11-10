@@ -1,0 +1,716 @@
+# Hunts's lore in French (frFR), over the English of addons/Pagle_Hunts/data/Lore.lua (DATA-R113, DATA-R114).
+# Machine-drafted: written by an AI model (Claude) for 1.5.3 and not yet reviewed by a native French speaker.
+
+[event.alterac_dawn_trout]
+name.value = "Truite à l’aube"
+name.en = "Dawn Trout"
+note.value = "Des lacs froids, haut parmi les cimes. Le pari, c’est la truite avant le petit-déjeuner, et le givre sur la ligne est offert."
+note.en = "Cold lakes high among the peaks. The wager is trout before breakfast, and the frost on the line comes free."
+
+[event.azshara_lobster]
+name.value = "Homard à la lanterne"
+name.en = "Lobster by Lamplight"
+note.value = "Une côte brisée de pierres tombées et de grandeur fanée. Les homards restent près des rochers, et les jaune-queues gardent leurs distances."
+note.en = "A broken coast of fallen stone and faded grandeur. The lobster keep close to the rocks, and the yellowtail keep their distance."
+
+[event.barrens_oddities]
+name.value = "Curiosité au crépuscule"
+name.en = "Oddity at Dusk"
+note.value = "Les mares des plaines arides donnent de drôles de poissons. Examinez-les au coucher du soleil, et réfléchissez à deux fois avant d’en cuire un."
+note.en = "The pools of the dry plains turn out some strange fish. Look them over at sundown, and think twice before cooking any."
+
+[event.burning_steppes_salmon]
+name.value = "Saumon sous la cendre"
+name.en = "Salmon under Ash"
+note.value = "Collines noires, cendre sur l’eau et saumons dessous. Prévoyez un chapeau à large bord."
+note.en = "Black hills, ash on the water and salmon under it. Bring a hat with a wide brim."
+
+[event.darkshore_moonlight]
+name.value = "Mérou au clair de lune"
+name.en = "Grouper by Moonlight"
+note.value = "Une longue côte grise sous de vieux arbres sombres. Le pari, c’est le mérou une fois la lune levée, et les nuits y sont longues."
+note.en = "A long grey coast under old, dark trees. The wager is grouper once the moon is up, and the nights there are long."
+
+[event.deadwind_pass_night]
+name.value = "Col froid, longue nuit"
+name.en = "Cold Pass, Long Night"
+note.value = "Un col froid où rien ne pousse, et une vieille tour qui veille sur la route. Les saumons ne lui prêtent aucune attention."
+note.en = "A cold pass where nothing grows, and an old tower keeping watch over the road. The salmon pay it no attention."
+
+[event.duskwood_witching]
+name.value = "L’heure des sorcières"
+name.en = "Witching Hour"
+note.value = "De lentes rivières noires dans des bois où il ne fait jamais tout à fait jour. Après minuit, les poissons mordent, et tout le reste aussi."
+note.en = "Slow black rivers through woods where it never quite gets light. After midnight the fish bite, and so does everything else."
+
+[event.dustwallow_marsh_night]
+name.value = "Tard sur le marais"
+name.en = "Late on the Marsh"
+note.value = "Une côte chaude et humide qui bourdonne toute la nuit. Des truites dans les criques, des jaune-queues au large, et toujours quelque chose pour vous piquer la nuque."
+note.en = "A warm, wet coast that hums all night. Trout in the creeks, yellowtail off the shore, and something always biting your neck."
+
+[event.eastern_plaguelands_night]
+name.value = "Minuit dans l’Est mort"
+name.en = "Midnight in the Dead East"
+note.value = "Personne ne pêche dans l’Est mort une fois la nuit tombée, s’il peut l’éviter. Les saumons ont fini par compter dessus."
+note.en = "Nobody fishes the dead east after dark if they can help it. The salmon have come to count on that."
+
+[event.eastern_plaguelands_redgill]
+name.value = "Sinistres lacs de l’Est"
+name.en = "Grim Lakes of the East"
+note.value = "Sinistres à voir et généreux en dessous, comme la plupart des bons lacs et certains vieux pêcheurs."
+note.en = "Grim to look at and generous underneath, like most good lakes and some old anglers."
+
+[event.felwood_moonglade]
+name.value = "Bois souillés, lac clair"
+name.en = "Tainted Woods, Clear Lake"
+note.value = "Des ruisseaux maladifs sous les arbres souillés, et un lac clair et tranquille au-delà. Les rougets ne semblent pas voir la différence."
+note.en = "Sickly streams under the tainted trees, and a clear, quiet lake beyond them. The redgill don't seem to notice the difference."
+
+[event.feralas_redgill]
+name.value = "Rougets sous la pluie"
+name.en = "Redgill in the Rain"
+note.value = "Des rougets en remontant les rivières, des jaune-queues au large, et de la pluie sur les deux. La forêt ne sèche jamais tout à fait."
+note.en = "Redgill up the rivers, yellowtail off the coast, and rain over both. The forest never quite dries."
+
+[event.hinterlands_coast]
+name.value = "Où les collines rejoignent la mer"
+name.en = "Where the Hills Meet the Sea"
+note.value = "Des collines sauvages, des griffons au-dessus, et une mer tranquille tout en bas. Les barracudas valent bien la descente."
+note.en = "Wild hill country, gryphons overhead, and a quiet sea at the bottom of it all. The mightfish are worth the climb down."
+
+[event.hinterlands_redgill]
+name.value = "Rivières froides, nuits tardives"
+name.en = "Cold Rivers, Late Nights"
+note.value = "Des rivières claires et froides à travers les collines sauvages. Les rougets veillent tard : prévoyez une deuxième couverture."
+note.en = "Clear, cold rivers through the wild hills. The redgill keep late hours, so bring a second blanket."
+
+[event.loch_modan_frenzy]
+name.value = "Eaux de furie"
+name.en = "Frenzy Water"
+note.value = "Un grand lac froid en pays nain, où les poissons se battent au-dessus de leur taille. De temps en temps, quelque chose de plus fin remonte avec eux."
+note.en = "A wide, cold lake in dwarf country, where the fish fight above their size. Now and then something finer comes up with them."
+
+[event.silithus_coast]
+name.value = "Du sable jusqu’à l’eau"
+name.en = "Sand to the Water's Edge"
+note.value = "Du sable jusqu’au bord de l’eau, et quelque chose qui bourdonne dans les dunes derrière. Passé le ressac, ce sont d’honnêtes poissons de mer."
+note.en = "Sand all the way down to the water, and something buzzing in the dunes behind. Past the surf it's honest sea fish."
+
+[event.silithus_salmon]
+name.value = "Saumons dans le sable"
+name.en = "Salmon in the Sand"
+note.value = "Des blanchécailles si loin au sud, c’est une surprise pour tout le monde, saumons compris. Prenez-les tant que dure la lumière."
+note.en = "Whitescale this far south is a surprise to everyone, the salmon included. Take them while the light lasts."
+
+[event.stranglethorn_coast]
+name.value = "Rivage de jungle"
+name.en = "Jungle Shore"
+note.value = "Une eau chaude, de longues plages et une morue sous chaque rocher. Gardez un œil sur la lisière des arbres."
+note.en = "Warm water, long beaches and a cod under every rock. Keep one eye on the treeline."
+
+[event.tanaris_yellowtail]
+name.value = "Midi sur la côte du désert"
+name.en = "Noon on the Desert Coast"
+note.value = "Du sable jusqu’à la laisse de mer et pas un brin d’ombre. Les jaune-queues ne craignent pas la chaleur ; le pêcheur, peut-être."
+note.en = "Sand to the tideline and not a scrap of shade. The yellowtail don't mind the heat; the angler might."
+
+[event.tirisfal_silverpine_dusk]
+name.value = "Eaux grises au crépuscule"
+name.en = "Grey Waters at Dusk"
+note.value = "De l’eau froide sous les forêts grises du nord, calme comme un cimetière. Personne n’est pressé ici, et les poissons moins que quiconque."
+note.en = "Cold water under grey northern woods, quiet as a churchyard. Nobody here is in a hurry, least of all the fish."
+
+[event.ungoro_redgill]
+name.value = "Crépuscule dans le cratère"
+name.en = "Dusk in the Crater"
+note.value = "Des bassins fumants au fond du cratère, grouillants de rougets. Quelque chose de plus gros guette toujours depuis les fougères."
+note.en = "Steaming pools at the bottom of the crater, thick with redgill. Something larger is always watching from the ferns."
+
+[event.western_plaguelands_lake]
+name.value = "Un après-midi en terre flétrie"
+name.en = "An Afternoon in the Blight"
+note.value = "Des champs morts, un ciel malade et un lac plein de rougets en pleine santé. Personne ne leur a parlé de la peste."
+note.en = "Dead fields, a sick sky and a lake full of healthy redgill. Nobody has told them about the plague."
+
+[event.winterspring_daylight]
+name.value = "Jours courts dans la neige"
+name.en = "Short Days in the Snow"
+note.value = "Là-haut, dans la neige, les jours sont courts et les lacs froids. Passez la lumière sur l’eau, et la nuit près d’un feu."
+note.en = "Up in the snow the days are short and the lakes are cold. Spend the light on the water, and the dark by a fire."
+
+[event.winterspring_salmon]
+name.value = "Saumons des neiges"
+name.en = "Snowbound Salmon"
+note.value = "Eau froide, saumons blancs et le soir qui tombe tôt. Prenez garde à la glace en rentrant."
+note.en = "Cold water, white salmon and the evenings drawing in early. Mind the ice on the way home."
+
+[hunt.alterac_dawn_trout_catfish]
+name.value = "Moustaches dans la fonte des neiges"
+name.en = "Whiskers in the Snowmelt"
+
+[hunt.alterac_dawn_trout_haul]
+name.value = "Une bourriche froide"
+name.en = "A Cold Creel"
+
+[hunt.alterac_dawn_trout_smallfish]
+name.value = "Des goujons à pleines mains"
+name.en = "Smallfish by the Handful"
+
+[hunt.alterac_dawn_trout_trout]
+name.value = "Avant le petit-déjeuner"
+name.en = "Before Breakfast"
+
+[hunt.armoured_after_dark]
+name.value = "Cuirassés à la nuit tombée"
+name.en = "Armoured After Dark"
+
+[hunt.azshara_lobster_haul]
+name.value = "Panier de la côte brisée"
+name.en = "Broken-Coast Basket"
+
+[hunt.azshara_lobster_lobster]
+name.value = "Homards près des rochers"
+name.en = "Lobster by the Rocks"
+
+[hunt.azshara_lobster_night]
+name.value = "Vers minuit"
+name.en = "Toward Midnight"
+
+[hunt.azshara_lobster_yellowtail]
+name.value = "Jaune-queues à distance"
+name.en = "Yellowtail at a Distance"
+
+[hunt.barrens_oddities_albacore]
+name.value = "Thons au large des quais"
+name.en = "Albacore off the Docks"
+
+[hunt.barrens_oddities_haul]
+name.value = "Cueillette à l’oasis"
+name.en = "Oasis Pickings"
+
+[hunt.barrens_oddities_oddity]
+name.value = "Choses étranges au couchant"
+name.en = "Strange Things at Sundown"
+
+[hunt.barrens_oddities_snapper]
+name.value = "Lutjans dans les mares"
+name.en = "Snappers in the Pools"
+
+[hunt.bloated_luck]
+name.value = "Chance boursouflée"
+name.en = "Bloated Luck"
+note.value = "Lourds pour leur taille, et quelque chose cliquette à l’intérieur."
+note.en = "Heavy for their size, and something rattles inside."
+
+[hunt.burning_steppes_salmon_haul]
+name.value = "Un panier cendré"
+name.en = "An Ashen Basket"
+
+[hunt.burning_steppes_salmon_noon]
+name.value = "Les heures les plus chaudes"
+name.en = "The Hottest Hours"
+
+[hunt.burning_steppes_salmon_redgill]
+name.value = "Braises et rougets"
+name.en = "Embers and Redgill"
+
+[hunt.burning_steppes_salmon_salmon]
+name.value = "Saumons à travers la suie"
+name.en = "Salmon through the Soot"
+
+[hunt.darkshore_moonlight_albacore]
+name.value = "Thons plus au large"
+name.en = "Albacore Further Out"
+
+[hunt.darkshore_moonlight_grouper]
+name.value = "La lune sur l’eau"
+name.en = "Moon over the Water"
+
+[hunt.darkshore_moonlight_haul]
+name.value = "Une bourriche au clair de lune"
+name.en = "A Moonlit Keepnet"
+
+[hunt.darkshore_moonlight_snapper]
+name.value = "Lutjans sous les arbres"
+name.en = "Snappers under the Trees"
+
+[hunt.deadwind_pass_night_haul]
+name.value = "Quelque chose mord encore"
+name.en = "Something Still Bites"
+
+[hunt.deadwind_pass_night_salmon]
+name.value = "Blanchécailles dans le col"
+name.en = "Whitescale in the Pass"
+
+[hunt.deadwind_pass_night_tower]
+name.value = "Sous la vieille tour"
+name.en = "Under the Old Tower"
+
+[hunt.duskwood_witching_catfish]
+name.value = "Moustaches dans le noir"
+name.en = "Whiskers in the Dark"
+
+[hunt.duskwood_witching_haul]
+name.value = "Panier à la lueur des lanternes"
+name.en = "Lantern-Light Basket"
+
+[hunt.duskwood_witching_midnight]
+name.value = "Après le douzième coup"
+name.en = "After the Twelfth Bell"
+
+[hunt.duskwood_witching_snapper]
+name.value = "Lutjans d’eau noire"
+name.en = "Black-Water Snappers"
+
+[hunt.dustwallow_marsh_night_haul]
+name.value = "Seau d’eau de tourbière"
+name.en = "Bog-Water Bucket"
+
+[hunt.dustwallow_marsh_night_small_hours]
+name.value = "Petit matin"
+name.en = "Small Hours"
+
+[hunt.dustwallow_marsh_night_trout]
+name.value = "Truites dans les roseaux"
+name.en = "Trout in the Reeds"
+
+[hunt.dustwallow_marsh_night_yellowtail]
+name.value = "Jaune-queues au large du marais"
+name.en = "Yellowtail off the Marsh"
+
+[hunt.eastern_plaguelands_night_haul]
+name.value = "Un panier courageux"
+name.en = "A Brave Basket"
+
+[hunt.eastern_plaguelands_night_midnight]
+name.value = "Saumons après minuit"
+name.en = "Salmon after Midnight"
+
+[hunt.eastern_plaguelands_night_salmon]
+name.value = "Saumon pâle, rivière sombre"
+name.en = "Pale Salmon, Dark River"
+
+[hunt.eastern_plaguelands_redgill_haul]
+name.value = "Généreux en dessous"
+name.en = "Generous Underneath"
+
+[hunt.eastern_plaguelands_redgill_redgill]
+name.value = "Rougets des eaux troubles"
+name.en = "Redgill from the Murk"
+
+[hunt.eastern_plaguelands_redgill_salmon]
+name.value = "Saumons des eaux sinistres"
+name.en = "Grim-Water Salmon"
+
+[hunt.felwood_moonglade_haul]
+name.value = "Eau souillée, eau claire"
+name.en = "Foul Water, Fair Water"
+
+[hunt.felwood_moonglade_redgill]
+name.value = "Rougets, imperturbables"
+name.en = "Redgill, Unbothered"
+
+[hunt.felwood_moonglade_trout]
+name.value = "Truites du lac clair"
+name.en = "Clear-Lake Trout"
+
+[hunt.feralas_redgill_haul]
+name.value = "De la pluie dans le panier"
+name.en = "Rain in the Basket"
+
+[hunt.feralas_redgill_redgill]
+name.value = "Rougets en amont"
+name.en = "Redgill up the Rivers"
+
+[hunt.feralas_redgill_trout]
+name.value = "Truites sous la canopée"
+name.en = "Trout under the Canopy"
+
+[hunt.feralas_redgill_yellowtail]
+name.value = "Jaune-queues au large de la côte"
+name.en = "Yellowtail off the Coast"
+
+[hunt.first_light]
+name.value = "Premières lueurs"
+name.en = "First Light"
+note.value = "L’aube n’est qu’un début : le saumon mord jusque tard dans la soirée."
+note.en = "Dawn is only the start: the salmon bites well into the evening."
+
+[hunt.hinterlands_coast_haul]
+name.value = "En descendant des collines"
+name.en = "Down from the Hills"
+
+[hunt.hinterlands_coast_mightfish]
+name.value = "Vaut bien la descente"
+name.en = "Worth the Climb"
+
+[hunt.hinterlands_coast_morning]
+name.value = "Marée de fin de matinée"
+name.en = "Late-Morning Tide"
+
+[hunt.hinterlands_coast_yellowtail]
+name.value = "Jaune-queues de la mer calme"
+name.en = "Quiet-Sea Yellowtail"
+
+[hunt.hinterlands_redgill_haul]
+name.value = "Un panier de berge"
+name.en = "A Riverbank Basket"
+
+[hunt.hinterlands_redgill_night]
+name.value = "Heures tardives"
+name.en = "Late Hours"
+
+[hunt.hinterlands_redgill_redgill]
+name.value = "Rougets des rivières de colline"
+name.en = "Hill-River Redgill"
+
+[hunt.hinterlands_redgill_trout]
+name.value = "Truites dans les radiers"
+name.en = "Trout in the Riffles"
+
+[hunt.home_waters]
+name.value = "Eaux familières"
+name.en = "Home Waters"
+note.value = "N’importe quel poisson fera l’affaire. Tout le monde commence quelque part, et c’est humide."
+note.en = "Any fish will do. Everyone starts somewhere, and it's damp."
+
+[hunt.hut_hour]
+name.value = "L’heure de la hutte"
+name.en = "Hut Hour"
+
+[hunt.lantern_hours]
+name.value = "Heures de lanterne"
+name.en = "Lantern Hours"
+note.value = "De la cloche du soir au petit matin : une lanterne et une rive tranquille."
+note.en = "Evening bell to the small hours: one lantern and a quiet shore."
+
+[hunt.live_wire]
+name.value = "Fil sous tension"
+name.en = "Live Wire"
+
+[hunt.loch_modan_frenzy_frenzy]
+name.value = "Furie combative"
+name.en = "Fighting Frenzy"
+
+[hunt.loch_modan_frenzy_haul]
+name.value = "Panier des hautes terres"
+name.en = "Highland Basket"
+
+[hunt.loch_modan_frenzy_quality]
+name.value = "Quelque chose de plus fin"
+name.en = "Something Finer"
+
+[hunt.loch_modan_frenzy_snapper]
+name.value = "Hauts-fonds à lutjans"
+name.en = "Snapper Shallows"
+
+[hunt.mackerel_run]
+name.value = "Remontée de maquereaux"
+name.en = "Mackerel Run"
+note.value = "Glissants, abondants, et présents sur toute côte digne de ce nom."
+note.en = "Slippery, plentiful and found on every coast worth the name."
+
+[hunt.night_run]
+name.value = "Course de nuit"
+name.en = "Night Run"
+
+[hunt.rack_hour]
+name.value = "L’heure du séchoir"
+name.en = "Rack Hour"
+
+[hunt.riggles_angelfish]
+name.value = "Le scalaire de Riggle"
+name.en = "Riggle's Angelfish"
+
+[hunt.riggles_queenfish]
+name.value = "Le talang de Riggle"
+name.en = "Riggle's Queenfish"
+
+[hunt.riggles_racer]
+name.value = "Le tassergal de Riggle"
+name.en = "Riggle's Racer"
+
+[hunt.silithus_coast_albacore]
+name.value = "Thons au large du sable"
+name.en = "Albacore off the Sand"
+
+[hunt.silithus_coast_grouper]
+name.value = "Mérous passé le ressac"
+name.en = "Grouper past the Surf"
+
+[hunt.silithus_coast_haul]
+name.value = "D’honnêtes poissons de mer"
+name.en = "Honest Sea Fish"
+
+[hunt.silithus_coast_mackerel]
+name.value = "Maquereaux du rivage des dunes"
+name.en = "Dune-Shore Mackerel"
+
+[hunt.silithus_salmon_blackmouth]
+name.value = "Des clients huileux"
+name.en = "Oily Customers"
+
+[hunt.silithus_salmon_dusk]
+name.value = "Tant que dure la lumière"
+name.en = "While the Light Lasts"
+
+[hunt.silithus_salmon_haul]
+name.value = "Bien loin au sud"
+name.en = "A Long Way South"
+
+[hunt.silithus_salmon_salmon]
+name.value = "Saumons surpris"
+name.en = "Surprised Salmon"
+
+[hunt.stranglethorn_coast_cod]
+name.value = "Une morue sous chaque rocher"
+name.en = "A Cod under Every Rock"
+
+[hunt.stranglethorn_coast_haul]
+name.value = "Panier à l’ombre des palmiers"
+name.en = "Palm-Shade Basket"
+
+[hunt.stranglethorn_coast_trout]
+name.value = "Truites des rivières de la jungle"
+name.en = "Jungle River Trout"
+
+[hunt.stranglethorn_coast_yellowtail]
+name.value = "Jaune-queues dans les hauts-fonds"
+name.en = "Yellowtail in the Shallows"
+
+[hunt.summers_bass]
+name.value = "La perche de l’été"
+name.en = "Summer's Bass"
+
+[hunt.tanaris_yellowtail_cod]
+name.value = "Morues au pied des rochers"
+name.en = "Cod off the Rocks"
+
+[hunt.tanaris_yellowtail_haul]
+name.value = "Panier cuit au soleil"
+name.en = "Sun-Baked Basket"
+
+[hunt.tanaris_yellowtail_noon]
+name.value = "Pas d’ombre à midi"
+name.en = "No Shade at Noon"
+
+[hunt.tanaris_yellowtail_yellowtail]
+name.value = "Jaune-queues à la laisse de mer"
+name.en = "Yellowtail by the Tideline"
+
+[hunt.tastyfish_haul]
+name.value = "Pêche de courbines"
+name.en = "Tastyfish Haul"
+
+[hunt.tirisfal_silverpine_dusk_haul]
+name.value = "Un seau tranquille"
+name.en = "A Quiet Bucket"
+
+[hunt.tirisfal_silverpine_dusk_mackerel]
+name.value = "Maquereaux d’eau froide"
+name.en = "Cold-Water Mackerel"
+
+[hunt.tirisfal_silverpine_dusk_smallfish]
+name.value = "Un éclat de goujons"
+name.en = "A Glint of Smallfish"
+
+[hunt.tirisfal_silverpine_dusk_snapper]
+name.value = "Lutjans à l’heure des lampes"
+name.en = "Snappers at Lamplighting"
+
+[hunt.ungoro_redgill_dusk]
+name.value = "Épié depuis les fougères"
+name.en = "Watched from the Ferns"
+
+[hunt.ungoro_redgill_haul]
+name.value = "Un panier du fond du cratère"
+name.en = "A Crater-Floor Basket"
+
+[hunt.ungoro_redgill_redgill]
+name.value = "Rougets d’eau chaude"
+name.en = "Warm-Water Redgill"
+
+[hunt.ungoro_redgill_trout]
+name.value = "Truites des bassins fumants"
+name.en = "Steam-Pool Trout"
+
+[hunt.western_plaguelands_lake_afternoon]
+name.value = "Long après-midi"
+name.en = "Long Afternoon"
+
+[hunt.western_plaguelands_lake_haul]
+name.value = "Un panier malgré tout"
+name.en = "A Basket Despite It All"
+
+[hunt.western_plaguelands_lake_redgill]
+name.value = "Rougets en bonne santé"
+name.en = "Redgill in Good Health"
+
+[hunt.western_plaguelands_lake_trout]
+name.value = "Truites en terre flétrie"
+name.en = "Trout in the Blight"
+
+[hunt.winters_squid]
+name.value = "Le calmar de l’hiver"
+name.en = "Winter's Squid"
+
+[hunt.winterspring_daylight_haul]
+name.value = "Un panier mordu par le gel"
+name.en = "A Frostbitten Basket"
+
+[hunt.winterspring_daylight_morning]
+name.value = "Soleil sur la neige"
+name.en = "Sun on the Snow"
+
+[hunt.winterspring_daylight_redgill]
+name.value = "Rougets dans la neige"
+name.en = "Redgill in the Snow"
+
+[hunt.winterspring_salmon_evening]
+name.value = "Les soirs raccourcissent"
+name.en = "Evenings Drawing In"
+
+[hunt.winterspring_salmon_haul]
+name.value = "De la glace sur la ligne"
+name.en = "Ice on the Line"
+
+[hunt.winterspring_salmon_salmon]
+name.value = "Poissons blancs, collines blanches"
+name.en = "White Fish, White Hills"
+
+[huntgood."hunts.binding.fiveseal"]
+description.value = "Cuir noir frappé de sceaux de cire, un pour chaque série de chasses qui existe. Personne ne contrefait celle-ci."
+description.en = "Black leather with wax seals pressed into it, one for every set of hunts there is. Nobody fakes this one."
+name.value = "Sceau des cinq séries"
+name.en = "Five-Set Seal"
+
+[huntgood."hunts.binding.pathfinder"]
+description.value = "Un cuir de veau souple frappé d’une rose des vents. Remis aux pêcheurs qui ont mené une série de chasses entière jusqu’au bout."
+description.en = "Soft calfskin pressed with a compass rose. Handed to anglers who saw a whole set of hunts through to the end."
+name.value = "Veau de l’éclaireur"
+name.en = "Pathfinder's Calf"
+
+[huntgood."hunts.binding.wagersilk"]
+description.value = "Brocart de soie pourpre tissé de pièces et de poissons, barré d’une écharpe rouge. Offert aux pêcheurs qui ne cessent de gagner les paris de la maison."
+description.en = "Purple silk brocade woven with coins and fish, a red sash across it. Given to anglers who keep winning the house’s bets."
+name.value = "Brocart du gagnant"
+name.en = "Winner's Brocade"
+
+[huntgood."hunts.soundset.nightwatch"]
+description.value = "Une cloche grave pour la veille de nuit, une lanterne qui bourdonne et une chouette qui a vu chacune de vos prises."
+description.en = "A low bell for the night watch, a lantern humming and an owl who has seen every catch you ever made."
+name.value = "Veille de nuit"
+name.en = "Night Watch"
+
+[huntgood."hunts.toaststyle.nightfin"]
+description.value = "Au-delà du promontoire, là où finit la lumière, les nagenuits filent sous la pleine lune. Restez assez longtemps immobile et l’un d’eux la traverse d’un bond."
+description.en = "Out past the headland, where the light ends, the nightfin run under a full moon. Hold still long enough and one jumps clean across it."
+name.value = "Marée de nagenuits"
+name.en = "Nightfin Tide"
+
+[huntgood."hunts.toaststyle.study"]
+description.value = "Un journal ouvert sur un bureau, la lampe encore allumée et l’encrier débouché, ses meilleures mouches suspendues dans l’air tiède au-dessus de la page. Personne ne l’y a jamais surpris. Personne n’a jamais vu le bureau vide non plus."
+description.en = "A journal open on a desk, the lamp still lit and the ink uncapped, his best flies hanging in the warm air over the page. Nobody has ever caught him at it. Nobody has ever seen the desk empty, either."
+name.value = "Le cabinet de Nat"
+name.en = "Nat's Study"
+
+[huntgood."hunts.toaststyle.trench"]
+description.value = "Plus bas que là où renonce la lumière du soleil, et plus bas que là où renoncent les lanternes des baudroies. Quelque chose de très grand vit ici, et il a remarqué la ligne."
+description.en = "Below where the sunlight gives up, and below where the anglerfish lanterns give up. Something very large lives down here, and it has noticed the line."
+name.value = "La fosse profonde"
+name.en = "The Deep Trench"
+
+[huntgood."hunts.trackerframe.bounty"]
+description.value = "Cloué à la cabane du quai, les bords qui se recourbent. Le poisson dessus a un prix, et le prix monte."
+description.en = "Nailed up at the dock house, edges curling. The fish on it has a price, and the price is going up."
+name.value = "Avis de prime"
+name.en = "Bounty Poster"
+
+[huntgood."hunts.trackerframe.inkwash"]
+description.value = "Une feuille écrite à l’encre bleue, le lavis un peu coulé, comme une page qui aurait pris les embruns."
+description.en = "A sheet of paper written in blue ink, the wash run a little, like a page that caught the spray."
+name.value = "Lavis d’encre"
+name.en = "Ink Wash"
+
+[huntgood."hunts.trackerframe.mapscrap"]
+description.value = "Un coin arraché à une carte de chasse : un sentier en pointillés, une boussole, et le rond de tasse de quelqu’un."
+description.en = "A corner torn off a hunting map: a dotted trail, a compass, and somebody’s coffee ring."
+name.value = "Bout de carte"
+name.en = "Map Scrap"
+
+[huntgood."hunts.trackerframe.none"]
+description.value = "Seulement les lignes elles-mêmes, sans rien dessiné autour."
+description.en = "Only the lines themselves, with nothing drawn around them."
+name.value = "Sans cadre"
+name.en = "No Frame"
+
+[huntgood."hunts.trackerframe.slate"]
+description.value = "Une ardoise dans un cadre lié de corde, écrite à la craie chaque matin et barbouillée avant midi."
+description.en = "A slate in a rope-bound frame, chalked fresh each morning and smudged by noon."
+name.value = "Ardoise à craie"
+name.en = "Chalk Slate"
+
+[huntgood."hunts.trackerframe.spyglass"]
+description.value = "De l’émail bleu marine entre deux rails de laiton, l’oculaire dans le coin tourné vers la prochaine chasse."
+description.en = "Navy enamel between two brass rails, the eyepiece at the corner turned toward the next hunt."
+name.value = "Bordure de longue-vue"
+name.en = "Spyglass Rim"
+
+[huntgood."hunts.trackerframe.wagerribbon"]
+description.value = "Un ruban de soie pourpre à franges d’or, pour les pêcheurs qui battent sans cesse la maison à ses propres paris."
+description.en = "A purple silk ribbon with a gold fringe, for anglers who keep beating the house at its own wagers."
+name.value = "Ruban du gagnant"
+name.en = "Winner's Ribbon"
+
+[huntgood."hunts.trackerframe.waxseal"]
+description.value = "Un parchemin à la marge réglée de rouge, un sceau de cire pressé dans le coin, comme si la liste était officielle."
+description.en = "Parchment with a red rule down its margin and a wax seal pressed in the corner, as if the list were official."
+name.value = "Sceau de cire"
+name.en = "Wax Seal"
+
+[ladder.100]
+title.value = "Retraite du bookmaker"
+title.en = "Bookmaker's Retirement"
+
+[ladder.25]
+title.value = "Fléau du bookmaker"
+title.en = "Bookmaker's Bane"
+
+[ladder.50]
+title.value = "Ruine du bookmaker"
+title.en = "Bookmaker's Ruin"
+
+[set.camp_hours]
+name.value = "Heures de camp"
+name.en = "Camp Hours"
+title.value = "Gardien de hutte"
+title.en = "Hut Keeper"
+
+[set.home_waters]
+name.value = "Eaux familières"
+name.en = "Home Waters"
+note.value = "Vos premières eaux, près de chez vous."
+note.en = "Your first waters, close to home."
+title.value = "Docker"
+title.en = "Dockhand"
+
+[set.round_the_clock]
+name.value = "Tout le tour du cadran"
+name.en = "Round the Clock"
+title.value = "Guetteur d’horloge"
+title.en = "Clockwatcher"
+
+[set.sunday_showdown]
+name.value = "Le duel du dimanche"
+name.en = "Sunday Showdown"
+note.value = "Le grand concours de pêche, réservé aux personnages de niveau 60."
+note.en = "The Extravaganza, for level 60 characters only."
+title.value = "Concurrent de la jungle"
+title.en = "Jungle Contender"
+
+[set.turn_of_the_year]
+name.value = "Au fil de l’année"
+name.en = "Turn of the Year"
+title.value = "Main de toutes saisons"
+title.en = "All-Seasons Hand"

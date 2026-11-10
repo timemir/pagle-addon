@@ -1,0 +1,541 @@
+# Pagle's interface text in French (frFR), over data/locale/enUS/qol.toml (DATA-R114). `value` is the
+# translation, `en` the English it was translated from.
+#
+# Machine-drafted: written by an AI model (Claude) and not yet reviewed by a native French speaker. Strings that are
+# only textures, codes or the name Pagle carry the English as it is, so the Locale covers every key of the interface.
+
+[TITLE]
+value = "Confort"
+en = "QoL"
+
+[SETTINGS_ACTION]
+value = "Réglages de pêche »"
+en = "Fishing settings »"
+
+[BINDING_HEADER]
+value = "Pagle"
+en = "Pagle"
+
+[BINDING_FISHING_KEY]
+value = "Pagle : touche de pêche"
+en = "Pagle: Fishing key"
+
+[SETTINGS_CASTING]
+value = "Lancer"
+en = "Casting"
+
+[SETTINGS_CAST_WITH]
+value = "Lancer avec"
+en = "Cast with"
+
+[SETTINGS_CAST_WITH_TOOLTIP]
+value = "Aussi dans le menu du bouton des add-ons et avec /pagle qol input."
+en = "Also on the compartment menu and /pagle qol input."
+
+[SETTINGS_CAST_WITH_KEY]
+value = "Touche de pêche"
+en = "Fishing key"
+
+[SETTINGS_CAST_WITH_CLICK]
+value = "Double clic droit"
+en = "Double right-click"
+
+[SETTINGS_CAST_WITH_BOTH]
+value = "Les deux"
+en = "Both"
+
+[SETTINGS_FISHING_KEY]
+value = "Touche de pêche"
+en = "Fishing key"
+
+[SETTINGS_FISHING_KEY_TOOLTIP]
+value = "Chaque pression fait la chose suivante, une seule : lancer, ferrer, ou un appât, l’équipement ou une palourde au besoin."
+en = "Each press does the next single thing: cast, reel, or a lure, gear or clam when needed."
+
+[SETTINGS_LURES_AND_CLAMS]
+value = "Appâts et palourdes"
+en = "Lures and clams"
+
+[SETTINGS_LURES]
+value = "Appâts"
+en = "Lures"
+
+[SETTINGS_LURES_TOOLTIP]
+value = "Une pression avant un lancer pose un appât s’il n’y en a aucun."
+en = "A press before a cast applies a lure when none is on."
+
+[SETTINGS_LURES_OFF]
+value = "Désactivé"
+en = "Off"
+
+[SETTINGS_LURES_BEST]
+value = "Le meilleur que j’ai"
+en = "Best I have"
+
+[SETTINGS_LURES_THIS]
+value = "Uniquement celui-ci"
+en = "Only this one"
+
+[SETTINGS_LURE]
+value = "Appât"
+en = "Lure"
+
+[SETTINGS_LURE_UNNAMED]
+value = "Objet {item}"
+en = "Item {item}"
+
+[SETTINGS_CLAMS]
+value = "Ouvrir les palourdes entre les lancers"
+en = "Open clams between Casts"
+
+[SETTINGS_CLAMS_TOOLTIP]
+value = "Une palourde par pression, jamais pendant un lancer."
+en = "One clam per press, never during a cast."
+
+[SETTINGS_WHILE_YOU_FISH]
+value = "Pendant la pêche"
+en = "While you fish"
+
+[SETTINGS_AUDIO_MIX]
+value = "Mixage audio de pêche"
+en = "Fishing audio mix"
+
+[SETTINGS_AUDIO_MIX_TOOLTIP]
+value = "Pendant la pêche : chaque canal et le périphérique de sortie tels que réglés ci-dessous. Rétablis ensuite."
+en = "While you fish: each channel and the output device as set below. Put back afterwards."
+
+[SETTINGS_AUDIO_MASTER]
+value = "Volume principal"
+en = "Master volume"
+
+[SETTINGS_AUDIO_MASTER_TOOLTIP]
+value = "Coché, règle le volume principal pendant la pêche. Il ne se coupe pas et ne descend pas sous 10 %, pour que vous entendiez toujours le plouf."
+en = "Ticked, sets the master volume while you fish. It has no Off and goes no lower than 10%, so you still hear the splash."
+
+[SETTINGS_AUDIO_CHANNEL_TOOLTIP]
+value = "Coché, règle ce canal pendant la pêche : à 0 %, il est coupé. Décoché, le laisse tel quel."
+en = "Ticked, sets this channel while you fish: at 0% it's off. Unticked, leaves it as it is."
+
+[SETTINGS_AUDIO_EFFECTS]
+value = "Effets"
+en = "Effects"
+
+[SETTINGS_AUDIO_MUSIC]
+value = "Musique"
+en = "Music"
+
+[SETTINGS_AUDIO_AMBIENCE]
+value = "Ambiance"
+en = "Ambience"
+
+[SETTINGS_AUDIO_DIALOG]
+value = "Dialogues"
+en = "Dialog"
+
+[SETTINGS_AUDIO_KEEP]
+value = "Ne pas changer"
+en = "Don't change"
+
+[SETTINGS_AUDIO_OFF]
+value = "Coupé"
+en = "Off"
+
+[SETTINGS_AUDIO_LEVEL]
+value = "{level:0} %"
+en = "{level:0}%"
+
+[SETTINGS_AUDIO_DEVICE]
+value = "Périphérique de sortie"
+en = "Output device"
+
+[SETTINGS_AUDIO_DEVICE_TOOLTIP]
+value = "Joue le son du jeu ici pendant la pêche. Le son se coupe un instant au changement, au début et à la fin."
+en = "Plays the game's sound here while you fish. The sound drops out for a moment as it switches, at the start and at the end."
+
+[SETTINGS_AUDIO_DEVICE_MISSING]
+value = "{device} (introuvable)"
+en = "{device} (not found)"
+
+[SETTINGS_BACKGROUND_SOUND]
+value = "Garder le son en arrière-plan"
+en = "Keep sound in the background"
+
+[SETTINGS_BACKGROUND_SOUND_TOOLTIP]
+value = "Pendant la pêche, le son continue quand le jeu est en arrière-plan."
+en = "While you fish, the sound keeps playing when the game is in the background."
+
+[SETTINGS_AUTO_LOOT]
+value = "Fouille automatique en pêchant"
+en = "Auto-loot while fishing"
+
+[SETTINGS_AUTO_LOOT_TOOLTIP]
+value = "Uniquement pendant la pêche. Ignoré si la fouille automatique est déjà activée."
+en = "Only while you fish. Skipped if you already have auto-loot on."
+
+[MENU_INPUT]
+value = "Commande : {names}"
+en = "Input: {names}"
+
+[INPUT_KEY]
+value = "Touche de pêche"
+en = "Fishing key"
+
+[INPUT_CLICK]
+value = "Double clic"
+en = "Double-click"
+
+[INPUT_BOTH]
+value = "Les deux"
+en = "Both"
+
+[SLASH_HELP]
+value = "input key|click|both : choisir comment lancer"
+en = "input key|click|both: choose how you cast"
+
+[SLASH_USAGE]
+value = "Pagle : /pagle qol input key|click|both"
+en = "Pagle: /pagle qol input key|click|both"
+
+[INPUT_SET_KEY]
+value = "Pagle : lancer avec la touche de pêche."
+en = "Pagle: cast with the Fishing key."
+
+[INPUT_SET_CLICK]
+value = "Pagle : lancer avec un double clic droit."
+en = "Pagle: cast with a double right-click."
+
+[INPUT_SET_BOTH]
+value = "Pagle : lancer avec la touche de pêche ou un double clic droit."
+en = "Pagle: cast with the Fishing key or a double right-click."
+
+[CONFLICT_TEXT]
+value = "Deux add-ons veulent votre touche de pêche."
+en = "Two addons want your fishing key."
+
+[CONFLICT_USE_PAGLE]
+value = "Utiliser Pagle"
+en = "Use Pagle"
+
+[CONFLICT_USE_THAT_ADDON]
+value = "Utiliser {title}"
+en = "Use {title}"
+
+[CONFLICT_USE_THOSE_ADDONS]
+value = "Utiliser les autres"
+en = "Use the others"
+
+[CONFLICT_TURNED_OFF]
+value = "Pagle : désactivé {titles}. Tapez /reload pour terminer."
+en = "Pagle: turned off {titles}. Type /reload to finish."
+
+[TITLES_JOIN]
+value = ", "
+en = ", "
+
+[CONFLICT_TURNED_OFF_QOL]
+value = "Pagle : Pagle QoL désactivé. Tapez /reload pour terminer. Pagle continue d’enregistrer vos prises."
+en = "Pagle: turned off Pagle QoL. Type /reload to finish. Pagle keeps recording your Catches."
+
+[CONFLICT_RELOAD_TEXT]
+value = "Recharger l’interface maintenant pour terminer ?"
+en = "Reload the interface now to finish?"
+
+[CONFLICT_RELOAD_NOW]
+value = "Recharger"
+en = "Reload now"
+
+[CONFLICT_RELOAD_LATER]
+value = "Plus tard"
+en = "Later"
+
+[NUDGE_OUT_OF_LURES]
+value = "Votre appât est épuisé et il n’en reste aucun dans vos sacs."
+en = "Your lure is gone and there are none left in your bags."
+
+[NUDGE_OUT_OF_LURE]
+value = "Votre appât est épuisé et il ne reste plus de {lureName} dans vos sacs."
+en = "Your lure is gone and there's no {lureName} left in your bags."
+
+[BINDING_SWAP_GEAR]
+value = "Pagle : changer d’équipement"
+en = "Pagle: Swap gear"
+
+[SETTINGS_GEAR]
+value = "Équipement"
+en = "Gear"
+
+[SETTINGS_FISHING_SET]
+value = "Ensemble de pêche"
+en = "Fishing set"
+
+[SETTINGS_FISHING_SET_TOOLTIP]
+value = "La touche de pêche l’équipe quand aucune canne n’est en main. Le double clic saute cette étape."
+en = "The Fishing key puts it on when no pole is in hand. Double-click skips this."
+
+[SETTINGS_FISHING_SET_NONE]
+value = "Aucun (l’équipement reste tel quel)"
+en = "None (gear stays as it is)"
+
+[SETTINGS_SAVE_FISHING_SET]
+value = "Enregistrer ce que je porte comme ensemble de pêche"
+en = "Save what I'm wearing as my fishing set"
+
+[SETTINGS_SWAP_GEAR]
+value = "Changer d’équipement"
+en = "Swap gear"
+
+[SETTINGS_SWAP_GEAR_TOOLTIP]
+value = "Alterne entre votre ensemble de pêche et ce que vous portiez avant (enregistré sous Pagle Previous)."
+en = "Swaps between your fishing set and what you wore before (saved as Pagle Previous)."
+
+[GEAR_NEEDS_SLOT]
+value = "Pagle : il faut un emplacement d’ensemble d’équipement libre pour {setName}."
+en = "Pagle: needs a free equipment set slot for {setName}."
+
+[GEAR_NEEDS_TWO_SLOTS]
+value = "Pagle : il faut deux emplacements d’ensemble d’équipement libres pour {fishingSetName} et {previousSetName}."
+en = "Pagle: needs two free equipment set slots for {fishingSetName} and {previousSetName}."
+
+[NUDGE_SWAP_BACK]
+value = "Vous tenez toujours votre canne. Appuyez sur {key} pour vous rééquiper."
+en = "Still holding your pole. Press {key} to swap back."
+
+[NUDGE_SWAP_BACK_UNBOUND]
+value = "Vous tenez toujours votre canne. Associez {binding} pour vous rééquiper d’une seule pression."
+en = "Still holding your pole. Bind {binding} to swap back in one press."
+
+[BUTTON_CAST]
+value = "Lancer"
+en = "Cast"
+
+[BUTTON_REEL]
+value = "Ferrer"
+en = "Reel"
+
+[BUTTON_GEAR]
+value = "Tenue"
+en = "Gear"
+
+[BUTTON_LURE]
+value = "Appât"
+en = "Lure"
+
+[BUTTON_CLAM]
+value = "Palourde"
+en = "Clam"
+
+[BUTTON_TOOLTIP_CAST]
+value = "Lancer"
+en = "Cast"
+
+[BUTTON_TOOLTIP_REEL]
+value = "Ferrer le poisson"
+en = "Reel in"
+
+[BUTTON_TOOLTIP_GEAR]
+value = "Équiper {name}"
+en = "Put on {name}"
+
+[BUTTON_TOOLTIP_LURE]
+value = "Appliquer {name}"
+en = "Apply {name}"
+
+[BUTTON_TOOLTIP_CLAM]
+value = "Ouvrir {name}"
+en = "Open {name}"
+
+[BUTTON_TOOLTIP_NOTHING]
+value = "Rien à faire"
+en = "Nothing to do"
+
+[SETTINGS_SHOW_BUTTON]
+value = "Afficher le bouton d’action suivante"
+en = "Show the next-action button"
+
+[SETTINGS_SHOW_BUTTON_TOOLTIP]
+value = "Montre ce que fera votre prochaine pression. Maj + glisser pour déplacer."
+en = "Shows what your next press will do. Shift-drag to move."
+
+[SETTINGS_HIDE_UNTIL_POLE]
+value = "Masquer tant qu’aucune canne n’est en main"
+en = "Hide until a fishing pole is in hand"
+
+[SETTINGS_HIDE_UNTIL_POLE_TOOLTIP]
+value = "Garde le bouton caché tant que vous ne portez pas votre équipement de pêche. Il s’affiche dès qu’une canne est en main ou que vous pêchez."
+en = "Keeps the button hidden while you're out of your fishing gear. It shows once a pole is in hand or you're fishing."
+
+[SETTINGS_BUTTON_POSITION]
+value = "Position du bouton"
+en = "Button position"
+
+[SETTINGS_BUTTON_RESET]
+value = "Réinitialiser"
+en = "Reset"
+
+[GUIDE_BLURB]
+value = "La touche de pêche, votre tenue de pêche, les appâts et les palourdes : une pression, une action."
+en = "The Fishing key, your fishing clothes, lures and clams: one press, one action."
+
+[GUIDE_CASTING_RIBBON]
+value = "Lancer"
+en = "Casting"
+
+[GUIDE_CASTING_KICKER]
+value = "Lancer"
+en = "Casting"
+
+[GUIDE_CASTING_TITLE]
+value = "Une touche pour tout le lancer"
+en = "One key for the whole cast"
+
+[GUIDE_CASTING_BODY]
+value = "Appuyez sur la touche de pêche et Pagle fait la chose suivante, une seule, puis attend votre prochaine pression. Il ne fait jamais deux choses à la fois, et ne fait jamais rien de lui-même."
+en = "Press the Fishing key and Pagle does the one next thing, then waits for your next press. It never does two things at once, and it never does anything on its own."
+
+[GUIDE_CASTING_GEAR]
+value = "votre tenue de pêche s’enfile"
+en = "your fishing clothes go on"
+
+[GUIDE_CASTING_LURE]
+value = "le meilleur appât que vous avez"
+en = "the best lure you have"
+
+[GUIDE_CASTING_CAST]
+value = "et la ligne part"
+en = "out it goes"
+
+[GUIDE_CASTING_REEL]
+value = "quand le flotteur plonge"
+en = "when the bobber dips"
+
+[GUIDE_CASTING_THEN]
+value = "»"
+en = "»"
+
+[GUIDE_CASTING_SMALL]
+value = "Les étapes inutiles sont sautées : pas de tenue de pêche enregistrée, pas d’étape d’équipement ; un appât déjà posé, pas d’étape d’appât. Un petit bouton au bord de l’eau montre ce que fera votre prochaine pression."
+en = "Steps you don’t need are passed over: no fishing clothes saved, no gear step; a lure already on, no lure step. A small button by the water shows what your next press will do."
+
+[GUIDE_CASTING_NOTE]
+value = "Un *double clic droit* sur l’eau lance et ferre aussi, mais ne change jamais votre tenue."
+en = "A *double right-click* on the water casts and reels too, but never changes your clothes."
+
+[GUIDE_CHOICE_KICKER]
+value = "À vous de choisir"
+en = "Your choice"
+
+[GUIDE_CHOICE_TITLE]
+value = "Comment voulez-vous lancer ?"
+en = "How would you like to cast?"
+
+[GUIDE_CARD_KEY]
+value = "La touche de pêche"
+en = "The Fishing key"
+
+[GUIDE_CARD_KEY_LINE]
+value = "Une touche fait la chose suivante, tenue et appâts compris."
+en = "One key does the next thing, clothes and lures included."
+
+[GUIDE_CARD_CLICK]
+value = "Double clic droit"
+en = "Double right-click"
+
+[GUIDE_CARD_CLICK_LINE]
+value = "Deux clics droits, comme d’habitude. Aucune touche à sacrifier."
+en = "Right-click twice, as you would anyway. No key to give up."
+
+[GUIDE_CARD_BOTH]
+value = "Les deux"
+en = "Both"
+
+[GUIDE_CARD_BOTH_LINE]
+value = "La touche quand vous la voulez, la souris sinon."
+en = "The key when you want it, the mouse when you don’t."
+
+[GUIDE_CARD_BOTH_TAG]
+value = "le choix habituel"
+en = "the usual"
+
+[GUIDE_RESTING]
+value = "La touche de pêche de Pagle est au repos tant que {titles} la détient. Vous pouvez toujours lancer avec un double clic droit."
+en = "Pagle’s Fishing key is resting while {titles} has it. You can still cast with a double right-click."
+
+[GUIDE_CLOTHES_RIBBON]
+value = "Tenue de pêche"
+en = "Fishing clothes"
+
+[GUIDE_CLOTHES_SKIP]
+value = "Je n’ai pas de tenue de pêche"
+en = "I don’t keep fishing clothes"
+
+[GUIDE_CLOTHES_KICKER]
+value = "Tenue de pêche"
+en = "Fishing clothes"
+
+[GUIDE_CLOTHES_TITLE]
+value = "Votre chapeau, votre canne"
+en = "Your hat, your pole"
+
+[GUIDE_CLOTHES_BODY]
+value = "Si vous avez une tenue de pêche, Pagle peut vous l’enfiler : la première pression de la touche de pêche au bord de l’eau change votre tenue, et ce que vous portiez est gardé, prêt à être remis."
+en = "If you keep a fishing outfit, Pagle can put it on for you: the Fishing key’s first press at the water changes your clothes, and what you were wearing is kept, ready to put back."
+
+[GUIDE_CLOTHES_PREVIOUS]
+value = "ce que vous portiez avant"
+en = "what you wore before"
+
+[GUIDE_CLOTHES_FISHING]
+value = "votre tenue de pêche"
+en = "your fishing clothes"
+
+[GUIDE_CLOTHES_ONE_KEY]
+value = "une touche"
+en = "one key"
+
+[GUIDE_CLOTHES_SMALL]
+value = "Ce sont deux ensembles d’équipement ordinaires : vous les verrez aussi dans votre fiche de personnage. Si vous partez avec votre canne encore en main, une petite note vous rappelle comment vous changer. Pagle ne change jamais votre tenue sans une pression."
+en = "Both are ordinary equipment sets, so you’ll see them in your character sheet too. When you walk away with your pole still in hand, a small note reminds you how to change back. Pagle never changes your clothes without a press."
+
+[GUIDE_SAVE_KICKER]
+value = "Si vous avez une tenue de pêche"
+en = "If you have a fishing outfit"
+
+[GUIDE_SAVE_TITLE]
+value = "Enfilez-la, puis enregistrez-la"
+en = "Put it on, then save it"
+
+[GUIDE_SAVE_SMALL]
+value = "Portez maintenant votre chapeau, vos gants et votre canne de pêche, puis appuyez sur le bouton. Vous pourrez aussi le faire plus tard depuis Réglages » Pêche."
+en = "Wear your fishing hat, gloves and pole now, then press the button. You can do this later from Settings » Fishing."
+
+[GUIDE_SAVE]
+value = "Enregistrer ce que je porte comme ensemble de pêche"
+en = "Save what I’m wearing as my fishing set"
+
+[GUIDE_SAVE_OR]
+value = "ou utiliser un ensemble existant"
+en = "or use a set you made"
+
+[GUIDE_SAVE_SLOTS]
+value = "Nécessite deux emplacements d’ensemble d’équipement libres : un pour votre tenue de pêche et un pour Pagle Previous."
+en = "Needs two free equipment set slots: one for your fishing clothes and one for Pagle Previous."
+
+[GUIDE_NUDGE_KICKER]
+value = "Si vous partez encore en tenue"
+en = "If you walk off still dressed for it"
+
+[NOTE_LURE]
+value = "Votre canne n’a pas d’appât. Votre prochaine pression pose le meilleur de vos sacs. |cff9a2a1aRien de plus|r ; ensuite, vous lancez."
+en = "Your pole has no lure on. Your next press puts the best one in your bags on. |cff9a2a1aOnly that|r; then you cast."
+
+[TOUR_SETTINGS]
+value = "les lignes de Confort sur la page Pêche"
+en = "QoL's rows on the Fishing page"
+
+[TOUR_NUDGE]
+value = "un exemple de rappel pour se rééquiper"
+en = "a sample swap-back Nudge"
+
+[TOUR_NOTES]
+value = "des exemples de la note de conflit et de la note Recharger"
+en = "samples of the conflict note and the Reload now note"
