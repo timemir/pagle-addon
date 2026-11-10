@@ -1,7 +1,8 @@
 # French (frFR), machine-drafted: an AI model (Claude) wrote every string, and no human translator has yet, so
 # `translators` names no one. A native French speaker proofread the 200 interface keys most often seen (311 strings,
-# their corrections applied), not the rest. Not listed: a native French speaker who did not write it should review it
-# first (docs/translations.md › Getting your language listed). French draws in Pagle's bundled faces, which have every
+# their corrections applied), not the rest. Listed for 1.6.1 by the maintainer's decision, before a native French
+# speaker who did not write it has reviewed it, as German was; corrections are welcome (docs/translations.md › Getting
+# your language listed). 1.6's strings were machine-drafted on top for 1.6.1. French draws in Pagle's bundled faces, which have every
 # letter it needs (é è ê à â ù û ô î ï ë ç œ, and their capitals). Typography follows the French WoW client: a no-break
 # space (U+00A0) before : ; ! ? % and inside « », curly apostrophes, no thousands separator (LARGE_NUMBER_SEPERATOR is
 # "").
@@ -10,7 +11,7 @@
 
 name = "Français"
 translators = []
-listed = false
+listed = true
 plural = "one_many_other_01"
 decimal = ","
 thousands = ""

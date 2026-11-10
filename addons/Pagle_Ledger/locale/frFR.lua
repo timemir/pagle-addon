@@ -477,7 +477,7 @@ ns.Locale("frFR", function(L)
 	L.ZONE_UNKNOWN_FISH = "— inconnu —"
 end, {
 	name = "Français",
-	listed = false,
+	listed = true,
 	plural = function(n)
 		local i = math.floor(n)
 		if i == 0 or i == 1 then

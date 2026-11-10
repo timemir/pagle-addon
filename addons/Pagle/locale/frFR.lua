@@ -670,7 +670,7 @@ ns.Locale("frFR", function(L)
 	L.VIEWS_WRONG_COUNT = "count vaut {views_wrong_count_1}, mais {listName} contient {list}"
 end, {
 	name = "Français",
-	listed = false,
+	listed = true,
 	plural = function(n)
 		local i = math.floor(n)
 		if i == 0 or i == 1 then

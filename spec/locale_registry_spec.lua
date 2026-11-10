@@ -147,7 +147,7 @@ describe("the locale line of every addon (ADR 0019)", function()
 	end
 
 	it(
-		"registers deDE, esES and ruRU listed and frFR unlisted in every addon, as the maintainer chose (frFR for 1.6.1)",
+		"registers deDE, esES, frFR and ruRU listed in every addon, as the maintainer listed them (deDE for 1.1.1, frFR for 1.6.1)",
 		function()
 			for code, name in pairs({ deDE = "Deutsch", esES = "Español", frFR = "Français", ruRU = "Русский" }) do
 				for _, addon in ipairs(ADDONS) do
@@ -159,8 +159,7 @@ describe("the locale line of every addon (ADR 0019)", function()
 					chunk(addon, ns)
 
 					local info = assert(ns.LocaleInfo(code), addon)
-					-- Ikar-Rahl's French (#679) ships unlisted until a native speaker who didn't write it has reviewed it.
-					assert.are.equal(code ~= "frFR", info.listed, addon)
+					assert.are.equal(true, info.listed, addon)
 					assert.are.equal(name, info.name, addon)
 				end
 			end

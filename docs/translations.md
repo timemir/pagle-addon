@@ -139,7 +139,7 @@ Pagle bundles fonts for Latin scripts (Latin-1 and Latin Extended-A, with Cyrill
 
 A language that is not listed is not offered. A player whose game language is unlisted sees English when the setting is "Game default".
 
-For 1.1 the maintainer listed Spanish (`esES`) and Russian (`ruRU`) before step 3: parts of both are machine-drafted (all of Russian, and the Spanish strings #510 didn't have), and they await a native speaker's review. For 1.1.1 German (`deDE`) joined them the same way, all of it machine-drafted. French (`frFR`, Ikar-Rahl's [#679](https://github.com/timemir/pagle-addon/pull/679)) ships from 1.6.1 **unlisted**: it is machine-drafted, and waits for step 3 before it is listed. Corrections are welcome as ordinary pull requests.
+For 1.1 the maintainer listed Spanish (`esES`) and Russian (`ruRU`) before step 3: parts of both are machine-drafted (all of Russian, and the Spanish strings #510 didn't have), and they await a native speaker's review. For 1.1.1 German (`deDE`) joined them the same way, all of it machine-drafted. For 1.6.1 French (`frFR`, Ikar-Rahl's [#679](https://github.com/timemir/pagle-addon/pull/679)) joined them the same way, machine-drafted, with a native speaker's proofread of the most-seen strings. Corrections are welcome as ordinary pull requests.
 
 `esES` also serves `esMX` until a separate `esMX` exists. A later `esMX` overlays it, and only needs the strings that differ.
 

@@ -288,7 +288,7 @@ ns.Locale("frFR", function(L)
 	L.WRITE_UP_XP = "XP de pêcheur +{write_up_xp}"
 end, {
 	name = "Français",
-	listed = false,
+	listed = true,
 	plural = function(n)
 		local i = math.floor(n)
 		if i == 0 or i == 1 then

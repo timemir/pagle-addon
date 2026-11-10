@@ -205,7 +205,7 @@ ns.Locale("frFR", function(L)
 	L.XP_LINE = "XP de pêcheur +{xp}"
 end, {
 	name = "Français",
-	listed = false,
+	listed = true,
 	plural = function(n)
 		local i = math.floor(n)
 		if i == 0 or i == 1 then

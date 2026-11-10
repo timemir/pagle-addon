@@ -251,7 +251,7 @@ ns.Locale("frFR", function(L)
 	L.WINDOW_NAMES = { autumn = "en automne", day = "de jour", event = "pendant son évènement", night = "de nuit", other = "dans sa fenêtre", spring = "au printemps", summer = "en été", winter = "en hiver" }
 end, {
 	name = "Français",
-	listed = false,
+	listed = true,
 	plural = function(n)
 		local i = math.floor(n)
 		if i == 0 or i == 1 then
