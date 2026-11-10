@@ -1927,9 +1927,9 @@ describe("The Curio crate in the window", function()
 			assert.are.same({
 				"Plain | 28 left | 40%",
 				"Fine | 35 left | 26%",
-				"Lively | 27 left | 16%",
-				"Showpiece | 9 left | 10%",
-				"Marvel | 2 left | 5%",
+				"Lively | 29 left | 16%",
+				"Showpiece | 11 left | 10%",
+				"Marvel | 3 left | 5%",
 				"Heirloom | pays back 1,500 | 2.5%",
 				"Curio | 1 left | 0.5%",
 			}, oddsShown(stage))

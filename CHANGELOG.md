@@ -1,5 +1,35 @@
 # Pagle
 
+## 1.6.0 (2026-11-10)
+
+Morning news from your Anglers, and Hunts with your party.
+
+### Added
+
+- **The Morning Tide.** At login or /reload, a sign drops in with the best news about the Anglers you follow on the Pagle website: a Legend, a Prestige, the Ledger completed, a rare colour, Hunt gold, a Zone Master or a Monster record. Or it shows the first in your region to land a fish this month. When there's more, it says how many.
+  - It hangs for about 8 seconds. Hover to hold it, right-click to send it up, left-click to read the news in the Fish Journal, or drag it somewhere else.
+  - It never drops in combat, waits for any letter or the Field guide, stays away in Cozy mode, and shows only news you haven't seen.
+  - Your first login with 1.6 shows nothing old. It needs an up-to-date Pagle Companion.
+- **News in the Fish Journal.** The last 30 days of news about the Anglers you follow, plus your region's firsts this month, newest first, with new items marked. Open it from the sign, or from "News »" on the Following spread.
+- **Settings › Announcements › The Morning Tide:** Show news at login, a switch for each kind of news, Region headlines, Mute the sign, and the sign's look.
+- **Five sign looks in the Curio Shop.**
+  - Scroll and Lantern cost 900 Coins, Astrolabe and Coral 3,000, Kraken 10,000. Try any with "Show on screen".
+  - Wood stays free and the default.
+  - Curio crates bought from 1.6 on can hold them.
+- **Party Hunts.**
+  - In a party (not a raid), while you fish the same zone, your groupmates' catches count toward your Hunts and Pagle Wagers, and yours count toward theirs. Both of you need Pagle 1.6 with Party Hunts on.
+  - A tier reached this way says "party" on the Hunts board.
+  - It pays exactly what your own catch would, never more.
+  - On pagle.app it counts once your groupmate has uploaded their Catch log too.
+- **"Completed for the party."** When a shared catch finishes a Hunt or settles a Pagle Wager for a groupmate, the rest of the party gets a small toast. It reads "Your catch" when the catch was yours.
+
+### Changed
+
+- **Party Hunts is opt-in.** The party letter now asks about it too. "Fish together" turns on Party Hunts, sharing your best catches, and your party's toasts and cheers. "Not now" asks again after a day; "No thanks" never asks again.
+- **If you set a party switch yourself,** the letter takes that as your answer. Party Hunts stays off for you: turn it on in Settings › Announcements › Party › Party Hunts.
+- **If you said "Fish together" in 1.5.3,** Party Hunts is already on.
+- Pagle knows the areas the latest Forever patch added, and a Field report from Tirisfal Glades confirms what bites in Brightwater Lake and Stillwater Pond. Thanks, MrHedgeWoW! (#678, #680)
+
 ## 1.5.3 (2026-11-09)
 
 Party sharing now asks first.
