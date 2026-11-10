@@ -1194,3 +1194,25 @@ en = "Hunts: the pushed definition of {run_log_event_ignored_1} is ignored: {pro
 [RUN_LOG_RUN_IGNORED]
 value = "Chasses : un pari poussé de {event} est ignoré : il lui faut un ID d’évènement et des horaires début < fin (HNT-R151)"
 en = "Hunts: a pushed run of {event} is ignored: it needs an event ID and times start < end (HNT-R151)"
+
+# Machine-drafted (Claude) for 1.6's Party Hunts and The Morning Tide; awaits a native speaker's review.
+
+[PARTY_WITH]
+value = "{text} · avec {name}"
+en = "{text} · with {name}"
+
+[PARTY_A_GROUPMATE]
+value = "un membre du groupe"
+en = "a groupmate"
+
+[LADDER_WHEN_PARTY]
+value = "{when} · groupe"
+en = "{when} · party"
+
+[LADDER_PARTY_TIP]
+value = "La prise d’un membre du groupe, pendant que vous pêchiez dans les mêmes eaux."
+en = "A groupmate's catch, while you fished the same water."
+
+[LADDER_PARTY_TIP_SITE]
+value = "Sur pagle.app, elle compte une fois que ce membre du groupe a aussi envoyé son journal des prises."
+en = "On pagle.app it counts once your groupmate has uploaded their Catch log too."

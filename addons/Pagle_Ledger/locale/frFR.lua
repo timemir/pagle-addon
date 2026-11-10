@@ -96,6 +96,7 @@ ns.Locale("frFR", function(L)
 	L.COLLECTION_SLOT_NAMES = {
 		["core.binding"] = { "Reliure", "Reliures" },
 		["core.crest"] = { "Blason d’ex-libris", "Blasons d’ex-libris" },
+		["core.newssign"] = { "Enseigne des nouvelles", "Enseignes des nouvelles" },
 		["core.soundset"] = { "Bruitages", "Bruitages" },
 		["core.toaststyle"] = { "Style de bandeau", "Styles de bandeau" },
 	}
@@ -199,6 +200,8 @@ ns.Locale("frFR", function(L)
 	L.FOLLOWING_LEGENDS = "Légendes"
 	L.FOLLOWING_LEGENDS_COUNT = "{following_legends_count_1} sur {following_legends_count_2}"
 	L.FOLLOWING_MORE = { many = "et {count:n} d’autres personnages", one = "et {count:n} autre personnage", other = "et {count:n} autres personnages" }
+	L.FOLLOWING_NEWS = "Nouvelles »"
+	L.FOLLOWING_NEWS_NEW = { many = "Nouvelles : {count:n} nouvelles »", one = "Nouvelles : {count:n} nouvelle »", other = "Nouvelles : {count:n} nouvelles »" }
 	L.FOLLOWING_NO_COMPANION = "pas de Companion"
 	L.FOLLOWING_ROW = "Niv. {level:0} · {emblem} · {ledger:0} %"
 	L.FOLLOWING_ROW_NO_PRESTIGE = "Niv. {level:0} · {ledger:0} %"
@@ -282,6 +285,17 @@ ns.Locale("frFR", function(L)
 	L.MONTHS = { "janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre" }
 	L.MONTHS_SHORT = { "janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc." }
 	L.NAME_UNKNOWN = "..."
+	L.NEWS_AGE_DAYS = "{days:0} j"
+	L.NEWS_AGE_HOURS = "{hours:0} h"
+	L.NEWS_CARD = "Voir la carte de {name} »"
+	L.NEWS_EMPTY = {
+		none = { "Les nouvelles arrivent avec le Companion.", "Mettez à jour le Pagle Companion pour recevoir les nouvelles des pêcheurs que vous suivez.", "Leurs cartes s’affichent toujours sur la double page Suivis." },
+		ok = { "Pas de nouvelles ce mois-ci.", "Quand un pêcheur que vous suivez prend une Légende, atteint un Prestige ou complète le Registre, cela s’affiche ici, et sur l’enseigne à votre prochaine connexion." },
+	}
+	L.NEWS_FOLLOW = "Suivez-les depuis leur page sur le site de Pagle."
+	L.NEWS_KICKER = "La Marée du matin"
+	L.NEWS_LINE = "Des pêcheurs que vous suivez, et les premiers de votre région ce mois-ci. Ce que montre l’enseigne se règle dans les Réglages."
+	L.NEWS_TITLE = "Nouvelles"
 	L.NEW_CURIO_STAMP = "Nouveau !"
 	L.NEW_CURIO_TITLE = "Nouvelle curiosité"
 	L.NEW_IN_ZONE_STAMP = "Nouveau ici"
@@ -345,6 +359,7 @@ ns.Locale("frFR", function(L)
 	L.TOUR_FISH = "le Carnet de pêche : l’espèce la plus prise"
 	L.TOUR_HOME = "le Carnet de pêche : Accueil"
 	L.TOUR_LEGENDS = "le Carnet de pêche : Légendes, sur une Légende prise"
+	L.TOUR_NEWS = "le Carnet de pêche : la liste des nouvelles, sur des nouvelles d’exemple"
 	L.TOUR_SEARCH = "le Carnet de pêche : résultats de recherche pour le nom de l’espèce la plus prise"
 	L.TOUR_TROPHY = "le Carnet de pêche : la Salle des trophées, sur une famille prise"
 	L.TOUR_ZONE = "le Carnet de pêche : la zone la plus pêchée, son espèce la plus prise ouverte"

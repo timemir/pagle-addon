@@ -93,7 +93,10 @@ ns.Locale("frFR", function(L)
 	L.LADDER_CAUGHT = "{ladder_caught:0} pris"
 	L.LADDER_LABEL = "L’échelle"
 	L.LADDER_NOT_YET = "pas encore"
+	L.LADDER_PARTY_TIP = "La prise d’un membre du groupe, pendant que vous pêchiez dans les mêmes eaux."
+	L.LADDER_PARTY_TIP_SITE = "Sur pagle.app, elle compte une fois que ce membre du groupe a aussi envoyé son journal des prises."
 	L.LADDER_PROGRESS = "{ladder_progress_1:0} / {ladder_progress_2:0}"
+	L.LADDER_WHEN_PARTY = "{when} · groupe"
 	L.LADDER_WHEN_ZONE = "{date}, {areaName}"
 	L.LEGEND_ITEMS = { camp = "votre camp est installé", dashed = "fenêtre non confirmée", hatched = "ouvert", pencil = "requiert plus de compétence" }
 	L.LINE_ANY_TIME = "Ouverte à toute heure."
@@ -127,6 +130,8 @@ ns.Locale("frFR", function(L)
 	L.NEEDS_SKILL = "requiert la compétence {need:0}"
 	L.NO_HUNTS = "Pas encore de chasses."
 	L.OUT_OF_SEASON = "hors saison"
+	L.PARTY_A_GROUPMATE = "un membre du groupe"
+	L.PARTY_WITH = "{text} · avec {name}"
 	L.PAY_AMOUNT = "+{xpRun:0} XP · {coins:0} pièces"
 	L.PAY_PAID_OUT = "versé"
 	L.PAY_REFRESH = { many = "+{count} de renouvellements", one = "+{count} renouvellement", other = "+{count} renouvellements" }

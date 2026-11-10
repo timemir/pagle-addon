@@ -75,6 +75,7 @@ ns.Locale("frFR", function(L)
 	L.DEV_ONBOARDING_RESET = "Pagle dev : l’accueil est revenu à celui d’un nouveau pêcheur, avec la lettre en attente ; /reload pour repartir de là."
 	L.DEV_ONBOARDING_USAGE = "Pagle dev : /pagle dev onboarding {usages}"
 	L.DEV_PARTY_CHEERED = "Pagle dev : {count:0} chopes levées pour un de vos moments sont en route."
+	L.DEV_PARTY_HUNT_OFF = "Pagle dev : rien ne s’affiche tant que Chasses en groupe, Afficher les moments de mon groupe ou Accompli pour le groupe est désactivé."
 	L.DEV_PARTY_LETTER = "Pagle dev : la lettre de groupe est à l’écran, comme si {name} pêchait à côté de vous."
 	L.DEV_PARTY_LETTER_RESET = "Pagle dev : la réponse à la lettre de groupe est oubliée ; le partage en groupe reste désactivé tant qu’elle n’a pas de réponse."
 	L.DEV_PARTY_QUEUED = "Pagle dev : un bandeau de groupe de {name} est en file d’attente : {kind}."
@@ -101,6 +102,9 @@ ns.Locale("frFR", function(L)
 	L.DEV_SAMPLE_VARIETY_NAME = "Corail"
 	L.DEV_SAMPLE_WRITE_UP = "Votre Registre a été rédigé à partir de 2340 lancers"
 	L.DEV_SESSION_ENDED = "Pagle dev : la session est terminée, comme si son délai était écoulé."
+	L.DEV_SIGN_DROPPED = "Pagle dev : l’enseigne {look} descend avec une nouvelle d’exemple {kind} ; le survol la retient, un clic droit la remonte."
+	L.DEV_SIGN_USAGE = "Pagle dev : /pagle dev sign <look> [kind] [more], où look est l’un de {looks} et kind l’un de {kinds}"
+	L.DEV_SIGN_WAITING = "Pagle dev : l’enseigne descendra une fois le combat et la restriction terminés."
 	L.DEV_SKILL_CLEARED = "Pagle dev : la compétence de Pêche suit de nouveau le client."
 	L.DEV_SKILL_NOT_SET = "Pagle dev : la compétence de Pêche suit le client ; /pagle dev skill <rang> la remplace."
 	L.DEV_SKILL_REMINDER = "Pagle dev : la compétence de Pêche est forcée à {rank}/{max} (/pagle dev skill off pour l’annuler)."
@@ -138,13 +142,14 @@ ns.Locale("frFR", function(L)
 	L.DEV_TOUR_STOPPING = "Pagle dev : la visite s’arrête dès que cette étape disparaît."
 	L.DEV_TOUR_STOPS = { many = "{count} d’étapes", one = "1 étape", other = "{count} étapes" }
 	L.DEV_UNKNOWN_AREA = "Pagle dev : {areaText} n’est pas une zone du catalogue de Pagle."
-	L.DEV_USAGE = "Pagle dev : /pagle dev on | off | endsession | preview <type> | stage <nombre> | glyphs | tour [module | list | stop] | probe | fonts | pseudo on | off | onboarding <commande> | content | views | pastetest <Ko>"
+	L.DEV_USAGE = "Pagle dev : /pagle dev on | off | endsession | preview <type> | stage <nombre> | glyphs | tour [module | list | stop] | probe | fonts | pseudo on | off | onboarding <commande> | content | views | pastetest <Ko> | sign <apparence> [type] [more]"
 	L.DEV_VIEWS_ABSENT = "Pagle dev : {name} est absent : {reason}."
 	L.DEV_VIEWS_ANGLERS = "Pagle dev : generatedAt de Pagle_Anglers {generatedAt}, blocs {dev_views_anglers_2}."
 	L.DEV_VIEWS_EXPIRED = "Pagle dev : {name} a expiré : généré il y a {age} s, l’âge d’expiration est {viewExpiryAge} s."
 	L.DEV_VIEWS_FOLLOWING = "Pagle dev : generatedAt de Pagle_Following {generatedAt}, pêcheurs {dev_views_following_2}."
 	L.DEV_VIEWS_LIVE = "Pagle dev : {name} est actif."
 	L.DEV_VIEWS_LOADED = "Pagle dev : Pagle_Anglers s’est chargé pendant cette connexion."
+	L.DEV_VIEWS_NEWS = "Pagle dev : nouvelles {state} : lignes utilisées {used}, ignorées {skipped} ; vues {seen}, seuil {floor}."
 	L.DEV_VIEWS_NONE = "aucun"
 	L.DEV_VIEWS_NOT_LOADED = "Pagle dev : Pagle_Anglers ne s’est pas chargé pendant cette connexion."
 	L.EVENING_CAST = "Faire un lancer"
@@ -318,9 +323,18 @@ ns.Locale("frFR", function(L)
 	L.PARTY_DETAIL = "{what} · {detail}"
 	L.PARTY_FULL_NAME = "{name} {surname}"
 	L.PARTY_GOLD = "A décroché l’or dans {hunt}"
+	L.PARTY_HP_HUNT = "{hunt} · pour {senders}"
+	L.PARTY_HP_MINE = "Votre prise"
+	L.PARTY_HP_PARTY = "Accompli pour le groupe"
+	L.PARTY_HP_RUN = "{event} réglé · pour {senders}"
+	L.PARTY_HP_SENDERS_MORE = { many = "{name}, {other} et {count} autres", one = "{name}, {other} et {count} autre", other = "{name}, {other} et {count} autres" }
+	L.PARTY_HP_SENDERS_TWO = "{name} et {other}"
+	L.PARTY_HP_SOME_HUNT = "une chasse"
+	L.PARTY_HP_SOME_RUN = "un Pari Pagle"
 	L.PARTY_LETTER_KICKER = "Une lettre, transmise le long de la rive"
 	L.PARTY_LETTER_LATER = "Pas maintenant"
-	L.PARTY_LETTER_LINE = "{name} pêche avec vous ({zone}) et utilise aussi Pagle. Pêchez ensemble : partagez vos plus belles prises et saluez les siennes."
+	L.PARTY_LETTER_LINE = "{name} pêche avec vous ({zone}) et utilise aussi Pagle. Pêchez ensemble : partagez vos plus belles prises, saluez les siennes et comptez les prises de chacun pour vos chasses."
+	L.PARTY_LETTER_LINE_NO_ZONE = "{name} utilise aussi Pagle et fait partie de votre groupe. Pêchez ensemble : partagez vos plus belles prises, saluez les siennes et comptez les prises de chacun pour vos chasses."
 	L.PARTY_LETTER_NO = "Non merci"
 	L.PARTY_LETTER_YES = "Pêcher ensemble"
 	L.PARTY_LINES = { epic = "A pris une couleur épique", gold = "A décroché l’or dans une chasse", ledger = "Registre à 100 %", legend = "A pris une Légende", monster = "Record de taille Monstre", rare = "A pris une couleur rare", zone = "Maître de zone" }
@@ -466,12 +480,22 @@ ns.Locale("frFR", function(L)
 	L.SETTINGS_MORE_LOOKS = "Plus d’apparences"
 	L.SETTINGS_MOTION = "Animations"
 	L.SETTINGS_MOTION_TOOLTIP = "Les bandeaux glissent et s’impriment d’un coup de tampon, les bannières laissent tomber leur sceau, et les rayons derrière une bannière ou une Légende tournent. Désactivé, chacun apparaît directement en place."
+	L.SETTINGS_NEWS = "La Marée du matin"
+	L.SETTINGS_NEWS_HEADLINES = "Gros titres de la région"
+	L.SETTINGS_NEWS_HEADLINES_TOOLTIP = "Qui a été le premier de votre région ce mois-ci à prendre une Légende, que vous le suiviez ou non."
+	L.SETTINGS_NEWS_KINDS = { colour = "Variétés rares", first = "Premiers signalés", hunt = "Or dans une chasse", ledger = "Registre complété", legend = "Légendes", monster = "Records de taille Monstre", prestige = "Prestige", zone = "Maître de zone" }
+	L.SETTINGS_NEWS_MUTE = "Couper le son de l’enseigne"
+	L.SETTINGS_NEWS_MUTE_TOOLTIP = "L’enseigne descend sans ses sons. Les réglages de son du jeu s’appliquent toujours."
+	L.SETTINGS_NEWS_SHOW = "Afficher les nouvelles à la connexion"
+	L.SETTINGS_NEWS_SHOW_TOOLTIP = "À la connexion ou après un /reload, une enseigne descend avec la meilleure nouvelle des pêcheurs que vous suivez sur le site de Pagle. Nécessite le Pagle Companion. Un clic gauche ouvre le reste dans le Carnet de pêche."
 	L.SETTINGS_NO_MODULE = "Vos prises sont enregistrées. Activez un module pour les voir."
 	L.SETTINGS_PAGES = { announcements = "Annonces", fishing = "Pêche", look = "Apparence", trackers = "Suivis" }
 	L.SETTINGS_PAGLE_MENU = "Menu Pagle"
 	L.SETTINGS_PAGLE_WEBSITE = "Site de Pagle"
 	L.SETTINGS_PARTY = "Groupe"
-	L.SETTINGS_PARTY_KINDS = { colour = "Couleurs rares", gold = "Palier d’or dans une chasse", ledger = "Registre à 100 %", legend = "Légendes", monster = "Records de taille Monstre", prestige = "Prestige", zone = "Maître de zone" }
+	L.SETTINGS_PARTY_HUNTS = "Chasses en groupe"
+	L.SETTINGS_PARTY_HUNTS_TOOLTIP = "En groupe, les prises des membres de votre groupe comptent pour vos chasses et vos Paris Pagle tant que vous pêchez dans la même zone, et les vôtres comptent pour les leurs. Désactivé, Pagle ne partage pas vos prises et ne compte pas les leurs."
+	L.SETTINGS_PARTY_KINDS = { colour = "Couleurs rares", gold = "Palier d’or dans une chasse", hp = "Accompli pour le groupe", ledger = "Registre à 100 %", legend = "Légendes", monster = "Records de taille Monstre", prestige = "Prestige", zone = "Maître de zone" }
 	L.SETTINGS_PARTY_SHARE = "Partager mes moments avec mon groupe"
 	L.SETTINGS_PARTY_SHARE_TOOLTIP = "Quand vous prenez une Légende, établissez un record de taille Monstre ou autre, les membres du groupe qui utilisent Pagle en reçoivent un petit bandeau. Seul le moment est envoyé, jamais l’endroit où vous êtes. Pas en raid."
 	L.SETTINGS_PARTY_SHOW = "Afficher les moments de mon groupe"
@@ -521,7 +545,7 @@ ns.Locale("frFR", function(L)
 	L.SHOP_CRATE_CONFIRM = "Ouvrir une caisse de curiosités ?"
 	L.SHOP_CRATE_FINE = "Une apparence que vous n’avez pas encore, au hasard ; les chances sont indiquées sur la caisse."
 	L.SHOP_CRATE_KIND = "Une caisse d’apparences"
-	L.SHOP_CRATE_KINDS = { binding = "Reliure", crest = "Blason", soundset = "Bruitages", toaststyle = "Style de bandeau", trackerframe = "Cadre de suivi" }
+	L.SHOP_CRATE_KINDS = { binding = "Reliure", crest = "Blason", newssign = "Enseigne des nouvelles", soundset = "Bruitages", toaststyle = "Style de bandeau", trackerframe = "Cadre de suivi" }
 	L.SHOP_CRATE_LEFT = "{left:0} restants"
 	L.SHOP_CRATE_NEW_LOOK = "Une nouvelle apparence"
 	L.SHOP_CRATE_ONLY_NOTE = "Uniquement dans une caisse de curiosités, jamais en vente"
@@ -557,6 +581,15 @@ ns.Locale("frFR", function(L)
 	L.SHOP_TAG_SEPARATOR = " · "
 	L.SHOP_USE = "Utiliser"
 	L.SHOP_USE_NOW = "L’utiliser maintenant"
+	L.SIGN_DETAIL_COLOUR = "{species} {variety}"
+	L.SIGN_DETAIL_COLOUR_HIDDEN = "{species} ({rarity})"
+	L.SIGN_DETAIL_MONSTER = "{species}, {length}"
+	L.SIGN_HEAD = { colour = "{name} a pris une couleur rare", first = "Premier de la région {region} à prendre {fish}", hunt = "{name} décroche l’or", ledger = "{name} a complété le Registre", legend = "{name} a pris une Légende", monster = "{name} a pris un Monstre", prestige = "{name} a atteint le Prestige {rank}", region = "Premier de la région {region} ce mois-ci à prendre {fish}", zone = "{name} est Maître de {zone}" }
+	L.SIGN_HEAD_MASTER_PRESTIGE = "{name} a atteint le Prestige de maître {master:0}"
+	L.SIGN_ITEM_UNKNOWN = "un poisson"
+	L.SIGN_KICKER = { colour = "Couleur rare", first = "Premier signalement", hunt = "Or de chasse", ledger = "Le Registre", legend = "Légende", monster = "Monstre", prestige = "Prestige", region = "Nouvelles de la région · {region}", zone = "Maître de zone" }
+	L.SIGN_MORE = { many = "+{count:0} autres de vos pêcheurs", one = "+{count:0} autre de vos pêcheurs", other = "+{count:0} autres de vos pêcheurs" }
+	L.SIGN_ZONE_UNKNOWN = "Zone {zone}"
 	L.SIZE_BANDS = { "Fretin", "Honnête", "Costaud", "Énorme", "Monstre" }
 	L.SLASH_CORE_HELP = {
 		{ help = "ouvrir les réglages de Pagle (aussi /pagle seul)", name = "settings" },
@@ -578,6 +611,7 @@ ns.Locale("frFR", function(L)
 	L.SLOT_CREST = "Blasons"
 	L.SLOT_CREST_FISH = "Blasons de poisson"
 	L.SLOT_CREST_ZONES = "Blasons de zone"
+	L.SLOT_NEWS_SIGN = "Enseigne des nouvelles"
 	L.SLOT_SOUND_SET = "Bruitages"
 	L.SLOT_TOAST_STYLE = "Style de bandeau"
 	L.TOAST_SAMPLE_STAMP = "Nouveau ici"

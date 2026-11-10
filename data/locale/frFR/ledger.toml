@@ -1849,10 +1849,12 @@ value."core.binding" = ["Reliure", "Reliures"]
 value."core.crest" = ["Blason d’ex-libris", "Blasons d’ex-libris"]
 value."core.soundset" = ["Bruitages", "Bruitages"]
 value."core.toaststyle" = ["Style de bandeau", "Styles de bandeau"]
+value."core.newssign" = ["Enseigne des nouvelles", "Enseignes des nouvelles"]
 en."core.binding" = ["Binding", "Bindings"]
 en."core.crest" = ["Bookplate crest", "Bookplate crests"]
 en."core.soundset" = ["Sound set", "Sound sets"]
 en."core.toaststyle" = ["Toast style", "Toast styles"]
+en."core.newssign" = ["News sign", "News signs"]
 
 [COLLECTION_TRACKER_FRAME]
 value = "Cadre de suivi"
@@ -2059,3 +2061,54 @@ en = "Never for sale and never earned: a crate gives it, or nothing does."
 [COLLECTION_PUT_AWAY]
 value = "Rangée : {name} est désactivé"
 en = "Put away: {name} is off"
+
+# Machine-drafted (Claude) for 1.6's Party Hunts and The Morning Tide; awaits a native speaker's review.
+
+[FOLLOWING_NEWS]
+value = "Nouvelles »"
+en = "News »"
+
+[FOLLOWING_NEWS_NEW]
+value.one = "Nouvelles : {count:n} nouvelle »"
+value.many = "Nouvelles : {count:n} nouvelles »"
+value.other = "Nouvelles : {count:n} nouvelles »"
+en.one = "News: {count:n} new »"
+en.other = "News: {count:n} new »"
+
+[NEWS_TITLE]
+value = "Nouvelles"
+en = "News"
+
+[NEWS_KICKER]
+value = "La Marée du matin"
+en = "The Morning Tide"
+
+[NEWS_LINE]
+value = "Des pêcheurs que vous suivez, et les premiers de votre région ce mois-ci. Ce que montre l’enseigne se règle dans les Réglages."
+en = "From the Anglers you follow, and your region's firsts this month. What the sign shows is set in Settings."
+
+[NEWS_AGE_HOURS]
+value = "{hours:0} h"
+en = "{hours:0} h"
+
+[NEWS_AGE_DAYS]
+value = "{days:0} j"
+en = "{days:0} d"
+
+[NEWS_CARD]
+value = "Voir la carte de {name} »"
+en = "See {name}'s card »"
+
+[NEWS_FOLLOW]
+value = "Suivez-les depuis leur page sur le site de Pagle."
+en = "Follow them from their page on the Pagle website."
+
+[NEWS_EMPTY]
+value.none = ["Les nouvelles arrivent avec le Companion.", "Mettez à jour le Pagle Companion pour recevoir les nouvelles des pêcheurs que vous suivez.", "Leurs cartes s’affichent toujours sur la double page Suivis."]
+value.ok = ["Pas de nouvelles ce mois-ci.", "Quand un pêcheur que vous suivez prend une Légende, atteint un Prestige ou complète le Registre, cela s’affiche ici, et sur l’enseigne à votre prochaine connexion."]
+en.none = ["The news comes with the Companion.", "Update the Pagle Companion to bring news of the Anglers you follow.", "Their cards still show on the Following spread."]
+en.ok = ["No news this month.", "When an Angler you follow lands a Legend, takes a Prestige or completes the Ledger, it shows here, and on the sign at your next login."]
+
+[TOUR_NEWS]
+value = "le Carnet de pêche : la liste des nouvelles, sur des nouvelles d’exemple"
+en = "the Fish Journal: the news list, on sample news"
