@@ -61,6 +61,10 @@
 --- WhenIdle and Live.
 ---@field live fun(record: PagleRecord) Hands an entry the spec appended to fake.catchLog to the projections, as Core
 --- does with every entry it appends (LOG-R73); playCast and readSkill do it themselves.
+---@field partyCatch fun(copy: string?, name: string?, sourceId: string?): PaglePartyCatch What Core's receiver does for
+--- a groupmate's Catch that passed its checks (LOG-R113, from 1.6): appends a G1 of `copy` (Kukli Emnabi's Oily
+--- Blackmouth in Darkshore a second ago by default) and hands it live, with `name` and `sourceId`, to the projections
+--- that take Party Catches, then fires PartyCatch (LOG-R115, LOG-R116)
 ---@field prestige fun(): PaglePrestige What M:RecordPrestige() does, without a Module handle (LOG-R38): appends a P1
 --- for the logged-in character, one rank above the Prestiges in fake.catchLog, applies it live, then fires Prestige.
 --- Returns the record, read-only. Raises an error before login. A purchase is Core's own: fake.ns.RecordPurchase
@@ -119,7 +123,14 @@
 --- moves it, VIEW-R2), none or ok as IGV-R44 and IGV-R45 say, and Pagle.GetFollowedAnglers serves it, fresh copies,
 --- never read-only (VIEW-R11). helpers.lua's anglerFileExamples().following is IGV Contracts' example. With none set,
 --- as with no Pagle_Following installed, it reads absent. Raises an error after login. Pagle_Anglers is never
---- installed here: no Module reads it.
+--- installed here: no Module reads it. From 1.6 the same file's news block (VIEW-R40): Pagle.GetNews and
+--- Pagle.MarkNewsSeen over Core's real reads, keeping the seen items and the floor in fake.global.news (VIEW-R44), so a
+--- spec that wants items `new` sets `fake.global.news = { since = …, seen = {} }` before fake.login (with no floor,
+--- the first read calls nothing new; the sign's decision sets it, SIGN-R18); Pagle.NewsWords on Core's real words over fake.itemNames,
+--- fake.areaNames, the fixture catalogue's varieties and Pagle.GetVarietiesCaught, as an enUS client words them
+--- (VIEW-R45); helpers.lua's anglerFileExamples().news is IGV Contracts' example with a news block.
+---@field areaNames table<integer, string> The zone names the fake's client gives, by areaID, for Pagle.NewsWords; a
+--- spec sets them. A zone without one reads "Zone {areaID}" (SIGN-R19).
 ---@field setSpent fun(spent: integer) Sets the Coins spent, for a spec that doesn't care about the log: BalanceChanged
 --- fires if the balance or held changes (SHOP-R12). The wallet projection sets the log's own at enterWorld's done and
 --- on each live purchase (fake.global.projections.wallet, SHOP-R11), replacing it; set it after enterWorld to keep it.
@@ -539,6 +550,14 @@ part(function(fake, Pagle, ns)
 			stop = Pagle.StopMotion,
 		})
 		return crest
+	end
+end)
+
+-- A news item's emblem drawn into a frame (Pagle.DrawNewsEmblem, core/news-sign.md › Contracts, from 1.6): the host
+-- keeps what Core's kit would draw as `newsEmblem`, { emblem, size }, or nil once cleared; drawing again replaces it.
+part(function(_, Pagle)
+	function Pagle.DrawNewsEmblem(host, emblem, size)
+		host.newsEmblem = emblem and { emblem = emblem, size = size } or nil
 	end
 end)
 
@@ -1128,6 +1147,20 @@ part(function(fake, _, ns, host)
 	function fake.prestige()
 		return readOnly(ns.RecordPrestige())
 	end
+	--- A groupmate's Catch the receiver's checks passed (LOG-R113, from 1.6): appends a real G1 of `copy` (its time and
+	--- tie, then its C1 fields from minute to items), hands it live, with `name` and `sourceId`, to the projections that
+	--- take Party Catches, and fires PartyCatch, as Core's receiver does (LOG-R115, LOG-R116). The defaults: Kukli
+	--- Emnabi's Oily Blackmouth in Darkshore (148, The Long Wash 453) a second before the fake's server time.
+	function fake.partyCatch(copy, name, sourceId)
+		local time = host.serverTime() - 1
+		copy = copy or ("%d|0|494|148|453|120|0||||6358x1"):format(time)
+		local record = ns.RecordPartyCatch(
+			copy,
+			name or "Kukli Emnabi",
+			sourceId or ("Player-4618-0B00000A-" .. copy:match("^(%d+|%d+)"):gsub("|", "-"))
+		)
+		return readOnly(record)
+	end
 end)
 
 -- Activity XP (AXP-R2–R7, ADR 0011), on Core's wiring over fake.global.activityXP: M:ReportXPEarned on the handle,
@@ -1266,6 +1299,50 @@ part(function(fake, Pagle, ns, host)
 	local views = ns.anglerViews
 	function Pagle.GetFollowedAnglers()
 		return views:FollowedAnglers()
+	end
+	function Pagle.GetNews()
+		return views:News()
+	end
+	function Pagle.MarkNewsSeen(ids)
+		views:MarkNewsSeen(ids)
+	end
+	fake.areaNames = {}
+	local lookups = {
+		itemName = function(itemID)
+			return fake.itemNames[itemID]
+		end,
+		dropPrefix = ns.L.FISH_CREST_DROP_PREFIX,
+		varieties = function(species)
+			return Pagle.GetVarieties(species)
+		end,
+		caught = function(species)
+			return Pagle.GetVarietiesCaught(species)
+		end,
+		areaName = function(areaID)
+			return fake.areaNames[areaID]
+		end,
+		formatLength = function(mm)
+			return ns.FormatLength(mm, ns.LengthUnit())
+		end,
+		ledgerOn = function()
+			for _, module in ipairs(fake.registry:Modules()) do
+				if module.def.name == "Ledger" then
+					return true
+				end
+			end
+			return false
+		end,
+		fishCrest = function(species)
+			for _, id in ipairs(ns.Catalogue.GetVarietySpecies()) do
+				if id == species then
+					return true
+				end
+			end
+			return false
+		end,
+	}
+	function Pagle.NewsWords(item)
+		return ns.NewsWords(item, lookups)
 	end
 
 	function fake.setFollowing(data)
@@ -1896,7 +1973,7 @@ function newFakePagle()
 	-- tables behave as the stock ones.
 	env.pairs, env.ipairs, env.next = proxyPairs, proxyIpairs, proxyNext
 	-- Pagle.API_VERSION as adapter/Core.lua sets it; fake_pagle_spec.lua checks they agree.
-	local Pagle = { API_VERSION = 2 }
+	local Pagle = { API_VERSION = 3 }
 	local fake = { Pagle = Pagle, ns = ns, printed = {}, readOnly = readOnly }
 	-- PagleDB as login step 1 opens it: Core's defaults, and nothing saved. A spec seeds fake.global's keys and
 	-- fake.profile's before login, as a saved PagleDB would hold them.
@@ -1945,8 +2022,8 @@ function newFakePagle()
 		fingerprint = function()
 			return Pagle.CONTENT_FINGERPRINT
 		end,
-		iterate = function(afterSeq, module)
-			local records = fake.catchLog:Iterate(afterSeq, module)
+		iterate = function(afterSeq, module, party)
+			local records = fake.catchLog:Iterate(afterSeq, module, party)
 			return function()
 				return readOnly(records())
 			end

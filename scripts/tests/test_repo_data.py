@@ -27,7 +27,7 @@ def test_the_aura_and_fishing_spell_lists_hold_their_seeds() -> None:
     layer = read_forever(REPO, problems)
     assert problems.found == []
     assert sorted(layer.auras) == [1265220, 1280341, 1280342, 1299323]
-    assert sorted(layer.fishing_spells) == [7620, 7731, 7732, 18248, 1240948, 1240959, 1240970, 1240983]
+    assert sorted(layer.fishing_spells) == [7620, 7731, 7732, 18248, 1240948, 1240959, 1240970, 1240983, 1283866]
 
 
 def _slice() -> Db2Layer:
@@ -41,9 +41,9 @@ def test_the_db2_slice_is_from_wago_tools_for_a_named_forever_build() -> None:
     # DATA-R11, DATA-R12: build.toml names the one Forever build the slice describes, and the products searched,
     # seeded with wow_classic_beta (DATA-R128). #56 took the beta's 1.60.1.70338; #312 refreshed it to 1.60.1.70450,
     # #439 to 1.60.1.70532, then 1.60.1.70685, when the live product wowf joined the watch, #506 to 1.60.1.70707,
-    # and batch A (#547) to the live build 1.60.1.70790.
+    # batch A (#547) to the live build 1.60.1.70790, and #678 to 1.60.1.70862.
     layer = _slice()
-    assert (layer.version, layer.build) == ("1.60.1", 70790)
+    assert (layer.version, layer.build) == ("1.60.1", 70862)
     assert layer.products == ["wow_classic_beta", "wowf"]
     # Forever's own zones are in the slice (DATA-R31 names them): Riverglades and Shen'dralas, for example.
     assert layer.areas[16591].name == "Riverglades"

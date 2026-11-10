@@ -196,9 +196,12 @@ describe("Pagle_Ledger with Core", function()
 				look[i] = row.initializer:GetName()
 			end
 			assert.are.same({ "Pagle", "Announcements", "Look and Feel" }, names)
-			-- Core's own: SET-R30's nine and, from 1.5.2, SET-R36's Party block (its header and ten rows).
-			assert.are.equal(20, #settings.category("Announcements").layout.initializers)
-			assert.are.same({ "Books", "Book binding", "More looks" }, { look[7], look[8], look[9] })
+			-- Core's own: SET-R30's nine and, from 1.5.2, SET-R36's Party block (its header and ten rows), headed from 1.6 by
+			-- Party Hunts (SET-R35), and Completed for the party's row (ANN-R111); then from 1.6 SET-R37's The Morning
+			-- Tide (its header and eleven rows, and the News sign slot's dropdown, SHOP-R60).
+			assert.are.equal(35, #settings.category("Announcements").layout.initializers)
+			-- from 1.6 the news sign's dropdown follows Sound set under Announcements (SET-R50, SHOP-R60)
+			assert.are.same({ "Books", "Book binding", "More looks" }, { look[8], look[9], look[10] })
 		end
 	)
 end)
@@ -247,7 +250,7 @@ describe("Pagle_Ledger with FakePagle", function()
 
 	it("stops while inert, with no SavedVariables touched (CORE-R13)", function()
 		local fake = newFakePagle()
-		fake.addons.Pagle_Ledger.metadata["X-Pagle-API"] = "3"
+		fake.addons.Pagle_Ledger.metadata["X-Pagle-API"] = "4"
 
 		local loaded = fake.load("Pagle_Ledger")
 

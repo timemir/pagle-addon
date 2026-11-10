@@ -16,8 +16,9 @@ local ns = select(2, ...)
 ---@field fire fun(event: PagleEvent, ...: any)  -- fires a Core event on the bus (CORE-R22)
 ---@field listen fun(owner: string, event: PagleEvent, fn: fun(event: string, ...: any)) -- Pagle.RegisterCallback
 ---@field fingerprint fun(): string?             -- Pagle.CONTENT_FINGERPRINT
----@field iterate fun(afterSeq: integer?, module: string?): fun(): PagleRecord? -- the log's records after a seq: what
---- Pagle.IterateCatches yields, plus the Module records of `module` if given (M:IterateCatches, LOG-R41, LOG-R42)
+---@field iterate fun(afterSeq: integer?, module: string?, party: boolean?): fun(): PagleRecord? -- the log's records
+--- after a seq: what Pagle.IterateCatches yields, plus the Module records of `module` if given (M:IterateCatches,
+--- LOG-R41, LOG-R42), and the Party Catches with `party` (LOG-R117)
 ---@field serverTime fun(): integer              -- GetServerTime()
 ---@field after fun(seconds: number, fn: fun())  -- runs fn `seconds` from now (C_Timer.After)
 ---@field nextFrame fun(step: fun())             -- runs step on the next frame
@@ -64,7 +65,13 @@ local ns = select(2, ...)
 ---@field marginNotes PagleMarginNotes Core's Margin notes (ns.WireMarginNotes, ONB-R50–R53).
 ---@field firstLooks PagleFirstLooks Core's First looks (ns.WireFirstLooks, ONB-R55–R59).
 ---@field pushedContent PaglePushedContent Core's pushed content this login (ns.WirePushedContent, PUSH-R10–R23).
----@field anglerViews PagleAnglerViews Core's reads of the Companion's data files (ns.WireAnglerViews, VIEW-R1–R12).
+---@field anglerViews PagleAnglerViews Core's reads of the Companion's data files (ns.WireAnglerViews, VIEW-R1–R12,
+--- and from 1.6 the news, VIEW-R40–R46).
+---@field SetNewsFloor fun() Sets the news floor to the server time now (ns.WireAnglerViews, SIGN-R18, SET-R37).
+---@field NewsOffered fun(): (fun(id: string?))? The first On Module's `def.news` by def.order, or nil (ns.WireAnglerViews,
+--- VIEW-R46).
+---@field OpenNews fun(id: string?): boolean Opens the news through it, on item `id` if given; false with none
+--- (ns.WireAnglerViews, VIEW-R46).
 
 --- Core's projection machinery (LOG-R70–R78) as ns.projections, and `M:NewProjection` and `M:IterateCatches` on every
 --- Module handle. A Module's records are the ones Pagle.IterateCatches yields plus its own Module records (LOG-R42).
@@ -522,9 +529,9 @@ end
 
 --- Prestige and purchase entries and Module records (LOG-R38–R40) as Core appends them: `M:RecordPrestige()` and
 --- `M:AppendRecord(kind, payload)` on every Module handle, and Core's own `ns.RecordPrestige()` and
---- `ns.RecordPurchase(goodID, price)`. Each appends for the logged-in character at the server time and hands the
---- record to the projections live (LOG-R73). A purchase has no Pagle or Module call: the Curio Shop's buy flow is its
---- only caller.
+--- `ns.RecordPurchase(goodID, price)`, and from 1.6 `ns.RecordPartyCatch(copy, name, sourceId)` (LOG-R115). Each
+--- appends for the logged-in character at the server time and hands the record to the projections live (LOG-R73). A
+--- purchase has no Pagle or Module call: the Curio Shop's buy flow is its only caller.
 ---@param host PagleHost
 function ns.WireLogEntries(host)
 	-- Appends `record` (its kind and fields) for the logged-in character now, and hands it over live. Raises an error
@@ -533,8 +540,9 @@ function ns.WireLogEntries(host)
 	-- (LOG-R14, LOG-R40, LOG-R75).
 	---@param record table
 	---@param what string the call, for its error
+	---@param live (fun(appended: PagleRecord): PagleRecord)? the record handed over live, made from the appended one
 	---@return PagleRecord
-	local function append(record, what)
+	local function append(record, what, live)
 		local mode = ns.projections:Mode()
 		if mode and mode ~= "live" then
 			error(("%s can't append from a projection's %s"):format(what, mode), 3)
@@ -545,7 +553,7 @@ function ns.WireLogEntries(host)
 		end
 		record.char, record.time = char, host.serverTime()
 		local appended = host.catchLog():Append(record)
-		ns.projections:Live(appended) -- LOG-R73
+		ns.projections:Live(live and live(appended) or appended) -- LOG-R73
 		return appended
 	end
 
@@ -587,6 +595,33 @@ function ns.WireLogEntries(host)
 		local companion = append({ kind = "companion", keyId = keyId, pushedSeq = seq }, "ns.RecordCompanion")
 		---@cast companion PagleCompanion
 		return companion
+	end
+
+	--- Appends a Party Catch (`G1`, LOG-R115) of `copy`, a groupmate's Cast as the receiver's checks passed it
+	--- (LOG-R113), for the logged-in character now; hands it to the projections that take Party Catches as live, with
+	--- the groupmate's `name` and the source entry ID `sourceId` on the live record only (LOG-R116), then fires
+	--- `PartyCatch(record)`. Nothing else: no Session, no catch toast, no Catch or CastEnded. Returns that live record,
+	--- or nil before PLAYER_LOGIN. adapter/PartyCatches.lua's receiver is its one caller.
+	---@param copy string
+	---@param name string
+	---@param sourceId string
+	---@return PaglePartyCatch?
+	function ns.RecordPartyCatch(copy, name, sourceId)
+		if not host.character() then
+			return nil
+		end
+		local live
+		append({ kind = "party", copy = copy }, "ns.RecordPartyCatch", function(appended)
+			-- The record every reader gets back from the log stays as it is (CORE-R18); the live one is a copy.
+			live = {}
+			for key, value in pairs(appended) do
+				live[key] = value
+			end
+			live.name, live.sourceId = name, sourceId
+			return live
+		end)
+		host.fire("PartyCatch", live)
+		return live
 	end
 
 	---@class PagleModuleHandle
@@ -939,7 +974,7 @@ function ns.WireShop(host, seams)
 		-- from the entry and that state alone), so its tier comes too: the log keeps only the good or the payback.
 		local before = ns.walletSnapshot or { owned = {}, dry = 0 }
 		local record = ns.RecordPurchase(purchase.id, purchase.price)
-		return true, ns.CrateRoll(record.id, before.owned, before.dry, record.time, record.price)
+		return true, ns.CrateRoll(record.id, before.owned, before.dry, before.rules, record.price)
 	end
 
 	--- Equips `goodID` in its slot, if it is an owned good registered this session (SHOP-R32): the stage's Use.
@@ -1569,7 +1604,9 @@ end
 --- Core's reads of the Companion's data files as ns.anglerViews (core/anglers-in-game.md, ADR 0001), on the server
 --- time, the restriction state and PagleDB.profile.anglerTooltips (VIEW-R3, VIEW-R30), with ns.StartAnglerViews,
 --- login step 2's part (VIEW-R1). The tooltip block calls ns.anglerViews:HoverPlayer for each player unit it shows
---- (VIEW-R3, VIEW-R10); `/pagle dev views` (VIEW-R12) prints its report (ns.WireDev).
+--- (VIEW-R3, VIEW-R10); `/pagle dev views` (VIEW-R12) prints its report (ns.WireDev). From 1.6 it keeps the news seen
+--- and the floor in PagleDB.global.news (VIEW-R44), with ns.SetNewsFloor for the sign's switch (SET-R37), and offers
+--- the news view of a Module's `def.news` (VIEW-R46).
 ---@param host PagleHost
 ---@param client PagleAnglerViewsClient
 function ns.WireAnglerViews(host, client)
@@ -1584,10 +1621,45 @@ function ns.WireAnglerViews(host, client)
 			return host.db().profile.anglerTooltips == true
 		end,
 		isSecret = client.isSecret,
+		global = function()
+			return host.db().global
+		end,
 	})
 	--- Login step 2, after ModulesChanged: reads PagleFollowingData once (VIEW-R1).
 	function ns.StartAnglerViews()
 		ns.anglerViews:Start()
+	end
+
+	--- Sets the news floor to the server time now (SIGN-R18, VIEW-R44): what turning "Show news at login" on does, and
+	--- a Defaults that turns it back on (SET-R37).
+	function ns.SetNewsFloor()
+		ns.anglerViews:SetNewsFloor()
+	end
+
+	--- The first On Module's `def.news` by def.order, its view of the news (VIEW-R46, the Ledger's news list); nil when
+	--- no On Module has one.
+	---@return (fun(id: string?))?
+	function ns.NewsOffered()
+		for _, module in ipairs(host.registry:Modules()) do
+			if module.def.news then
+				return module.def.news
+			end
+		end
+		return nil
+	end
+
+	--- Opens the news (VIEW-R46) on item `id`, if given, through the first On Module's `def.news`, as the sign's left
+	--- click does (SIGN-R42); one that raises is reported through `call` (geterrorhandler()). Returns whether a Module
+	--- offers one: with none nothing opens.
+	---@param id string?
+	---@return boolean
+	function ns.OpenNews(id)
+		local news = ns.NewsOffered()
+		if not news then
+			return false
+		end
+		host.call(news, id)
+		return true
 	end
 end
 
@@ -1776,7 +1848,7 @@ end
 --- What the Letter's wiring needs from where Core runs, beyond the host: Core's adapter passes its frame and
 --- IsInInstance() (adapter/Letter.lua), FakePagle its records.
 ---@class PagleLetterView
----@field show fun(content: PagleLetterSpec) -- the frame on screen with these words, rising in with the `letter` sound (ONB-R11)
+---@field show fun(content: PagleLetterWords) -- the frame on screen with these words, rising in with the `letter` sound (ONB-R11)
 ---@field hide fun()               -- the frame off screen, at once
 ---@field inInstance fun(): boolean -- IsInInstance()
 
@@ -1821,6 +1893,8 @@ function ns.WireLetter(host, view)
 			local log = host.catchLog()
 			return log ~= nil and log.data.test == true
 		end,
+		-- ONB-R16: a re-ask policy's clock (from 1.6).
+		now = host.serverTime,
 	})
 	ns.letter = letter
 
@@ -1841,9 +1915,10 @@ function ns.WireLetter(host, view)
 
 	--- Declares a letter of the Module's own (ONB-R15): its id `<module>.<name>`, its `kicker`, `text`, `confirm`
 	--- and `later` words and the `onConfirm` function its confirm button calls, once Core has set the letter
-	--- `opened`. Call it in OnInitialize or OnEnable, and only `if M.RegisterLetter then`, so it runs on a Core without
-	--- it (ONB-R90). Raises an error at the Module's call, adding nothing, for a missing or mistyped field or an id
-	--- registered before (ns.LetterProblem). Core keeps a copy.
+	--- `opened`; from 1.6, if it likes, a third button's `decline` label, live `words` and a re-ask policy, `again`
+	--- (PagleLetterSpec). Call it in OnInitialize or OnEnable, and only `if M.RegisterLetter then`, so it runs on a
+	--- Core without it (ONB-R90). Raises an error at the Module's call, adding nothing, for a missing or mistyped field
+	--- or an id registered before (ns.LetterProblem). Core keeps a copy.
 	---@param id string
 	---@param spec PagleLetterSpec
 	function ModuleHandle:RegisterLetter(id, spec)

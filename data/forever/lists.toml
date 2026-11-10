@@ -7,4 +7,7 @@ auras = [1265220, 1280341, 1280342, 1299323]
 
 # Spell IDs whose channel is a fishing Cast (LOG-R2): the Classic ranks, then Forever's. M1 dogfooding confirms
 # which ID the channel reports and corrects this list (roadmap M1 exit check, step 1).
-fishingSpells = [7620, 7731, 7732, 18248, 1240948, 1240959, 1240970, 1240983]
+# 1283866 is new in build 1.60.1.70862 (#678): named "Fishing", subtext "Apprentice", icon 136245, with 7620's
+# duration and range but its own cast time and attributes. No channel of it has been seen yet; it is listed as
+# insurance, so a Cast is still seen if Forever moves the channel to it (the dev's decision, 10 Nov 2026).
+fishingSpells = [7620, 7731, 7732, 18248, 1240948, 1240959, 1240970, 1240983, 1283866]

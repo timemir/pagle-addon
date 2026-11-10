@@ -35,8 +35,8 @@ NEEDED = [
     "plaque-cap", "plaque-mid",
     "reel-frame-cap", "reel-frame-mid", "reel-fade", "reel-line", "reel-line-glow", "reel-bobber", "reel-hook", "reel-light",
     "card-base", "card-tint", "card-hatch", "card-sheen", "card-shadow", "card-glow", "card-curio", "card-coin",
-    *(f"emblem-{kind}" for kind in ("toast", "book", "sound", "tracker", "coin")),
-    *(f"emblem-{kind}-hi" for kind in ("toast", "book", "sound", "tracker", "coin")),
+    *(f"emblem-{kind}" for kind in ("toast", "book", "sound", "tracker", "sign", "coin")),
+    *(f"emblem-{kind}-hi" for kind in ("toast", "book", "sound", "tracker", "sign", "coin")),
     "kind-toast", "kind-book", "kind-sound",
     "rays-crate", "rays-a", "rays-b", "fx-burst", "fx-beam", "fx-spark", "fx-ember", "fx-dust", "fx-straw", "fx-flash",
     "fx-halo", "fx-seal-glow", "fx-coin",
@@ -88,7 +88,7 @@ def tga() -> npt.NDArray[np.uint8]:
 def test_the_sprite_table_names_every_piece_the_opening_needs() -> None:
     assert not [name for name in NEEDED if name not in SPRITES]
     assert not [name for name in SPRITES if name not in NEEDED], "a sprite the test's list doesn't know"
-    assert len(EMBLEMS) == 5
+    assert len(EMBLEMS) == 6  # the news sign's from 1.6 (SHOP-R62)
 
 
 def test_the_atlas_is_one_texture_within_budget_and_the_same_size_in_the_table_the_tga_and_the_blp(

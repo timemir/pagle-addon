@@ -23,7 +23,8 @@
 	Blizzard's search, Defaults, greying and tooltips, but draws in frames from its own pool. The list pools its frames by
 	template name (Pools.lua's GetPoolKey), and a pooled frame keeps the taint of the row it last drew: a Blizzard row
 	reusing a frame Pagle's row drew in, such as Nameplates' "Nameplate style", ran as Pagle's and set its CVar so, and
-	every nameplate then errored until /reload. adapter/SettingsControls.lua builds the initializers. -->
+	every nameplate then errored until /reload. adapter/SettingsControls.lua, on the TOC line after this file, builds
+	the initializers. -->
 	<Frame name="PagleSettingsListSectionHeaderTemplate" inherits="SettingsListSectionHeaderTemplate" virtual="true">
 		<Size y="45"/>
 	</Frame>
@@ -51,15 +52,4 @@
 	<Button name="PagleMenuDropdownHighlightButtonTemplate" inherits="WowMenuDropdownHighlightButtonTemplate" virtual="true">
 		<Size x="1" y="20"/>
 	</Button>
-	<Script file="SettingsControls.lua"/>
-	<!-- Party toasts and cheers (announcements.md ANN-R103–R109, ANN-R112, settings.md SET-R36; from 1.5.2, #640) load here, after
-	adapter/Settings.lua: a patch can't add a file to the TOC, whose file list is hashed, and every file in logic/ is
-	hashed too. Their messages' pure Lua first, then the client's side, the party toast's frame and the Party block,
-	then (from 1.5.3, #655) the party letter (ANN-R113–R116). Each looks up what it needs of files loaded later (the
-	lanes, the letter service, PagleDB) when it runs. Paths are relative to this file. -->
-	<Script file="PartyMessages.lua"/>
-	<Script file="Party.lua"/>
-	<Script file="PartyToast.lua"/>
-	<Script file="PartySettings.lua"/>
-	<Script file="PartyLetter.lua"/>
 </Ui>

@@ -93,7 +93,10 @@ ns.Locale("ruRU", function(L)
 	L.LADDER_CAUGHT = "поймано: {ladder_caught:0}"
 	L.LADDER_LABEL = "Лестница"
 	L.LADDER_NOT_YET = "ещё нет"
+	L.LADDER_PARTY_TIP = "Улов участника группы, пока вы рыбачили в тех же водах."
+	L.LADDER_PARTY_TIP_SITE = "На pagle.app он засчитается, когда участник группы тоже загрузит свой Журнал уловов."
 	L.LADDER_PROGRESS = "{ladder_progress_1:0} / {ladder_progress_2:0}"
+	L.LADDER_WHEN_PARTY = "{when} • группа"
 	L.LADDER_WHEN_ZONE = "{date}, {areaName}"
 	L.LEGEND_ITEMS = { camp = "лагерь разбит", dashed = "окно не подтверждено", hatched = "открыто", pencil = "нужен навык выше" }
 	L.LINE_ANY_TIME = "Открыто в любое время."
@@ -127,6 +130,8 @@ ns.Locale("ruRU", function(L)
 	L.NEEDS_SKILL = "нужен навык {need:0}"
 	L.NO_HUNTS = "Охот пока нет."
 	L.OUT_OF_SEASON = "не сезон"
+	L.PARTY_A_GROUPMATE = "участником группы"
+	L.PARTY_WITH = "{text} • с {name}"
 	L.PAY_AMOUNT = "+{xpRun:0} опыта • {coins:0} мон."
 	L.PAY_PAID_OUT = "выплачено"
 	L.PAY_REFRESH = { few = "+{count} обновления", many = "+{count} обновлений", one = "+{count} обновление", other = "+{count} обновления" }

@@ -168,7 +168,17 @@ local BOOK_BINDING = {
 	"Mother-of-Pearl | 10,000",
 	"Gilded Trophy Case | 10,000",
 }
-for _, line in ipairs(BOOK_BINDING) do
+-- Core's news sign slot (SHOP-R60), from 1.6, after its other slots: Wood, then the five for sale by tier (SHOP-R27).
+local NEWS_SIGN = {
+	"NEWS SIGN 1 of 6",
+	"Wood | IN USE",
+	"Scroll | 900",
+	"Lantern | 900",
+	"Astrolabe | 3,000",
+	"Coral | 3,000",
+	"Kraken | 10,000",
+}
+for _, line in ipairs(concat({ BOOK_BINDING, NEWS_SIGN })) do
 	CORE_UNBOUGHT[#CORE_UNBOUGHT + 1] = line
 end
 
@@ -771,15 +781,17 @@ describe("The Curio Shop's list", function()
 			"Plain | IN USE",
 			"BOOK BINDING 1 of 34",
 			"Field Leather | IN USE",
+			"NEWS SIGN 1 of 6",
+			"Wood | IN USE",
 			"JOURNAL BINDING 1 of 2",
 			"Oak | IN USE",
 			"NOTEBOOK COVER 1 of 2",
 			"Plain | IN USE",
 		}, listed(loaded))
 		filters.notOwned:Click()
-		assert.are.equal(9 + 8 + 40 + 33, #listed(loaded))
+		assert.are.equal(9 + 8 + 40 + 33 + 6, #listed(loaded))
 		filters.all:Click()
-		assert.are.equal(15 + 8 + 40 + 34, #listed(loaded))
+		assert.are.equal(15 + 8 + 40 + 34 + 7, #listed(loaded))
 	end)
 
 	it(
@@ -799,8 +811,18 @@ describe("The Curio Shop's list", function()
 			)
 			assert.is_true(frame.chips[4].pressed)
 			assert.is_false(frame.chips[1].pressed)
+			-- Announcements: the toast styles, the sound sets and, from 1.6, the news sign's looks (SHOP-R60).
+			frame.chips[2]:Click()
+			assert.are.same(
+				concat({
+					withExpansion({ "TOAST STYLE 1 of 25", "Torn Page | IN USE" }, "toaststyle"),
+					withExpansion({ "SOUND SET 1 of 27", "Driftwood | IN USE" }, "soundset"),
+					NEWS_SIGN,
+				}),
+				listed(loaded)
+			)
 			frame.chips[1]:Click()
-			assert.are.equal(15 + 8 + 40 + 34, #listed(loaded))
+			assert.are.equal(15 + 8 + 40 + 34 + 7, #listed(loaded))
 		end
 	)
 
@@ -1905,9 +1927,9 @@ describe("The Curio crate in the window", function()
 			assert.are.same({
 				"Plain | 28 left | 40%",
 				"Fine | 35 left | 26%",
-				"Lively | 27 left | 16%",
-				"Showpiece | 9 left | 10%",
-				"Marvel | 2 left | 5%",
+				"Lively | 29 left | 16%",
+				"Showpiece | 11 left | 10%",
+				"Marvel | 3 left | 5%",
 				"Heirloom | pays back 1,500 | 2.5%",
 				"Curio | 1 left | 0.5%",
 			}, oddsShown(stage))
@@ -1958,7 +1980,7 @@ describe("The Curio crate in the window", function()
 
 			local pool = loaded.ns.CRATE_POOL
 			local grown = { unpack(pool) }
-			grown[#grown + 1] = { id = "core.binding.later", tier = 1, kind = "binding", since = 1 }
+			grown[#grown + 1] = { id = "core.binding.later", tier = 1, kind = "binding", since = "pagle-2026a" }
 			loaded.ns.CRATE_POOL = grown
 			loaded.env.Pagle.OpenShop("core.crate")
 
@@ -2287,6 +2309,41 @@ describe("The Curio crate in the window", function()
 			local again = billShown(askToBuy(loaded, "core.toaststyle.ripple"))
 			assert.are.same({ "Buy Ripple?", "Looks are yours for good." }, { again.question, again.fine })
 			assert.is_true(shopFrame(loaded).bill.useNow:IsShown())
+		end
+	)
+
+	it(
+		"opens the first crate after a login whose build entry brings a new rule set on what the log records for it:"
+			.. " the shown roll is the projection's (SHOP-R51, SHOP-R53, LOG-R36)",
+		function()
+			-- The log's last build entry is an older rule set's, so login appends this client's live (LOG-R36).
+			local entries = history(2)
+			entries[#entries] = ("B1|1|%d|0|70337|1.60.0|pagle-2026h"):format(SERVER_TIME - 5000)
+			local loaded, handles = shopCore(nil, { entries = entries })
+			local ns = loaded.ns
+			assert.are.equal(ns.RULE_SET_ID, ns.walletSnapshot.rules)
+			handles.Ledger:ReportCoinsEarned(3500)
+			-- A tier-1 good that joins with this client's rule set, and one for sale under any, so the crate is for sale
+			-- under both; every crate rolls tier 1.
+			local late = "core.toaststyle.storm"
+			ns.CRATE_POOL = {
+				{ id = late, tier = 1, kind = "toaststyle", since = ns.RULE_SET_ID },
+				{ id = "core.toaststyle.ripple", tier = 2, kind = "toaststyle" },
+			}
+			ns.SizeHash = function()
+				return 0
+			end
+			local buy, rolled = ns.shop.Buy, nil
+			ns.shop.Buy = function(...)
+				local bought, result = buy(...)
+				rolled = result
+				return bought, result
+			end
+
+			askToBuy(loaded, "core.crate").buy:Click()
+
+			assert.are.same({ late }, ns.walletSnapshot.crates)
+			assert.are.same({ tier = 1, good = late }, rolled)
 		end
 	)
 end)

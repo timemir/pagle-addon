@@ -20,7 +20,9 @@ local function loggedIn(group, unasked)
 	local loaded = loadCore(history(2))
 	loaded.env.PagleDB.global.onboarding.notesOn = false
 	if not unasked then
-		loaded.ns.db.profile.party = { optIn = 1, share = true, show = true, sounds = true, letter = "accepted" }
+		loaded.ns.db.profile.party = { optIn = 1, share = true, show = true, sounds = true }
+		loaded.ns.db.profile.partyHunts = true
+		loaded.env.PagleDB.global.onboarding.letters = { ["core.party"] = "opened" }
 	end
 	loaded.client.group = group
 	local M = loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
@@ -612,6 +614,7 @@ describe("the Party block (SET-R36)", function()
 		"Zone Master",
 		"Prestige",
 		"Ledger 100%",
+		"Completed for the party",
 		"Cheers sounds",
 	}
 
@@ -633,18 +636,22 @@ describe("the Party block (SET-R36)", function()
 		local names = {}
 		local after = false
 		for _, initializer in ipairs(page(loaded).layout.initializers) do
+			if initializer:GetName() == "The Morning Tide" then
+				break -- the next section (SET-R37, spec/Pagle/adapter/NewsSignSettings_spec.lua)
+			end
 			if after then
 				names[#names + 1] = initializer:GetName()
 			end
 			after = after or initializer:GetName() == "Toast position"
 		end
-		local expected = { "Party" }
+		-- From 1.6, Party Hunts heads the block (SET-R35).
+		local expected = { "Party", "Party Hunts" }
 		for _, label in ipairs(LABELS) do
 			expected[#expected + 1] = label
 		end
 		assert.are.same(expected, names)
 		local show = row(loaded, "Show my party's moments")
-		for i = 3, 9 do
+		for i = 3, 10 do
 			assert.are.equal(show, row(loaded, LABELS[i]):GetParentInitializer())
 		end
 		assert.is_nil(row(loaded, "Cheers sounds"):GetParentInitializer())

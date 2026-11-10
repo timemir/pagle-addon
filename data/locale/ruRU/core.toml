@@ -357,6 +357,14 @@ en = "Shift-drag a toast to move the toasts and Nods, or the Session summary to 
 value = "Группа"
 en = "Party"
 
+[SETTINGS_PARTY_HUNTS]
+value = "Групповые охоты"
+en = "Party Hunts"
+
+[SETTINGS_PARTY_HUNTS_TOOLTIP]
+value = "В группе улов участников засчитывается в ваши Охоты и Пари Пэгла, пока вы рыбачите в одной зоне, а ваш — в их. Если выключено, Pagle не делится вашим уловом и не засчитывает их улов."
+en = "In a party, your groupmates' catches count toward your Hunts and Pagle Wagers while you fish the same zone, and yours count toward theirs. Off, Pagle neither shares your catches nor counts theirs."
+
 [SETTINGS_PARTY_SHARE]
 value = "Делиться моими моментами с группой"
 en = "Share my moments with my party"
@@ -376,6 +384,7 @@ en = "A small toast when a groupmate who runs Pagle has a moment, with a mug you
 [SETTINGS_PARTY_KINDS]
 value.colour = "Редкие окраски"
 value.gold = "Золотая ступень в охоте"
+value.hp = "Выполнено для группы"
 value.ledger = "Реестр на 100%"
 value.legend = "Легенды"
 value.monster = "Рекорды размера «Чудовище»"
@@ -383,6 +392,7 @@ value.prestige = "Престиж"
 value.zone = "Мастер зоны"
 en.colour = "Rare colours"
 en.gold = "Gold tier in a Hunt"
+en.hp = "Completed for the party"
 en.ledger = "Ledger 100%"
 en.legend = "Legends"
 en.monster = "Monster-size records"
@@ -396,6 +406,52 @@ en = "Cheers sounds"
 [SETTINGS_PARTY_SOUNDS_TOOLTIP]
 value = "Звон, когда приходит плашка участника группы, когда вы поднимаете кружку и когда кто-то поднимает кружку за вас."
 en = "A clink when a groupmate's toast arrives, when you raise a mug, and when someone raises one to you."
+
+[SETTINGS_NEWS]
+value = "Утренний прилив"
+en = "The Morning Tide"
+
+[SETTINGS_NEWS_SHOW]
+value = "Показывать новости при входе"
+en = "Show news at login"
+
+[SETTINGS_NEWS_SHOW_TOOLTIP]
+value = "При входе в игру или после /reload опускается вывеска с лучшей новостью о рыболовах, за которыми вы следите на сайте Pagle. Нужен компаньон Pagle. Щелчок левой кнопкой открывает остальное в Рыбацком журнале."
+en = "At login or /reload, a sign drops in with the best news about the Anglers you follow on the Pagle website. Needs the Pagle Companion. A left click opens the rest in the Fish Journal."
+
+[SETTINGS_NEWS_KINDS]
+value.colour = "Редкие разновидности"
+value.first = "Первые вести"
+value.hunt = "Золото охоты"
+value.ledger = "Реестр заполнен"
+value.legend = "Легенды"
+value.monster = "Рекорды «Чудовищ»"
+value.prestige = "Престиж"
+value.zone = "Мастер зоны"
+en.colour = "Rare varieties"
+en.first = "First reported"
+en.hunt = "Hunt gold"
+en.ledger = "Ledger completed"
+en.legend = "Legends"
+en.monster = "Monster records"
+en.prestige = "Prestige"
+en.zone = "Zone Master"
+
+[SETTINGS_NEWS_HEADLINES]
+value = "Новости региона"
+en = "Region headlines"
+
+[SETTINGS_NEWS_HEADLINES_TOOLTIP]
+value = "Кто первым в вашем регионе в этом месяце выловил легенду, следите вы за ним или нет."
+en = "Who was first in your region this month to land a Legend, whether you follow them or not."
+
+[SETTINGS_NEWS_MUTE]
+value = "Выключить звук вывески"
+en = "Mute the sign"
+
+[SETTINGS_NEWS_MUTE_TOOLTIP]
+value = "Вывеска опускается без своих звуков. Настройки звука игры по-прежнему действуют."
+en = "The sign drops without its sounds. The game's sound settings still apply."
 
 [SETTINGS_NO_MODULE]
 value = "Ваши уловы записываются. Включите модуль, чтобы их увидеть."
@@ -828,8 +884,12 @@ value = "Письмо, переданное по берегу"
 en = "A letter, passed along the bank"
 
 [PARTY_LETTER_LINE]
-value = "{name} рыбачит с вами в зоне {zone} и тоже пользуется Pagle. Рыбачьте вместе: делитесь лучшими уловами и поднимайте кружку за чужие."
-en = "{name} is fishing {zone} with you, and they run Pagle too. Fish together: share your best catches and cheer theirs."
+value = "{name} рыбачит с вами в зоне {zone} и тоже пользуется Pagle. Рыбачьте вместе: делитесь лучшими уловами, поднимайте кружку за чужие, и ваш улов будет засчитываться в Охоты друг друга."
+en = "{name} is fishing {zone} with you, and they run Pagle too. Fish together: share your best catches, cheer theirs, and count each other’s catches toward your Hunts."
+
+[PARTY_LETTER_LINE_NO_ZONE]
+value = "{name} тоже пользуется Pagle и состоит в вашей группе. Рыбачьте вместе: делитесь лучшими уловами, поднимайте кружку за чужие, и ваш улов будет засчитываться в Охоты друг друга."
+en = "{name} runs Pagle too and is in your party. Fish together: share your best catches, cheer theirs, and count each other’s catches toward your Hunts."
 
 [PARTY_LETTER_YES]
 value = "Рыбачить вместе"
@@ -842,6 +902,42 @@ en = "Not now"
 [PARTY_LETTER_NO]
 value = "Нет, спасибо"
 en = "No thanks"
+
+[PARTY_HP_MINE]
+value = "Ваш улов"
+en = "Your catch"
+
+[PARTY_HP_PARTY]
+value = "Выполнено для группы"
+en = "Completed for the party"
+
+[PARTY_HP_HUNT]
+value = "{hunt} • для: {senders}"
+en = "{hunt} · for {senders}"
+
+[PARTY_HP_RUN]
+value = "{event}: рассчитано • для: {senders}"
+en = "{event} settled · for {senders}"
+
+[PARTY_HP_SOME_HUNT]
+value = "охота"
+en = "a Hunt"
+
+[PARTY_HP_SOME_RUN]
+value = "пари Пэгла"
+en = "a Pagle Wager"
+
+[PARTY_HP_SENDERS_TWO]
+value = "{name} и {other}"
+en = "{name} and {other}"
+
+[PARTY_HP_SENDERS_MORE]
+value.few = "{name}, {other} и ещё {count}"
+value.many = "{name}, {other} и ещё {count}"
+value.one = "{name}, {other} и ещё {count}"
+value.other = "{name}, {other} и ещё {count}"
+en.one = "{name}, {other} and {count} more"
+en.other = "{name}, {other} and {count} more"
 
 [TOAST_SAMPLE_TITLE]
 value = "Новый вид"
@@ -1348,11 +1444,13 @@ en = "It shows here once its Module is on."
 [SHOP_CRATE_KINDS]
 value.binding = "Переплёт"
 value.crest = "Герб"
+value.newssign = "Табличка новостей"
 value.soundset = "Набор звуков"
 value.toaststyle = "Стиль плашек"
 value.trackerframe = "Рамка трекера"
 en.binding = "Binding"
 en.crest = "Crest"
+en.newssign = "News sign"
 en.soundset = "Sound set"
 en.toaststyle = "Toast style"
 en.trackerframe = "Tracker frame"
@@ -1434,8 +1532,8 @@ value = "Pagle dev: команды разработчика выключены; 
 en = "Pagle dev: dev commands are off; /pagle dev on turns them on."
 
 [DEV_USAGE]
-value = "Pagle dev: /pagle dev on | off | endsession | preview <тип> | stage <число> | glyphs | tour [модуль | list | stop] | probe | fonts | pseudo on | off | onboarding <команда> | content | views | pastetest <КБ>"
-en = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | stage <count> | glyphs | tour [module | list | stop] | probe | fonts | pseudo on | off | onboarding <command> | content | views | pastetest <KB>"
+value = "Pagle dev: /pagle dev on | off | endsession | preview <тип> | stage <число> | glyphs | tour [модуль | list | stop] | probe | fonts | pseudo on | off | onboarding <команда> | content | views | pastetest <КБ> | sign <вид> [тип] [more]"
+en = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | stage <count> | glyphs | tour [module | list | stop] | probe | fonts | pseudo on | off | onboarding <command> | content | views | pastetest <KB> | sign <look> [kind] [more]"
 
 [DEV_PARTY_USAGE]
 value = "Pagle dev: /pagle dev party <kind | all | cheer [1-4] | letter [reset]>, где kind — одно из {kinds}"
@@ -1444,6 +1542,10 @@ en = "Pagle dev: /pagle dev party <kind | all | cheer [1-4] | letter [reset]>, w
 [DEV_PARTY_QUEUED]
 value = "Pagle dev: плашка группы от {name} в очереди: {kind}."
 en = "Pagle dev: a party toast from {name} is queued: {kind}."
+
+[DEV_PARTY_HUNT_OFF]
+value = "Pagle dev: ничего не появится, пока выключены Групповые охоты, Показывать моменты моей группы или Выполнено для группы."
+en = "Pagle dev: nothing shows while Party Hunts, Show my party's moments or Completed for the party is off."
 
 [DEV_PARTY_CHEERED]
 value = "Pagle dev: {count:0} тостов за ваш момент уже в пути."
@@ -1672,6 +1774,11 @@ en = "Pagle dev: Pagle_Anglers has loaded this login."
 [DEV_VIEWS_NOT_LOADED]
 value = "Pagle dev: Pagle_Anglers за этот вход в игру не загружался."
 en = "Pagle dev: Pagle_Anglers hasn't loaded this login."
+
+# Machine-drafted (Claude) for the news reader (#656); awaits a native speaker's review.
+[DEV_VIEWS_NEWS]
+value = "Pagle dev: новости {state}: строк использовано {used}, пропущено {skipped}; просмотрено {seen}, порог {floor}."
+en = "Pagle dev: news {state}: lines used {used}, skipped {skipped}; seen {seen}, floor {floor}."
 
 [DEV_VIEWS_NONE]
 value = "нет"
@@ -2555,6 +2662,11 @@ en = "Crests"
 value = "Переплёт книг"
 en = "Book binding"
 
+# Machine-drafted (Claude) for the news sign's looks (SHOP-R60); awaits a native speaker's review.
+[SLOT_NEWS_SIGN]
+value = "Табличка новостей"
+en = "News sign"
+
 [SLOT_CREST_ZONES]
 value = "Гербы зон"
 en = "Zone crests"
@@ -2618,3 +2730,90 @@ en = "On the Fish Journal's bookplate."
 [PREVIEW_BINDING_NOTE]
 value = "Этот переплёт носят все ваши книги."
 en = "Every book of yours wears it."
+
+# Machine-drafted (Claude) for the news sign (core/news-sign.md); awaits a native speaker's review.
+
+[SIGN_KICKER]
+value.first = "Первая весть"
+value.legend = "Легенда"
+value.prestige = "Престиж"
+value.ledger = "Реестр"
+value.colour = "Редкий цвет"
+value.hunt = "Золото охоты"
+value.zone = "Мастер зоны"
+value.monster = "Чудовище"
+value.region = "Новости региона • {region}"
+en.first = "First report"
+en.legend = "Legend"
+en.prestige = "Prestige"
+en.ledger = "The Ledger"
+en.colour = "Rare colour"
+en.hunt = "Hunt gold"
+en.zone = "Zone Master"
+en.monster = "Monster"
+en.region = "Region news · {region}"
+
+[SIGN_HEAD]
+value.first = "Впервые в {region}: {fish}"
+value.legend = "{name}: выловлена Легенда"
+value.prestige = "{name}: достигнут Престиж {rank}"
+value.ledger = "{name}: Реестр заполнен"
+value.colour = "{name}: пойман редкий цвет"
+value.hunt = "{name}: золото охоты"
+value.zone = "{name}: Мастер зоны {zone}"
+value.monster = "{name}: выловлено Чудовище"
+value.region = "Впервые в {region} в этом месяце: {fish}"
+en.first = "First in {region} to land {fish}"
+en.legend = "{name} landed a Legend"
+en.prestige = "{name} reached Prestige {rank}"
+en.ledger = "{name} completed the Ledger"
+en.colour = "{name} caught a rare colour"
+en.hunt = "{name} took gold"
+en.zone = "{name} became Master of {zone}"
+en.monster = "{name} landed a Monster"
+en.region = "First in {region} this month to land {fish}"
+
+[SIGN_DETAIL_COLOUR]
+value = "{species}, {variety}"
+en = "{variety} {species}"
+
+[SIGN_DETAIL_MONSTER]
+value = "{species}, {length}"
+en = "{species}, {length}"
+
+# Machine-drafted (Claude) for the news reader (#656); awaits a native speaker's review.
+[SIGN_DETAIL_COLOUR_HIDDEN]
+value = "{species} ({rarity})"
+en = "{rarity} {species}"
+
+[SIGN_HEAD_MASTER_PRESTIGE]
+value = "{name}: достигнут Престиж мастера {master:0}"
+en = "{name} reached Master Prestige {master:0}"
+
+[SIGN_ITEM_UNKNOWN]
+value = "рыба"
+en = "a fish"
+
+[SIGN_ZONE_UNKNOWN]
+value = "Зона {zone}"
+en = "Zone {zone}"
+
+[SIGN_MORE]
+value.one = "+{count:0} от ваших рыболовов"
+value.few = "+{count:0} от ваших рыболовов"
+value.many = "+{count:0} от ваших рыболовов"
+value.other = "+{count:0} от ваших рыболовов"
+en.one = "+{count:0} more from your anglers"
+en.other = "+{count:0} more from your anglers"
+
+[DEV_SIGN_USAGE]
+value = "Pagle dev: /pagle dev sign <вид> [тип] [more], вид — один из {looks}, тип — один из {kinds}"
+en = "Pagle dev: /pagle dev sign <look> [kind] [more], where look is one of {looks} and kind one of {kinds}"
+
+[DEV_SIGN_DROPPED]
+value = "Pagle dev: опускается табличка {look} с примером новости {kind}; наведение мыши удерживает её, правый щелчок поднимает."
+en = "Pagle dev: dropping the {look} sign with sample {kind} news; hover holds it, a right click sends it up."
+
+[DEV_SIGN_WAITING]
+value = "Pagle dev: табличка опустится, когда закончатся бой и ограничения."
+en = "Pagle dev: the sign drops once combat and restriction end."

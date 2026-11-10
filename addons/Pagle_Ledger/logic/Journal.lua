@@ -48,6 +48,10 @@ local ns = select(2, ...)
 ---                                     -- of Home's contents and the Following spread (LED-R132, LED-R163)
 ---@field collection? LedgerCollectionDB -- PagleLedgerDB.global.collection: which looks were seen and looked at
 ---                                     -- (LED-R171); never nil on a Journal context once the Collection has noted
+---@field news? fun(): PagleNews       -- Pagle.GetNews (VIEW-R42), called at each drawing of the Following spread and
+---                                     -- the news list (LED-R163, LED-R176)
+---@field newsWords? fun(item: PagleNewsItem): PagleNewsSignNews -- Pagle.NewsWords (VIEW-R45): an item's words and emblem
+---@field markNewsSeen? fun()           -- Pagle.MarkNewsSeen() (VIEW-R43): marks every item seen (LED-R177)
 
 --- A Species' fish crest, as the varieties spread's foot shows it (VAR-R12, VAR-R24): its icon, and its name once Core
 --- has registered the crest's good (none before).
@@ -90,6 +94,9 @@ local ns = select(2, ...)
 ---@field activityXP? ActivityXP                     -- Pagle.GetActivityXP() (AXP-R6, LED-R150)
 ---@field prestigeSources? LedgerPrestigeSources     -- PagleLedgerDB.global.prestigeSources (LED-R150)
 ---@field collection LedgerCollectionDB              -- PagleLedgerDB.global.collection (LED-R171)
+---@field news fun(): PagleNews                    -- Pagle.GetNews (VIEW-R42, LED-R163, LED-R176)
+---@field newsWords fun(item: PagleNewsItem): PagleNewsSignNews -- Pagle.NewsWords (VIEW-R45, LED-R176)
+---@field markNewsSeen fun()                         -- Pagle.MarkNewsSeen() (VIEW-R43, LED-R177)
 
 --- One thing drawn on a page, top to bottom, as data; adapter/JournalWidgets.lua draws each kind:
 --- - `kicker`, `title`, `text` (`text`, in the serif face; `hand` for the handwriting face, `color` "faded", "red" or
@@ -140,9 +147,12 @@ local ns = select(2, ...)
 ---   foot), `useRow` (`seal` pressed, or a `button` calling `action`, then `text` in the hand and `sub` in italic),
 ---   `price` (a coin and `value`) and `count` (an ink bar at `fill` with `text` in the hand). A `title` takes a `value`
 ---   in the hand at its right (`color` "red" for "new!"), `tabs` a `count` each and a `leader` a red `note`.
+--- - the news list's own (LED-R176), drawn by adapter/JournalNews.lua: `newsRow` (an item's row: a red wax dot when
+---   `new`, its `kicker` in small capitals, its headline `text` on one line, its age as `value`, `selected` marked,
+---   opening `place`) and `newsEmblem` (the chosen item's `emblem`, VIEW-R45's, at 96 units, as the sign draws it)
 --- Any block with `foot` sits at its page's foot when the page has room above it (the varieties spread's fish crest).
 ---@class LedgerBlock
----@field kind "kicker"|"title"|"text"|"link"|"leader"|"seal"|"stamps"|"tiles"|"icon"|"xpBar"|"xpSource"|"tabs"|"bookplate"|"board"|"plinth"|"ladder"|"row"|"emblem"|"plate"|"button"|"prestigeFrame"|"rule"|"map"|"variety"|"varietyArt"|"varietyCard"|"fishCrest"|"level"|"shelfRow"|"reachRow"|"latelyRow"|"shopFoot"|"cards"|"stage"|"useRow"|"price"|"count"
+---@field kind "kicker"|"title"|"text"|"link"|"leader"|"seal"|"stamps"|"tiles"|"icon"|"xpBar"|"xpSource"|"tabs"|"bookplate"|"board"|"plinth"|"ladder"|"row"|"emblem"|"plate"|"button"|"prestigeFrame"|"rule"|"map"|"variety"|"varietyArt"|"varietyCard"|"fishCrest"|"level"|"shelfRow"|"reachRow"|"latelyRow"|"shopFoot"|"cards"|"stage"|"useRow"|"price"|"count"|"newsRow"|"newsEmblem"
 ---@field text? string
 ---@field hand? boolean
 ---@field color? "faded"|"red"|"blue"
@@ -189,6 +199,9 @@ local ns = select(2, ...)
 ---@field cards? LedgerCard[]     -- a shelf's cards
 ---@field layout? "look"|"speaker"|"book"|"shield"|"pick" -- how the cards are drawn
 ---@field button? string          -- a useRow's button
+---@field kicker? string          -- a news row's kicker (LED-R176)
+---@field new? boolean            -- a news row's item is new: its red wax dot (LED-R176, VIEW-R42)
+---@field emblem? table           -- a news item's emblem (VIEW-R45, LED-R176)
 
 --- A variety's rarity as its pill shows it (VAR-R24, core/varieties.md › UI): its name, and its colour and its darker
 --- ink on parchment, each { r, g, b }.
@@ -263,6 +276,8 @@ ns.JOURNAL_LEGENDS = "legends"
 --- The Following spread's ID (LED-R163): its args may name an `angler` (its place in GetFollowedAnglers' order) to
 --- select. logic/JournalFollowing.lua registers it.
 ns.JOURNAL_FOLLOWING = "following"
+--- The news list's ID (LED-R176): its args may name an item's `id` to choose. logic/JournalNews.lua registers it.
+ns.JOURNAL_NEWS = "news"
 --- The Collection's ID (LED-R166, LED-R168). logic/JournalShelves.lua registers it.
 ns.JOURNAL_COLLECTION = "collection"
 --- A shelf's ID (LED-R166, LED-R169): its args are `{ shelf = key, look = id?, tab = "all"|"yours"|"earn"|"shop"? }`, the
@@ -341,6 +356,14 @@ end
 ---@return LedgerJournalPlace
 function ns.JournalPlace.following(angler)
 	return { id = ns.JOURNAL_FOLLOWING, args = angler and { angler = angler } or nil }
+end
+
+--- The news list, with the item `id` chosen when given (LED-R176): what the Following spread's News link, a row and
+--- the sign's left click (`def.news(id)`, LED-R178) open.
+---@param id string?
+---@return LedgerJournalPlace
+function ns.JournalPlace.news(id)
+	return { id = ns.JOURNAL_NEWS, args = id and { id = id } or nil }
 end
 
 --- The Collection (LED-R168): what Home's contents line, the compartment's `def.collection` and `/pagle collection` open.

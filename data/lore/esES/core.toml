@@ -756,6 +756,44 @@ name.en = "Curio crate"
 description.value = "Embalado en los muelles por alguien que nunca dice qué llevan dentro. Casi todos los cofres traen un aspecto que aún no tienes, más raro cuanto más hondo rebuscas. Sobre todo, paja."
 description.en = "Packed down at the docks by someone who never says what's in them. Nearly every crate holds one look you don't yet own, rarer the deeper you dig. Straw, mostly."
 
+# Machine-drafted (Claude) for the news sign's looks (SHOP-R60); awaits a native speaker's review.
+
+[good."core.newssign.wood"]
+name.value = "Madera"
+name.en = "Wood"
+description.value = "Tablones curtidos colgados de dos cuerdas. Cae, se balancea, se asienta y dice lo suyo. Sencillo, y a mucha honra."
+description.en = "Weathered planks on two ropes. It drops, sways, settles and says its piece. Plain, and proud of it."
+
+[good."core.newssign.scroll"]
+name.value = "Pergamino"
+name.en = "Scroll"
+description.value = "Una carta enrollada que baja tras un corcho rojo y blanco. Se desenrolla con la noticia y se lleva un sello de lacre, por si acaso."
+description.en = "A rolled chart reeled down behind a red and white bobber. It unrolls with the news and takes a wax seal for good measure."
+
+[good."core.newssign.lantern"]
+name.value = "Farol"
+name.en = "Lantern"
+description.value = "Un farol de latón que baja de una cadena ante un cristal oscuro. Se enciende, las líneas aparecen una a una y las luciérnagas se quedan."
+description.en = "A brass lantern lowered on a chain before a dark pane. It lights, the lines come up one by one, and the fireflies stay."
+
+[good."core.newssign.kraken"]
+name.value = "Kraken"
+name.en = "Kraken"
+description.value = "Dos tentáculos bajan una tablilla de piedra cubierta de algas, agarrada por las esquinas. Gotea. Sus ventosas laten. Nadie pregunta dónde está el resto."
+description.en = "Two tentacles bring down a weed-hung stone tablet, gripping its corners. It drips. Its suckers pulse. Nobody asks where the rest is."
+
+[good."core.newssign.astro"]
+name.value = "Astrolabio"
+name.en = "Astrolabe"
+description.value = "Cae una estrella, y un astrolabio de latón gira a su alrededor hasta que su placa se abre al cielo nocturno. La noticia se lee mejor a la luz de las estrellas."
+description.en = "A star falls, and a brass astrolabe spins up round it until its plate opens on the night sky. The news reads better by starlight."
+
+[good."core.newssign.coral"]
+name.value = "Coral"
+name.en = "Coral"
+description.value = "Cae una gota, y del chapoteo emerge una placa ribeteada de perlas, con algas y coral creciendo alrededor. Suben burbujas. Alguien lee desde allá abajo."
+description.en = "A drop falls, and a pearl-rimmed plaque surfaces from the splash, kelp and coral growing round it. Bubbles rise. Something down there is reading."
+
 # esES: fish varieties, core.toml lines 525–1269 (first 185 varieties).
 
 [variety."1467.sunset-breasted"]

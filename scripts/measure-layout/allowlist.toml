@@ -323,3 +323,32 @@ languages = ["pseudo"]
 reason = """A run page's time line under its hand ("until … · … in all", RUN_UNTIL_ALL) is held to the room right \
 of its dial (WagersEntry.lua, ns.FitWagerText) and cut with "…" there; it has no shrink step. Pseudo-only: \
 Russian's takes 140 of the 272. Accepted by the dev for 1.3.5."""
+
+[[allow]]
+kind = "cut"
+text = "*"
+stop = "ledger.journal.news"
+detail = "wider than its box: * wide in 3[0-3]?*"
+reason = """The news list's rows set each headline on one line, cut with the client's "…" at the row's width \
+(LED-R176); the chosen item's page has it whole. Measured on the tour's sample news (#658)."""
+
+[[allow]]
+kind = "cut"
+text = "*"
+stop = "ledger.journal.news"
+detail = "wider than its box: * wide in 2[6-8]?*"
+languages = ["pseudo"]
+reason = """As above: each headline is set on one line and cut with the client's "…" (LED-R176). In the \
+pseudo-locale the headlines are padded about 40%, and so is the age at the row's right ("{n} h", "{n} d"), whose \
+look-alikes draw as notdef boxes, so the age takes more of the row and the headline's box is 265 to 284 wide. \
+Every real language's sample headline fits its row whole (scripts/measure-layout.sh all: no finding at this stop)."""
+
+[[allow]]
+kind = "cut"
+text = "*"
+stop = "core.announce.hp"
+reason = """"Completed for the party" (ANN-R111, #646): the tour's sample is the worst case, a run with a long event \
+name settled for four groupmates, and its line shrinks to its floor (0.6, adapter/PartyToast.lua) and is then cut \
+with the client's "…" (ns.ShrinkToFit) in the party toast's fixed 380 units (ANN-R107). A run or a Hunt for one or \
+two groupmates fits in every language. Accepted for 1.6 until the dev decides whether the line should drop names \
+first."""

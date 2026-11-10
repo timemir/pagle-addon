@@ -1336,6 +1336,51 @@ en.none = [
 	"The Companion brings them in within the hour; they show here after your next /reload.",
 ]
 
+[FOLLOWING_NEWS]
+value = "Noticias »"
+en = "News »"
+
+[FOLLOWING_NEWS_NEW]
+value.one = "Noticias: {count:n} nueva »"
+value.many = "Noticias: {count:n} nuevas »"
+value.other = "Noticias: {count:n} nuevas »"
+en.one = "News: {count:n} new »"
+en.other = "News: {count:n} new »"
+
+[NEWS_TITLE]
+value = "Noticias"
+en = "News"
+
+[NEWS_KICKER]
+value = "La Marea Matinal"
+en = "The Morning Tide"
+
+[NEWS_LINE]
+value = "De los Pescadores que sigues, y los primeros de tu región este mes. Lo que muestra el cartel se elige en Ajustes."
+en = "From the Anglers you follow, and your region's firsts this month. What the sign shows is set in Settings."
+
+[NEWS_AGE_HOURS]
+value = "{hours:0} h"
+en = "{hours:0} h"
+
+[NEWS_AGE_DAYS]
+value = "{days:0} d"
+en = "{days:0} d"
+
+[NEWS_CARD]
+value = "Ver la ficha de {name} »"
+en = "See {name}'s card »"
+
+[NEWS_FOLLOW]
+value = "Síguelo desde su página en la web de Pagle."
+en = "Follow them from their page on the Pagle website."
+
+[NEWS_EMPTY]
+value.none = ["Las noticias llegan con el Companion.", "Actualiza el Pagle Companion para traer noticias de los Pescadores que sigues.", "Sus fichas siguen en la página de Siguiendo."]
+value.ok = ["No hay noticias este mes.", "Cuando un Pescador al que sigues pesca una Leyenda, alcanza un Prestigio o completa el Libro, aparece aquí, y en el cartel en tu próximo inicio de sesión."]
+en.none = ["The news comes with the Companion.", "Update the Pagle Companion to bring news of the Anglers you follow.", "Their cards still show on the Following spread."]
+en.ok = ["No news this month.", "When an Angler you follow lands a Legend, takes a Prestige or completes the Ledger, it shows here, and on the sign at your next login."]
+
 [PRESTIGE_CONFIRM_KICKER]
 value = "Prestigio"
 en = "Prestige"
@@ -1618,10 +1663,12 @@ en = "Put away"
 [COLLECTION_SLOT_NAMES]
 value."core.binding" = ["Encuadernación", "Encuadernaciones"]
 value."core.crest" = ["Blasón de ex libris", "Blasones de ex libris"]
+value."core.newssign" = ["Cartel de noticias", "Carteles de noticias"]
 value."core.soundset" = ["Juego de sonidos", "Juegos de sonidos"]
 value."core.toaststyle" = ["Estilo de aviso emergente", "Estilos de aviso emergente"]
 en."core.binding" = ["Binding", "Bindings"]
 en."core.crest" = ["Bookplate crest", "Bookplate crests"]
+en."core.newssign" = ["News sign", "News signs"]
 en."core.soundset" = ["Sound set", "Sound sets"]
 en."core.toaststyle" = ["Toast style", "Toast styles"]
 
@@ -1920,6 +1967,10 @@ en = "the Fish Journal: the Angler page"
 [TOUR_SEARCH]
 value = "el Diario de peces: resultados de búsqueda del nombre de la Especie más capturada"
 en = "the Fish Journal: search results for the most-caught Species' name"
+
+[TOUR_NEWS]
+value = "el Diario de peces: las noticias, con noticias de ejemplo"
+en = "the Fish Journal: the news list, on sample news"
 
 [COLLECTION_SLOT_FALLBACK]
 value.one = "{label}"

@@ -9,8 +9,9 @@ end
 -- The Party block on the Announcements page (settings.md SET-R36; announcements.md ANN-R104–R108; from 1.5.2, #640):
 -- after Core's rows, under its own header, native checkboxes on proxy settings over PagleDB.profile.party, read
 -- through adapter/Party.lua's ns.PartyOption and ns.PartyKindOn, since Core's defaults sit in logic/, which a patch
--- can't change: from 1.5.3 Share and Show are off until the party letter is accepted (ANN-R113), the rest on unless
--- stored off. adapter/AnnouncementSettings.lua calls it last. Loaded by adapter/Settings.xml.
+-- can't change: from 1.5.3 Share and Show are off until the party letter is accepted (ANN-R113), and from 1.6 Party
+-- Hunts too (ns.PartyHuntsOn), the rest on unless stored off. adapter/AnnouncementSettings.lua calls it last. Loaded
+-- from the TOC, before it.
 local L = ns.L
 
 -- The proxy setting variables: Core's Cozy mode (adapter/AnnouncementSettings.lua's), then the block's own.
@@ -19,6 +20,7 @@ local SHARE = "Pagle_Core_partyShare"
 local SHOW = "Pagle_Core_partyShow"
 local SOUNDS = "Pagle_Core_partySounds"
 local KIND = "Pagle_Core_partyKind_"
+local HUNTS = "Pagle_Core_partyHunts"
 
 local function notCozy()
 	return not ns.db.profile.announcements.cozy
@@ -37,14 +39,24 @@ local function greys(initializer, isLive)
 	initializer:AddEvaluateStateCVar(SHOW)
 end
 
---- Builds the Party block on the Announcements page (SET-R36): the header, Share, Show with a switch per kind under
---- it, then Cheers sounds. Each reads the stored value each time the page is shown and writes it at once (SET-R62);
---- Share and Show default to off (ANN-R113), the rest to on, which the page's Defaults button restores (SET-R33).
+--- Builds the Party block on the Announcements page (SET-R36): the header, from 1.6 Party Hunts (SET-R35), then Share,
+--- Show with a switch per kind under it, then Cheers sounds. Each reads the stored value each time the page is shown and
+--- writes it at once (SET-R62); Party Hunts, Share and Show default to off (ANN-R113), the rest to on, which the
+--- page's Defaults button restores (SET-R33).
 ---@param page SettingsCategory
 ---@param layout SettingsLayout
 function ns.PartySettingsRows(page, layout)
 	local Boolean = Settings.VarType.Boolean
 	layout:AddInitializer(ns.CreateSettingsListSectionHeaderInitializer(L.SETTINGS_PARTY))
+
+	-- Party Hunts (SET-R35, LOG-R121): PagleDB.profile.partyHunts, off until the party letter is accepted (ANN-R113,
+	-- adapter/Party.lua's ns.PartyHuntsOn), never greyed: it governs what is shared and what counts, not what pops up.
+	local hunts = Settings.RegisterProxySetting(page, HUNTS, Boolean, L.SETTINGS_PARTY_HUNTS, false, function()
+		return ns.PartyHuntsOn()
+	end, function(value)
+		ns.SetPartyHunts(value == true)
+	end)
+	ns.CreateCheckbox(layout, hunts, L.SETTINGS_PARTY_HUNTS_TOOLTIP)
 
 	-- A row over option `key`, defaulting to `default`.
 	local function option(variable, label, key, default)
@@ -60,7 +72,10 @@ function ns.PartySettingsRows(page, layout)
 	local show =
 		ns.CreateCheckbox(layout, option(SHOW, L.SETTINGS_PARTY_SHOW, "show", false), L.SETTINGS_PARTY_SHOW_TOOLTIP)
 	greys(show, notCozy)
-	for _, kind in ipairs(ns.PARTY_KINDS) do
+	-- The moment kinds, then from 1.6 "Completed for the party" (SET-R35, ANN-R111), which isn't one a moment is shared as.
+	local kinds = { unpack(ns.PARTY_KINDS) }
+	kinds[#kinds + 1] = ns.PARTY_HUNT_KIND
+	for _, kind in ipairs(kinds) do
 		local setting = Settings.RegisterProxySetting(
 			page,
 			KIND .. kind,
@@ -76,7 +91,15 @@ function ns.PartySettingsRows(page, layout)
 		)
 		local row = ns.CreateCheckbox(layout, setting)
 		row:SetParentInitializer(show)
-		greys(row, kindsLive)
+		if kind == ns.PARTY_HUNT_KIND then
+			-- It does nothing while Party Hunts is off (ANN-R111), so it greys then too.
+			greys(row, function()
+				return kindsLive() and ns.PartyHuntsOn()
+			end)
+			row:AddEvaluateStateCVar(HUNTS)
+		else
+			greys(row, kindsLive)
+		end
 	end
 
 	local sounds = ns.CreateCheckbox(

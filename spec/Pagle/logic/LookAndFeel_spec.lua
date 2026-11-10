@@ -132,6 +132,28 @@ describe("Look and Feel's logic", function()
 				assert.are.same({ "core.toaststyle", "core.soundset" }, ids)
 			end
 		)
+
+		it(
+			"leaves out the news sign's slot, whose dropdown is in The Morning Tide's section instead (SET-R30, SET-R37,"
+				.. " SHOP-R60)",
+			function()
+				local env = newGoods()
+				slotWithDefault(env, "Core", "core.newssign", "Announcements")
+
+				local ids = {}
+				for i, slot in ipairs(ns.CoreAnnouncementSlots(env.goods)) do
+					ids[i] = slot.id
+				end
+				assert.are.same({ "core.toaststyle", "core.soundset" }, ids)
+				local sections = ns.LookAndFeelSections(env.goods)
+				local announcements = {}
+				for i, slot in ipairs(sections[1].slots) do
+					announcements[i] = slot.id
+				end
+				-- Look and Feel still has it, with Core's other Announcements slots (SET-R50).
+				assert.are.same({ "core.toaststyle", "core.soundset", "core.newssign" }, announcements)
+			end
+		)
 	end)
 
 	describe("ns.SectionSlots", function()

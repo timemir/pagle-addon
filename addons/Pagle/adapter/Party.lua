@@ -15,7 +15,7 @@ local Pagle = Pagle
 -- adapter/PartyMessages.lua; the party toast's frame is adapter/PartyToast.lua's and its rows adapter/PartySettings.lua's.
 -- From 1.5.3 (#655) sharing and showing are off until the party letter is answered (ANN-R113, adapter/PartyLetter.lua),
 -- which reads here who in the party runs Pagle and is in the player's zone (ns.PartyGroupmateHere).
--- Loaded by adapter/Settings.xml, before the lanes exist: everything it reaches of them (ns.lanes, ns.db) it looks up
+-- Loaded from the TOC, after adapter/PartyMessages.lua and before the lanes exist: everything it reaches of them (ns.lanes, ns.db) it looks up
 -- when it runs. Its own owner on Core's bus.
 local OWNER = "Pagle party"
 
@@ -39,7 +39,7 @@ local state = {
 	sharedOrder = {}, ---@type string[]
 	queue = {}, ---@type { announcement: PagleAnnouncement, expires: number }[] party toasts waiting (ANN-R106)
 	heldCheers = {}, ---@type table[] cheers gathered while the lanes hold, waiting to show merged (ANN-R108)
-	outbox = {}, ---@type string[] messages waiting for the limiter (ANN-R103)
+	outbox = {}, ---@type PaglePartyOutgoing[] messages waiting for the limiter (ANN-R103, LOG-R112)
 	helloAt = nil, ---@type number?
 	rosterToken = 0,
 	retrying = false,
@@ -138,6 +138,25 @@ function ns.SetPartyOption(key, on)
 	end
 end
 
+--- Whether Party Hunts is on (SET-R35, LOG-R121; from 1.6): only once `PagleDB.profile.partyHunts` is stored true, by
+--- the party letter's Fish together (ANN-R115) or by hand in Settings; nil, not asked yet, reads off. The one switch
+--- for party-wide Hunts: the party catch message sent and received (adapter/PartyCatches.lua) and "Completed for the
+--- party" sent (ANN-R111) each ask it.
+---@return boolean
+function ns.PartyHuntsOn()
+	return ns.db ~= nil and ns.db.profile.partyHunts == true
+end
+
+--- Sets Party Hunts, stored as given: a change by hand is an answer to the party letter, as Share's and Show's are
+--- (ANN-R113). Setting what it already is writes nothing, so the Defaults button on a player not asked yet answers
+--- nothing.
+---@param on boolean
+function ns.SetPartyHunts(on)
+	if ns.PartyHuntsOn() ~= on then
+		ns.db.profile.partyHunts = on
+	end
+end
+
 --- Whether a kind's switch is on (SET-R36): on unless stored as false.
 ---@param kind string
 ---@return boolean
@@ -178,13 +197,22 @@ local function inParty()
 	return IsInGroup() and not IsInRaid()
 end
 
+--- A party for party-wide Hunts (LOG-R110, ANN-R111): a home group of up to 5, never a raid, an instance group or a
+--- battleground. adapter/PartyCatches.lua and adapter/PartyHunts.lua read it.
+---@return boolean
+function ns.InHomeParty()
+	return IsInGroup(LE_PARTY_CATEGORY_HOME) and not IsInRaid()
+end
+
 --- A groupmate as Core keeps them (ANN-R105): `key`, their GUID (their first name only where the client gives none),
 --- what Core remembers them by; `first`, their first name; and `name`, how a party toast and a cheer's Nod name them,
---- "{name} {surname}" where Forever gives a surname, as the website writes it (pagle-backend ANG-R13).
+--- "{name} {surname}" where Forever gives a surname, as the website writes it (pagle-backend ANG-R13). From 1.6, `guid`
+--- too, their unit's UnitGUID, nil where the client gives none (the party catch check, LOG-R113 item 4).
 ---@class PagleGroupmate
 ---@field key string
 ---@field first string
 ---@field name string
+---@field guid string?
 
 -- `unit`'s groupmate, or nil for none: UnitName's first return and Forever's surname, its second (CORE's Angler reads
 -- the player's the same way, adapter/Angler.lua), and UnitGUID.
@@ -201,7 +229,8 @@ local function memberAt(unit)
 	if type(surname) == "string" and surname ~= "" then
 		name = ns.RenderText(ns.L.PARTY_FULL_NAME, { name = first, surname = surname })
 	end
-	return { key = type(guid) == "string" and guid or ("name:" .. first), first = first, name = name }
+	guid = type(guid) == "string" and guid or nil
+	return { key = guid or ("name:" .. first), first = first, name = name, guid = guid }
 end
 
 -- The groupmates, party1 to party4.
@@ -248,7 +277,25 @@ local function groupmate(sender)
 	return named
 end
 
--- Sending (ANN-R103): through the limiter, waiting out chat lockdown, and only in a party.
+--- The groupmate `sender` is (ANN-R105), or nil: not one, the player, or a first name two of them share. The party
+--- catch receiver (adapter/PartyCatches.lua, LOG-R113 item 4) matches the sender as the party toasts do.
+---@param sender any
+---@return PagleGroupmate?
+function ns.PartyGroupmate(sender)
+	return groupmate(sender)
+end
+
+--- A message waiting in the party send queue (ANN-R103, LOG-R112): its prefix and text; `first`, a party catch
+--- message, which goes before every toast, cheer and hello waiting; and `expires`, the server time after which it is
+--- dropped unsent.
+---@class PaglePartyOutgoing
+---@field prefix string
+---@field text string
+---@field first boolean?
+---@field expires integer?
+
+-- Sending (ANN-R103, LOG-R112): one queue for every party message, the party toasts' and the party catches', through the
+-- limiter, waiting out chat lockdown, and only in a party.
 local pump
 
 local function retry()
@@ -262,7 +309,19 @@ local function retry()
 	end)
 end
 
+-- Drops every message waiting past its `expires` (LOG-R112).
+local function dropExpired()
+	local now = GetServerTime()
+	for i = #state.outbox, 1, -1 do
+		local expires = state.outbox[i].expires
+		if expires and now > expires then
+			table.remove(state.outbox, i)
+		end
+	end
+end
+
 function pump()
+	dropExpired()
 	while state.outbox[1] do
 		if not inParty() then
 			state.outbox = {}
@@ -272,18 +331,66 @@ function pump()
 			retry()
 			return
 		end
-		C_ChatInfo.SendAddonMessage(ns.PARTY_PREFIX, table.remove(state.outbox, 1), "PARTY")
+		local message = table.remove(state.outbox, 1)
+		C_ChatInfo.SendAddonMessage(message.prefix, message.text, "PARTY")
 	end
 end
 
+-- Where a message goes in the queue: a `first` one after the others waiting that are first, before the rest.
+---@param first boolean?
+---@return integer
+local function placeFor(first)
+	if not first then
+		return #state.outbox + 1
+	end
+	local at = 1
+	while state.outbox[at] and state.outbox[at].first do
+		at = at + 1
+	end
+	return at
+end
+
+-- Makes room for a `first` message in a full queue (LOG-R112): the last toast, cheer or hello waiting goes, or, when
+-- every one waiting is a party catch message, the oldest, nearest its expiry. False when a message that isn't first
+-- finds the queue full: it is dropped, as from 1.5.2 (ANN-R103).
+---@param first boolean?
+---@return boolean
+local function makeRoom(first)
+	if #state.outbox < SEND_WAITING then
+		return true
+	elseif not first then
+		return false
+	end
+	for i = #state.outbox, 1, -1 do
+		if not state.outbox[i].first then
+			table.remove(state.outbox, i)
+			return true
+		end
+	end
+	table.remove(state.outbox, 1)
+	return true
+end
+
+--- Puts `text` in the party send queue (ANN-R103, LOG-R112), on `options.prefix` (the party toasts' `Pagle` unless
+--- given), ahead of the toasts, cheers and hellos waiting when `options.first`, and dropped unsent after the server
+--- time `options.expires`. Nothing is queued outside a party.
 ---@param text string
-local function send(text)
-	if not inParty() or #state.outbox >= SEND_WAITING then
+---@param options { prefix: string?, first: boolean?, expires: integer? }?
+local function send(text, options)
+	options = options or {}
+	if not inParty() then
 		return
 	end
-	state.outbox[#state.outbox + 1] = text
+	dropExpired()
+	if not makeRoom(options.first) then
+		return
+	end
+	local message =
+		{ prefix = options.prefix or ns.PARTY_PREFIX, text = text, first = options.first, expires = options.expires }
+	table.insert(state.outbox, placeFor(options.first), message)
 	pump()
 end
+ns.SendPartyMessage = send
 
 ---@param ask boolean
 local function sayHello(ask)
@@ -359,7 +466,24 @@ local function lookups()
 			end
 			return nil
 		end,
+		-- From 1.6, an event's name, the same way (its def.partyEventName, ANN-R111).
+		eventName = function(eventID)
+			for _, module in ipairs(ns.Modules:Modules()) do
+				local name = module.def.partyEventName
+				if name then
+					local ok, text = pcall(name, eventID)
+					return ok and type(text) == "string" and text or nil
+				end
+			end
+			return nil
+		end,
 	}
+end
+
+--- What a party toast's line looks things up with (ns.PartyMomentLine, ns.PartyHuntLine).
+---@return PaglePartyLookups
+function ns.PartyLookups()
+	return lookups()
 end
 
 --- The party toast for a groupmate's moment (ANN-R106): one moment, `toast.low`, Core's own, titled by the groupmate,
@@ -417,10 +541,20 @@ function ns.PumpPartyToasts()
 	end
 end
 
+-- `expires`, GetTime()'s, defaults to EXPIRY seconds on.
 ---@param announcement PagleAnnouncement
-local function enqueue(announcement)
-	state.queue[#state.queue + 1] = { announcement = announcement, expires = GetTime() + EXPIRY }
+---@param expires number?
+local function enqueue(announcement, expires)
+	state.queue[#state.queue + 1] = { announcement = announcement, expires = expires or GetTime() + EXPIRY }
 	ns.PumpPartyToasts()
+end
+
+--- Puts a party toast in the party queue, behind the player's own toasts (ANN-R106): "Completed for the party"
+--- (adapter/PartyHunts.lua, ANN-R111), with `expires` (GetTime()'s) when it waited before.
+---@param announcement PagleAnnouncement
+---@param expires number?
+function ns.EnqueuePartyToast(announcement, expires)
+	enqueue(announcement, expires)
 end
 
 -- A valid moment from a groupmate (ANN-R106): a party toast while Show and its kind's switch are on.
@@ -583,7 +717,8 @@ end)
 
 --- The Pagle groupmate the party letter names (ANN-R114): the first of party1 to party4 who sent a valid message (a
 --- Pagle groupmate, ANN-R103) and whom the client places on the player's own map (`C_Map.GetBestMapForUnit`), with that
---- map's ID; nil out of a party, with no Pagle groupmate, or none the client places beside the player.
+--- map's ID; else the first such groupmate where the client places them or the player nowhere (nil), with no map, as
+--- an unknown zone isn't another one; nil out of a party, with no Pagle groupmate, or only ones placed elsewhere.
 ---@return PagleGroupmate?
 ---@return integer? map
 function ns.PartyGroupmateHere()
@@ -591,17 +726,23 @@ function ns.PartyGroupmateHere()
 		return nil
 	end
 	local here = unsecret((C_Map.GetBestMapForUnit("player")))
-	if type(here) ~= "number" then
-		return nil
-	end
+	here = type(here) == "number" and here or nil
+	local unplaced
 	for i = 1, 4 do
 		local unit = "party" .. i
 		local member = memberAt(unit)
-		if member and state.peers[member.key] and unsecret((C_Map.GetBestMapForUnit(unit))) == here then
-			return member, here
+		if member and state.peers[member.key] then
+			local map = unsecret((C_Map.GetBestMapForUnit(unit)))
+			map = type(map) == "number" and map or nil
+			if here and map == here then
+				return member, here
+			elseif not here or not map then
+				-- Where the client places one of the two nowhere, the zone is unknown, not another (ANN-R114).
+				unplaced = unplaced or member
+			end
 		end
 	end
-	return nil
+	return unplaced, nil
 end
 
 --- Shares the moments of `announcement` a Module marked with `party` (ANN-R104), each once, while Share is on, in a
@@ -632,7 +773,8 @@ end
 ---@return boolean
 function ns.RaisePartyMug(display)
 	local toast = display.announcement.headline.partyToast
-	if not toast or toast.raised then
+	-- "Completed for the party" has no mug (ANN-R111).
+	if not toast or toast.raised or toast.kind == ns.PARTY_HUNT_KIND then
 		return false
 	end
 	toast.raised = true
@@ -691,6 +833,16 @@ function ns.RunPartyDev(args)
 	elseif DEV_SAMPLES[word] then
 		devToast(word)
 		return
+	elseif word == ns.PARTY_HUNT_KIND then
+		-- From 1.6, "Completed for the party" from Kukli (ANN-R111), through the hp receiving path, which drops it while
+		-- Party Hunts, Show or its kind is off: then it says so rather than that it is queued.
+		if not ns.PartyHuntShows() then
+			print(L.DEV_PARTY_HUNT_OFF)
+			return
+		end
+		ns.DevPartyHunt((DEV_NAMES[1]:match("^%S+")))
+		print(ns.RenderText(L.DEV_PARTY_QUEUED, { name = DEV_NAMES[1], kind = word }))
+		return
 	elseif word == "cheer" then
 		local count = rest == "" and 1 or tonumber(rest)
 		if count and count >= 1 and count <= #DEV_NAMES and count == math.floor(count) then
@@ -703,5 +855,6 @@ function ns.RunPartyDev(args)
 			return
 		end
 	end
-	print(ns.RenderText(L.DEV_PARTY_USAGE, { kinds = table.concat(ns.PARTY_KINDS, ", ") }))
+	local kinds = table.concat(ns.PARTY_KINDS, ", ") .. ", " .. ns.PARTY_HUNT_KIND
+	print(ns.RenderText(L.DEV_PARTY_USAGE, { kinds = kinds }))
 end

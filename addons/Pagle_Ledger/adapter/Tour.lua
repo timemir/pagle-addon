@@ -24,6 +24,8 @@ function ns.RegisterTourStops(M)
 		local saved
 		M:RegisterTourStop(stop.id, ns.L[stop.label], function()
 			saved = { shown = journal:IsShown(), place = journal:Place() }
+			-- the news list's stop shows its sample, never the player's news, and marks nothing seen (CORE-R68)
+			journal.newsSample = stop.news and stop.news(GetServerTime()) or nil
 			local context = journal:Context()
 			local ready = not context.updating and context --[[@as LedgerSpreadContext]]
 			journal:OpenPlace(ready and stop.place(ready) or ns.JournalPlace.home())
@@ -34,6 +36,7 @@ function ns.RegisterTourStops(M)
 			end
 		end, function()
 			local search = journal.search
+			journal.newsSample = nil
 			if not saved or not search then
 				return
 			end

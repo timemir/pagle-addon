@@ -9,7 +9,8 @@ local ns = select(2, ...)
 
 --- The wallet rules version (wallet-and-shop.md › Data): a change rebuilds the projection (LOG-R72). 2: the whole-shop
 --- crate, with its payback and Curio pity (SHOP-R53). 3: each good's `ownedAt`, the time of the entry that gave it
---- (SHOP-R36).
+--- (SHOP-R36). 1.6's `rules`, the rule set a crate is drawn under (SHOP-R53), needs none: no crate before a pagle-2026j
+--- build entry has a new candidate, so no stored state changes.
 ns.WALLET_RULES_VERSION = 3
 
 --- What the wallet projection stores in PagleDB.global.projections.wallet (wallet-and-shop.md › Data). The crate,
@@ -24,6 +25,8 @@ ns.WALLET_RULES_VERSION = 3
 ---@field companion? true                  -- a Companion entry is applied (SHOP-R29, LOG-R37)
 ---@field ownedAt? table<string, integer>  -- the server time of the entry that first gave each good: its U1, or the
 --- crate's U1 for a good a crate gave, never a payback's (SHOP-R36); left out until a purchase or a crate gives one
+---@field rules? string                    -- the rule set of the last build entry folded (LOG-R36): the one a crate
+--- after it was bought under (SHOP-R53); left out until a build entry sets it
 
 --- What the wallet projection hands Core besides the spent total and the owned set: the crates and the companion.
 ---@class PagleWalletSnapshot
@@ -31,6 +34,7 @@ ns.WALLET_RULES_VERSION = 3
 ---@field dry integer                      -- crates since the last that gave a crate-only good (SHOP-R52)
 ---@field owned table<string, true>        -- the goods purchases and crates gave (SHOP-R51's "owned")
 ---@field companion boolean                -- a Companion entry is applied (SHOP-R29)
+---@field rules? string                    -- the rule set the next crate is drawn under, as far as the log says (SHOP-R53)
 
 --- What the wallet projection is fed (logic/Wiring.lua, for Core's adapter and FakePagle alike).
 ---@class PagleWalletProjectionOptions
@@ -79,15 +83,15 @@ local function noteOwned(state, good, time)
 	at[good] = at[good] or time
 end
 
--- Opens the crate `record` bought (SHOP-R50–R52): its price less what it pays back is spent, every crate's counting
--- (SHOP-R11), and the draw's result, the good or the Coins paid back, goes into `crates`, the pity's count of crates
+-- Opens the crate `record` bought (SHOP-R50–R52), drawn under the rule set of the last build entry before it (SHOP-R53):
+-- its price less what it pays back is spent, every crate's counting (SHOP-R11), and the draw's result, the good or the Coins paid back, goes into `crates`, the pity's count of crates
 -- since the last crate-only good going back to 0 or on by one. A good it gave is noted at the crate's time; a payback
 -- gives no good and notes none (SHOP-R36).
 ---@param state PagleWalletState
 ---@param record PaglePurchase
 local function openCrate(state, record)
 	local dry = state.dry or 0
-	local roll = ns.CrateRoll(record.id, ownedBy(state), dry, record.time, record.price)
+	local roll = ns.CrateRoll(record.id, ownedBy(state), dry, state.rules, record.price)
 	state.spent = state.spent + record.price - (roll.payback or 0)
 	local crates = state.crates or {}
 	crates[#crates + 1] = roll.good or roll.payback
@@ -100,13 +104,23 @@ end
 
 -- Counts one record (SHOP-R10, SHOP-R11): the first U1 for a good adds the price it stores, the price paid, to
 -- `spent` and the good to `purchased`; a later one for the same good is ignored, so nothing costs twice. Each crate's
--- U1 counts and opens it (SHOP-R50). The first Companion entry marks the companion linked (SHOP-R29). Every other
--- kind, Casts and their Uncharted Catches too, concerns no wallet (SHOP-R96). Returns whether it counted.
+-- U1 counts and opens it (SHOP-R50). The first Companion entry marks the companion linked (SHOP-R29). A build entry
+-- sets the rule set the crates after it are drawn under (SHOP-R53, LOG-R36) and changes no balance; one that changes
+-- the rule set counts, so a live one hands it over at once and the shop shows and rolls the next crate under the rule
+-- set the projection draws it under. Every other kind, Casts and their Uncharted Catches too, concerns no wallet
+-- (SHOP-R96). Returns whether it counted: whether the snapshot changed.
 ---@param state PagleWalletState
 ---@param record PagleRecord
 ---@return boolean
 local function count(state, record)
-	if record.kind == "companion" then
+	if record.kind == "build" then
+		---@cast record PagleBuild
+		if type(record.rules) ~= "string" or record.rules == state.rules then
+			return false
+		end
+		state.rules = record.rules
+		return true
+	elseif record.kind == "companion" then
 		if state.companion then
 			return false
 		end
@@ -177,6 +191,7 @@ function ns.WalletSnapshot(state)
 		dry = tonumber(state.dry) or 0,
 		owned = ownedBy(state),
 		companion = state.companion == true,
+		rules = type(state.rules) == "string" and state.rules or nil,
 	}
 end
 

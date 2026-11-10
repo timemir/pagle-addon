@@ -9,8 +9,8 @@ end
 -- The previews of Core's own goods on the Curio Shop's stage (wallet-and-shop.md › UI, the preview stage), by slot:
 -- logic/CoreGoods.lua's goods draw with these, looked up when the shop draws one. A sound set shows its swatch and
 -- » Toast / » Banner / » Legend buttons playing its sounds on the SFX channel (ANN-R73); a crest, a small bookplate
--- with the crest on it, as prototypes/curio-shop/ (variant B) draws them; a binding, its closed book. The toast styles
--- add the toast style's.
+-- with the crest on it, as prototypes/curio-shop/ (variant B) draws them; a binding, its closed book; a news sign
+-- look, the sign itself at rest with Show on screen under it (SHOP-R61). The toast styles add the toast style's.
 local L = ns.L
 
 -- Each stage's panels, one per slot drawn on it, reused at the next drawing. Weak, so a stage the shop drops goes.
@@ -180,6 +180,9 @@ end
 --- "core.toaststyle" (ANN-R80).
 ---@type table<string, PagleCorePreview>
 ns.CORE_PREVIEWS = {
+	[ns.NEWS_SIGN_SLOT] = function(stage, good)
+		ns.NewsSignPreview(stage, ns.NewsSignLookOf(good.id))
+	end,
 	-- A binding's closed book (ADR 0015), the kits' swatch of it, Core's art for a Module's earned one too (SHOP-R25);
 	-- for the two no kit drew closed (Tooled Leather, Verdigris), a live one the renderer draws.
 	[ns.BINDING_SLOT] = function(stage, good)
@@ -208,6 +211,63 @@ ns.CORE_PREVIEWS = {
 		panel.name:SetText((UnitName("player")))
 	end,
 }
+
+-- The well a look is drawn in, at the stage's top (SHOP-R36: adapter/GoodPreview.lua's ns.GOOD_PREVIEW_W and _H, which
+-- loads after this file), and how far under its foot Show on screen sits.
+local WELL_W, WELL_H, UNDER_WELL = 370, 132, 10
+
+---@class PagleNewsSignPanel: Frame
+---@field sign Frame  -- the sign's still, scaled into the well
+---@field show Button -- Show on screen
+---@field look string -- the look drawn
+
+-- Each stage's news sign still, for the specs. Weak, so a stage the shop drops goes.
+---@type table<Frame, Frame>
+local signs = setmetatable({}, { __mode = "k" })
+
+-- The scale every look is drawn at in the well: the one that fits the tallest and the widest look whole (the Scroll,
+-- 400 x 176 at its full drop, sets it: 0.75), so the looks are drawn alike.
+---@return number
+local function signScale()
+	local w, h = 0, 0
+	for _, look in pairs(ns.NEWS_SIGN_LOOKS) do
+		w, h = math.max(w, look.w), math.max(h, look.h)
+	end
+	return math.min(1, WELL_W / w, WELL_H / h)
+end
+
+--- A news sign look's preview (SHOP-R61): the sign in `lookKey` at rest and still, with the Legend sample, scaled into
+--- the well and centred in it; under it, Show on screen, which drops the real sign in that look with that sample,
+--- owned or not and with dev mode off, opening nothing on a left click and waiting while restricted (SIGN-R40,
+--- SIGN-R42). The Collection's card and stage draw it too (Pagle.DrawGoodPreview, LED-R170).
+---@param stage Frame
+---@param lookKey string
+function ns.NewsSignPreview(stage, lookKey)
+	local panel = ns.CorePreviewPanel(stage, ns.NEWS_SIGN_SLOT, function(panel)
+		---@cast panel PagleNewsSignPanel
+		panel.sign = CreateFrame("Frame", nil, panel)
+		panel.show = ns.PanelButton(panel, L.TOAST_SHOW_ON_SCREEN, 140, nil, function()
+			ns.DropNewsSign(panel.look, ns.NewsSignSample("legend"))
+		end)
+		panel.show:SetPoint("TOP", panel, "TOP", 0, -(WELL_H + UNDER_WELL))
+	end) --[[@as PagleNewsSignPanel]]
+	local look = ns.NEWS_SIGN_LOOKS[lookKey] or ns.NEWS_SIGN_LOOKS[ns.NewsSignLookOf(ns.NEWS_SIGN_DEFAULT)]
+	local scale = signScale()
+	panel.look = look.key
+	panel.sign:SetScale(scale)
+	panel.sign:ClearAllPoints()
+	-- the sign's centre on the well's, in the sign's own units; its ropes reach up to the well's top
+	panel.sign:SetPoint("CENTER", panel, "TOP", 0, -(WELL_H / 2) / scale)
+	ns.DrawNewsSignStill(panel.sign, look.key, ns.NewsSignSample("legend"), look.h / 2 - (WELL_H / 2) / scale)
+	signs[stage] = panel.sign
+end
+
+--- The news sign's still on `stage`, once a look was drawn there (for the specs).
+---@param stage Frame
+---@return Frame?
+function ns.NewsSignPreviewOf(stage)
+	return signs[stage]
+end
 
 -- The owner of the GET_ITEM_INFO_RECEIVED registration: a fish crest's fish arriving (VAR-R12).
 local OWNER = "Pagle fish crests"

@@ -134,6 +134,9 @@ SETTINGS_TOAST_RESET_TOOLTIP = "Shift-drag a toast to move the toasts and Nods, 
 # The Party block on the Announcements page (SET-R36, ANN-R103–R108, from 1.5.2): its header, its rows' labels and
 # tooltips, and each kind's switch.
 SETTINGS_PARTY = "Party"
+# Its first row, from 1.6 (SET-R35, LOG-R121): one switch for sharing the player's catches and counting the party's.
+SETTINGS_PARTY_HUNTS = "Party Hunts"
+SETTINGS_PARTY_HUNTS_TOOLTIP = "In a party, your groupmates' catches count toward your Hunts and Pagle Wagers while you fish the same zone, and yours count toward theirs. Off, Pagle neither shares your catches nor counts theirs."
 SETTINGS_PARTY_SHARE = "Share my moments with my party"
 SETTINGS_PARTY_SHARE_TOOLTIP = "When you catch a Legend, set a Monster-size record and the like, groupmates who run Pagle get a small toast of it. Only the moment is sent, never where you are. Not in a raid."
 SETTINGS_PARTY_SHOW = "Show my party's moments"
@@ -145,8 +148,27 @@ SETTINGS_PARTY_KINDS.gold = "Gold tier in a Hunt"
 SETTINGS_PARTY_KINDS.zone = "Zone Master"
 SETTINGS_PARTY_KINDS.prestige = "Prestige"
 SETTINGS_PARTY_KINDS.ledger = "Ledger 100%"
+SETTINGS_PARTY_KINDS.hp = "Completed for the party"
 SETTINGS_PARTY_SOUNDS = "Cheers sounds"
 SETTINGS_PARTY_SOUNDS_TOOLTIP = "A clink when a groupmate's toast arrives, when you raise a mug, and when someone raises one to you."
+# The Morning Tide's section on the Announcements page (SET-R37, SIGN-R14–R18, SIGN-R31, from 1.6): its header, the
+# master switch, a switch per followed kind in the sign's rank (SIGN-R10), Region headlines and Mute the sign, with
+# their tooltips.
+SETTINGS_NEWS = "The Morning Tide"
+SETTINGS_NEWS_SHOW = "Show news at login"
+SETTINGS_NEWS_SHOW_TOOLTIP = "At login or /reload, a sign drops in with the best news about the Anglers you follow on the Pagle website. Needs the Pagle Companion. A left click opens the rest in the Fish Journal."
+SETTINGS_NEWS_KINDS.first = "First reported"
+SETTINGS_NEWS_KINDS.legend = "Legends"
+SETTINGS_NEWS_KINDS.prestige = "Prestige"
+SETTINGS_NEWS_KINDS.ledger = "Ledger completed"
+SETTINGS_NEWS_KINDS.colour = "Rare varieties"
+SETTINGS_NEWS_KINDS.hunt = "Hunt gold"
+SETTINGS_NEWS_KINDS.zone = "Zone Master"
+SETTINGS_NEWS_KINDS.monster = "Monster records"
+SETTINGS_NEWS_HEADLINES = "Region headlines"
+SETTINGS_NEWS_HEADLINES_TOOLTIP = "Who was first in your region this month to land a Legend, whether you follow them or not."
+SETTINGS_NEWS_MUTE = "Mute the sign"
+SETTINGS_NEWS_MUTE_TOOLTIP = "The sign drops without its sounds. The game's sound settings still apply."
 SETTINGS_NO_MODULE = "Recording your Catches. Enable a Module to see them."
 SETTINGS_MODULES = "Modules"
 SETTINGS_MODULES_NOTE = "Turn Modules on or off in the AddOns list."
@@ -300,10 +322,24 @@ PARTY_CHEER_COUNT.other = "{count} raised a mug"
 # PARTY_FULL_NAME) and the zone they share, and its three buttons. Fish together turns the party features on; Not
 # now asks again a day later at the soonest; No thanks never asks again.
 PARTY_LETTER_KICKER = "A letter, passed along the bank"
-PARTY_LETTER_LINE = "{name} is fishing {zone} with you, and they run Pagle too. Fish together: share your best catches and cheer theirs."
+PARTY_LETTER_LINE = "{name} is fishing {zone} with you, and they run Pagle too. Fish together: share your best catches, cheer theirs, and count each other’s catches toward your Hunts."
+# ANN-R114: the same, when the client can't place the groupmate or the player on the map, so no zone is named.
+PARTY_LETTER_LINE_NO_ZONE = "{name} runs Pagle too and is in your party. Fish together: share your best catches, cheer theirs, and count each other’s catches toward your Hunts."
 PARTY_LETTER_YES = "Fish together"
 PARTY_LETTER_LATER = "Not now"
 PARTY_LETTER_NO = "No thanks"
+# "Completed for the party" (ANN-R111, from 1.6): the kicker the catcher sees, and every other groupmate; the line, a
+# Hunt or a run and the groupmates it was for; a Hunt or an event the player's Hunts can't name; and the groupmates,
+# two, or from three the first two and a count.
+PARTY_HP_MINE = "Your catch"
+PARTY_HP_PARTY = "Completed for the party"
+PARTY_HP_HUNT = "{hunt} · for {senders}"
+PARTY_HP_RUN = "{event} settled · for {senders}"
+PARTY_HP_SOME_HUNT = "a Hunt"
+PARTY_HP_SOME_RUN = "a Pagle Wager"
+PARTY_HP_SENDERS_TWO = "{name} and {other}"
+PARTY_HP_SENDERS_MORE.one = "{name}, {other} and {count} more"
+PARTY_HP_SENDERS_MORE.other = "{name}, {other} and {count} more"
 # A toast style's sample on the Curio Shop's preview stage (wallet-and-shop.md › UI, ANN-R80): its headline, its
 # one stamp, and the button that shows it through the lanes.
 TOAST_SAMPLE_TITLE = "New Species"
@@ -494,6 +530,7 @@ SHOP_CRATE_UNSHOWN = "It shows here once its Module is on."
 # stamp on its card.
 SHOP_CRATE_KINDS.binding = "Binding"
 SHOP_CRATE_KINDS.crest = "Crest"
+SHOP_CRATE_KINDS.newssign = "News sign"
 SHOP_CRATE_KINDS.soundset = "Sound set"
 SHOP_CRATE_KINDS.toaststyle = "Toast style"
 SHOP_CRATE_KINDS.trackerframe = "Tracker frame"
@@ -526,10 +563,11 @@ SLASH_SKIPPED_TAKEN = "Pagle: {module}'s /pagle {name} is skipped: {owners} alre
 DEV_ON = "Pagle dev: dev commands are on."
 DEV_OFF = "Pagle dev: dev commands are off."
 DEV_IS_OFF = "Pagle dev: dev commands are off; /pagle dev on turns them on."
-DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | stage <count> | glyphs | tour [module | list | stop] | probe | fonts | pseudo on | off | onboarding <command> | content | views | pastetest <KB>"
+DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | stage <count> | glyphs | tour [module | list | stop] | probe | fonts | pseudo on | off | onboarding <command> | content | views | pastetest <KB> | sign <look> [kind] [more]"
 # /pagle dev party (ANN-R109, from 1.5.2): its usage, and what it queued.
 DEV_PARTY_USAGE = "Pagle dev: /pagle dev party <kind | all | cheer [1-4] | letter [reset]>, where kind is one of {kinds}"
 DEV_PARTY_QUEUED = "Pagle dev: a party toast from {name} is queued: {kind}."
+DEV_PARTY_HUNT_OFF = "Pagle dev: nothing shows while Party Hunts, Show my party's moments or Completed for the party is off."
 DEV_PARTY_CHEERED = "Pagle dev: {count:0} cheers for a moment of yours are on their way."
 # /pagle dev party letter [reset] (ANN-R116, from 1.5.3): the party letter shown, and its answer forgotten.
 DEV_PARTY_LETTER = "Pagle dev: the party letter is on screen, as if {name} were fishing beside you."
@@ -605,6 +643,9 @@ DEV_VIEWS_ANGLERS = "Pagle dev: Pagle_Anglers' generatedAt {generatedAt}, blocks
 DEV_VIEWS_LOADED = "Pagle dev: Pagle_Anglers has loaded this login."
 DEV_VIEWS_NOT_LOADED = "Pagle dev: Pagle_Anglers hasn't loaded this login."
 DEV_VIEWS_NONE = "none"
+# From 1.6, the news (VIEW-R12): its state (ok, none, expired or absent), the news lines used and skipped (VIEW-R41),
+# how many items are seen and the floor, a server time (VIEW-R44), each "none" when there is none.
+DEV_VIEWS_NEWS = "Pagle dev: news {state}: lines used {used}, skipped {skipped}; seen {seen}, floor {floor}."
 # Why a data file is absent (VIEW-R1, IGV-R44), the first that holds, as /pagle dev views names it: no file (by
 # folder name, with the client's reason a load failed, or the global's name), then IGV-R44's conditions in order.
 # A global's or field's name; v as read; count as read, the list's name and its length; a block's number, and its
@@ -937,6 +978,8 @@ SLOT_TOAST_STYLE = "Toast style"
 SLOT_SOUND_SET = "Sound set"
 SLOT_CREST = "Crests"
 SLOT_BOOK_BINDING = "Book binding"
+# From 1.6: The Morning Tide's looks (SHOP-R60).
+SLOT_NEWS_SIGN = "News sign"
 # The crest slot's groups (SHOP-R27): the zones' crests, then the fishes', which name them; the Curio Shop lists
 # neither, as it lists no earned crest (SHOP-R25).
 SLOT_CREST_ZONES = "Zone crests"
@@ -963,3 +1006,41 @@ PREVIEW_EX_LIBRIS = "Ex Libris"
 PREVIEW_CREST_NOTE = "On the Fish Journal's bookplate."
 # A binding's preview (wallet-and-shop.md › UI): its closed book, then what wears it (ADR 0015).
 PREVIEW_BINDING_NOTE = "Every book of yours wears it."
+
+# The Morning Tide, the news sign (core/news-sign.md, SIGN-R12): each kind's name over its headline, the headline, the line under it,
+# the region headline's kicker and the "+N more" line. {name} is an Angler's public name, never a character's
+# (SIGN-R11); {region} a region's code (EU); {fish}, {legend}, {species} and {variety} item and variety names; {zone} a
+# zone's name; {hunt} a Hunt's name; {rank} a Prestige numeral; {length} a length in the player's unit.
+SIGN_KICKER.first = "First report"
+SIGN_KICKER.legend = "Legend"
+SIGN_KICKER.prestige = "Prestige"
+SIGN_KICKER.ledger = "The Ledger"
+SIGN_KICKER.colour = "Rare colour"
+SIGN_KICKER.hunt = "Hunt gold"
+SIGN_KICKER.zone = "Zone Master"
+SIGN_KICKER.monster = "Monster"
+SIGN_KICKER.region = "Region news · {region}"
+SIGN_HEAD.first = "First in {region} to land {fish}"
+SIGN_HEAD.legend = "{name} landed a Legend"
+SIGN_HEAD.prestige = "{name} reached Prestige {rank}"
+SIGN_HEAD.ledger = "{name} completed the Ledger"
+SIGN_HEAD.colour = "{name} caught a rare colour"
+SIGN_HEAD.hunt = "{name} took gold"
+SIGN_HEAD.zone = "{name} became Master of {zone}"
+SIGN_HEAD.monster = "{name} landed a Monster"
+SIGN_HEAD.region = "First in {region} this month to land {fish}"
+SIGN_DETAIL_COLOUR = "{variety} {species}"
+SIGN_DETAIL_MONSTER = "{species}, {length}"
+# From 1.6 (SIGN-R12, SIGN-R19): an uncaught variety's detail, its rarity's name (Epic) for its own (VAR-R27); a Master
+# Prestige's headline, {master} its rank above X; an item the client hasn't loaded yet; a zone the client has no name
+# for, {zone} its areaID.
+SIGN_DETAIL_COLOUR_HIDDEN = "{rarity} {species}"
+SIGN_HEAD_MASTER_PRESTIGE = "{name} reached Master Prestige {master:0}"
+SIGN_ITEM_UNKNOWN = "a fish"
+SIGN_ZONE_UNKNOWN = "Zone {zone}"
+SIGN_MORE.one = "+{count:0} more from your anglers"
+SIGN_MORE.other = "+{count:0} more from your anglers"
+# /pagle dev sign (SIGN-R60): drops the news sign with sample news; dev text stays English.
+DEV_SIGN_USAGE = "Pagle dev: /pagle dev sign <look> [kind] [more], where look is one of {looks} and kind one of {kinds}"
+DEV_SIGN_DROPPED = "Pagle dev: dropping the {look} sign with sample {kind} news; hover holds it, a right click sends it up."
+DEV_SIGN_WAITING = "Pagle dev: the sign drops once combat and restriction end."

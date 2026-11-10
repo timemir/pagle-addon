@@ -441,6 +441,14 @@ en = "{trim} mark"
 value = "Apuesta liquidada"
 en = "Wager settled"
 
+[PARTY_WITH]
+value = "{text} · con {name}"
+en = "{text} · with {name}"
+
+[PARTY_A_GROUPMATE]
+value = "un compañero de grupo"
+en = "a groupmate"
+
 [WAGER_SETTLED_STAMP]
 value = "Liquidada"
 en = "Settled"
@@ -562,6 +570,18 @@ en = "not yet"
 [LADDER_CAUGHT]
 value = "{ladder_caught:0} capturas"
 en = "{ladder_caught:0} caught"
+
+[LADDER_WHEN_PARTY]
+value = "{when} · grupo"
+en = "{when} · party"
+
+[LADDER_PARTY_TIP]
+value = "La captura de un miembro del grupo mientras pescabas en las mismas aguas."
+en = "A groupmate's catch, while you fished the same water."
+
+[LADDER_PARTY_TIP_SITE]
+value = "En pagle.app cuenta cuando tu compañero de grupo también haya subido su Registro de capturas."
+en = "On pagle.app it counts once your groupmate has uploaded their Catch log too."
 
 [EFFORT_CASTS]
 value.one = "{count:0} Lance"

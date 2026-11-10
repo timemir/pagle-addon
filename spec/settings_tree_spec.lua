@@ -87,12 +87,18 @@ local TIPS = {
 	trackerPosition = "Shift-drag any Pagle tracker to move them all. This puts them back under the minimap.",
 	whileFishing = "Shows the trackers while a fishing pole is in hand. Once you put it away, they stay up for a minute "
 		.. "after your last Cast, then hide.",
+	partyHunts = "In a party, your groupmates' catches count toward your Hunts and Pagle Wagers while you fish the same "
+		.. "zone, and yours count toward theirs. Off, Pagle neither shares your catches nor counts theirs.",
 	partyShare = "When you catch a Legend, set a Monster-size record and the like, groupmates who run Pagle get a "
 		.. "small toast of it. Only the moment is sent, never where you are. Not in a raid.",
 	partyShow = "A small toast when a groupmate who runs Pagle has a moment, with a mug you can raise to cheer them. It "
 		.. "waits behind your own toasts and keeps to your interruption budget. Greyed out in Cozy mode, which shows "
 		.. "nothing.",
 	partySounds = "A clink when a groupmate's toast arrives, when you raise a mug, and when someone raises one to you.",
+	newsShow = "At login or /reload, a sign drops in with the best news about the Anglers you follow on the Pagle "
+		.. "website. Needs the Pagle Companion. A left click opens the rest in the Fish Journal.",
+	newsHeadlines = "Who was first in your region this month to land a Legend, whether you follow them or not.",
+	newsMute = "The sign drops without its sounds. The game's sound settings still apply.",
 	toastPosition = "Shift-drag a toast to move the toasts and Nods, or the Session summary to move it. This puts them all"
 		.. " back where they started.",
 	huntsTracker = "A small tracker under the minimap with the Hunts you've pinned on the board.",
@@ -195,8 +201,9 @@ local EXPECTED = {
 			{ "slot", "Toast style" },
 			{ "slot", "Sound set" },
 			{ "button", "Toast position", caption = "Reset", tip = TIPS.toastPosition },
-			-- The Party block (SET-R36, from 1.5.2).
+			-- The Party block (SET-R36, from 1.5.2), Party Hunts first (SET-R35, from 1.6).
 			{ "header", "Party" },
+			{ "checkbox", "Party Hunts", tip = TIPS.partyHunts },
 			{ "checkbox", "Share my moments with my party", tip = TIPS.partyShare },
 			{ "checkbox", "Show my party's moments", tip = TIPS.partyShow },
 			{ "checkbox", "Legends", under = true },
@@ -206,7 +213,24 @@ local EXPECTED = {
 			{ "checkbox", "Zone Master", under = true },
 			{ "checkbox", "Prestige", under = true },
 			{ "checkbox", "Ledger 100%", under = true },
+			-- From 1.6, "Completed for the party" (SET-R35, ANN-R111).
+			{ "checkbox", "Completed for the party", under = true },
 			{ "checkbox", "Cheers sounds", tip = TIPS.partySounds },
+			-- The Morning Tide (SET-R37, from 1.6). Its last row, the News sign slot dropdown, comes with Core's
+			-- `core.newssign` slot (SHOP-R60, #660), as Toast style and Sound set came with theirs (SET-R30).
+			{ "header", "The Morning Tide" },
+			{ "checkbox", "Show news at login", tip = TIPS.newsShow },
+			{ "checkbox", "First reported", under = true },
+			{ "checkbox", "Legends", under = true },
+			{ "checkbox", "Prestige", under = true },
+			{ "checkbox", "Ledger completed", under = true },
+			{ "checkbox", "Rare varieties", under = true },
+			{ "checkbox", "Hunt gold", under = true },
+			{ "checkbox", "Zone Master", under = true },
+			{ "checkbox", "Monster records", under = true },
+			{ "checkbox", "Region headlines", under = true, tip = TIPS.newsHeadlines },
+			{ "checkbox", "Mute the sign", tip = TIPS.newsMute },
+			{ "slot", "News sign" }, -- its look: Wood and the looks owned (SET-R37, SET-R51, SHOP-R60)
 			{ "header", "Hunts", of = "Hunts" },
 			{ "checkbox", "Announce open Hunt windows", tip = TIPS.windowMoments, of = "Hunts" },
 			{ "checkbox", "Remind me about the Pagle companion", tip = TIPS.companionHint, of = "Hunts" },
@@ -239,6 +263,7 @@ local EXPECTED = {
 			{ "header", "Announcements" },
 			{ "slot", "Toast style" },
 			{ "slot", "Sound set" },
+			{ "slot", "News sign" }, -- from 1.6 (SET-R50, SHOP-R60)
 			{ "header", "Crests" },
 			{ "slot", "Crests" },
 			{ "header", "Books" },
@@ -640,6 +665,7 @@ local PARTY_KINDS = {
 	"Zone Master",
 	"Prestige",
 	"Ledger 100%",
+	"Completed for the party", -- from 1.6 (SET-R35, ANN-R111)
 }
 
 -- `list`, then the Party block's kind rows.
@@ -782,11 +808,12 @@ describe("Greying in the Settings tree", function()
 			KeyBindingFrameBindingTemplate = true,
 		}
 
-		local drawnOn = {}
+		local drawnOn, checked = {}, {}
 		for _, category in ipairs(loaded.client.settings.categories) do
 			for _, initializer in ipairs(category.layout.initializers) do
 				local template = initializer:GetTemplate()
 				local row = category.name .. " › " .. tostring(initializer:GetName()) .. " on " .. tostring(template)
+				checked[row] = (checked[row] or 0) + 1
 				assert(not blizzards[template], row)
 				assert(template:match("^Pagle") and loaded.client.templates[template], row)
 				-- a native row's tooltip is a string, so no Pagle function runs in Settings.InitTooltip
@@ -810,6 +837,36 @@ describe("Greying in the Settings tree", function()
 			"PagleSettingsSlotRowTemplate",
 		}) do
 			assert(drawnOn[template], "no row on " .. template)
+		end
+		-- 1.6's rows are among those checked, each on its own kind of Pagle template: Party Hunts and "Completed for the
+		-- party" in the Party block (SET-R35, ANN-R111), The Morning Tide's section with its News sign look dropdown
+		-- (SET-R37, SHOP-R60), and the look's dropdown on Look and Feel (SET-R50). Legends, Prestige and Zone Master are
+		-- kind rows of both the Party block and The Morning Tide.
+		local HEADER, CHECKBOX, SLOT =
+			"PagleSettingsListSectionHeaderTemplate",
+			"PagleSettingsCheckboxControlTemplate",
+			"PagleSettingsSlotRowTemplate"
+		for _, want in ipairs({
+			{ "Announcements", "Party", HEADER },
+			{ "Announcements", "Party Hunts", CHECKBOX },
+			{ "Announcements", "Completed for the party", CHECKBOX },
+			{ "Announcements", "The Morning Tide", HEADER },
+			{ "Announcements", "Show news at login", CHECKBOX },
+			{ "Announcements", "First reported", CHECKBOX },
+			{ "Announcements", "Legends", CHECKBOX, 2 },
+			{ "Announcements", "Prestige", CHECKBOX, 2 },
+			{ "Announcements", "Ledger completed", CHECKBOX },
+			{ "Announcements", "Rare varieties", CHECKBOX },
+			{ "Announcements", "Hunt gold", CHECKBOX },
+			{ "Announcements", "Zone Master", CHECKBOX, 2 },
+			{ "Announcements", "Monster records", CHECKBOX },
+			{ "Announcements", "Region headlines", CHECKBOX },
+			{ "Announcements", "Mute the sign", CHECKBOX },
+			{ "Announcements", "News sign", SLOT },
+			{ "Look and Feel", "News sign", SLOT },
+		}) do
+			local row = want[1] .. " › " .. want[2] .. " on " .. want[3]
+			assert.are.equal(want[4] or 1, checked[row] or 0, row)
 		end
 	end)
 
@@ -892,12 +949,40 @@ describe("Greying in the Settings tree", function()
 			"Zone Master",
 			"Prestige",
 			"Ledger 100%",
+			"Completed for the party",
 			"Cheers sounds",
+			-- The Morning Tide's master and the rows under it, but not Mute the sign (SET-R37).
+			"Show news at login",
+			"First reported",
+			"Legends",
+			"Prestige",
+			"Ledger completed",
+			"Rare varieties",
+			"Hunt gold",
+			"Zone Master",
+			"Monster records",
+			"Region headlines",
 		}, greyedOn(loaded, "Announcements"))
 
 		setRow(loaded, "Announcements", "Cozy mode", false)
 		assert.are.same(PARTY_KINDS, greyedOn(loaded, "Announcements"))
 	end)
+
+	it(
+		"writes Party Hunts to PagleDB.profile.partyHunts at once, one switch for both sides, off until the party"
+			.. " letter is accepted (SET-R35, LOG-R121, ANN-R113)",
+		function()
+			local loaded = ready()
+			local profile = loaded.namespaces.Pagle.db.profile
+			assert.is_nil(profile.partyHunts)
+
+			setRow(loaded, "Announcements", "Party Hunts", true)
+			assert.is_true(profile.partyHunts)
+
+			setRow(loaded, "Announcements", "Party Hunts", false)
+			assert.is_false(profile.partyHunts)
+		end
+	)
 
 	it("greys Interruptions and Per while the budget is off, until it is on again (SET-R30, SET-R31)", function()
 		local loaded = ready()
@@ -1063,22 +1148,36 @@ describe("Each page's Defaults button", function()
 				"Animations",
 				"Announce open Hunt windows",
 				"Cheers sounds",
+				"Completed for the party",
 				"Cozy mode",
+				"First reported", -- The Morning Tide's, from 1.6 (SET-R37)
 				"Gold tier in a Hunt",
+				"Hunt gold",
 				"Interruption budget",
 				"Interruptions",
 				"Ledger 100%",
+				"Ledger completed",
 				"Legends",
+				"Legends",
+				"Monster records",
 				"Monster-size records",
+				"Mute the sign",
+				"News sign",
+				"Party Hunts",
 				"Per",
 				"Prestige",
+				"Prestige",
 				"Rare colours",
+				"Rare varieties",
+				"Region headlines",
 				"Remind me about the Pagle companion",
 				"Share my moments with my party",
 				"Show every catch",
 				"Show my party's moments",
+				"Show news at login",
 				"Sound set",
 				"Toast style",
+				"Zone Master",
 				"Zone Master",
 			}, restoredOn(loaded, "Announcements"))
 			assert.are.same({
@@ -1094,6 +1193,7 @@ describe("Each page's Defaults button", function()
 				"Book binding",
 				"Crests",
 				"Hunts tracker frame",
+				"News sign",
 				"Sound set",
 				"Stats tracker frame",
 				"Tackle Board tracker frame",
@@ -1219,9 +1319,14 @@ describe("Each page's Defaults button", function()
 			["Animations"] = false,
 			["Announce open Hunt windows"] = true,
 			["Remind me about the Pagle companion"] = false,
+			["Party Hunts"] = true,
 			["Share my moments with my party"] = true,
 			["Zone Master"] = false,
 			["Cheers sounds"] = false,
+			["Show news at login"] = false,
+			["Hunt gold"] = false,
+			["Region headlines"] = false,
+			["Mute the sign"] = true,
 		}) do
 			setRow(loaded, "Announcements", label, value)
 		end
@@ -1239,7 +1344,9 @@ describe("Each page's Defaults button", function()
 			["Animations"] = true,
 			["Announce open Hunt windows"] = false,
 			["Remind me about the Pagle companion"] = true,
-			-- SET-R36's: Share and Show off until the party letter is accepted (ANN-R113), the rest on.
+			-- SET-R35's Party Hunts and SET-R36's Share and Show off until the party letter is accepted (ANN-R113), the
+			-- rest on.
+			["Party Hunts"] = false,
 			["Share my moments with my party"] = false,
 			["Show my party's moments"] = false,
 			["Legends"] = true,
@@ -1249,7 +1356,17 @@ describe("Each page's Defaults button", function()
 			["Zone Master"] = true,
 			["Prestige"] = true,
 			["Ledger 100%"] = true,
+			["Completed for the party"] = true,
 			["Cheers sounds"] = true,
+			-- SET-R37's: every switch on, the sign unmuted. Legends, Prestige and Zone Master are both blocks' labels.
+			["Show news at login"] = true,
+			["First reported"] = true,
+			["Ledger completed"] = true,
+			["Rare varieties"] = true,
+			["Hunt gold"] = true,
+			["Monster records"] = true,
+			["Region headlines"] = true,
+			["Mute the sign"] = false,
 		}, valuesOn(loaded, "Announcements"))
 		assert.are.equal(300, loaded.namespaces.Pagle.db.profile.announcements.budget.window) -- stored in seconds
 		assert.are.same({
@@ -1571,8 +1688,10 @@ local AVOIDED = {
 ---@return string[]
 local function avoidedIn(text)
 	local said = {}
-	-- A Hunt's Gold tier (its trim, HNT-R18) is a tier, not money (SET-R36).
-	local lower = text:lower():gsub("curio shop", ""):gsub("field report", ""):gsub("gold tier", "")
+	-- A Hunt's Gold tier (its trim, HNT-R18) is a tier, not money (SET-R36), and so is The Morning Tide's Hunt gold, a
+	-- Hunt's Gold tier won (SIGN-R10, SET-R37).
+	local lower =
+		text:lower():gsub("curio shop", ""):gsub("field report", ""):gsub("gold tier", ""):gsub("hunt gold", "")
 	for _, word in ipairs(AVOIDED) do
 		if lower:find("%f[%w]" .. word .. "%f[^%w]") then
 			said[#said + 1] = word
@@ -1601,11 +1720,14 @@ local NAMES = {
 	-- A Zone Mastery rank (CONTEXT.md), as in Zone Master (SET-R36).
 	Master = true,
 	Modules = true,
+	-- The Morning Tide, the news sign's name (CONTEXT.md), its section's header (SET-R37).
+	Morning = true,
 	Pagle = true,
 	QoL = true,
 	Shop = true,
 	Stats = true,
 	Tackle = true,
+	Tide = true,
 }
 
 -- Each word of row label `text`, after its first, written with a capital it shouldn't have in sentence case.

@@ -132,6 +132,7 @@ ns.API_INVENTORY = {
 	"IsShiftKeyDown",
 	"Item",
 	"Item.CreateFromItemID",
+	"LE_PARTY_CATEGORY_HOME",
 	"MAX_EQUIPMENT_SETS_PER_PLAYER",
 	"MenuUtil",
 	"MenuUtil.CreateContextMenu",

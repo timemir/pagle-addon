@@ -535,15 +535,16 @@ There is no check 22: it looked for a per-character Self-Found call, and the cha
 
 **Goal:** in a party of up to 5, a groupmate's Catch counts toward the Angler's Hunts, Standing Hunts and Pagle Wagers alike, while both fish the same zone ([#641](https://github.com/timemir/pagle-addon/issues/641)). It is a policy release: it adds the `G1` entry and raises the Hunts rules version, so it declares a new rule set, `pagle-2026j`, and pagle-backend must read `G1` and hold `pagle-2026j` before the tag (pagle-backend [#457](https://github.com/timemir/pagle-backend/issues/457)): a backend that doesn't know `G1` refuses every Catch log that holds one. It ships after [#640](https://github.com/timemir/pagle-addon/issues/640)'s party toasts, whose channel, send queue and compact style it uses.
 
-**Build order:** 1. Core's channel, message, checks, `G1` entry and record, and the Party Hunts row (LOG-R110–R121, SET-R35). 2. Hunts' fold of Party Catches, its filter and its board line (HNT-R180–R187). 3. The moments: the Angler's own and the completed-for-the-party toast (ANN-R110, ANN-R111).
+**Build order:** 1. Core's channel, message, checks, `G1` entry and record, and the Party Hunts row (LOG-R110–R121, SET-R35). 2. Hunts' fold of Party Catches, its filter and its board line (HNT-R180–R187). 3. The moments: the Angler's own and the completed-for-the-party toast (ANN-R110, ANN-R111). 4. The party letter governs Party Hunts, and the letter service gains a third button, live words and a re-ask policy, so the party letter needs no workaround ([#665](https://github.com/timemir/pagle-addon/issues/665); hashed: `logic/Letter.lua`, `logic/Onboarding.lua`, `logic/Wiring.lua`, `logic/Migrations.lua`'s step 4).
 
-**Core rules:** LOG-R110–R121, LOG-R122–R126, and the 1.6 parts of LOG-R42 and the Entry formats; ANN-R10 for Party Catches, ANN-R110, ANN-R111
+**Core rules:** LOG-R110–R121, LOG-R122–R126, and the 1.6 parts of LOG-R42 and the Entry formats; ANN-R10 for Party Catches, ANN-R110, ANN-R111; the 1.6 parts of ANN-R113–R116, ANN-R117, ONB-R15 and ONB-R16
 
 **Module rules:** Hunts: HNT-R180–R187, HNT-R205–R208, and the 1.6 parts of HNT-R136, HNT-R137, HNT-R149, HNT-R190
 
 **Settings rules:** SET-R33 for the Party section, SET-R35
 
 **Exit check,** with two accounts in one party, both on 1.6:
+0. Neither shares nor counts anything until each accepts the party letter (Fish together turns Party Hunts on, ANN-R113, ANN-R115); No thanks on one side keeps that side's Party Hunts off.
 1. Both fish the same zone: each Catch of one that a Hunt of the other targets adds to the other's count, and a tier it reaches shows "party" on the tier ladder; the other's toast reads "… · with {name}".
 2. When a groupmate's Catch completes a Hunt, the catcher sees a "Your catch" party toast and the third groupmate a "Completed for the party" one, each once.
 3. One of them moves to another zone, or stops casting for more than 5 minutes: the other's Catches no longer count for them.
@@ -551,6 +552,31 @@ There is no check 22: it looked for a per-character Self-Found call, and the cha
 5. A `/reload` rebuilds nothing and the counts stay; turning Hunts off and on again catches up the Party Catches logged meanwhile.
 6. The Paste string of a log with Party Catches uploads to pagle-backend without a refusal.
 7. `scripts/check.sh` passes.
+
+### 1.6: The Morning Tide (rule set pagle-2026j)
+
+**Goal:** the news sign drops at login with real news ([#650](https://github.com/timemir/pagle-addon/issues/650)): the best news about the Anglers the player follows, or a region headline, from the news block the Companion brings in `Pagle_Following` (pagle-backend's IGV-R60–R66, [#466](https://github.com/timemir/pagle-backend/issues/466)); a left click opens the full list in the Fish Journal; Settings for the sign, its kinds and its look; and the five looks beyond Wood as Curio Shop goods. It ships with party-wide Hunts, above, on the same rule set. It needs a news-aware Pagle Companion (pagle-backend's CMP-R82); with an older one the sign never drops and the list says to update it.
+
+**Build order:** 1. Core's read of the news block, seen and the floor (VIEW-R40–R46). 2. The decision and the words (SIGN-R14–R19, SIGN-R57), and the Curio Shop's slot, goods and preview (SHOP-R60–R62), in parallel. 3. The Ledger's news list and `def.news` (LED-R176–R179), and the Settings section (SET-R37).
+
+**Core rules:** VIEW-R4, VIEW-R12, VIEW-R40–R46, VIEW-R96–R98; SIGN-R10–R19, SIGN-R31, SIGN-R40 (letters), SIGN-R42, SIGN-R57; ONB-R17 for the sign; SHOP-R25 (its News sign row and tier principle), SHOP-R60–R62
+
+**Module rules:** Ledger: LED-R163 for its News link, LED-R176–R179
+
+**Settings rules:** SET-R37, and SET-R50's News sign slot
+
+**Hashed files the build changes:** Core's `logic/AnglersInGame.lua` (the news read, VIEW-R40–R44), `logic/Wiring.lua` (the new `Pagle.` calls), `logic/CoreGoods.lua` (the slot and goods, SHOP-R60) and `logic/Crate.lua` (`ns.CRATE_POOL`, SHOP-R62); the Ledger's `logic/Module.lua` (`def.news`, LED-R178) and `logic/JournalFollowing.lua` (the News link, LED-R163), with a new `logic/` file for the news list if the build makes one; `logic/Letter.lua` (the sign and a letter never show together, SIGN-R40, ONB-R17); `Pagle.toc`, whose new lines load the sign's files in place of `adapter/Settings.xml` (news-sign.md's Decisions); and `logic/Migrations.lua` only if the new `PagleDB.global` keys get defaults there rather than reading nil as their default. `logic/Catalogue.lua`, the item catalogue, isn't touched: the goods are registered in `CoreGoods.lua`.
+
+**Exit check,** with a news-aware Pagle Companion linked, following one Published Angler of another account:
+1. The first login with 1.6 drops nothing, though the Following spread's News link lists the last 30 days.
+2. The followed account lands a Legend and uploads; at the next login after the Companion's next download, the sign drops with it, "+N more" counting any other new news, and a right click sends it up. A `/reload` doesn't drop it again.
+3. A left click opens the Fish Journal's news list on that item; with the Ledger off it only sends the sign up.
+4. In combat at login, the sign waits until combat ends; with a letter showing (the Prestige letter, or the party letter), it waits until the letter is answered, and a letter due while the sign hangs follows once it has gone up.
+5. Turning a kind off and back on, or the sign off and on, never brings back news that came meanwhile.
+6. A Rare variety the player hasn't caught shows its rarity and the silhouette, never its name or colours.
+7. Each of the five looks can be bought in the Curio Shop, previewed with Show on screen, equipped from the shop, Look and Feel, the Announcements page or the Collection, and the next drop wears it; Mute the sign silences it.
+8. With an older Companion, `Pagle_Following`'s Anglers read as before, the sign never drops and the news list says to update the Companion.
+9. `scripts/check.sh` passes.
 
 ### Later
 

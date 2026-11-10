@@ -525,6 +525,14 @@ en = "{trim} mark"
 value = "Пари выиграно"
 en = "Wager settled"
 
+[PARTY_WITH]
+value = "{text} • с {name}"
+en = "{text} · with {name}"
+
+[PARTY_A_GROUPMATE]
+value = "участником группы"
+en = "a groupmate"
+
 [WAGER_SETTLED_STAMP]
 value = "Выиграно"
 en = "Settled"
@@ -664,6 +672,18 @@ en = "{ladder_progress_1:0} / {ladder_progress_2:0}"
 [LADDER_CAUGHT]
 value = "поймано: {ladder_caught:0}"
 en = "{ladder_caught:0} caught"
+
+[LADDER_WHEN_PARTY]
+value = "{when} • группа"
+en = "{when} · party"
+
+[LADDER_PARTY_TIP]
+value = "Улов участника группы, пока вы рыбачили в тех же водах."
+en = "A groupmate's catch, while you fished the same water."
+
+[LADDER_PARTY_TIP_SITE]
+value = "На pagle.app он засчитается, когда участник группы тоже загрузит свой Журнал уловов."
+en = "On pagle.app it counts once your groupmate has uploaded their Catch log too."
 
 [EFFORT_CASTS]
 value.one = "{count:0} заброс"

@@ -8,16 +8,15 @@ end
 ---@class Pagle
 local Pagle = Pagle
 
--- The party letter (announcements.md › The party letter, ANN-R113–R116; from 1.5.3, #655): party sharing, showing
--- party moments and cheers are off until the player answers it (adapter/Party.lua's ns.PartyOption reads the answer).
--- It goes through Core's letter service (ONB-R15–R17), Core's own letter `core.party`, so it has the Letter's frame,
--- seal, gates and "A letter for you", one letter at a time. It is sent mid-session, whenever its reason holds: a
--- Pagle groupmate in the player's zone while the player fishes (ANN-R114). Its three buttons are Fish together, Not
--- now and No thanks (ANN-R115): the service has two, so the frame's third and the words written as it shows come from
--- adapter/Letter.lua's ns.letterExtras, and the answer is kept here, in PagleDB.profile.party, beside the switches it
--- sets. Every file in logic/, the letter service's own included, is hashed, and a 1.5.x patch changes none. Loaded by
--- adapter/Settings.xml, after adapter/Party.lua and before adapter/Letter.lua: it reaches ns.letter, ns.onboarding and
--- ns.letterExtras only when it runs.
+-- The party letter (announcements.md › The party letter, ANN-R113–R116; from 1.5.3, #655, and from 1.6, #665): Party
+-- Hunts, party sharing, showing party moments and cheers are off until the player accepts it (adapter/Party.lua's
+-- ns.PartyHuntsOn and ns.PartyOption read the switches it sets). It goes through Core's letter service (ONB-R15–R17),
+-- Core's own letter `core.party`, so it has the Letter's frame, seal, gates and "A letter for you", one letter at a
+-- time. It is sent mid-session, whenever its reason holds: a Pagle groupmate in the player's zone while the player
+-- fishes (ANN-R114). Its three buttons, Fish together, Not now and No thanks (ANN-R115), its words written as it shows
+-- and its asking again a day after Not now are the service's own (ONB-R15, ONB-R16), which keeps its answer
+-- account-wide. Loaded from the TOC, after adapter/Party.lua and before adapter/Letter.lua: it reaches
+-- ns.letter and ns.onboarding only when it runs.
 local OWNER = "Pagle party letter"
 
 --- The party letter's id among the letters Core sends (ONB-R15): Core's own, as the onboarding Letter's is.
@@ -53,45 +52,25 @@ local function mapName(map)
 	return type(name) == "string" and name ~= "" and name or nil
 end
 
--- Whether the player has answered (ANN-R113, ANN-R115): Fish together, No thanks, a 1.5.2 choice kept, or Share or
--- Show changed by hand in Settings.
----@param party table?
+-- Whether a party switch was set by hand (ANN-R113): Party Hunts, Share or Show stored either way, by Settings or as a
+-- 1.5.2 choice kept. That answers the letter, which then never asks.
 ---@return boolean
-local function answered(party)
-	return party ~= nil
-		and (party.letter == "accepted" or party.letter == "declined" or party.share ~= nil or party.show ~= nil)
-end
-
--- Whether the letter may ask now (ANN-R115): not answered, and no Not now in the last AGAIN seconds.
----@return boolean
-local function mayAsk()
+local function setByHand()
 	local party = ns.PartyStored()
-	if answered(party) then
-		return false
-	end
-	local at = party and party.letter == "later" and party.laterAt
-	return not (type(at) == "number" and GetServerTime() < at + AGAIN)
+	return ns.db.profile.partyHunts ~= nil or (party ~= nil and (party.share ~= nil or party.show ~= nil))
 end
 
---- Whether the party letter's reason holds now (ANN-R114): it may ask, the player cast in the last 300 s, and a Pagle
---- groupmate is in the player's party and zone. The letter service asks it again as the letter is about to show
---- (`isDue`, ONB-R17), so a reason that passed while the letter waited (combat, another letter) shows nothing.
+--- Whether the party letter's reason holds now (ANN-R114): no party switch set by hand, the player cast in the last
+--- 300 s, and a Pagle groupmate is in the player's party and zone, or in the party where the client can't place them
+--- or the player (ns.PartyGroupmateHere): an unknown zone isn't another one. Whether it was answered, and when Not now
+--- lets it ask again, is the letter service's (ONB-R16). The service asks it again as the letter is about to show (`isDue`,
+--- ONB-R17), so a reason that passed while the letter waited (combat, another letter) shows nothing.
 ---@return boolean
 function ns.PartyLetterIsDue()
-	if not mayAsk() or not castAt or GetTime() - castAt > WINDOW then
+	if setByHand() or not castAt or GetTime() - castAt > WINDOW then
 		return false
 	end
 	return ns.PartyGroupmateHere() ~= nil
-end
-
--- The letter service's state of the letter (PagleDB.global.onboarding.letters[id], ONB-R16) made fresh for an ask
--- (ANN-R115): the party letter keeps its answer in PagleDB.profile.party, so the service's own two showings before
--- `declined` never decide it. A letter already waiting or on screen keeps `waiting`.
-local function freshState()
-	local letters = ns.onboarding:State().letters
-	if type(letters) == "table" and letters[ID] ~= "waiting" then
-		letters[ID] = nil
-	end
 end
 
 --- Sends the party letter when its reason holds (ANN-R114): called as the player casts, as a groupmate is found to
@@ -101,7 +80,6 @@ function ns.CheckPartyLetter()
 	if not registered or not ns.PartyLetterIsDue() then
 		return
 	end
-	freshState()
 	ns.letter:Send(ID)
 end
 
@@ -113,46 +91,45 @@ Pagle.RegisterEvent(OWNER, "ZONE_CHANGED_NEW_AREA", function()
 	ns.CheckPartyLetter()
 end)
 
+-- Whether the letter shows as the dev command's sample (`/pagle dev party letter`), while ns.letter:ShowNow writes it.
+local devShowing = false
+
 --- The party letter's words as it shows (ANN-R116): the Pagle groupmate in the player's zone and that zone, or, for the
---- tour's sample and the dev command, the made-up Kukli Emnabi in the player's zone (Elwynn Forest where the client
---- can't name it).
----@return { kicker: string, text: string, confirm: string, later: string, decline: string }
+--- tour's sample and the dev command, always the made-up Kukli Emnabi in the player's zone (Elwynn Forest where the
+--- client can't name it), never a real groupmate.
+---@return PagleLetterWords
 function ns.PartyLetterWords()
-	local L = ns.L
-	local member, map = ns.PartyGroupmateHere()
+	-- The tour's sample is the letter service's preview while it is written (logic/Letter.lua's TourShow, ONB-R84).
+	---@diagnostic disable-next-line: invisible -- read only: the service names no accessor for its preview alone
+	local sample = devShowing or ns.letter.preview == ID
+	local member, map
+	if not sample then
+		member, map = ns.PartyGroupmateHere()
+	end
+	if member and not map then
+		-- The client placed one of the two nowhere: the words name no zone (ANN-R114).
+		return { text = ns.RenderText(ns.L.PARTY_LETTER_LINE_NO_ZONE, { name = member.name }) }
+	end
 	local zone = mapName(map) or mapName(unsecret((C_Map.GetBestMapForUnit("player")))) or SAMPLE_ZONE
 	return {
-		kicker = L.PARTY_LETTER_KICKER,
-		text = ns.RenderText(L.PARTY_LETTER_LINE, { name = member and member.name or ns.PARTY_DEV_NAME, zone = zone }),
-		confirm = L.PARTY_LETTER_YES,
-		later = L.PARTY_LETTER_LATER,
-		decline = L.PARTY_LETTER_NO,
+		text = ns.RenderText(
+			ns.L.PARTY_LETTER_LINE,
+			{ name = member and member.name or ns.PARTY_DEV_NAME, zone = zone }
+		),
 	}
 end
 
--- The answers (ANN-R115), each stored in PagleDB.profile.party. Fish together: every party feature on, as explicit
--- choices (from 1.6 Party Hunts too, SET-R35).
+-- Fish together (ANN-R115), once the service has set the letter `opened`: every party feature on, as explicit
+-- choices, Party Hunts too (SET-R35).
 local function fishTogether()
 	local party = ns.PartyStore()
 	party.share, party.show, party.sounds = true, true, true
-	party.letter, party.laterAt = "accepted", nil
-end
-
--- Not now: asked again the next time the reason holds, AGAIN seconds on at the soonest.
-local function notNow()
-	local party = ns.PartyStore()
-	party.letter, party.laterAt = "later", GetServerTime()
-end
-
--- No thanks: never asked again; the switches stay as they are, off unless set by hand.
-local function noThanks()
-	local party = ns.PartyStore()
-	party.letter, party.laterAt = "declined", nil
+	ns.db.profile.partyHunts = true
 end
 
 -- Registered at Core's ADDON_LOADED, before PLAYER_LOGIN's ModulesChanged adds a tour stop for each letter
--- (ONB-R84): the service keeps a copy of these words, and the frame writes the live ones as it shows
--- (ns.letterExtras).
+-- (ONB-R84). The service writes the live words as it shows (`words`); Not now keeps it `later` and asks again AGAIN
+-- seconds on (`again`); No thanks declines it (`decline`, ONB-R16).
 Pagle.RegisterEvent(OWNER, "ADDON_LOADED", function(_, name)
 	if name ~= "Pagle" then
 		return
@@ -165,13 +142,15 @@ Pagle.RegisterEvent(OWNER, "ADDON_LOADED", function(_, name)
 		text = ns.RenderText(L.PARTY_LETTER_LINE, { name = ns.PARTY_DEV_NAME, zone = SAMPLE_ZONE }),
 		confirm = L.PARTY_LETTER_YES,
 		later = L.PARTY_LETTER_LATER,
+		decline = L.PARTY_LETTER_NO,
 		onConfirm = fishTogether,
 		isDue = ns.PartyLetterIsDue,
+		words = ns.PartyLetterWords,
+		again = AGAIN,
 	}, ns.CORE_OWNER)
 	if problem then
 		error(problem)
 	end
-	ns.letterExtras[ID] = { words = ns.PartyLetterWords, onLater = notNow, onDecline = noThanks }
 	registered = true
 end)
 
@@ -184,17 +163,23 @@ function ns.RunPartyLetterDev(args)
 	if ns.ParseSlash(args) == "reset" then
 		local party = ns.PartyStored()
 		if party then
-			party.share, party.show, party.letter, party.laterAt = nil, nil, nil, nil
+			party.share, party.show = nil, nil
 		end
-		local letters = ns.onboarding:State().letters
-		if type(letters) == "table" then
-			letters[ID] = nil
+		ns.db.profile.partyHunts = nil
+		local state = ns.onboarding:State()
+		for _, key in ipairs({ "letters", "laterAt" }) do
+			if type(state[key]) == "table" then
+				state[key][ID] = nil
+			end
 		end
 		print(L.DEV_PARTY_LETTER_RESET)
 		return
 	end
-	-- a fresh state, so each button steps it and the answer is written (adapter/Letter.lua)
-	freshState()
-	ns.letter:ShowNow(ID)
+	devShowing = true
+	local ok, problem = pcall(ns.letter.ShowNow, ns.letter, ID)
+	devShowing = false
+	if not ok then
+		error(problem, 0)
+	end
 	print(ns.RenderText(L.DEV_PARTY_LETTER, { name = ns.PARTY_DEV_NAME }))
 end

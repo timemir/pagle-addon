@@ -96,6 +96,7 @@ ns.Locale("deDE", function(L)
 	L.COLLECTION_SLOT_NAMES = {
 		["core.binding"] = { "Einband", "Einbände" },
 		["core.crest"] = { "Exlibris-Wappen", "Exlibris-Wappen" },
+		["core.newssign"] = { "Nachrichtenschild", "Nachrichtenschilder" },
 		["core.soundset"] = { "Klangset", "Klangsets" },
 		["core.toaststyle"] = { "Einblendungsstil", "Einblendungsstile" },
 	}
@@ -199,6 +200,8 @@ ns.Locale("deDE", function(L)
 	L.FOLLOWING_LEGENDS = "Legenden"
 	L.FOLLOWING_LEGENDS_COUNT = "{following_legends_count_1} von {following_legends_count_2}"
 	L.FOLLOWING_MORE = { one = "und {count:n} weiterer Charakter", other = "und {count:n} weitere Charaktere" }
+	L.FOLLOWING_NEWS = "Neuigkeiten »"
+	L.FOLLOWING_NEWS_NEW = { one = "Neuigkeiten: {count:n} neu »", other = "Neuigkeiten: {count:n} neu »" }
 	L.FOLLOWING_NO_COMPANION = "kein Begleiter"
 	L.FOLLOWING_ROW = "St. {level:0} · {emblem} · {ledger:0}%"
 	L.FOLLOWING_ROW_NO_PRESTIGE = "St. {level:0} · {ledger:0}%"
@@ -282,6 +285,17 @@ ns.Locale("deDE", function(L)
 	L.MONTHS = { "Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember" }
 	L.MONTHS_SHORT = { "Jan.", "Feb.", "März", "Apr.", "Mai", "Juni", "Juli", "Aug.", "Sep.", "Okt.", "Nov.", "Dez." }
 	L.NAME_UNKNOWN = "..."
+	L.NEWS_AGE_DAYS = "{days:0} Tg."
+	L.NEWS_AGE_HOURS = "{hours:0} Std."
+	L.NEWS_CARD = "Zur Karte von {name} »"
+	L.NEWS_EMPTY = {
+		none = { "Die Neuigkeiten kommen mit dem Begleiter.", "Aktualisiere den Pagle-Begleiter, um Neuigkeiten von den Anglern zu bekommen, denen du folgst.", "Ihre Karten stehen weiter unter Gefolgte Angler." },
+		ok = { "Keine Neuigkeiten in diesem Monat.", "Fängt ein Angler, dem du folgst, eine Legende, erreicht ein Prestige oder vollendet das Anglerbuch, steht es hier und beim nächsten Einloggen auf dem Schild." },
+	}
+	L.NEWS_FOLLOW = "Folge ihm über seine Seite auf der Pagle-Website."
+	L.NEWS_KICKER = "Die Morgenflut"
+	L.NEWS_LINE = "Von den Anglern, denen du folgst, und die Ersten deiner Region in diesem Monat. Was das Schild zeigt, stellst du in den Einstellungen ein."
+	L.NEWS_TITLE = "Neuigkeiten"
 	L.NEW_CURIO_STAMP = "Neu!"
 	L.NEW_CURIO_TITLE = "Neue Kuriosität"
 	L.NEW_IN_ZONE_STAMP = "Neu hier"
@@ -345,6 +359,7 @@ ns.Locale("deDE", function(L)
 	L.TOUR_FISH = "das Fischjournal: die meistgefangene Art"
 	L.TOUR_HOME = "das Fischjournal: Start"
 	L.TOUR_LEGENDS = "das Fischjournal: Legenden, bei einer gefangenen"
+	L.TOUR_NEWS = "das Fischjournal: die Neuigkeiten, mit Beispielnachrichten"
 	L.TOUR_SEARCH = "das Fischjournal: Suchergebnisse zum Namen der meistgefangenen Art"
 	L.TOUR_TROPHY = "das Fischjournal: das Trophäenzimmer, bei einer gefangenen Familie"
 	L.TOUR_ZONE = "das Fischjournal: das meistbefischte Gebiet, seine meistgefangene Art geöffnet"

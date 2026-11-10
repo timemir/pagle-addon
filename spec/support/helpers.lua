@@ -202,7 +202,7 @@ FISH_CREST_SPECIES = {
 }
 
 --- The build entry the fake client's build matches, so login appends no B1.
-BUILD_ENTRY = ("B1|1|%d|0|70338|1.60.1|pagle-2026i"):format(SERVER_TIME - 5000)
+BUILD_ENTRY = ("B1|1|%d|0|70338|1.60.1|pagle-2026j"):format(SERVER_TIME - 5000)
 
 --- A caught Cast at server time `time`, as a PagleLog entry: in Darkshore (148) at realm 08:14, Fishing 86+25 with
 --- lure 263, catching one item. By default the item is Oily Blackmouth (6358), the subzone The Long Wash (453), and
@@ -953,15 +953,23 @@ end
 --- The Companion's two data files as pagle-backend's IGV Contracts gives their examples, byte for byte in
 --- spec/Pagle/fixtures/views/ (core/anglers-in-game.md): `following`, the PagleFollowingData that Following.txt sets
 --- (Ada, one Followed Angler with two GUIDs), and `anglers`, the PagleAnglersData that Anglers.txt sets (one block of
---- two Anglers and three keys). Each call runs the files afresh, so a spec may change what it gets.
----@return { following: table, anglers: table }
+--- two Anglers and three keys); and from 1.6 `news`, the PagleFollowingData that FollowingNews.txt sets, IGV Contracts'
+--- example for a news-aware Companion (Ada Brook, with a news block of three lines: a Monster record, Hunt gold and a
+--- region headline, IGV-R60–R66). Each call runs the files afresh, so a spec may change what it gets.
+---@return { following: table, anglers: table, news: table }
 function anglerFileExamples()
-	local env = {}
-	for _, file in ipairs({ "Following.txt", "Anglers.txt" }) do
+	local examples = {}
+	for _, file in ipairs({
+		{ "Following.txt", "following", "PagleFollowingData" },
+		{ "Anglers.txt", "anglers", "PagleAnglersData" },
+		{ "FollowingNews.txt", "news", "PagleFollowingData" },
+	}) do
+		local env = {}
 		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no loadstring
-		local chunk = assert(loadstring(readFile("spec/Pagle/fixtures/views/" .. file), "=" .. file))
+		local chunk = assert(loadstring(readFile("spec/Pagle/fixtures/views/" .. file[1]), "=" .. file[1]))
 		setfenv(chunk, env)
 		chunk()
+		examples[file[2]] = env[file[3]]
 	end
-	return { following = env.PagleFollowingData, anglers = env.PagleAnglersData }
+	return examples
 end

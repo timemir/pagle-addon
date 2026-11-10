@@ -61,13 +61,18 @@ local STORED = {
 	"pastText",
 }
 
---- The fields of a raised moment the summary keeps (announcements.md › Data).
+--- The fields of a raised moment the summary keeps (announcements.md › Data). From 1.6, a moment's `storedText`
+--- is kept in place of its `text`: a Party Catch's moments name the groupmate only as they show, never in PagleDB
+--- (ANN-R110).
 ---@param moment PagleRaisedMoment
 ---@return PagleStoredMoment
 function ns.StoredMoment(moment)
 	local stored = {}
 	for _, key in ipairs(STORED) do
 		stored[key] = moment[key]
+	end
+	if type(moment.storedText) == "string" then
+		stored.text = moment.storedText
 	end
 	return stored
 end

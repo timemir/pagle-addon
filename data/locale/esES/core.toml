@@ -489,8 +489,12 @@ value = "Una carta, pasada por la orilla"
 en = "A letter, passed along the bank"
 
 [PARTY_LETTER_LINE]
-value = "{name} está pescando en {zone} contigo y también usa Pagle. Pescad juntos: comparte tus mejores capturas y brinda por las suyas."
-en = "{name} is fishing {zone} with you, and they run Pagle too. Fish together: share your best catches and cheer theirs."
+value = "{name} está pescando en {zone} contigo y también usa Pagle. Pescad juntos: comparte tus mejores capturas, brinda por las suyas y que las capturas de cada uno cuenten para las Cazas del otro."
+en = "{name} is fishing {zone} with you, and they run Pagle too. Fish together: share your best catches, cheer theirs, and count each other’s catches toward your Hunts."
+
+[PARTY_LETTER_LINE_NO_ZONE]
+value = "{name} también usa Pagle y está en tu grupo. Pescad juntos: comparte tus mejores capturas, brinda por las suyas y que las capturas de cada uno cuenten para las Cazas del otro."
+en = "{name} runs Pagle too and is in your party. Fish together: share your best catches, cheer theirs, and count each other’s catches toward your Hunts."
 
 [PARTY_LETTER_YES]
 value = "Pescar juntos"
@@ -503,6 +507,41 @@ en = "Not now"
 [PARTY_LETTER_NO]
 value = "No, gracias"
 en = "No thanks"
+
+[PARTY_HP_MINE]
+value = "Tu captura"
+en = "Your catch"
+
+[PARTY_HP_PARTY]
+value = "Completado para el grupo"
+en = "Completed for the party"
+
+[PARTY_HP_HUNT]
+value = "{hunt} · para {senders}"
+en = "{hunt} · for {senders}"
+
+[PARTY_HP_RUN]
+value = "{event} liquidada · para {senders}"
+en = "{event} settled · for {senders}"
+
+[PARTY_HP_SOME_HUNT]
+value = "una caza"
+en = "a Hunt"
+
+[PARTY_HP_SOME_RUN]
+value = "una apuesta Pagle"
+en = "a Pagle Wager"
+
+[PARTY_HP_SENDERS_TWO]
+value = "{name} y {other}"
+en = "{name} and {other}"
+
+[PARTY_HP_SENDERS_MORE]
+value.many = "{name}, {other} y {count} más"
+value.one = "{name}, {other} y {count} más"
+value.other = "{name}, {other} y {count} más"
+en.one = "{name}, {other} and {count} more"
+en.other = "{name}, {other} and {count} more"
 
 [TOAST_SAMPLE_TITLE]
 value = "Nueva Especie"
@@ -948,11 +987,13 @@ en = "It shows here once its Module is on."
 [SHOP_CRATE_KINDS]
 value.binding = "Encuadernación"
 value.crest = "Blasón"
+value.newssign = "Cartel de noticias"
 value.soundset = "Juego de sonidos"
 value.toaststyle = "Estilo de aviso emergente"
 value.trackerframe = "Marco de rastreador"
 en.binding = "Binding"
 en.crest = "Crest"
+en.newssign = "News sign"
 en.soundset = "Sound set"
 en.toaststyle = "Toast style"
 en.trackerframe = "Tracker frame"
@@ -1022,8 +1063,8 @@ value = "Pagle dev: los comandos de desarrollo están desactivados; /pagle dev o
 en = "Pagle dev: dev commands are off; /pagle dev on turns them on."
 
 [DEV_USAGE]
-value = "Pagle dev: /pagle dev on | off | endsession | preview <tipo> | stage <número> | glyphs | tour [module | list | stop] | probe | fonts | pseudo on | off | onboarding <comando> | content | views | pastetest <KB>"
-en = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | stage <count> | glyphs | tour [module | list | stop] | probe | fonts | pseudo on | off | onboarding <command> | content | views | pastetest <KB>"
+value = "Pagle dev: /pagle dev on | off | endsession | preview <tipo> | stage <número> | glyphs | tour [module | list | stop] | probe | fonts | pseudo on | off | onboarding <comando> | content | views | pastetest <KB> | sign <estilo> [tipo] [more]"
+en = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | stage <count> | glyphs | tour [module | list | stop] | probe | fonts | pseudo on | off | onboarding <command> | content | views | pastetest <KB> | sign <look> [kind] [more]"
 
 [DEV_PARTY_USAGE]
 value = "Pagle dev: /pagle dev party <kind | all | cheer [1-4] | letter [reset]>, donde kind es uno de {kinds}"
@@ -1032,6 +1073,10 @@ en = "Pagle dev: /pagle dev party <kind | all | cheer [1-4] | letter [reset]>, w
 [DEV_PARTY_QUEUED]
 value = "Pagle dev: un aviso de grupo de {name} está en cola: {kind}."
 en = "Pagle dev: a party toast from {name} is queued: {kind}."
+
+[DEV_PARTY_HUNT_OFF]
+value = "Pagle dev: no se muestra nada mientras Cazas en grupo, Mostrar los momentos de mi grupo o Completado para el grupo estén desactivados."
+en = "Pagle dev: nothing shows while Party Hunts, Show my party's moments or Completed for the party is off."
 
 [DEV_PARTY_CHEERED]
 value = "Pagle dev: {count:0} brindis por un momento tuyo van en camino."
@@ -1232,6 +1277,11 @@ en = "Pagle dev: Pagle_Anglers has loaded this login."
 [DEV_VIEWS_NOT_LOADED]
 value = "Pagle dev: Pagle_Anglers no se ha cargado en esta sesión."
 en = "Pagle dev: Pagle_Anglers hasn't loaded this login."
+
+# Machine-drafted (Claude) for the news reader (#656); awaits a native speaker's review.
+[DEV_VIEWS_NEWS]
+value = "Pagle dev: noticias {state}: líneas usadas {used}, omitidas {skipped}; vistas {seen}, umbral {floor}."
+en = "Pagle dev: news {state}: lines used {used}, skipped {skipped}; seen {seen}, floor {floor}."
 
 [DEV_VIEWS_NONE]
 value = "ninguno"
@@ -1992,6 +2042,11 @@ en = "Crests"
 value = "Encuadernación"
 en = "Book binding"
 
+# Machine-drafted (Claude) for the news sign's looks (SHOP-R60); awaits a native speaker's review.
+[SLOT_NEWS_SIGN]
+value = "Cartel de noticias"
+en = "News sign"
+
 [SLOT_CREST_ZONES]
 value = "Blasones de zona"
 en = "Zone crests"
@@ -2088,6 +2143,14 @@ en = "Shift-drag a toast to move the toasts and Nods, or the Session summary to 
 value = "Grupo"
 en = "Party"
 
+[SETTINGS_PARTY_HUNTS]
+value = "Cazas en grupo"
+en = "Party Hunts"
+
+[SETTINGS_PARTY_HUNTS_TOOLTIP]
+value = "En un grupo, las capturas de tus compañeros cuentan para tus Cazas y Apuestas Pagle mientras pescáis en la misma zona, y las tuyas para las suyas. Desactivado, Pagle ni comparte tus capturas ni cuenta las suyas."
+en = "In a party, your groupmates' catches count toward your Hunts and Pagle Wagers while you fish the same zone, and yours count toward theirs. Off, Pagle neither shares your catches nor counts theirs."
+
 [SETTINGS_PARTY_SHARE]
 value = "Compartir mis momentos con mi grupo"
 en = "Share my moments with my party"
@@ -2107,6 +2170,7 @@ en = "A small toast when a groupmate who runs Pagle has a moment, with a mug you
 [SETTINGS_PARTY_KINDS]
 value.colour = "Colores raros"
 value.gold = "Nivel de Oro en una caza"
+value.hp = "Completado para el grupo"
 value.ledger = "Libro de registro al 100 %"
 value.legend = "Leyendas"
 value.monster = "Récords de tamaño Monstruo"
@@ -2114,6 +2178,7 @@ value.prestige = "Prestigio"
 value.zone = "Maestro de zona"
 en.colour = "Rare colours"
 en.gold = "Gold tier in a Hunt"
+en.hp = "Completed for the party"
 en.ledger = "Ledger 100%"
 en.legend = "Legends"
 en.monster = "Monster-size records"
@@ -2127,6 +2192,52 @@ en = "Cheers sounds"
 [SETTINGS_PARTY_SOUNDS_TOOLTIP]
 value = "Un tintineo cuando llega el aviso de un miembro del grupo, cuando alzas una jarra y cuando alguien alza una por ti."
 en = "A clink when a groupmate's toast arrives, when you raise a mug, and when someone raises one to you."
+
+[SETTINGS_NEWS]
+value = "La Marea Matinal"
+en = "The Morning Tide"
+
+[SETTINGS_NEWS_SHOW]
+value = "Mostrar noticias al conectarte"
+en = "Show news at login"
+
+[SETTINGS_NEWS_SHOW_TOOLTIP]
+value = "Al conectarte o tras /reload, baja un letrero con la mejor noticia sobre los Pescadores que sigues en la web de Pagle. Necesita Pagle Companion. Un clic izquierdo abre el resto en el Diario de peces."
+en = "At login or /reload, a sign drops in with the best news about the Anglers you follow on the Pagle website. Needs the Pagle Companion. A left click opens the rest in the Fish Journal."
+
+[SETTINGS_NEWS_KINDS]
+value.colour = "Variedades raras"
+value.first = "Primeros avisos"
+value.hunt = "Oro en Caza"
+value.ledger = "Libro completado"
+value.legend = "Leyendas"
+value.monster = "Récords de Monstruo"
+value.prestige = "Prestigio"
+value.zone = "Maestro de zona"
+en.colour = "Rare varieties"
+en.first = "First reported"
+en.hunt = "Hunt gold"
+en.ledger = "Ledger completed"
+en.legend = "Legends"
+en.monster = "Monster records"
+en.prestige = "Prestige"
+en.zone = "Zone Master"
+
+[SETTINGS_NEWS_HEADLINES]
+value = "Titulares de la región"
+en = "Region headlines"
+
+[SETTINGS_NEWS_HEADLINES_TOOLTIP]
+value = "Quién fue el primero de tu región este mes en pescar una Leyenda, lo sigas o no."
+en = "Who was first in your region this month to land a Legend, whether you follow them or not."
+
+[SETTINGS_NEWS_MUTE]
+value = "Silenciar el letrero"
+en = "Mute the sign"
+
+[SETTINGS_NEWS_MUTE_TOOLTIP]
+value = "El letrero baja sin sus sonidos. Los ajustes de sonido del juego siguen aplicándose."
+en = "The sign drops without its sounds. The game's sound settings still apply."
 
 [SETTINGS_RELOAD_REMINDER_TOOLTIP]
 value = "Una línea en el chat cada {reloadReminderStep:0} Lances sin guardar. WoW solo guarda al hacer /reload o cerrar sesión, así que un cierre inesperado los pierde."
@@ -2654,3 +2765,89 @@ en = "Raw "
 [FISH_CREST_UNCAUGHT_JOIN]
 value = ", "
 en = ", "
+
+# Machine-drafted (Claude) for the news sign (core/news-sign.md); awaits a native speaker's review.
+
+[SIGN_KICKER]
+value.first = "Primer aviso"
+value.legend = "Leyenda"
+value.prestige = "Prestigio"
+value.ledger = "El Libro"
+value.colour = "Color raro"
+value.hunt = "Oro en Caza"
+value.zone = "Maestro de zona"
+value.monster = "Monstruo"
+value.region = "Noticias de la región · {region}"
+en.first = "First report"
+en.legend = "Legend"
+en.prestige = "Prestige"
+en.ledger = "The Ledger"
+en.colour = "Rare colour"
+en.hunt = "Hunt gold"
+en.zone = "Zone Master"
+en.monster = "Monster"
+en.region = "Region news · {region}"
+
+[SIGN_HEAD]
+value.first = "Primero en {region} en pescar {fish}"
+value.legend = "{name} ha pescado una Leyenda"
+value.prestige = "{name} ha alcanzado Prestigio {rank}"
+value.ledger = "{name} ha completado el Libro"
+value.colour = "{name} ha pescado un color raro"
+value.hunt = "{name} se lleva el oro"
+value.zone = "{name} es Maestro de zona de {zone}"
+value.monster = "{name} ha pescado un Monstruo"
+value.region = "Primero en {region} este mes en pescar {fish}"
+en.first = "First in {region} to land {fish}"
+en.legend = "{name} landed a Legend"
+en.prestige = "{name} reached Prestige {rank}"
+en.ledger = "{name} completed the Ledger"
+en.colour = "{name} caught a rare colour"
+en.hunt = "{name} took gold"
+en.zone = "{name} became Master of {zone}"
+en.monster = "{name} landed a Monster"
+en.region = "First in {region} this month to land {fish}"
+
+[SIGN_DETAIL_COLOUR]
+value = "{species} {variety}"
+en = "{variety} {species}"
+
+[SIGN_DETAIL_MONSTER]
+value = "{species}, {length}"
+en = "{species}, {length}"
+
+# Machine-drafted (Claude) for the news reader (#656); awaits a native speaker's review.
+[SIGN_DETAIL_COLOUR_HIDDEN]
+value = "{species} ({rarity})"
+en = "{rarity} {species}"
+
+[SIGN_HEAD_MASTER_PRESTIGE]
+value = "{name} ha alcanzado Prestigio de Maestro {master:0}"
+en = "{name} reached Master Prestige {master:0}"
+
+[SIGN_ITEM_UNKNOWN]
+value = "un pez"
+en = "a fish"
+
+[SIGN_ZONE_UNKNOWN]
+value = "Zona {zone}"
+en = "Zone {zone}"
+
+[SIGN_MORE]
+value.one = "+{count:0} más de tus pescadores"
+value.many = "+{count:0} más de tus pescadores"
+value.other = "+{count:0} más de tus pescadores"
+en.one = "+{count:0} more from your anglers"
+en.other = "+{count:0} more from your anglers"
+
+[DEV_SIGN_USAGE]
+value = "Pagle dev: /pagle dev sign <estilo> [tipo] [more], estilo uno de {looks} y tipo uno de {kinds}"
+en = "Pagle dev: /pagle dev sign <look> [kind] [more], where look is one of {looks} and kind one of {kinds}"
+
+[DEV_SIGN_DROPPED]
+value = "Pagle dev: cae el cartel {look} con una noticia de ejemplo {kind}; el ratón encima lo sujeta, un clic derecho lo sube."
+en = "Pagle dev: dropping the {look} sign with sample {kind} news; hover holds it, a right click sends it up."
+
+[DEV_SIGN_WAITING]
+value = "Pagle dev: el cartel caerá cuando acaben el combate y la restricción."
+en = "Pagle dev: the sign drops once combat and restriction end."

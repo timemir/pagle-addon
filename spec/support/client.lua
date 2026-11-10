@@ -49,6 +49,8 @@
 ---@field members { name: string, surname: string?, guid: string?, sender: string?, map: integer? }[] `map` is their
 --- uiMap, as `C_Map.GetBestMapForUnit("partyN")` returns it (the party letter, ANN-R114); nil by default.
 ---@field raid boolean?
+---@field instance boolean? an instance group (the dungeon finder's), not a home party: IsInGroup(LE_PARTY_CATEGORY_HOME)
+--- is false for it (Party Catches, LOG-R110)
 
 --- The loot window the loot API reads: whether it's fishing loot (`IsFishingLoot()`) and its slots, in order.
 --- Specs set both before firing LOOT_READY.
@@ -418,9 +420,19 @@ local function clientStubs(client)
 			end
 			return "Angler", "Tester"
 		end,
-		-- The group (party toasts, ANN-R103), from client.group: none by default.
-		IsInGroup = function()
-			return client.group ~= nil
+		-- The group (party toasts, ANN-R103), from client.group: none by default. With a category, a home group
+		-- unless client.group.instance, an instance group if it is (Party Catches, LOG-R110).
+		LE_PARTY_CATEGORY_HOME = 1,
+		LE_PARTY_CATEGORY_INSTANCE = 2,
+		IsInGroup = function(category)
+			if client.group == nil then
+				return false
+			elseif category == 1 then
+				return not client.group.instance
+			elseif category == 2 then
+				return client.group.instance == true
+			end
+			return true
 		end,
 		IsInRaid = function()
 			return client.group ~= nil and client.group.raid == true

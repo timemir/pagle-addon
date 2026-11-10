@@ -217,7 +217,7 @@ describe("/pagle dev probe", function()
 		assert.are.same({ name = "Fishing", icon = 136245 }, check.reference)
 		assert.are.equal("C_SpellBook.IsSpellKnown", check.knownCall)
 		assert.are.same({ id = 7620, name = "Fishing", icon = 136245, known = true }, check.spells[1])
-		assert.are.equal(8, #check.spells)
+		assert.are.equal(9, #check.spells)
 	end)
 
 	it(

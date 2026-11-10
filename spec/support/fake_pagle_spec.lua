@@ -30,7 +30,7 @@ describe("FakePagle", function()
 
 		it("leaves a Module with an incompatible X-Pagle-API inert, with Core's chat line (CORE-R13)", function()
 			local fake = newFakePagle()
-			fake.addons.Pagle_Hunts.metadata["X-Pagle-API"] = "3"
+			fake.addons.Pagle_Hunts.metadata["X-Pagle-API"] = "4"
 
 			assert.is_nil(fake.Pagle.RegisterModule({ name = "Hunts", title = "Hunts", order = 20 }))
 			assert.are.same({ "Pagle: Pagle Hunts needs a newer Pagle." }, fake.printed)
@@ -1241,7 +1241,71 @@ describe("FakePagle", function()
 					.. " isn't restricted, with the tooltip setting on).",
 				"Pagle dev: Pagle_Anglers' generatedAt none, blocks none.",
 				"Pagle dev: Pagle_Anglers hasn't loaded this login.",
-			}, { unpack(fake.printed, #fake.printed - 4) })
+				"Pagle dev: news none: lines used none, skipped none; seen 0, floor none.",
+			}, { unpack(fake.printed, #fake.printed - 5) })
+		end)
+
+		-- From 1.6, IGV Contracts' example with a news block, written ten minutes before the fake's server time.
+		local function news()
+			local data = anglerFileExamples().news
+			data.generatedAt = SERVER_TIME - 600
+			return data
+		end
+
+		it(
+			"serve the news block as Core's reads do, calling nothing new before the sign sets a floor (VIEW-R42, VIEW-R44)",
+			function()
+				local fake = newFakePagle()
+				fake.setFollowing(news())
+				fake.login()
+
+				local got = fake.Pagle.GetNews()
+
+				assert.are.same({ "ok", 3 }, { got.state, #got.items })
+				assert.are.same({ false, false, false }, { got.items[1].new, got.items[2].new, got.items[3].new })
+				assert.are.same({ seen = {} }, fake.global.news)
+			end
+		)
+
+		it(
+			"call items new after a floor a spec sets, and mark them seen in fake.global.news (VIEW-R42, VIEW-R43)",
+			function()
+				local fake = newFakePagle()
+				fake.global.news = { since = 1791700000, seen = {} }
+				fake.setFollowing(news())
+				fake.login()
+
+				local items = fake.Pagle.GetNews().items
+				fake.Pagle.MarkNewsSeen({ items[1].id })
+
+				assert.are.same({ true, true, false }, { items[1].new, items[2].new, items[3].new })
+				assert.are.same({ [items[1].id] = items[1].time }, fake.global.news.seen)
+			end
+		)
+
+		it("read none for a Companion without news, as Core does (VIEW-R40, VIEW-R96)", function()
+			local fake = newFakePagle()
+			fake.setFollowing(example())
+			fake.login()
+
+			assert.are.same({ state = "none", items = {} }, fake.Pagle.GetNews())
+		end)
+
+		it("word an item as an enUS client does, from fake.itemNames and fake.areaNames (VIEW-R45)", function()
+			local fake = newFakePagle()
+			fake.setFollowing(news())
+			fake.login()
+			local items = fake.Pagle.GetNews().items
+
+			assert.are.same(
+				{ "Ada Brook landed a Monster", "a fish, 21.4 in" },
+				{ fake.Pagle.NewsWords(items[1]).head, fake.Pagle.NewsWords(items[1]).detail }
+			)
+			fake.itemNames[6358] = "Raw Old Ironjaw"
+			assert.are.equal("First in EU this month to land Old Ironjaw", fake.Pagle.NewsWords(items[3]).head)
+			local zone = { kind = "zone", name = "Ada Brook", region = "", zone = 12, key = "elwynn" }
+			fake.areaNames[12] = "Elwynn Forest"
+			assert.are.equal("Ada Brook became Master of Elwynn Forest", fake.Pagle.NewsWords(zone).head)
 		end)
 
 		it("refuse a set after login: Core reads Pagle_Following once (VIEW-R1)", function()
@@ -2038,6 +2102,55 @@ describe("FakePagle", function()
 		assert.has_error(function()
 			records[1].build = 1
 		end)
+	end)
+
+	describe("Party Catches (from 1.6)", function()
+		it(
+			"append a real G1 for fake.partyCatch, live with the name and source ID only to a projection that takes"
+				.. " them, then fire PartyCatch (LOG-R115–R117)",
+			function()
+				local fake = newFakePagle()
+				local seen = {}
+				local function module(name, takes)
+					local M = fake.Pagle.RegisterModule({ name = name, title = name, order = 10 })
+					M:NewProjection({
+						db = {},
+						rulesVersion = 1,
+						partyCatches = takes,
+						reset = function()
+							return {}
+						end,
+						apply = function(_, record, mode)
+							seen[#seen + 1] = ("%s %s %s %s"):format(name, record.kind, mode, tostring(record.name))
+						end,
+					})
+					return M
+				end
+				local hunts = module("Hunts", true)
+				module("Ledger", false)
+				fake.Pagle.RegisterCallback("Spec", "PartyCatch", function(_, record)
+					seen[#seen + 1] = "PartyCatch " .. record.sourceId
+				end)
+				fake.login()
+				fake.enterWorld()
+
+				local record = fake.partyCatch()
+
+				assert.are.same({
+					"Hunts party live Kukli Emnabi",
+					("PartyCatch Player-4618-0B00000A-%d-0"):format(SERVER_TIME - 1),
+				}, seen)
+				assert.are.equal(
+					("G1|1|%d|0|%d|0|494|148|453|120|0||||6358x1"):format(SERVER_TIME, SERVER_TIME - 1),
+					fake.catchLog:Get(record.seq)
+				)
+				local yielded = {}
+				for read in hunts:IterateCatches(0) do
+					yielded[#yielded + 1] = read.kind
+				end
+				assert.are.same({ "party" }, yielded)
+			end
+		)
 	end)
 
 	describe("Prestige and purchase entries", function()

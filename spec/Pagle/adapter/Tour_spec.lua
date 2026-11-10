@@ -82,13 +82,14 @@ describe("Core's own tour stops (CORE-R65, CORE-R68)", function()
 			pagle(loaded, "dev tour list core")
 
 			assert.are.same({
-				"Pagle dev: 23 tour stops:",
+				"Pagle dev: 24 tour stops:",
 				"  core.onboarding.letter: the Letter",
 				"  core.announce.toast: a sample toast",
 				"  core.announce.nod: a sample nod",
 				"  core.announce.banner: a sample banner",
 				"  core.announce.splash: a sample splash",
 				"  core.announce.party: a sample party",
+				"  core.announce.hp: a sample hp",
 				"  core.card.session: a sample session card",
 				"  core.card.writeup: a sample writeup card",
 				"  core.shop: the Curio Shop",
@@ -122,7 +123,7 @@ describe("Core's own tour stops (CORE-R65, CORE-R68)", function()
 		pagle(loaded, "dev tour core")
 		loaded.client.advance(90)
 
-		assert.are.equal(23, #shown)
+		assert.are.equal(24, #shown)
 		for i, n in ipairs(shown) do
 			assert(n > 0, "stop " .. i .. " showed nothing")
 		end
@@ -137,11 +138,11 @@ describe("Core's own tour stops (CORE-R65, CORE-R68)", function()
 		loaded.client.advance(90)
 
 		assert.are.equal(0, added(onScreen(loaded), before))
-		assert.are.equal(23, loaded.client.screenshots)
+		assert.are.equal(24, loaded.client.screenshots)
 		assert.are.same(saved, loaded.env.PagleDB)
-		assert.are.equal("Pagle dev: tour 1/23: core.onboarding.letter", loaded.printed[2])
-		assert.are.equal("Pagle dev: tour 23/23: core.onboarding.step.off", loaded.printed[24])
-		assert.are.equal("Pagle dev: the tour is done at ", loaded.printed[25]:sub(1, 31))
+		assert.are.equal("Pagle dev: tour 1/24: core.onboarding.letter", loaded.printed[2])
+		assert.are.equal("Pagle dev: tour 24/24: core.onboarding.step.off", loaded.printed[25])
+		assert.are.equal("Pagle dev: the tour is done at ", loaded.printed[26]:sub(1, 31))
 	end)
 
 	it("leave open a window that was open before its stop", function()

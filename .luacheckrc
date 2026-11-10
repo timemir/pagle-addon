@@ -245,6 +245,9 @@ stds.wow = {
 		C_ChatInfo = { fields = { "RegisterAddonMessagePrefix", "SendAddonMessage", "InChatMessagingLockdown" } },
 		"IsInGroup",
 		"IsInRaid",
+		-- Party Catches (catch-log.md LOG-R110, from 1.6): a home party only, never an instance group. In the forever
+		-- dump's LuaEnum.lua at BIR_COMMIT.
+		"LE_PARTY_CATEGORY_HOME",
 	},
 }
 

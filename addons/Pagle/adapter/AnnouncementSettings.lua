@@ -135,7 +135,8 @@ ns.CoreSettingsRows.announcements = function(page, layout)
 	ns.CreateCheckbox(layout, motion, L.SETTINGS_MOTION_TOOLTIP)
 
 	-- Toast style and Sound set: the same equipped looks as on Look and Feel, which this page's Defaults button
-	-- restores too (SET-R30, SET-R33, SET-R51).
+	-- restores too (SET-R30, SET-R33, SET-R51). The news sign's look ends The Morning Tide's section instead (SET-R37):
+	-- ns.CoreAnnouncementSlots leaves it out.
 	for _, slot in ipairs(ns.CoreAnnouncementSlots(ns.goods)) do
 		ns.SlotDropdown(page, layout, slot, "announcements")
 	end
@@ -152,4 +153,6 @@ ns.CoreSettingsRows.announcements = function(page, layout)
 
 	-- The Party block after Core's rows (SET-R36, from 1.5.2): adapter/PartySettings.lua's.
 	ns.PartySettingsRows(page, layout)
+	-- The Morning Tide's section after the Party block (SET-R37, from 1.6): adapter/NewsSignSettings.lua's.
+	ns.NewsSignSettingsRows(page, layout)
 end

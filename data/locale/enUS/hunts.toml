@@ -212,6 +212,10 @@ WAGER_MARK_STAMP = "Mark"
 # "Silver mark"
 WAGER_TIER = "{trim} mark"
 WAGER_SETTLED = "Wager settled"
+# A moment a groupmate's Catch reached (HNT-R185, ANN-R110, from 1.6): the groupmate's name after its text.
+PARTY_WITH = "{text} · with {name}"
+# The groupmate as the Session summary keeps such a moment: never their name (ANN-R110).
+PARTY_A_GROUPMATE = "a groupmate"
 WAGER_SETTLED_STAMP = "Settled"
 WRITE_UP_FIRST_BUILD.one = "Your Hunts were written up from {count:n} Cast"
 WRITE_UP_FIRST_BUILD.other = "Your Hunts were written up from {count:n} Casts"
@@ -256,6 +260,11 @@ LADDER_NOT_YET = "not yet"
 LADDER_WHEN_ZONE = "{date}, {areaName}"
 LADDER_PROGRESS = "{ladder_progress_1:0} / {ladder_progress_2:0}"
 LADDER_CAUGHT = "{ladder_caught:0} caught"
+# A tier a groupmate's Catch reached (HNT-R186): "party" after its date and zone, and the tooltip on them, as two
+# lines (from 1.6).
+LADDER_WHEN_PARTY = "{when} · party"
+LADDER_PARTY_TIP = "A groupmate's catch, while you fished the same water."
+LADDER_PARTY_TIP_SITE = "On pagle.app it counts once your groupmate has uploaded their Catch log too."
 # The effort counter (HNT-R26) and HNT-R27's note: plain counts, no link; "1 Cast", "2 Casts".
 EFFORT_CASTS.one = "{count:0} Cast"
 EFFORT_CASTS.other = "{count:0} Casts"

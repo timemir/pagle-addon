@@ -75,6 +75,7 @@ ns.Locale("ruRU", function(L)
 	L.DEV_ONBOARDING_RESET = "Pagle dev: знакомство сброшено как для нового рыболова, письмо ждёт; /reload, чтобы начать с этого места."
 	L.DEV_ONBOARDING_USAGE = "Pagle dev: /pagle dev onboarding {usages}"
 	L.DEV_PARTY_CHEERED = "Pagle dev: {count:0} тостов за ваш момент уже в пути."
+	L.DEV_PARTY_HUNT_OFF = "Pagle dev: ничего не появится, пока выключены Групповые охоты, Показывать моменты моей группы или Выполнено для группы."
 	L.DEV_PARTY_LETTER = "Pagle dev: письмо группы на экране, будто {name} рыбачит рядом с вами."
 	L.DEV_PARTY_LETTER_RESET = "Pagle dev: ответ на письмо группы забыт; обмен с группой выключен, пока на него не ответят."
 	L.DEV_PARTY_QUEUED = "Pagle dev: плашка группы от {name} в очереди: {kind}."
@@ -101,6 +102,9 @@ ns.Locale("ruRU", function(L)
 	L.DEV_SAMPLE_VARIETY_NAME = "Коралловая"
 	L.DEV_SAMPLE_WRITE_UP = "Сводка вашего Реестра по 2 340 забросам"
 	L.DEV_SESSION_ENDED = "Pagle dev: сессия завершена, будто перерыв уже прошёл."
+	L.DEV_SIGN_DROPPED = "Pagle dev: опускается табличка {look} с примером новости {kind}; наведение мыши удерживает её, правый щелчок поднимает."
+	L.DEV_SIGN_USAGE = "Pagle dev: /pagle dev sign <вид> [тип] [more], вид — один из {looks}, тип — один из {kinds}"
+	L.DEV_SIGN_WAITING = "Pagle dev: табличка опустится, когда закончатся бой и ограничения."
 	L.DEV_SKILL_CLEARED = "Pagle dev: навык рыбной ловли снова берётся из клиента."
 	L.DEV_SKILL_NOT_SET = "Pagle dev: навык рыбной ловли берётся из клиента; /pagle dev skill <ранг> его подменяет."
 	L.DEV_SKILL_REMINDER = "Pagle dev: навык рыбной ловли подменён на {rank}/{max} (/pagle dev skill off, чтобы сбросить)."
@@ -138,13 +142,14 @@ ns.Locale("ruRU", function(L)
 	L.DEV_TOUR_STOPPING = "Pagle dev: тур остановится, когда скроется эта остановка."
 	L.DEV_TOUR_STOPS = { few = "{count} остановки", many = "{count} остановок", one = "1 остановка", other = "{count} остановки" }
 	L.DEV_UNKNOWN_AREA = "Pagle dev: {areaText} — не область из каталога Pagle."
-	L.DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <тип> | stage <число> | glyphs | tour [модуль | list | stop] | probe | fonts | pseudo on | off | onboarding <команда> | content | views | pastetest <КБ>"
+	L.DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <тип> | stage <число> | glyphs | tour [модуль | list | stop] | probe | fonts | pseudo on | off | onboarding <команда> | content | views | pastetest <КБ> | sign <вид> [тип] [more]"
 	L.DEV_VIEWS_ABSENT = "Pagle dev: {name} отсутствует: {reason}."
 	L.DEV_VIEWS_ANGLERS = "Pagle dev: Pagle_Anglers — generatedAt {generatedAt}, блоков {dev_views_anglers_2}."
 	L.DEV_VIEWS_EXPIRED = "Pagle dev: {name} устарел: создан {age} с назад, срок годности — {viewExpiryAge} с."
 	L.DEV_VIEWS_FOLLOWING = "Pagle dev: Pagle_Following — generatedAt {generatedAt}, рыболовов {dev_views_following_2}."
 	L.DEV_VIEWS_LIVE = "Pagle dev: {name} активен."
 	L.DEV_VIEWS_LOADED = "Pagle dev: Pagle_Anglers загружен за этот вход в игру."
+	L.DEV_VIEWS_NEWS = "Pagle dev: новости {state}: строк использовано {used}, пропущено {skipped}; просмотрено {seen}, порог {floor}."
 	L.DEV_VIEWS_NONE = "нет"
 	L.DEV_VIEWS_NOT_LOADED = "Pagle dev: Pagle_Anglers за этот вход в игру не загружался."
 	L.EVENING_CAST = "Сделать заброс"
@@ -318,9 +323,18 @@ ns.Locale("ruRU", function(L)
 	L.PARTY_DETAIL = "{what} • {detail}"
 	L.PARTY_FULL_NAME = "{name} {surname}"
 	L.PARTY_GOLD = "Взял(а) золото в охоте «{hunt}»"
+	L.PARTY_HP_HUNT = "{hunt} • для: {senders}"
+	L.PARTY_HP_MINE = "Ваш улов"
+	L.PARTY_HP_PARTY = "Выполнено для группы"
+	L.PARTY_HP_RUN = "{event}: рассчитано • для: {senders}"
+	L.PARTY_HP_SENDERS_MORE = { few = "{name}, {other} и ещё {count}", many = "{name}, {other} и ещё {count}", one = "{name}, {other} и ещё {count}", other = "{name}, {other} и ещё {count}" }
+	L.PARTY_HP_SENDERS_TWO = "{name} и {other}"
+	L.PARTY_HP_SOME_HUNT = "охота"
+	L.PARTY_HP_SOME_RUN = "пари Пэгла"
 	L.PARTY_LETTER_KICKER = "Письмо, переданное по берегу"
 	L.PARTY_LETTER_LATER = "Не сейчас"
-	L.PARTY_LETTER_LINE = "{name} рыбачит с вами в зоне {zone} и тоже пользуется Pagle. Рыбачьте вместе: делитесь лучшими уловами и поднимайте кружку за чужие."
+	L.PARTY_LETTER_LINE = "{name} рыбачит с вами в зоне {zone} и тоже пользуется Pagle. Рыбачьте вместе: делитесь лучшими уловами, поднимайте кружку за чужие, и ваш улов будет засчитываться в Охоты друг друга."
+	L.PARTY_LETTER_LINE_NO_ZONE = "{name} тоже пользуется Pagle и состоит в вашей группе. Рыбачьте вместе: делитесь лучшими уловами, поднимайте кружку за чужие, и ваш улов будет засчитываться в Охоты друг друга."
 	L.PARTY_LETTER_NO = "Нет, спасибо"
 	L.PARTY_LETTER_YES = "Рыбачить вместе"
 	L.PARTY_LINES = { epic = "Поймал(а) эпическую окраску", gold = "Взял(а) золото в охоте", ledger = "Реестр на 100%", legend = "Поймал(а) легенду", monster = "Рекорд размера «Чудовище»", rare = "Поймал(а) редкую окраску", zone = "Мастер зоны" }
@@ -466,12 +480,22 @@ ns.Locale("ruRU", function(L)
 	L.SETTINGS_MORE_LOOKS = "Другие облики"
 	L.SETTINGS_MOTION = "Анимация"
 	L.SETTINGS_MOTION_TOOLTIP = "Плашки выезжают и ставят штамп, баннеры опускают печать, а лучи за баннером или легендой вращаются. Если выключено, всё появляется сразу в итоговом виде."
+	L.SETTINGS_NEWS = "Утренний прилив"
+	L.SETTINGS_NEWS_HEADLINES = "Новости региона"
+	L.SETTINGS_NEWS_HEADLINES_TOOLTIP = "Кто первым в вашем регионе в этом месяце выловил легенду, следите вы за ним или нет."
+	L.SETTINGS_NEWS_KINDS = { colour = "Редкие разновидности", first = "Первые вести", hunt = "Золото охоты", ledger = "Реестр заполнен", legend = "Легенды", monster = "Рекорды «Чудовищ»", prestige = "Престиж", zone = "Мастер зоны" }
+	L.SETTINGS_NEWS_MUTE = "Выключить звук вывески"
+	L.SETTINGS_NEWS_MUTE_TOOLTIP = "Вывеска опускается без своих звуков. Настройки звука игры по-прежнему действуют."
+	L.SETTINGS_NEWS_SHOW = "Показывать новости при входе"
+	L.SETTINGS_NEWS_SHOW_TOOLTIP = "При входе в игру или после /reload опускается вывеска с лучшей новостью о рыболовах, за которыми вы следите на сайте Pagle. Нужен компаньон Pagle. Щелчок левой кнопкой открывает остальное в Рыбацком журнале."
 	L.SETTINGS_NO_MODULE = "Ваши уловы записываются. Включите модуль, чтобы их увидеть."
 	L.SETTINGS_PAGES = { announcements = "Оповещения", fishing = "Рыбалка", look = "Внешний вид", trackers = "Трекеры" }
 	L.SETTINGS_PAGLE_MENU = "Меню Pagle"
 	L.SETTINGS_PAGLE_WEBSITE = "Сайт Pagle"
 	L.SETTINGS_PARTY = "Группа"
-	L.SETTINGS_PARTY_KINDS = { colour = "Редкие окраски", gold = "Золотая ступень в охоте", ledger = "Реестр на 100%", legend = "Легенды", monster = "Рекорды размера «Чудовище»", prestige = "Престиж", zone = "Мастер зоны" }
+	L.SETTINGS_PARTY_HUNTS = "Групповые охоты"
+	L.SETTINGS_PARTY_HUNTS_TOOLTIP = "В группе улов участников засчитывается в ваши Охоты и Пари Пэгла, пока вы рыбачите в одной зоне, а ваш — в их. Если выключено, Pagle не делится вашим уловом и не засчитывает их улов."
+	L.SETTINGS_PARTY_KINDS = { colour = "Редкие окраски", gold = "Золотая ступень в охоте", hp = "Выполнено для группы", ledger = "Реестр на 100%", legend = "Легенды", monster = "Рекорды размера «Чудовище»", prestige = "Престиж", zone = "Мастер зоны" }
 	L.SETTINGS_PARTY_SHARE = "Делиться моими моментами с группой"
 	L.SETTINGS_PARTY_SHARE_TOOLTIP = "Когда вы ловите легенду, ставите рекорд размера «Чудовище» и тому подобное, участники группы с Pagle видят небольшую плашку. Отправляется только сам момент, а не то, где вы находитесь. Не в рейде."
 	L.SETTINGS_PARTY_SHOW = "Показывать моменты моей группы"
@@ -521,7 +545,7 @@ ns.Locale("ruRU", function(L)
 	L.SHOP_CRATE_CONFIRM = "Открыть ящик диковин?"
 	L.SHOP_CRATE_FINE = "Один облик, которого у вас ещё нет, — наудачу; шансы указаны на ящике."
 	L.SHOP_CRATE_KIND = "Ящик обликов"
-	L.SHOP_CRATE_KINDS = { binding = "Переплёт", crest = "Герб", soundset = "Набор звуков", toaststyle = "Стиль плашек", trackerframe = "Рамка трекера" }
+	L.SHOP_CRATE_KINDS = { binding = "Переплёт", crest = "Герб", newssign = "Табличка новостей", soundset = "Набор звуков", toaststyle = "Стиль плашек", trackerframe = "Рамка трекера" }
 	L.SHOP_CRATE_LEFT = "Осталось: {left:0}"
 	L.SHOP_CRATE_NEW_LOOK = "Новый облик"
 	L.SHOP_CRATE_ONLY_NOTE = "Только в ящике диковин, не продаётся"
@@ -557,6 +581,15 @@ ns.Locale("ruRU", function(L)
 	L.SHOP_TAG_SEPARATOR = " • "
 	L.SHOP_USE = "Использовать"
 	L.SHOP_USE_NOW = "Использовать сразу"
+	L.SIGN_DETAIL_COLOUR = "{species}, {variety}"
+	L.SIGN_DETAIL_COLOUR_HIDDEN = "{species} ({rarity})"
+	L.SIGN_DETAIL_MONSTER = "{species}, {length}"
+	L.SIGN_HEAD = { colour = "{name}: пойман редкий цвет", first = "Впервые в {region}: {fish}", hunt = "{name}: золото охоты", ledger = "{name}: Реестр заполнен", legend = "{name}: выловлена Легенда", monster = "{name}: выловлено Чудовище", prestige = "{name}: достигнут Престиж {rank}", region = "Впервые в {region} в этом месяце: {fish}", zone = "{name}: Мастер зоны {zone}" }
+	L.SIGN_HEAD_MASTER_PRESTIGE = "{name}: достигнут Престиж мастера {master:0}"
+	L.SIGN_ITEM_UNKNOWN = "рыба"
+	L.SIGN_KICKER = { colour = "Редкий цвет", first = "Первая весть", hunt = "Золото охоты", ledger = "Реестр", legend = "Легенда", monster = "Чудовище", prestige = "Престиж", region = "Новости региона • {region}", zone = "Мастер зоны" }
+	L.SIGN_MORE = { few = "+{count:0} от ваших рыболовов", many = "+{count:0} от ваших рыболовов", one = "+{count:0} от ваших рыболовов", other = "+{count:0} от ваших рыболовов" }
+	L.SIGN_ZONE_UNKNOWN = "Зона {zone}"
 	L.SIZE_BANDS = { "Мелочь", "Приличная", "Увесистая", "Громадина", "Чудовище" }
 	L.SLASH_CORE_HELP = {
 		{ help = "открыть настройки Pagle (или просто /pagle)", name = "settings" },
@@ -578,6 +611,7 @@ ns.Locale("ruRU", function(L)
 	L.SLOT_CREST = "Гербы"
 	L.SLOT_CREST_FISH = "Рыбьи гербы"
 	L.SLOT_CREST_ZONES = "Гербы зон"
+	L.SLOT_NEWS_SIGN = "Табличка новостей"
 	L.SLOT_SOUND_SET = "Набор звуков"
 	L.SLOT_TOAST_STYLE = "Стиль плашек"
 	L.TOAST_SAMPLE_STAMP = "Здесь впервые"

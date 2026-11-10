@@ -12,7 +12,7 @@ ns.GOOD_ID_PATTERN = "^[%w_.]+$"
 ---@class PagleRecord
 ---@field seq integer            -- the entry's 1-based place in the log (LOG-R14, LOG-R103)
 ---@field id string              -- entry ID: <character GUID>-<time>-<tie> (LOG-R13)
----@field kind "cast"|"skill"|"prestige"|"build"|"purchase"|"module"|"companion"
+---@field kind "cast"|"skill"|"prestige"|"build"|"purchase"|"module"|"companion"|"party" -- "party" from 1.6 (LOG-R117)
 ---@field char integer           -- index into Angler.characters
 ---@field time integer           -- server time
 
@@ -58,6 +58,24 @@ ns.GOOD_ID_PATTERN = "^[%w_.]+$"
 --- Who reads a Companion entry (LOG-R37): Core's projections, which read the log as this reader (CatchLog:Iterate).
 ns.COMPANION_READER = "Core"
 
+--- A Party Catch (`G1`, LOG-R115, LOG-R116; from 1.6): a groupmate's Cast, logged by its **copy** (its time and tie,
+--- then its C1 fields from minute to items) and never by its GUID. Read only by the projections that take Party
+--- Catches (`partyCatches = true`, LOG-R117), and by their Modules' M:IterateCatches. A live record also carries the
+--- groupmate's `name` and the source entry ID `sourceId` (`<guid>-<catchTime>-<catchTie>`), for moments only; they
+--- are never stored, so a replayed or rebuilt record has neither (LOG-R116, LOG-R120).
+---@class PaglePartyCatch : PagleRecord
+---@field catchTime integer      -- the groupmate's Cast's server time
+---@field catchTie integer       -- its tie
+---@field copy string            -- the copy, byte for byte as the entry holds it (LOG-R113 item 8)
+---@field conditions ConditionsSnapshot -- built from the copied fields as a Cast's is, with time = catchTime
+---@field items { n: integer, itemID: integer, quantity: integer, catchId: string }[] -- catchId: the Party Catch ID
+---@field name? string           -- live only: the groupmate's full name at receipt
+---@field sourceId? string       -- live only: the groupmate's Cast entry ID
+
+--- Who reads a Party Catch (LOG-R117): a reader that takes them, as CatchLog:Iterate's `party` says. No Module's
+--- def.name can be it (they match [%w_.]+).
+ns.PARTY_CATCH_READER = "@party"
+
 --- A Module record (`A1`, LOG-R40, ADR 0008): opaque to Core, replayed only to the Module that wrote it (LOG-R41).
 ---@class PagleModuleRecord : PagleRecord
 ---@field module string          -- the writing Module's def.name
@@ -67,7 +85,7 @@ ns.COMPANION_READER = "Core"
 --- The PagleLog layout version (LOG-R18). 1.0 ships format 4, frozen from then on (LOG-R17); every beta or dev log
 --- is another format, so it starts over at the first 1.0 login.
 ns.LOG_FORMAT = 4
-ns.RULE_SET_ID = "pagle-2026i"
+ns.RULE_SET_ID = "pagle-2026j"
 
 --- The entries a new log packs into each block (LOG-R103). A log records its own `blockSize`, so a later Pagle may
 --- choose another for new logs without breaking old ones.
@@ -716,6 +734,62 @@ local kinds = {
 		end,
 	},
 
+	-- LOG-R115, from 1.6: an additive kind, so PagleLog.format stays (LOG-R119); a Core from before it skips it
+	-- (LOG-R16). The copy is written verbatim, never re-encoded, so it stays byte for byte the groupmate's.
+	G1 = {
+		kind = "party",
+		count = 11,
+		encode = function(record)
+			if type(record.copy) ~= "string" then
+				error("not a Party Catch's copy: " .. tostring(record.copy))
+			end
+			return { record.copy }
+		end,
+		decode = function(record, f)
+			local catchTime, catchTie = wholeNumber(f[1]), wholeNumber(f[2])
+			local minute = optionalInteger(f[3])
+			local zone, subzone = integer(f[4]), integer(f[5])
+			local rank, mod, lure = optionalInteger(f[6]), optionalInteger(f[7]), optionalInteger(f[8])
+			local events, auras = idList(f[9]), idList(f[10])
+			if not catchTime or not catchTie or minute == false or not zone or not subzone then
+				return false
+			end
+			if rank == false or mod == false or lure == false or not events or not auras then
+				return false
+			end
+			local items = {}
+			for item in string.gmatch(f[11] .. ",", "([^,]*),") do
+				local itemID, quantity = string.match(item, "^(%d+)x(%d+)$")
+				if not itemID then
+					return false
+				end
+				local n = #items + 1
+				items[n] = {
+					n = n,
+					itemID = tonumber(itemID),
+					quantity = tonumber(quantity),
+					catchId = record.id .. ":" .. n,
+				}
+			end
+			record.catchTime, record.catchTie = catchTime, catchTie
+			record.copy = table.concat(f, "|", 1, 11)
+			record.conditions = {
+				time = catchTime,
+				minute = minute,
+				date = minute and ns.RealmDate(catchTime, minute) or nil,
+				zone = zone,
+				subzone = subzone,
+				skillRank = rank,
+				skillMod = mod,
+				lure = lure,
+				events = events,
+				auras = auras,
+			}
+			record.items = items
+			return true
+		end,
+	},
+
 	A1 = {
 		kind = "module",
 		count = 3,
@@ -747,10 +821,11 @@ local TAGS = {
 	purchase = "U1",
 	module = "A1",
 	companion = "K1",
+	party = "G1",
 }
 
 -- Who a record is for, when not every reader: a Module record's Module (LOG-R41), Core for a Companion entry
--- (LOG-R37); nil for a record every reader gets.
+-- (LOG-R37), ns.PARTY_CATCH_READER for a Party Catch (LOG-R117); nil for a record every reader gets.
 ---@param record PagleRecord
 ---@return string?
 function ns.RecordReader(record)
@@ -758,6 +833,8 @@ function ns.RecordReader(record)
 		return (record --[[@as PagleModuleRecord]]).module
 	elseif record.kind == "companion" then
 		return ns.COMPANION_READER
+	elseif record.kind == "party" then
+		return ns.PARTY_CATCH_READER
 	end
 	return nil
 end
@@ -1114,7 +1191,7 @@ end
 -- CatchLog:Reverse's walk; Casts carry their sizes when `sized` and the log has a catalogue. Walking back, the
 -- counts start at `fromSeq` and each entry passed is taken back out, so they always cover the entries before the next.
 ---@param catchLog PagleCatchLog
----@param kind "cast"|"skill"|"prestige"|"build"|"purchase"|"companion"
+---@param kind "cast"|"skill"|"prestige"|"build"|"purchase"|"companion"|"party"
 ---@param fromSeq integer?
 ---@param sized boolean
 ---@param byTag boolean? look at the entries of the kind's tag only, even for a Cast (never sized)
@@ -1274,12 +1351,14 @@ end
 --- counted in `PagleDB.global.decodeErrors`, once per entry for this login however many readers meet it (LOG-R16). Module records are yielded only to the
 --- Module named by `module`, its own (LOG-R41, LOG-R42): without one, as Pagle.IterateCatches reads, none is; another
 --- Module's are skipped, never counted as undecodable. A Companion entry is yielded only to ns.COMPANION_READER, Core's
---- projections (LOG-R37). An entry read forwards last is handed out as the record already made for it
---- (RECENT_RECORDS), its sizes and Session already on it.
+--- projections (LOG-R37), and a Party Catch only with `party`, to a Module whose projection takes them (LOG-R117). An
+--- entry read forwards last is handed out as the record already made for it (RECENT_RECORDS), its sizes and Session
+--- already on it.
 ---@param afterSeq integer?
 ---@param module string? the reading Module's def.name (M:IterateCatches)
+---@param party boolean? the reader takes Party Catches (LOG-R117)
 ---@return fun(): PagleRecord?
-function CatchLog:Iterate(afterSeq, module)
+function CatchLog:Iterate(afterSeq, module, party)
 	local data = self.data
 	local characters = data.characters
 	local recentSeqs, recent = self.recentSeqs, self.recent
@@ -1312,7 +1391,7 @@ function CatchLog:Iterate(afterSeq, module)
 				cutter:Add(record)
 				keepRecent(self, seq, record)
 				local owner = ns.RecordReader(record)
-				if owner == nil or owner == module then
+				if owner == nil or owner == module or (party and owner == ns.PARTY_CATCH_READER) then
 					return record
 				end
 			end
@@ -1350,10 +1429,19 @@ end
 --- Whether the log holds a record of `kind` the codec can read, found by its tag, newest first, without sizing or
 --- counting anything: how Core asks whether there is a Cast at all (ONB-R2). Entries of the kind it can't read are
 --- counted as Reverse counts them (LOG-R16).
----@param kind "cast"|"skill"|"prestige"|"build"|"purchase"|"companion"
+---@param kind "cast"|"skill"|"prestige"|"build"|"purchase"|"companion"|"party"
 ---@return boolean
 function CatchLog:Has(kind)
 	return reverse(self, kind, nil, false, true)() ~= nil
+end
+
+--- The newest record of `kind` the codec can read, found by its tag, unsized and with no Session: how the receiver
+--- finds the latest Cast (LOG-R113 item 7) in a log of any length, at the cost of the entries of that one tag. Nil when
+--- the log has none.
+---@param kind "cast"|"skill"|"prestige"|"build"|"purchase"|"companion"|"party"
+---@return PagleRecord?
+function CatchLog:Last(kind)
+	return reverse(self, kind, nil, false, true)()
 end
 
 --- Entry `seq` as it is stored, the raw string, or nil if the log has none (LOG-R105). Records come from `Iterate`
@@ -1364,11 +1452,48 @@ function CatchLog:Get(seq)
 	return LogBlocks.Get(self.data, seq)
 end
 
+-- The entry `record` would be appended as next, and the record it would read back as (unsized, with no Session);
+-- nil for a record the codec can't write and read back, or whose entry would hold a line feed (LOG-R101).
+---@param catchLog PagleCatchLog
+---@param record table
+---@return string? entry
+---@return PagleRecord? record
+local function written(catchLog, record)
+	local data = catchLog.data
+	local tag = TAGS[record.kind]
+	local ok, entry = pcall(function()
+		local fields = kinds[tag].encode(record)
+		local tie = nextTie(data, record.char, record.time)
+		local header = { tag, integerField(record.char), integerField(record.time), integerField(tie) }
+		return table.concat(header, "|") .. "|" .. table.concat(fields, "|")
+	end)
+	-- No entry ever holds a line feed (LOG-R101), whoever writes it and whatever its fields say.
+	if not ok or find(entry, "\n", 1, true) then
+		return nil
+	end
+	local read = decode(entry, data.count + 1, data.characters)
+	return read and entry or nil, read or nil
+end
+
+--- The record `record` would be appended as now (as CatchLog:Append takes it), without appending it: its seq, entry
+--- ID and fields, unsized and with no Session. How the receiver asks the Hunts filter about a Party Catch before it is
+--- written (LOG-R114). Raises an error in the caller, as Append does, for a record the codec can't write.
+---@param record table
+---@return PagleRecord
+function CatchLog:Draft(record)
+	local _, drafted = written(self, record)
+	if not drafted then
+		error(("the Catch log can't write this %s record"):format(tostring(record.kind)), 2)
+	end
+	return drafted
+end
+
 --- Appends an entry for `record`, a typed record without `seq` and `id` (`{ kind = "cast", char, time, outcome,
 --- conditions, items = { { itemID, quantity } } }`, `{ kind = "skill", char, time, rank, max, mod }`,
 --- `{ kind = "build", char, time, build, version }`, `{ kind = "prestige", char, time, rank, activityXP }` (0 without
 --- activityXP), `{ kind = "purchase", char, time, good, price }` or
---- `{ kind = "companion", char, time, keyId, pushedSeq }`), and returns the record as every reader will see it.
+--- `{ kind = "companion", char, time, keyId, pushedSeq }` or, from 1.6, `{ kind = "party", char, time, copy }`), and
+--- returns the record as every reader will see it.
 --- A Cast or Skill Reading carries its Session's ID (LOG-R98), and a Cast its Simulated Sizes, counted over the log
 --- before it (LOG-R100). Raises an error in the caller, appending nothing, for a record the codec can't write and read
 --- back, and for one whose entry would hold a line feed (LOG-R101).
@@ -1381,18 +1506,11 @@ function CatchLog:Append(record)
 	-- Counted on from the log's end only for a Cast, whose size needs the earlier Catches; any other entry leaves the
 	-- counts as they are, so a log that has none yet is not counted whole to append a Skill Reading or a build (LOG-R100).
 	local counts = self.getItem and (record.kind == "cast" and self:tailCatchCounts() or self.tailCounts)
-	local tag = TAGS[record.kind]
-	local ok, entry = pcall(function()
-		local fields = kinds[tag].encode(record)
-		local tie = nextTie(data, record.char, record.time)
-		local header = { tag, integerField(record.char), integerField(record.time), integerField(tie) }
-		return table.concat(header, "|") .. "|" .. table.concat(fields, "|")
-	end)
-	-- No entry ever holds a line feed (LOG-R101), whoever writes it and whatever its fields say.
-	local appended = ok and not find(entry, "\n", 1, true) and decode(entry, seq, data.characters)
+	local entry, appended = written(self, record)
 	if not appended then
 		error(("the Catch log can't write this %s record"):format(tostring(record.kind)), 2)
 	end
+	---@cast entry string
 	ensureLogId(data, record.time)
 	LogBlocks.Append(data, entry)
 	if counts then

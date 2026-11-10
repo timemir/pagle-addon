@@ -15,12 +15,13 @@ function ns.LookAndFeelSections(goods)
 end
 
 --- Core's slots in the "Announcements" category that have goods, in registration order: the rows that end Core's
---- rows on the Announcements page (CORE-R42, SET-R30).
+--- rows on the Announcements page (CORE-R42, SET-R30). The news sign's slot isn't one: its dropdown is in The Morning
+--- Tide's section on that page (SET-R37), and on Look and Feel with the others (SET-R50).
 ---@param goods PagleGoods
 ---@return PagleRegisteredSlot[]
 function ns.CoreAnnouncementSlots(goods)
 	return goods:SlotsWithGoods(function(slot)
-		return slot.module == ns.CORE_OWNER and slot.category == "Announcements"
+		return slot.module == ns.CORE_OWNER and slot.category == "Announcements" and slot.id ~= ns.NEWS_SIGN_SLOT
 	end)
 end
 

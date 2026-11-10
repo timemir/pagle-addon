@@ -28,3 +28,9 @@ MAX_EQUIPMENT_SETS_PER_PLAYER = 10
 -- it; the forever dump lists it: Ketho/BlizzardInterfaceResources branch forever at BIR_COMMIT, Resources/Frames.lua.
 ---@type Frame
 WorldFrame = {}
+
+-- A home party's group category (Party Catches, LOG-R110, from 1.6): IsInGroup(LE_PARTY_CATEGORY_HOME) is a group the
+-- player formed, not the dungeon finder's instance group. Not Forever-only, but the annotations lack it; the forever
+-- dump lists it: Ketho/BlizzardInterfaceResources branch forever at BIR_COMMIT, Resources/LuaEnum.lua.
+---@type integer
+LE_PARTY_CATEGORY_HOME = 1

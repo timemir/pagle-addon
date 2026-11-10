@@ -486,6 +486,14 @@ describe("the 1.0 surface", function()
 			assert(version == math.floor(version), "CORE-R15: Pagle.API_VERSION is a whole number")
 		end)
 
+		it("is above 2 once it has 1.6's names, added after 1.1's version 2 (CORE-R15)", function()
+			for _, name in ipairs({ "GetNews", "MarkNewsSeen", "NewsWords", "DrawNewsEmblem" }) do
+				if Pagle[name] ~= nil then
+					assert(Pagle.API_VERSION > 2, ("CORE-R15: Pagle gained %s but API_VERSION is still 2"):format(name))
+				end
+			end
+		end)
+
 		it(
 			"gives a Module handle every method 1.0 had, and needs API_VERSION above 1 for one more (CORE-R12, CORE-R15)",
 			function()

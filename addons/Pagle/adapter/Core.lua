@@ -18,11 +18,12 @@ end
 
 --- Core's public API: the one object Modules reach Core through (ADR 0001).
 ---@class Pagle
----@field API_VERSION integer Rises by one with each addition from 1.0 on (CORE-R15): 2 adds Pagle.Text and Pagle.GetLanguage (CORE-R8).
+---@field API_VERSION integer Rises by one with each addition from 1.0 on (CORE-R15): 2 adds Pagle.Text and Pagle.GetLanguage (CORE-R8);
+--- 3 (1.6) adds Pagle.GetNews, MarkNewsSeen, NewsWords and DrawNewsEmblem, and the party catches' def fields and events.
 ---@field VERSION string Core's TOC version (core/README.md › Contracts): the packager's version in a release, the TOC's
 --- own `@project-version@` in a development checkout, "" where the client gives none.
 local Pagle = {
-	API_VERSION = 2,
+	API_VERSION = 3,
 	-- Set once, as the table is built.
 	VERSION = tocVersion() or "",
 }
