@@ -412,9 +412,9 @@ expect "a suppression without a reason fails types" types "types" "each suppress
 copy
 printf 'do\n\t---@diagnostic disable-next-line: assign-type-mismatch, cast-local-type -- testing the gate\n' \
 	>>"$addon/adapter/Core.lua"
-printf '\tPagle.API_VERSION = "2"\nend\n' >>"$addon/adapter/Core.lua"
+printf '\tPagle.API_VERSION = "3"\nend\n' >>"$addon/adapter/Core.lua"
 # types lets it through; the stage after it, tests, still catches the string (CORE-R15).
-expect "an inline suppression with codes and a reason passes types" tests "types tests" "API version 2, the version that added Pagle.Text (CORE-R15)"
+expect "an inline suppression with codes and a reason passes types" tests "types tests" "API version 3, the version that added 1.6's news and party names (CORE-R15)"
 
 # The stages after libs run at once, but the verdict is the first failing stage in their order (#254).
 copy
