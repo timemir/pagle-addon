@@ -1,0 +1,63 @@
+issues = [680]
+
+[header]
+addon = "1.5.3"
+data = "f470cba8"
+locale = "enUS"
+
+[[i]]
+item = 6289
+area = 162
+build = 70862
+count = 14
+
+[[i]]
+item = 6289
+area = 810
+build = 70862
+count = 1
+
+[[i]]
+item = 6291
+area = 162
+build = 70862
+count = 12
+
+[[i]]
+item = 6291
+area = 810
+build = 70862
+count = 6
+
+[[i]]
+item = 6297
+area = 810
+build = 70862
+count = 3
+
+[[i]]
+item = 6299
+area = 162
+build = 70862
+count = 8
+
+[[i]]
+item = 6299
+area = 810
+build = 70862
+count = 4
+
+[[k]]
+area = 85
+build = 70862
+casts = 55
+away = 6
+land = 2
+lost = 13
+
+[[p]]
+area = 162
+locale = "enUS"
+text = "Fishing Bobber"
+casts = 4
+items = { 6289 = 1, 6299 = 2 }

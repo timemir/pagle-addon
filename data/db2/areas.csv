@@ -1233,6 +1233,8 @@ ID,ParentAreaID,ContinentID,AreaName_lang
 16532,0,2908,Tyler's Test Map (Desolace)
 16537,16510,2940,Northshire Valley - Camelot
 16544,0,2959,City of Dalaran
+16550,0,2970,The Drowned City
+16554,0,2974,Blackmaw Hold
 16558,16544,2959,Dalaran
 16559,16544,2959,Fel Grove
 16560,0,2959,City of Dalaran
@@ -1255,6 +1257,8 @@ ID,ParentAreaID,ContinentID,AreaName_lang
 16615,16611,2999,Lordamere Overlook
 16616,85,0,Whispering Forest
 16617,16611,2999,Market Street
+16619,0,3001,Excavation Site - Bael Modan
+16620,0,2994,Alcaz Prison
 16622,16593,2991,Thendal Grove
 16623,16593,2991,Shen'dar Highlands
 16624,16593,2991,Shen'dar Village
@@ -1282,6 +1286,7 @@ ID,ParentAreaID,ContinentID,AreaName_lang
 16661,16653,3005,Beneath the Double Rainbow
 16662,0,3006,Stormr's Test Map
 16663,16593,2991,Windfield Orchard
+16667,0,3001,The Shaper's Terrace
 16672,16593,2991,Shriekling Den
 16673,16593,2991,Thendal Cave
 16674,16593,2991,Bandit Hideout
@@ -1324,6 +1329,7 @@ ID,ParentAreaID,ContinentID,AreaName_lang
 16772,0,0,Unused
 16820,16591,0,The Forbidding Sea
 16833,16593,2991,Ruins of Ban'aethal
+16842,0,3039,Krol'dok Stronghold
 16848,616,1,Elderwild
 16849,616,1,Summit of Eternity
 16853,616,1,Tainted Foothills
@@ -1338,12 +1344,30 @@ ID,ParentAreaID,ContinentID,AreaName_lang
 16881,85,0,Shadowvale
 16916,493,1,Stormrage Barrow Dens
 16919,0,3065,The Hall of Thanes
+16928,16667,3001,Shaper's Plateau
+16929,16667,3001,Pillar of Assimilation
+16930,16667,3001,The Verdant Plains
+16931,16667,3001,Lost Tar Pits
+16932,16667,3001,Ruby Spring
+16933,16667,3001,Walk of Communion
+16934,16667,3001,The Highlands Causeway
+16935,16667,3001,Watcher's Overlook
+16937,16667,3001,Botanical Grounds
 16941,0,0,Crafting
 16985,490,1,The Shaper's Terrace
 16986,490,1,Pillar of Assimilation
 16988,16593,2991,Rise of Spirits
+17036,16667,3001,Crystalline Highlands
+17037,16550,2970,Sunken Hollow
+17038,16550,2970,Flooded Shrine
+17039,16550,2970,Deep Archives
+17040,16550,2970,Altar of the Serpent
+17041,16550,2970,Eternal Amphitheater
+17042,16550,2970,Abyssal Dais
+17043,16550,2970,The Unsinkable
 17044,215,1,Gloomrise
 17045,215,1,Skywatcher Plateau
+17046,16550,2970,Ataal'Byzal
 17050,616,1,Felblood Scar
 17052,400,1,Scalding Ridge
 17065,0,0,Gilneas
@@ -1354,6 +1378,11 @@ ID,ParentAreaID,ContinentID,AreaName_lang
 17203,1519,0,Stormwind Harbor
 17221,16593,2991,Skywall
 17223,215,1,Camp Gev'rek
+17309,16554,2974,Defiled Peak
+17310,16554,2974,Festering Grotto
+17311,16554,2974,Blackmaw Grove
+17312,16554,2974,Blackmaw Stillwater
+17313,16554,2974,Bonesnout's Thicket
 17674,16593,2991,West Pylon Watchtower
 17675,16593,2991,East Pylon Watchtower
 17676,16593,2991,Windsong Standing Stones
