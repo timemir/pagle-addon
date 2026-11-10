@@ -1,5 +1,13 @@
 # Pagle
 
+## 1.6.1 (2026-11-10)
+
+Pagle speaks French.
+
+### Added
+
+- **Français.** All of Pagle's interface and Lore, in French, from Ikar-Rahl. It's machine-drafted, with a native speaker's proofread of the strings you see most, so corrections are welcome. A French game client gets it with Language on "Game default", and anyone can pick it in Settings › Units › Language. (#679)
+
 ## 1.6.0 (2026-11-10)
 
 Morning news from your Anglers, and Hunts with your party.
