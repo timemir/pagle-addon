@@ -27,7 +27,7 @@ def test_the_aura_and_fishing_spell_lists_hold_their_seeds() -> None:
     layer = read_forever(REPO, problems)
     assert problems.found == []
     assert sorted(layer.auras) == [1265220, 1280341, 1280342, 1299323]
-    assert sorted(layer.fishing_spells) == [7620, 7731, 7732, 18248, 1240948, 1240959, 1240970, 1240983]
+    assert sorted(layer.fishing_spells) == [7620, 7731, 7732, 18248, 1240948, 1240959, 1240970, 1240983, 1283866]
 
 
 def _slice() -> Db2Layer:
