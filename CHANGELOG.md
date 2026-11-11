@@ -1,5 +1,19 @@
 # Pagle
 
+## 1.7.0 (2026-11-11)
+
+Fish without a fishing set.
+
+### Changed
+
+- **No fishing set? The Fishing key takes your pole from your bags.** With the Fishing set left at None (the default), the Fishing key's first press with no pole in hand puts on the best fishing pole in your bags, instead of trying to cast without one. Pagle picks the pole with the biggest Fishing bonus you can use.
+- **Swap gear works without a set too.** It puts the pole on, and with the pole in hand it puts your main-hand and off-hand weapons back in one press. Pagle remembers them for each character, even over a /reload or logout. When you walk away still holding the pole, the note reminds you of the key. No equipment set is made.
+- The Swap gear key in Settings › Fishing is no longer greyed out with no fishing set chosen.
+
+### TRANSLATORS
+
+- Español: fmartingr
+
 ## 1.6.1 (2026-11-10)
 
 Pagle speaks French.

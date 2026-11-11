@@ -85,7 +85,7 @@ ns.PARTY_CATCH_READER = "@party"
 --- The PagleLog layout version (LOG-R18). 1.0 ships format 4, frozen from then on (LOG-R17); every beta or dev log
 --- is another format, so it starts over at the first 1.0 login.
 ns.LOG_FORMAT = 4
-ns.RULE_SET_ID = "pagle-2026j"
+ns.RULE_SET_ID = "pagle-2026k"
 
 --- The entries a new log packs into each block (LOG-R103). A log records its own `blockSize`, so a later Pagle may
 --- choose another for new logs without breaking old ones.
