@@ -725,7 +725,7 @@ describe("The Fishing clothes step (ONB-R33)", function()
 		local fake, client = start()
 		local _, right = open(fake, "clothes")
 		local save = textReading(right, "Save what I’m wearing as my fishing set").parent.parent
-		local dropdown = textReading(right, "None (gear stays as it is)").parent
+		local dropdown = textReading(right, "None (a pole from your bags)").parent
 		dropdown:Click()
 		assert.is_true(showing(setList(right)))
 
@@ -761,8 +761,8 @@ describe("The Fishing clothes step (ONB-R33)", function()
 			assert.are.equal(dropdown.width, list.width)
 			assert.is_true(list:GetFrameLevel() > field(right, "PAGLE_SWAP_GEAR"):GetFrameLevel())
 			-- None and the character's sets but Pagle Previous, the chosen one's radio filled, each in the field's type.
-			assert.are.same({ { "None (gear stays as it is)", true }, { "Fishing", false } }, listed(list))
-			local choice = textReading(dropdown, "None (gear stays as it is)")
+			assert.are.same({ { "None (a pole from your bags)", true }, { "Fishing", false } }, listed(list))
+			local choice = textReading(dropdown, "None (a pole from your bags)")
 			for _, row in ipairs(rowsOf(list)) do
 				assert.are.equal(choice.fontObject, labelOf(row).fontObject)
 				assert.are.equal("Interface\\AddOns\\Pagle\\media\\fonts\\IMFeENrm28P.ttf", choice.fontObject.font[1])
@@ -828,7 +828,7 @@ describe("The Fishing clothes step (ONB-R33)", function()
 		assert.are.same({}, client.menus)
 
 		dropdown:Click()
-		assert.are.same({ { "None (gear stays as it is)", false }, { "Fishing", true } }, listed(setList(right)))
+		assert.are.same({ { "None (a pole from your bags)", false }, { "Fishing", true } }, listed(setList(right)))
 	end)
 
 	it("shuts the list on Esc, letting every other key through to the game (QOL-R40)", function()

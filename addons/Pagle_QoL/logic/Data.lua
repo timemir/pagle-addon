@@ -14,7 +14,7 @@ ns.SCHEMA_VERSION = 1
 --- PagleQoLDB's AceDB defaults (qol.md › Data). Each ticket adds the keys it uses.
 ns.DB_DEFAULTS = {
 	-- gear: each character's fishing set, by character GUID (QOL-R40).
-	global = { lease = {}, gear = {} },
+	global = { lease = {}, gear = {}, poleSwap = {} },
 	profile = {
 		-- Casting: how the player casts, with the Fishing key, a double right-click or both (QOL-R12).
 		input = "both",

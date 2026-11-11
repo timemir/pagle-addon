@@ -269,12 +269,12 @@ value = "Ensemble de pêche"
 en = "Fishing set"
 
 [SETTINGS_FISHING_SET_TOOLTIP]
-value = "La touche de pêche l’équipe quand aucune canne n’est en main. Le double clic saute cette étape."
-en = "The Fishing key puts it on when no pole is in hand. Double-click skips this."
+value = "La touche de pêche l’équipe quand aucune canne n’est en main. Avec Aucun, elle prend la meilleure canne de vos sacs, et changer d’équipement remet vos armes. Le double clic saute cette étape."
+en = "The Fishing key puts it on when no pole is in hand. With None, it takes the best pole from your bags, and Swap gear puts your weapons back. Double-click skips this."
 
 [SETTINGS_FISHING_SET_NONE]
-value = "Aucun (l’équipement reste tel quel)"
-en = "None (gear stays as it is)"
+value = "Aucun (une canne de vos sacs)"
+en = "None (a pole from your bags)"
 
 [SETTINGS_SAVE_FISHING_SET]
 value = "Enregistrer ce que je porte comme ensemble de pêche"
@@ -285,8 +285,8 @@ value = "Changer d’équipement"
 en = "Swap gear"
 
 [SETTINGS_SWAP_GEAR_TOOLTIP]
-value = "Alterne entre votre ensemble de pêche et ce que vous portiez avant (enregistré sous Pagle Previous)."
-en = "Swaps between your fishing set and what you wore before (saved as Pagle Previous)."
+value = "Alterne entre votre ensemble de pêche et ce que vous portiez avant (enregistré sous Pagle Previous). Sans ensemble, entre votre meilleure canne et vos armes."
+en = "Swaps between your fishing set and what you wore before (saved as Pagle Previous). With no set, between your best pole and your weapons."
 
 [GEAR_NEEDS_SLOT]
 value = "Pagle : il faut un emplacement d’ensemble d’équipement libre pour {setName}."

@@ -108,16 +108,13 @@ function ns.AddSettings(M, store)
 			return store.canEditGear()
 		end,
 	})
-	-- A binding, so Defaults leaves it alone (SET-R21). Greyed out while no set is chosen.
+	-- A binding, so Defaults leaves it alone (SET-R21). From 1.7 it works with no set chosen too (QOL-R48, QOL-R49).
 	M:AddSetting("fishing", {
 		kind = "keybinding",
 		parent = "fishingSet",
 		label = L.SETTINGS_SWAP_GEAR,
 		tooltip = L.SETTINGS_SWAP_GEAR_TOOLTIP,
 		binding = "PAGLE_SWAP_GEAR",
-		isEnabled = function()
-			return store.fishingSetChoice() ~= ns.NO_FISHING_SET
-		end,
 	})
 
 	-- Lures and clams: which lure the Fishing key applies (QOL-R50, QOL-R51). A change re-points the key at once

@@ -270,12 +270,12 @@ value = "Angelset"
 en = "Fishing set"
 
 [SETTINGS_FISHING_SET_TOOLTIP]
-value = "Die Angeltaste legt es an, wenn du keine Angelrute in der Hand hast. Doppelklick überspringt das."
-en = "The Fishing key puts it on when no pole is in hand. Double-click skips this."
+value = "Die Angeltaste legt es an, wenn du keine Angelrute in der Hand hast. Mit »Keins« nimmt sie die beste Angelrute aus deinen Taschen, und »Ausrüstung wechseln« legt deine Waffen zurück an. Doppelklick überspringt das."
+en = "The Fishing key puts it on when no pole is in hand. With None, it takes the best pole from your bags, and Swap gear puts your weapons back. Double-click skips this."
 
 [SETTINGS_FISHING_SET_NONE]
-value = "Keins (Ausrüstung bleibt)"
-en = "None (gear stays as it is)"
+value = "Keins (Rute aus der Tasche)"
+en = "None (a pole from your bags)"
 
 [SETTINGS_SAVE_FISHING_SET]
 value = "Was ich trage als Angelset speichern"
@@ -286,8 +286,8 @@ value = "Ausrüstung wechseln"
 en = "Swap gear"
 
 [SETTINGS_SWAP_GEAR_TOOLTIP]
-value = "Wechselt zwischen deinem Angelset und dem, was du vorher getragen hast (gespeichert als Pagle Previous)."
-en = "Swaps between your fishing set and what you wore before (saved as Pagle Previous)."
+value = "Wechselt zwischen deinem Angelset und dem, was du vorher getragen hast (gespeichert als Pagle Previous). Ohne Set zwischen deiner besten Angelrute und deinen Waffen."
+en = "Swaps between your fishing set and what you wore before (saved as Pagle Previous). With no set, between your best pole and your weapons."
 
 [GEAR_NEEDS_SLOT]
 value = "Pagle: braucht einen freien Ausrüstungsset-Platz für {setName}."

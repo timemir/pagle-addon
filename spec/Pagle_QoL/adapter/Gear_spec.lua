@@ -1,4 +1,4 @@
--- Gear (QOL-R20 step 3, QOL-R23, QOL-R24, QOL-R27, QOL-R29, QOL-R40–R47, QOL-R77): the fishing set on the Fishing
+-- Gear (QOL-R20 step 3, QOL-R23, QOL-R24, QOL-R27, QOL-R29, QOL-R40–R49, QOL-R77): the fishing set on the Fishing
 -- key, Swap gear and the swap-back Nudge, driven through FakePagle and the fake client's equipment sets
 -- (spec/support/fake_game.lua).
 
@@ -112,7 +112,7 @@ describe("Gear on the Fishing key", function()
 			assert.are.equal(CAST, poleless.overrideAction("F"))
 		end)
 
-		it("isn't offered with no fishing set chosen (QOL-R43)", function()
+		it("isn't offered with no fishing set chosen and no pole in the bags (QOL-R43, QOL-R48)", function()
 			local _, client = start(function(_, _, loaded)
 				loaded.ns.db.global.gear[PLAYER_GUID] = nil
 			end)
@@ -358,7 +358,7 @@ describe("Swap gear", function()
 		assert.are.same({}, downClient.equipmentSetCalls)
 	end)
 
-	it("does nothing with no fishing set chosen (QOL-R46)", function()
+	it("does nothing with no fishing set chosen and no pole in the bags (QOL-R46, QOL-R48)", function()
 		local _, client, loaded = start(function(_, _, loaded)
 			loaded.ns.db.global.gear[PLAYER_GUID] = nil
 		end)
@@ -573,7 +573,7 @@ describe("Choosing the fishing set", function()
 		local row = rowOf(fake, "Fishing set")
 
 		assert.are.same({
-			{ value = -1, label = "None (gear stays as it is)" },
+			{ value = -1, label = "None (a pole from your bags)" },
 			{ value = 0, label = "Raid" },
 			{ value = FISHING, label = "Fishing" },
 		}, row.options())
@@ -793,5 +793,250 @@ describe("Gear, with Core", function()
 			{ "clear ignored", "create Pagle Previous " .. SWORD_ICON, "use " .. FISHING },
 			client.equipmentSetCalls
 		)
+	end)
+end)
+
+describe("Gear with no fishing set (from 1.7)", function()
+	local ARCANITE, STRONG, MYSTERY, SHIELD, AXE = 19970, 6365, 285094, 2129, 1000
+
+	-- QoL logged in with no fishing set chosen, a sword in the main hand and a shield in the off hand, and the Fishing
+	-- Pole and the Arcanite Fishing Pole in the bags. `before` runs before PLAYER_LOGIN.
+	---@param before fun(fake: FakePagle, client: FakeClient, loaded: LoadedAddon)?
+	---@return FakePagle fake
+	---@return FakeClient client
+	---@return LoadedAddon loaded
+	local function noSet(before)
+		return start(function(fake, client, loaded)
+			loaded.ns.db.global.gear[PLAYER_GUID] = nil
+			for _, pole in ipairs({ ARCANITE, STRONG, MYSTERY }) do
+				client.items[pole] = { 2, 20, "INVTYPE_2HWEAPON" }
+			end
+			client.items[SHIELD] = { 4, 6, "INVTYPE_SHIELD" }
+			client.items[AXE] = { 2, 1, "INVTYPE_2HWEAPON" }
+			client.worn[17] = SHIELD
+			client.bags[FISHING_POLE], client.bags[ARCANITE] = 1, 1
+			if before then
+				before(fake, client, loaded)
+			end
+		end)
+	end
+
+	---@param loaded LoadedAddon
+	---@return PagleQoLPoleSwap?
+	local function remembered(loaded)
+		return loaded.ns.db.global.poleSwap[PLAYER_GUID]
+	end
+
+	describe("the gear step", function()
+		it("clicks PagleQoLGearButton with a pole in the bags and none in hand (QOL-R20, QOL-R48)", function()
+			local _, client = noSet()
+
+			assert.are.equal(GEAR, client.overrideAction("F"))
+		end)
+
+		it("puts on the best pole in one press, remembering the sword and the shield (QOL-R48)", function()
+			local _, client, loaded = noSet()
+
+			client.pressKey("F")
+
+			assert.are.same({ "equip 19970 16" }, client.equipCalls)
+			assert.are.same({}, client.equipmentSetCalls)
+			assert.are.same({
+				mainHand = { itemID = SWORD, link = "item:25" },
+				offHand = { itemID = SHIELD, link = "item:2129" },
+			}, remembered(loaded))
+		end)
+
+		it("picks by the pole table, an unlisted pole counting 0, ties to the lower item ID (QOL-R48)", function()
+			local _, client = noSet(function(_, client)
+				client.bags[ARCANITE] = nil
+				client.bags[MYSTERY] = 1
+			end)
+
+			client.pressKey("F")
+
+			-- The Fishing Pole (0) and the unlisted pole (0) tie: the lower item ID wins.
+			assert.are.same({ "equip 6256 16" }, client.equipCalls)
+		end)
+
+		it("skips a pole the character can't use (QOL-R48)", function()
+			local _, client = noSet(function(_, client)
+				client.unusable[ARCANITE] = true
+			end)
+
+			client.pressKey("F")
+
+			assert.are.same({ "equip 6256 16" }, client.equipCalls)
+		end)
+
+		it("casts once the pole is on, and doesn't equip again while the equip settles (QOL-R29, QOL-R48)", function()
+			local _, client = noSet()
+
+			client.pressKey("F")
+			assert.are_not.equal(GEAR, client.overrideAction("F"))
+			client.equip(16, ARCANITE)
+
+			assert.are.equal(CAST, client.overrideAction("F"))
+			assert.are.same({ "equip 19970 16" }, client.equipCalls)
+		end)
+
+		it("offers the step again after the result wait when the equip didn't take (QOL-R29)", function()
+			local _, client = noSet()
+
+			client.pressKey("F")
+			client.advance(1.9)
+			assert.are.equal(CAST, client.overrideAction("F"))
+			client.advance(0.1)
+
+			assert.are.equal(GEAR, client.overrideAction("F"))
+		end)
+	end)
+
+	describe("Swap gear", function()
+		it("puts on the best pole with none in hand (QOL-R46, QOL-R48)", function()
+			local _, client, loaded = noSet()
+
+			pressSwapGear(loaded)
+
+			assert.are.same({ "equip 19970 16" }, client.equipCalls)
+		end)
+
+		it("puts the sword back, then the shield, in one press (QOL-R46, QOL-R49)", function()
+			local _, client, loaded = noSet()
+			pressSwapGear(loaded)
+			client.equip(16, ARCANITE)
+
+			pressSwapGear(loaded)
+
+			assert.are.same({ "equip 19970 16", "equip item:25 16", "equip item:2129 17" }, client.equipCalls)
+		end)
+
+		it("forgets the weapons once they are worn again (QOL-R49)", function()
+			local _, client, loaded = noSet()
+			pressSwapGear(loaded)
+			client.equip(16, ARCANITE)
+			pressSwapGear(loaded)
+
+			client.equip(16, SWORD)
+			assert.are.same({ offHand = { itemID = SHIELD, link = "item:2129" } }, remembered(loaded))
+			client.equip(17, SHIELD)
+
+			assert.is_nil(remembered(loaded))
+		end)
+
+		it("tries again with a second press when the swap back didn't take (QOL-R49, QOL-R29)", function()
+			local _, client, loaded = noSet()
+			pressSwapGear(loaded)
+			client.equip(16, ARCANITE)
+			pressSwapGear(loaded)
+			client.advance(2)
+
+			pressSwapGear(loaded)
+
+			assert.are.same({
+				"equip 19970 16",
+				"equip item:25 16",
+				"equip item:2129 17",
+				"equip item:25 16",
+				"equip item:2129 17",
+			}, client.equipCalls)
+		end)
+
+		it("does nothing more until the swap back's result, or the result wait (QOL-R29)", function()
+			local _, client, loaded = noSet()
+			pressSwapGear(loaded)
+			client.equip(16, ARCANITE)
+			pressSwapGear(loaded)
+
+			pressSwapGear(loaded)
+
+			assert.are.equal(3, #client.equipCalls)
+		end)
+
+		it("leaves the off hand in the bags when a two-hander comes back (QOL-R49)", function()
+			local _, client, loaded = noSet(function(_, client)
+				client.mainHand, client.worn[17] = AXE, nil
+			end)
+			-- What a sword-and-shield character who then wielded an axe would have remembered.
+			loaded.ns.db.global.poleSwap[PLAYER_GUID] = {
+				mainHand = { itemID = AXE, link = "item:1000" },
+				offHand = { itemID = SHIELD, link = "item:2129" },
+			}
+			client.mainHand, client.bags[AXE], client.bags[SHIELD] = ARCANITE, 1, 1
+
+			pressSwapGear(loaded)
+
+			assert.are.same({ "equip item:1000 16" }, client.equipCalls)
+			assert.are.same({ mainHand = { itemID = AXE, link = "item:1000" } }, remembered(loaded))
+		end)
+
+		it(
+			"keeps the pole on when the main hand's weapon is gone: the shield can't come back alone (QOL-R49)",
+			function()
+				local _, client, loaded = noSet()
+				pressSwapGear(loaded)
+				client.equip(16, ARCANITE)
+				client.bags[SWORD] = 0
+
+				pressSwapGear(loaded)
+
+				assert.are.same({ "equip 19970 16" }, client.equipCalls)
+			end
+		)
+
+		it("does nothing with a pole put on by hand and nothing remembered (QOL-R49)", function()
+			local _, client, loaded = noSet(function(_, client)
+				client.mainHand = ARCANITE
+			end)
+
+			pressSwapGear(loaded)
+
+			assert.are.same({}, client.equipCalls)
+		end)
+
+		it("keeps the weapons over a /reload: they are saved per character (QOL-R48)", function()
+			local _, client, loaded = noSet()
+			pressSwapGear(loaded)
+			client.equip(16, ARCANITE)
+
+			assert.are.same(SWORD, loaded.env.PagleQoLDB.global.poleSwap[PLAYER_GUID].mainHand.itemID)
+		end)
+
+		it("keeps them when a fishing set is chosen, and uses them again once it's None (QOL-R49)", function()
+			local fake, client, loaded = noSet()
+			pressSwapGear(loaded)
+			client.equip(16, ARCANITE)
+
+			loaded.ns.db.global.gear[PLAYER_GUID] = { setID = FISHING, name = "Fishing" }
+			fake.fireGameEvent("PLAYER_EQUIPMENT_CHANGED", 1, true)
+			assert.is_not_nil(remembered(loaded))
+			loaded.ns.ChooseFishingSet(loaded.ns.NO_FISHING_SET)
+			pressSwapGear(loaded)
+
+			assert.are.same("equip item:2129 17", client.equipCalls[#client.equipCalls])
+		end)
+
+		it("does nothing while disarmed (QOL-R46, QOL-R34)", function()
+			local fake, client, loaded = noSet()
+
+			fake.setRestricted(true)
+			pressSwapGear(loaded)
+
+			assert.are.same({}, client.equipCalls)
+		end)
+	end)
+
+	it("shows the swap-back Nudge when a stretch ends with the weapons to put back (QOL-R77, QOL-R49)", function()
+		local fake, client, loaded = noSet()
+		pressSwapGear(loaded)
+		client.equip(16, ARCANITE)
+		fake.fire("CastStarted")
+		fake.fireGameEvent("UNIT_SPELLCAST_CHANNEL_STOP", "player", "Cast-1", 7620)
+		fake.fire("CastEnded", "caught")
+
+		client.mounted = true
+		fake.fireGameEvent("PLAYER_MOUNT_DISPLAY_CHANGED")
+
+		assert.are.equal("Still holding your pole. Press G to swap back.", nudge(client))
 	end)
 end)

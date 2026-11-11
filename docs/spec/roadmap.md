@@ -578,6 +578,16 @@ There is no check 22: it looked for a per-character Self-Found call, and the cha
 8. With an older Companion, `Pagle_Following`'s Anglers read as before, the sign never drops and the news list says to update the Companion.
 9. `scripts/check.sh` passes.
 
+### 1.7: Swap gear with no fishing set (rule set pagle-2026k)
+
+**Goal:** with no fishing set chosen, the Fishing key and Swap gear put the best fishing pole from the bags on, and Swap gear puts the weapons it replaced back (the dev's decision, 11 Nov 2026). No equipment set is made; the weapons are remembered per character.
+
+**Rules:** QoL's QOL-R48, QOL-R49, and the 1.7 parts of QOL-R20, R23, R24, R29, R46, R72, R74, R77, R99 and SET-R20's Swap gear row.
+
+**Hashed files the build changes:** QoL's `logic/Gear.lua`, `logic/FishingKey.lua` (annotations), `logic/Data.lua` (`global.poleSwap`), `logic/Settings.lua` (Swap gear never greyed out), the new `data/poles.lua` and its `Pagle_QoL.toc` line.
+
+**Exit check:** unit specs and CI only; no in-game test before release (the dev's decision, 11 Nov 2026). `C_Item.EquipItemByName` from `PagleQoLGearButton` on a keypress, the two equips of a swap back in one press, and a bind-on-equip pole's confirm are first seen in production.
+
 ### Later
 
 On the roadmap but not specified: custom Journal art (1.0 uses in-client textures, shared with the Hunts board and the Stats window), translations (1.0 is enUS only, with every string in `ns.L` from M0), QoL's recast reminder, and the post-launch Hunts (the Fishing Trip quest, Chef's Knife, the Rack and Hut contents), each with its own `since` date.

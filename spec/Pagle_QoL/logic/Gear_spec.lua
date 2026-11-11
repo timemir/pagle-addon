@@ -1,5 +1,6 @@
 -- Gear's pure logic: the fishing set's choice (QOL-R40), the free-slot check (QOL-R42), the gear step (QOL-R43),
--- Swap gear's body (QOL-R46), the wait for a swap's result (QOL-R29) and the swap-back Nudge's text (QOL-R77).
+-- Swap gear's body (QOL-R46), the wait for a swap's result (QOL-R29) and the swap-back Nudge's text (QOL-R77); from
+-- 1.7, the pole from the bags with no fishing set and the swap back to the weapons it replaced (QOL-R48, QOL-R49).
 
 describe("QoL's gear logic", function()
 	local ns = loadAddon("Pagle_QoL", FOREVER_GLOBALS).ns
@@ -49,7 +50,7 @@ describe("QoL's gear logic", function()
 			function()
 				assert.are.same(
 					{
-						{ value = ns.NO_FISHING_SET, label = "None (gear stays as it is)" },
+						{ value = ns.NO_FISHING_SET, label = "None (a pole from your bags)" },
 						{ value = 0, label = "Raid" },
 						{ value = 3, label = "Pagle Fishing" },
 					},
@@ -213,6 +214,156 @@ describe("QoL's gear logic", function()
 			assert.are.equal(132932, ns.FishingSetIcon(true, 132932, 136245))
 			assert.are.equal(136245, ns.FishingSetIcon(false, 135274, 136245))
 			assert.are.equal(136245, ns.FishingSetIcon(false, nil, 136245))
+		end)
+	end)
+
+	describe("the pole table (QOL-R48)", function()
+		it("lists the Classic poles with their Fishing bonus, each pole once", function()
+			local seen = {}
+			for _, pole in ipairs(ns.POLES) do
+				assert(seen[pole.itemID] == nil, pole.itemID)
+				seen[pole.itemID] = pole.bonus
+			end
+			assert.are.same(
+				{ [6256] = 0, [12225] = 3, [6365] = 5, [6366] = 15, [6367] = 20, [19022] = 25, [19970] = 35 },
+				seen
+			)
+		end)
+
+		it("counts a pole it doesn't list as 0", function()
+			assert.are.equal(35, ns.PoleBonus(19970))
+			assert.are.equal(0, ns.PoleBonus(285094))
+		end)
+	end)
+
+	describe("ns.ChoosePole (QOL-R48)", function()
+		it("picks the highest bonus, ties to the lower item ID, and nothing from nothing", function()
+			assert.are.equal(19970, ns.ChoosePole({ 6256, 19970, 6365 }))
+			assert.are.equal(6256, ns.ChoosePole({ 285094, 6256 }))
+			assert.are.equal(6256, ns.ChoosePole({ 6256, 285094 }))
+			assert.is_nil(ns.ChoosePole({}))
+		end)
+	end)
+
+	describe("ns.PoleStepReady (QOL-R48, QOL-R29)", function()
+		it("is ready with no pole in hand, a pole to put on, and nothing settling", function()
+			assert.is_true(ns.PoleStepReady(false, 6256, false))
+			assert.is_false(ns.PoleStepReady(true, 6256, false))
+			assert.is_false(ns.PoleStepReady(false, nil, false))
+			assert.is_false(ns.PoleStepReady(false, 6256, true))
+		end)
+	end)
+
+	describe("ns.RememberWeapons (QOL-R48)", function()
+		it("keeps the hands as worn, and nothing for two empty hands", function()
+			local sword = { itemID = 25, link = "item:25" }
+			assert.are.same({ mainHand = sword }, ns.RememberWeapons(sword, nil))
+			assert.is_nil(ns.RememberWeapons(nil, nil))
+		end)
+	end)
+
+	describe("ns.SwapBackPlan (QOL-R49)", function()
+		local SWORD, SHIELD, AXE, POLE = 25, 2129, 1000, 19970
+		local sword = { itemID = SWORD, link = "item:25" }
+		local shield = { itemID = SHIELD, link = "item:2129" }
+		local axe = { itemID = AXE, link = "item:1000" }
+
+		-- The hands with the pole in the main hand and `bags` in the bags.
+		---@param bags table<integer, true>
+		---@param fields table?
+		---@return PagleQoLHands
+		local function hands(bags, fields)
+			local read = {
+				mainHand = POLE,
+				mainIsPole = true,
+				offHand = nil,
+				inBags = function(itemID)
+					return bags[itemID] == true
+				end,
+				twoHanded = function(itemID)
+					return itemID == AXE or itemID == POLE
+				end,
+			}
+			for key, value in pairs(fields or {}) do
+				read[key] = value
+			end
+			return read
+		end
+
+		it("puts the main hand back, then the off hand", function()
+			local equips, kept =
+				ns.SwapBackPlan({ mainHand = sword, offHand = shield }, hands({ [SWORD] = true, [SHIELD] = true }))
+
+			assert.are.same({ { slot = 16, link = "item:25" }, { slot = 17, link = "item:2129" } }, equips)
+			assert.are.same({ mainHand = sword, offHand = shield }, kept)
+		end)
+
+		it("leaves the off hand when a two-hander comes back, and forgets it", function()
+			local equips, kept =
+				ns.SwapBackPlan({ mainHand = axe, offHand = shield }, hands({ [AXE] = true, [SHIELD] = true }))
+
+			assert.are.same({ { slot = 16, link = "item:1000" } }, equips)
+			assert.are.same({ mainHand = axe }, kept)
+		end)
+
+		it("keeps the pole on and the off hand remembered when the main hand's item is gone", function()
+			local equips, kept = ns.SwapBackPlan({ mainHand = sword, offHand = shield }, hands({ [SHIELD] = true }))
+
+			assert.are.same({}, equips)
+			assert.are.same({ offHand = shield }, kept)
+		end)
+
+		it("puts only the off hand back once the main hand already holds its weapon", function()
+			local equips, kept = ns.SwapBackPlan(
+				{ mainHand = sword, offHand = shield },
+				hands({ [SHIELD] = true }, { mainHand = SWORD, mainIsPole = false })
+			)
+
+			assert.are.same({ { slot = 17, link = "item:2129" } }, equips)
+			assert.are.same({ offHand = shield }, kept)
+		end)
+
+		it("drops an off hand that is in neither the bags nor the off hand", function()
+			local equips, kept = ns.SwapBackPlan({ mainHand = sword, offHand = shield }, hands({ [SWORD] = true }))
+
+			assert.are.same({ { slot = 16, link = "item:25" } }, equips)
+			assert.are.same({ mainHand = sword }, kept)
+		end)
+
+		it("makes no equip with nothing remembered", function()
+			local equips, kept = ns.SwapBackPlan(nil, hands({}))
+
+			assert.are.same({}, equips)
+			assert.is_nil(kept)
+		end)
+	end)
+
+	describe("ns.ClearWornWeapons (QOL-R49)", function()
+		local sword = { itemID = 25, link = "item:25" }
+		local shield = { itemID = 2129, link = "item:2129" }
+
+		it("spends each weapon worn again in its slot, with no pole in hand", function()
+			local memory = { mainHand = sword, offHand = shield }
+
+			assert.are.same({ offHand = shield }, ns.ClearWornWeapons(memory, 25, nil, false))
+			assert.is_nil(ns.ClearWornWeapons(memory, 25, 2129, false))
+		end)
+
+		it("spends nothing with a pole in hand, so the press that put it on keeps what it remembered", function()
+			local memory = { mainHand = sword, offHand = shield }
+
+			assert.are.equal(memory, ns.ClearWornWeapons(memory, 19970, 2129, true))
+		end)
+	end)
+
+	describe("ns.PoleSwapGearAction (QOL-R46, QOL-R48, QOL-R49)", function()
+		it("puts the pole on with none in hand, swaps back with one, and waits out a settling equip", function()
+			assert.are.equal("pole", ns.PoleSwapGearAction(true, false, 6256, 0, false))
+			assert.are.equal("nothing", ns.PoleSwapGearAction(true, false, nil, 0, false))
+			assert.are.equal("back", ns.PoleSwapGearAction(true, true, nil, 2, false))
+			assert.are.equal("nothing", ns.PoleSwapGearAction(true, true, nil, 0, false))
+			assert.are.equal("nothing", ns.PoleSwapGearAction(true, false, 6256, 0, true))
+			assert.are.equal("nothing", ns.PoleSwapGearAction(false, false, 6256, 0, false))
 		end)
 	end)
 end)

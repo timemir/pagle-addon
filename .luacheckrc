@@ -105,8 +105,11 @@ stds.wow = {
 				"GetItemIconByID", -- the next-action button's lure icon (QOL-R71), and a Hunt's icon (HNT-R55)
 				"GetItemInfo",
 				"GetItemQualityByID",
+				"EquipItemByName", -- the pole from the bags and the weapons it replaced (QOL-R48, QOL-R49), from 1.7
 			},
 		},
+		-- The bags a pole and a remembered weapon are looked for in (QOL-R48, QOL-R49), from 1.7.
+		C_Container = { fields = { "GetContainerNumSlots", "GetContainerItemID" } },
 		C_Spell = { fields = { "GetSpellName", "GetSpellTexture" } }, -- GetSpellTexture: the icon of QOL-R41
 		-- Its gear (QOL-R40–R46, QOL-R77): the character's equipment sets, the swap, the main hand's icon a new set takes,
 		-- and Swap gear's key in the swap-back Nudge; MAX_EQUIPMENT_SETS_PER_PLAYER is in stds.wow_variables.
@@ -124,6 +127,7 @@ stds.wow = {
 			},
 		},
 		"GetInventoryItemTexture",
+		"GetInventoryItemLink", -- the weapons a pole replaces, remembered by link (QOL-R48), from 1.7
 		"GetBindingText",
 		-- QoL's double-click (QOL-R13): the frames under the mouse at a right mouse-up, and the game world's frame. It
 		-- hears GLOBAL_MOUSE_DOWN and GLOBAL_MOUSE_UP (payload: the button), which Ketho/vscode-wow-api at

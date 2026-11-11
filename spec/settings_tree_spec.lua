@@ -46,8 +46,10 @@ local TIPS = {
 		.. "game supplies, such as items, zones and item quality, stay in the game's language.",
 	castWith = "Also on the compartment menu and /pagle qol input.",
 	fishingKey = "Each press does the next single thing: cast, reel, or a lure, gear or clam when needed.",
-	fishingSet = "The Fishing key puts it on when no pole is in hand. Double-click skips this.",
-	swapGear = "Swaps between your fishing set and what you wore before (saved as Pagle Previous).",
+	fishingSet = "The Fishing key puts it on when no pole is in hand. With None, it takes the best pole from your bags, "
+		.. "and Swap gear puts your weapons back. Double-click skips this.",
+	swapGear = "Swaps between your fishing set and what you wore before (saved as Pagle Previous). With no set, between "
+		.. "your best pole and your weapons.",
 	lures = "A press before a cast applies a lure when none is on.",
 	clams = "One clam per press, never during a cast.",
 	audio = "While you fish: each channel and the output device as set below. Put back afterwards.",
@@ -682,13 +684,13 @@ end
 
 describe("Greying in the Settings tree", function()
 	it(
-		"greys only Swap gear, Lure, the Tackle Board's checkbox and, until the party letter is accepted, the party"
+		"greys only Lure, the Tackle Board's checkbox and, until the party letter is accepted, the party"
 			.. " kinds at first (SET-R20, SET-R43, SET-R36, ANN-R113)",
 		function()
 			local loaded = ready()
 
 			assert.are.same({}, greyedOn(loaded, "Pagle"))
-			assert.are.same({ "Swap gear", "Lure" }, greyedOn(loaded, "Fishing"))
+			assert.are.same({ "Lure" }, greyedOn(loaded, "Fishing"))
 			assert.are.same(PARTY_KINDS, greyedOn(loaded, "Announcements"))
 			assert.are.same({ "Show goals workable here" }, greyedOn(loaded, "Trackers"))
 			assert.are.same({}, greyedOn(loaded, "Look and Feel"))
@@ -716,13 +718,13 @@ describe("Greying in the Settings tree", function()
 		local loaded = ready()
 
 		setRow(loaded, "Fishing", "Cast with", "click")
-		assert.are.same({ "Fishing key", "Swap gear", "Lure" }, greyedOn(loaded, "Fishing"))
+		assert.are.same({ "Fishing key", "Lure" }, greyedOn(loaded, "Fishing"))
 
 		setRow(loaded, "Fishing", "Cast with", "key")
-		assert.are.same({ "Swap gear", "Lure" }, greyedOn(loaded, "Fishing"))
+		assert.are.same({ "Lure" }, greyedOn(loaded, "Fishing"))
 	end)
 
-	it("greys Swap gear while no fishing set is chosen (SET-R20, SET-R61)", function()
+	it("keeps Swap gear live with or without a fishing set, from 1.7 (SET-R20, QOL-R48)", function()
 		local loaded = ready()
 		loaded.client.equipmentSets[3] = { name = "Fishing", items = { [16] = 6256 } }
 
@@ -730,17 +732,17 @@ describe("Greying in the Settings tree", function()
 		assert.are.same({ "Lure" }, greyedOn(loaded, "Fishing"))
 
 		setRow(loaded, "Fishing", "Fishing set", loaded.namespaces.Pagle_QoL.NO_FISHING_SET)
-		assert.are.same({ "Swap gear", "Lure" }, greyedOn(loaded, "Fishing"))
+		assert.are.same({ "Lure" }, greyedOn(loaded, "Fishing"))
 	end)
 
 	it("greys Lure unless Lures is Only this one (SET-R20)", function()
 		local loaded = ready()
 
 		setRow(loaded, "Fishing", "Lures", "one")
-		assert.are.same({ "Swap gear" }, greyedOn(loaded, "Fishing"))
+		assert.are.same({}, greyedOn(loaded, "Fishing"))
 
 		setRow(loaded, "Fishing", "Lures", "off")
-		assert.are.same({ "Swap gear", "Lure" }, greyedOn(loaded, "Fishing"))
+		assert.are.same({ "Lure" }, greyedOn(loaded, "Fishing"))
 	end)
 
 	it(
@@ -757,16 +759,13 @@ describe("Greying in the Settings tree", function()
 			end
 
 			setRow(loaded, "Fishing", "Fishing audio mix", false)
-			assert.are.same(
-				{ "Swap gear", "Lure", "Output device", "Keep sound in the background" },
-				greyedOn(loaded, "Fishing")
-			)
+			assert.are.same({ "Lure", "Output device", "Keep sound in the background" }, greyedOn(loaded, "Fishing"))
 			for _, label in ipairs(CHANNELS) do
 				assert(shown()[label] == true, label)
 			end
 
 			setRow(loaded, "Fishing", "Fishing audio mix", true)
-			assert.are.same({ "Swap gear", "Lure" }, greyedOn(loaded, "Fishing"))
+			assert.are.same({ "Lure" }, greyedOn(loaded, "Fishing"))
 			for _, label in ipairs(CHANNELS) do
 				assert(shown()[label] == true, label)
 			end
@@ -922,12 +921,12 @@ describe("Greying in the Settings tree", function()
 
 			setRow(loaded, "Fishing", "Show the next-action button", false)
 			assert.are.same(
-				{ "Swap gear", "Lure", "Hide until a fishing pole is in hand", "Button position" },
+				{ "Lure", "Hide until a fishing pole is in hand", "Button position" },
 				greyedOn(loaded, "Fishing")
 			)
 
 			setRow(loaded, "Fishing", "Show the next-action button", true)
-			assert.are.same({ "Swap gear", "Lure" }, greyedOn(loaded, "Fishing"))
+			assert.are.same({ "Lure" }, greyedOn(loaded, "Fishing"))
 		end
 	)
 
@@ -1023,7 +1022,7 @@ describe("Greying in the Settings tree", function()
 		assert.are.same({}, greyedOn(loaded, "Look and Feel"))
 
 		setCombat(loaded, false)
-		assert.are.same({ "Swap gear", "Lure" }, greyedOn(loaded, "Fishing"))
+		assert.are.same({ "Lure" }, greyedOn(loaded, "Fishing"))
 	end)
 end)
 
