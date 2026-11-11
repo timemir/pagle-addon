@@ -17,6 +17,9 @@ local FISHING_SPELL = 7620
 
 local gear = ns.NewGearState()
 
+-- The bags a pole or a remembered weapon is looked for in: the backpack (0) and the four bag slots (1–4).
+local LAST_BAG = 4
+
 -- PagleQoLDB.global.gear, by character GUID. AceDB drops it while empty at PLAYER_LOGOUT.
 ---@return table<string, PagleQoLGearChoice>
 local function choices()
@@ -128,11 +131,135 @@ local function swapToFishingSet(setID)
 	swapped()
 end
 
---- The ladder's gear step (QOL-R20 step 3, QOL-R43), read at each of the Fishing key's evaluations while armed.
----@param poleInHand boolean
+-- PagleQoLDB.global.poleSwap, by character GUID: the weapons a pole replaced (QOL-R48). AceDB drops it while empty.
+---@return table<string, PagleQoLPoleSwap>
+local function poleSwaps()
+	---@type table
+	local global = ns.db.global
+	global.poleSwap = global.poleSwap or {}
+	return global.poleSwap
+end
+
+-- Whether an item is a fishing pole (QOL-R21).
+---@param itemID integer
 ---@return boolean
+local function isPole(itemID)
+	local classID, subclassID = select(6, C_Item.GetItemInfoInstant(itemID))
+	return ns.IsFishingPole(classID, subclassID)
+end
+
+-- Whether an item is a two-handed weapon (QOL-R49).
+---@param itemID integer
+---@return boolean
+local function twoHanded(itemID)
+	return select(4, C_Item.GetItemInfoInstant(itemID)) == "INVTYPE_2HWEAPON"
+end
+
+-- Each item ID in the bags, once (QOL-R48).
+---@return table<integer, true>
+local function bagItems()
+	local items = {}
+	for bag = 0, LAST_BAG do
+		for slot = 1, C_Container.GetContainerNumSlots(bag) do
+			local itemID = C_Container.GetContainerItemID(bag, slot)
+			if itemID then
+				items[itemID] = true
+			end
+		end
+	end
+	return items
+end
+
+-- The best pole in the bags (QOL-R48): of the fishing poles the character can use, the pole table decides.
+---@return integer?
+local function bestPole()
+	local available = {}
+	for itemID in pairs(bagItems()) do
+		if isPole(itemID) and C_Item.IsUsableItem(itemID) then
+			available[#available + 1] = itemID
+		end
+	end
+	table.sort(available)
+	return ns.ChoosePole(available)
+end
+
+-- The weapon worn in an equipped slot, as QoL remembers it (QOL-R48); nil for an empty slot.
+---@param slot integer
+---@return PagleQoLWeapon?
+local function worn(slot)
+	local itemID = GetInventoryItemID("player", slot)
+	local link = itemID and GetInventoryItemLink("player", slot)
+	if not itemID or not link then
+		return nil
+	end
+	return { itemID = itemID, link = link }
+end
+
+-- The swap back's equips and what stays remembered, as the hands and bags are now (QOL-R49).
+---@return PagleQoLEquip[]
+---@return PagleQoLPoleSwap?
+local function swapBackPlan()
+	local inBags = bagItems()
+	return ns.SwapBackPlan(poleSwaps()[UnitGUID("player")], {
+		mainHand = GetInventoryItemID("player", 16),
+		mainIsPole = ns.PoleInHand(),
+		offHand = GetInventoryItemID("player", 17),
+		inBags = function(itemID)
+			return inBags[itemID] == true
+		end,
+		twoHanded = twoHanded,
+	})
+end
+
+-- Puts the best pole on from the bags (QOL-R48): the weapons worn now are remembered first, then the one game
+-- action. No equipment set is made or used. A pole that binds when equipped shows the game's own confirm.
+---@param pole integer
+local function equipPole(pole)
+	poleSwaps()[UnitGUID("player")] = ns.RememberWeapons(worn(16), worn(17))
+	C_Item.EquipItemByName(pole, 16)
+	swapped()
+end
+
+-- The swap back with no fishing set chosen (QOL-R49): the remembered main hand, then the off hand, in one press.
+local function swapBack()
+	local equips, kept = swapBackPlan()
+	poleSwaps()[UnitGUID("player")] = kept
+	for _, equip in ipairs(equips) do
+		C_Item.EquipItemByName(equip.link, equip.slot)
+	end
+	if equips[1] then
+		swapped()
+	end
+end
+
+-- Swap gear's body with no fishing set chosen (QOL-R46, QOL-R48, QOL-R49).
+---@param settling boolean
+---@return PagleQoLPoleSwapGear
+---@return integer? pole
+local function poleSwapAction(settling)
+	local pole = ns.PoleInHand()
+	local best = not pole and bestPole() or nil
+	local equips = pole and swapBackPlan() or {}
+	return ns.PoleSwapGearAction(true, pole, best, #equips, settling), best
+end
+
+--- The ladder's gear step (QOL-R20 step 3): with a fishing set chosen, QOL-R43's; with none, QOL-R48's, and then
+--- the pole it would put on, which the Next action button shows and doesn't count toward showing itself (QOL-R72).
+--- Read at each of the Fishing key's evaluations while armed.
+---@param poleInHand boolean
+---@return boolean ready
+---@return integer? pole the best pole, while the step is ready with no fishing set chosen
 function ns.ReadGearStep(poleInHand)
-	return ns.GearStepReady(readFishingSet(), poleInHand, gear:Settling(GetTime()))
+	local settling = gear:Settling(GetTime())
+	local set = readFishingSet()
+	if set then
+		return ns.GearStepReady(set, poleInHand, settling)
+	end
+	local pole = not poleInHand and bestPole() or nil
+	if ns.PoleStepReady(poleInHand, pole, settling) then
+		return true, pole
+	end
+	return false
 end
 
 --- PagleQoLGearButton's OnClick: the Fishing key's gear step (QOL-R24). It swaps only while the step is still
@@ -142,8 +269,16 @@ function ns.PressGearButton()
 		return
 	end
 	local set = readFishingSet()
-	if set and ns.GearStepReady(set, ns.PoleInHand(), gear:Settling(GetTime())) then
-		swapToFishingSet(set.setID)
+	if set then
+		if ns.GearStepReady(set, ns.PoleInHand(), gear:Settling(GetTime())) then
+			swapToFishingSet(set.setID)
+		end
+		return
+	end
+	-- No fishing set: the best pole from the bags, while the step is still ready (QOL-R48).
+	local ready, pole = ns.ReadGearStep(ns.PoleInHand())
+	if ready and pole then
+		equipPole(pole)
 	end
 end
 
@@ -155,6 +290,17 @@ function PagleQoL_SwapGear()
 		return
 	end
 	local set = readFishingSet()
+	if not set then
+		-- No fishing set: the pole from the bags, or the weapons it replaced back (QOL-R48, QOL-R49).
+		local action, pole = poleSwapAction(gear:Settling(GetTime()))
+		if action == "pole" then
+			---@cast pole integer
+			equipPole(pole)
+		elseif action == "back" then
+			swapBack()
+		end
+		return
+	end
 	local previous, previousID = readPrevious()
 	local action = ns.SwapGearAction(true, set, previous, gear:Settling(GetTime()))
 	if action == "back" then
@@ -170,7 +316,12 @@ end
 --- The swap-back Nudge (QOL-R77): the Fishing stretch ended on its own (not by restriction or logout), so it shows
 --- if Swap gear would swap back, naming Swap gear's first key in its short form.
 function ns.NudgeSwapBack()
-	if ns.SwapGearAction(true, readFishingSet(), (readPrevious()), false) ~= "back" then
+	local set = readFishingSet()
+	if set then
+		if ns.SwapGearAction(true, set, (readPrevious()), false) ~= "back" then
+			return
+		end
+	elseif poleSwapAction(false) ~= "back" then
 		return
 	end
 	local key = GetBindingKey("PAGLE_SWAP_GEAR")
@@ -300,6 +451,21 @@ function ns.StartGear()
 	-- The swap's result arrived, whether it worked or not: the gear step and Swap gear may act again (QOL-R29).
 	Pagle.RegisterEvent(OWNER, "EQUIPMENT_SWAP_FINISHED", function()
 		gear:SwapFinished()
+		ns.EvaluateFishingKey()
+	end)
+	-- A hand changed: with no fishing set, the main hand's change is an equip's result (QOL-R29); and the changed
+	-- slot's remembered weapon, worn again, is spent (QOL-R49), whatever put it on. The re-evaluation is QOL-R25's own.
+	Pagle.RegisterEvent(OWNER, "PLAYER_EQUIPMENT_CHANGED", function(_, slot)
+		if slot ~= 16 and slot ~= 17 then
+			return
+		end
+		if slot == 16 and not readFishingSet() then
+			gear:SwapFinished()
+		end
+		local guid = UnitGUID("player")
+		if guid and poleSwaps()[guid] then
+			poleSwaps()[guid] = ns.ClearWornWeapons(poleSwaps()[guid], slot, GetInventoryItemID("player", slot))
+		end
 		ns.EvaluateFishingKey()
 	end)
 	-- A set was deleted or renamed: a choice no set has both the ID and the name of any more is dropped (QOL-R40).

@@ -234,8 +234,8 @@ value = "Conjunto de pesca"
 en = "Fishing set"
 
 [SETTINGS_FISHING_SET_NONE]
-value = "Ninguno (equipo intacto)"
-en = "None (gear stays as it is)"
+value = "Ninguno (una caña de tus bolsas)"
+en = "None (a pole from your bags)"
 
 [SETTINGS_SAVE_FISHING_SET]
 value = "Guardar lo que llevo como conjunto de pesca"
@@ -462,20 +462,20 @@ value = "Pagle: Pagle QoL desactivado. Escribe /reload para terminar. Pagle sigu
 en = "Pagle: turned off Pagle QoL. Type /reload to finish. Pagle keeps recording your Catches."
 
 [SETTINGS_FISHING_SET_TOOLTIP]
-value = "La Tecla de pesca te lo pone si no llevas caña en la mano. El doble clic se lo salta."
-en = "The Fishing key puts it on when no pole is in hand. Double-click skips this."
+value = "La Tecla de pesca te lo pone si no llevas caña en la mano. Con Ninguno, toma la mejor caña de tus bolsas, y Cambiar equipo te devuelve las armas. El doble clic se lo salta."
+en = "The Fishing key puts it on when no pole is in hand. With None, it takes the best pole from your bags, and Swap gear puts your weapons back. Double-click skips this."
 
 [SETTINGS_SWAP_GEAR_TOOLTIP]
-value = "Alterna entre tu conjunto de pesca y lo que llevabas antes (guardado como Pagle Previous)."
-en = "Swaps between your fishing set and what you wore before (saved as Pagle Previous)."
+value = "Alterna entre tu conjunto de pesca y lo que llevabas antes (guardado como Pagle Previous). Sin conjunto, entre tu mejor caña y tus armas."
+en = "Swaps between your fishing set and what you wore before (saved as Pagle Previous). With no set, between your best pole and your weapons."
 
 [GUIDE_CASTING_BODY]
 value = "Pulsa la Tecla de pesca y Pagle hace lo siguiente que toca, y luego espera a tu próxima pulsación. Nunca hace dos cosas a la vez, y nunca hace nada por su cuenta."
 en = "Press the Fishing key and Pagle does the one next thing, then waits for your next press. It never does two things at once, and it never does anything on its own."
 
 [GUIDE_CASTING_SMALL]
-value = "Los pasos que no hacen falta se saltan: sin ropa de pescar guardada, no hay paso de equipo; con un señuelo ya puesto, no hay paso de señuelo. Un botoncito junto al agua muestra qué hará tu próxima pulsación."
-en = "Steps you don’t need are passed over: no fishing clothes saved, no gear step; a lure already on, no lure step. A small button by the water shows what your next press will do."
+value = "Los pasos que no hacen falta se saltan: sin ropa de pescar guardada, solo tu mejor caña de las bolsas; con un señuelo ya puesto, no hay paso de señuelo. Un botoncito junto al agua muestra qué hará tu próxima pulsación."
+en = "Steps you don’t need are passed over: no fishing clothes saved, just your best pole from the bags; a lure already on, no lure step. A small button by the water shows what your next press will do."
 
 [GUIDE_RESTING]
 value = "La Tecla de pesca de Pagle descansa mientras la tenga {titles}. Puedes seguir lanzando con doble clic derecho."

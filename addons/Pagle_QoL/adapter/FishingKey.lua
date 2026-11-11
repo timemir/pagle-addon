@@ -68,6 +68,7 @@ local function ladderState(armed, fishingName)
 	end
 	local pole = poleInHand()
 	local lure, lured = ns.ReadLures(pole)
+	local gearReady, gearPole = ns.ReadGearStep(pole)
 	return {
 		armed = true,
 		lootOpen = lootOpen,
@@ -77,7 +78,8 @@ local function ladderState(armed, fishingName)
 		lured = lured,
 		lure = lure,
 		clam = ns.ReadClams(),
-		gearReady = ns.ReadGearStep(pole),
+		gearReady = gearReady,
+		gearPole = gearPole,
 		reelMissed = reelWatch:Missed(),
 	}
 end

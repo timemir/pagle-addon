@@ -196,6 +196,19 @@ describe("The next-action button", function()
 			assert.is_nil(shown(loaded))
 		end)
 
+		it(
+			"stays hidden for a pole in the bags with no fishing set, though the key would put it on (QOL-R72, QOL-R48)",
+			function()
+				local _, client, loaded = start(function(_, client)
+					client.mainHand = SWORD
+					client.bags[6256] = 1
+				end)
+
+				assert.are.equal("CLICK PagleQoLGearButton:LeftButton", client.overrideAction("F"))
+				assert.is_nil(shown(loaded))
+			end
+		)
+
 		it("shows while a Fishing stretch runs, even with no pole in hand (QOL-R72, QOL-R61)", function()
 			local fake, client, loaded = start(function(_, client)
 				client.mainHand = nil

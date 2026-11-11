@@ -12,6 +12,7 @@
 locale\enUS.lua
 locale\Locales.xml
 data\lures.lua
+data\poles.lua
 data\clams.lua
 data\FieldArt.lua
 logic\Data.lua

@@ -142,7 +142,7 @@ The rules below are authoritative; this sketch only summarises them.
   | | ↳ Fishing key | keybinding `PAGLE_FISHING_KEY` | Cast with is Double right-click | M1, with its header |
   | Gear | Fishing set | dropdown (this character's choice) | restricted (QOL-R41) | Track Q step 2 |
   | | ↳ "Save what I'm wearing as my fishing set" | button (QOL-R41) | restricted (QOL-R41) | Track Q step 2 |
-  | | ↳ Swap gear | keybinding `PAGLE_SWAP_GEAR` | no fishing set is chosen | Track Q step 2 |
+  | | ↳ Swap gear | keybinding `PAGLE_SWAP_GEAR` | never from 1.7 (no fishing set chosen until then; QOL-R48) | Track Q step 2 |
   | Lures and clams | Lures | dropdown | | Track Q step 1 |
   | | ↳ Lure | dropdown | Lures isn't Only this one | Track Q step 1 |
   | | Open clams between Casts | checkbox | | Track Q step 6 |

@@ -149,10 +149,13 @@ describe("QoL's Fishing page with FakePagle", function()
 		local swap = rowOf(fake, "Swap gear")
 
 		-- qol.md › Settings › Tooltips, word for word; it gives the button none.
-		assert.are.equal("The Fishing key puts it on when no pole is in hand. Double-click skips this.", set.tooltip)
+		assert.are.equal(
+			"The Fishing key puts it on when no pole is in hand. With None, it takes the best pole from your bags, and Swap gear puts your weapons back. Double-click skips this.",
+			set.tooltip
+		)
 		assert.is_nil(save.tooltip)
 		assert.are.equal(
-			"Swaps between your fishing set and what you wore before (saved as Pagle Previous).",
+			"Swaps between your fishing set and what you wore before (saved as Pagle Previous). With no set, between your best pole and your weapons.",
 			swap.tooltip
 		)
 		assert.are.equal("PAGLE_SWAP_GEAR", swap.binding)
@@ -163,7 +166,7 @@ describe("QoL's Fishing page with FakePagle", function()
 		assert.are.equal("fishingSet", swap.parent)
 	end)
 
-	it("greys Swap gear out while no fishing set is chosen (SET-R20)", function()
+	it("keeps Swap gear enabled with no fishing set chosen, from 1.7 (SET-R20, QOL-R48)", function()
 		local fake = newFakePagle()
 		local loaded = fake.load("Pagle_QoL")
 		local client = loaded.client
@@ -173,11 +176,10 @@ describe("QoL's Fishing page with FakePagle", function()
 		fake.fireGameEvent("PLAYER_LOGIN")
 		local swap = rowOf(fake, "Swap gear")
 
-		assert.is_false(swap.isEnabled())
+		assert.is_nil(swap.isEnabled)
 		rowOf(fake, "Fishing set").set(3)
-		assert.is_true(swap.isEnabled())
 		rowOf(fake, "Fishing set").set(-1)
-		assert.is_false(swap.isEnabled())
+		assert.is_nil(swap.isEnabled)
 	end)
 
 	it("greys the Fishing set and its button out while restricted (QOL-R41)", function()
@@ -593,7 +595,7 @@ describe("QoL's Fishing page with Core", function()
 		assert.are.equal("PagleSettingsListSectionHeaderTemplate", header.template)
 		assert.are.equal("PagleSettingsDropdownControlTemplate", set.template)
 		assert.are.equal(
-			"The Fishing key puts it on when no pole is in hand. Double-click skips this.",
+			"The Fishing key puts it on when no pole is in hand. With None, it takes the best pole from your bags, and Swap gear puts your weapons back. Double-click skips this.",
 			set:GetTooltip()
 		)
 		-- The rows after the dropdown hang under it: the button, then Swap gear's binding row.
@@ -612,16 +614,16 @@ describe("QoL's Fishing page with Core", function()
 		assert.are.equal("PAGLE_SWAP_GEAR", swap:GetData().binding)
 		assert.are.same({ "SWAP GEAR" }, swap.searchTags)
 		assert.are.equal(set, swap:GetParentInitializer())
-		-- Drawn greyed out while no set is chosen, and live at once when one is (SET-R20, #120).
+		-- Drawn live with no set chosen, from 1.7 (SET-R20, QOL-R48), and still live when one is.
 		loaded.client.settings.show(fishing)
 		local frame = drawn(loaded, swap)
-		assert.is_false(keyRowDrawn(loaded, frame).live)
+		assert.is_true(keyRowDrawn(loaded, frame).live)
 		loaded.client.equipmentSets[0] = { name = "Fishing", items = { [16] = 6256 } }
 		set:GetSetting():SetValue(0)
 		assert.is_true(keyRowDrawn(loaded, frame).live)
 	end)
 
-	it("draws Swap gear live at once after Save what I'm wearing chooses a set (SET-R20, QOL-R41)", function()
+	it("keeps Swap gear live after Save what I'm wearing chooses a set (SET-R20, QOL-R41, QOL-R48)", function()
 		local loaded, fishing = fishingPage()
 		loaded.client.mainHand = 6256
 		local save = initializerOf(fishing, "Save what I'm wearing as my fishing set")
@@ -633,7 +635,7 @@ describe("QoL's Fishing page with Core", function()
 		end
 		loaded.client.settings.show(fishing)
 		local frame = drawn(loaded, swap)
-		assert.is_false(keyRowDrawn(loaded, frame).live)
+		assert.is_true(keyRowDrawn(loaded, frame).live)
 
 		loaded.client.settings.buttonsOf(drawn(loaded, save))[1]:Click()
 
@@ -935,10 +937,9 @@ describe("ns.AddSettings with a fake store", function()
 
 		assert.are.equal(ns.NO_FISHING_SET, set.get())
 		assert.are.same({ { value = ns.NO_FISHING_SET, label = "None" } }, set.options())
-		assert.is_false(swap.isEnabled())
+		assert.is_nil(swap.isEnabled)
 		set.set(3)
 		assert.are.equal(3, set.get())
-		assert.is_true(swap.isEnabled())
 		save.onClick()
 		assert.are.same({ { "chooseFishingSet", 3 }, { "saveFishingSet" } }, calls)
 		assert.is_true(set.isEnabled())

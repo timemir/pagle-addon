@@ -31,7 +31,8 @@ ns.GEAR_BUTTON = "PagleQoLGearButton"
 ---@field lured boolean? the pole has a lure on, or counts as lured while a lure's result is awaited (QOL-R29)
 ---@field lure integer? the lure QOL-R51 picks; nil while Lures is *Off* or none is available
 ---@field clam integer? the clam QOL-R55 picks; nil while *Open clams between Casts* is off or none is available
----@field gearReady boolean? the gear step is ready (QOL-R43)
+---@field gearReady boolean? the gear step is ready (QOL-R43, or with no fishing set QOL-R48)
+---@field gearPole integer? with no fishing set, the pole the gear step puts on (QOL-R48); nil with a set chosen
 ---@field skipGear boolean? the evaluation skips the gear step, as the double-click's does (QOL-R13, QOL-R15)
 ---@field reelMissed boolean? the reel didn't take, so the channel's next press casts again (QOL-R35)
 

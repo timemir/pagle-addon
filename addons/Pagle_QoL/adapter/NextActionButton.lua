@@ -34,7 +34,7 @@ local face ---@type PagleQoLButtonFace its face, made with it
 local tooltip ---@type PagleQoLButtonTooltip
 local lastIcon ---@type integer? the icon shown last, which *nothing* keeps (QOL-R71)
 -- What the button shows now: the action, and the lure, the clam or the fishing set it names (QOL-R74).
-local current = { action = "nothing" } ---@type { action: PagleQoLAction, lure: integer?, clam: integer?, setID: integer? }
+local current = { action = "nothing" } ---@type { action: PagleQoLAction, lure: integer?, clam: integer?, setID: integer?, pole: integer? }
 local moving = false -- a Shift-drag is moving it (QOL-R73)
 local hovering = false -- the mouse is over it, so its tooltip follows the next action (QOL-R74)
 local waitingFor ---@type integer? the item whose data the tooltip waits for (QOL-R74)
@@ -60,11 +60,13 @@ local function stopMoving()
 	place()
 end
 
--- The item the action shown uses: the lure for a lure, the clam for a clam; nil for any other action.
+--- The item the action shown uses: the lure for a lure, the clam for a clam, the pole for a pole from the bags (QOL-R48); nil for any other action.
 ---@return integer?
 local function currentItem()
 	if current.action == "lure" then
 		return current.lure
+	elseif current.action == "gear" and current.pole then
+		return current.pole
 	elseif current.action == "clam" then
 		return current.clam
 	end
@@ -264,10 +266,10 @@ end
 ---@param state PagleQoLLadderState
 ---@param keys string[] the Fishing key's bound keys
 function ns.ShowNextAction(state, keys)
-	local pole, gearReady = state.poleInHand == true, state.gearReady == true
+	local pole, gearReady, gearPole = state.poleInHand == true, state.gearReady == true, state.gearPole
 	if not state.armed then
 		pole = ns.PoleInHand()
-		gearReady = ns.ReadGearStep(pole)
+		gearReady, gearPole = ns.ReadGearStep(pole)
 	end
 	-- Restriction stops a Shift-drag where it got to (QOL-R73).
 	if Pagle.IsRestricted() then
@@ -279,7 +281,8 @@ function ns.ShowNextAction(state, keys)
 		standingDown = ns.IsStandingDown(),
 		stretch = ns.RunningStretch() ~= nil,
 		poleInHand = pole,
-		gearReady = gearReady,
+		-- A pole from the bags with no fishing set (QOL-R48) doesn't show the button: only a fishing set's step does.
+		gearReady = gearReady and not gearPole,
 	})
 	if not visible then
 		hide()
@@ -290,8 +293,11 @@ function ns.ShowNextAction(state, keys)
 
 	local action = ns.NextAction(state)
 	local icons = { fishing = (C_Spell.GetSpellTexture(ns.FISHING_SPELL_ID)) }
-	local setID
-	if action == "gear" then
+	local setID, gearItem
+	if action == "gear" and state.gearPole then
+		gearItem = state.gearPole
+		icons.set = C_Item.GetItemIconByID(state.gearPole)
+	elseif action == "gear" then
 		setID = ns.FishingSetChoice()
 		icons.set = select(2, C_EquipmentSet.GetEquipmentSetInfo(setID))
 	elseif action == "lure" and state.lure then
@@ -309,7 +315,7 @@ function ns.ShowNextAction(state, keys)
 	if action == "lure" and current.action ~= "lure" then
 		ns.NoteFirstLure(button)
 	end
-	current = { action = action, lure = state.lure, clam = state.clam, setID = setID }
+	current = { action = action, lure = state.lure, clam = state.clam, setID = setID, pole = gearItem }
 	if hovering then
 		showTooltip()
 	end

@@ -15,6 +15,8 @@
 --   loaded.client.mainHandEnchant = 263                             -- GetWeaponEnchantInfo(): a lure on
 --   loaded.client.equipmentSets[3] = { name = "Fishing", items = { [16] = 6256 } } -- a C_EquipmentSet set
 --   loaded.client.wearSet(3)                                        -- the set's items go on, as a swap ends
+--   loaded.client.equipCalls                                        -- { "equip 6256 16" }: C_Item.EquipItemByName
+--   loaded.client.equip(16, 6256)                                   -- an equip's result: the item goes on
 --   loaded.client.click("RightButton", 0.1)                         -- a mouse click, held 0.1 s
 --   loaded.client.mouseFoci = { someButton }                        -- GetMouseFoci(): the mouse is over a UI frame
 --   loaded.client.nextFrame(0.016)                                   -- the clock moves on, then one frame runs
@@ -35,7 +37,8 @@
 ---@field channel string? The spell the player is channeling, by name; `UnitChannelInfo("player")` returns it.
 ---@field casting string? The spell the player is casting with a cast time; `UnitCastingInfo("player")` returns it.
 ---@field mainHand integer? The item ID in the main hand (slot 16).
----@field items table<integer, integer[]> `{ classID, subclassID }` per item ID, for `C_Item.GetItemInfoInstant`.
+---@field items table<integer, { [1]: integer, [2]: integer, [3]: string? }> `{ classID, subclassID, equipLoc }` per item
+--- ID, for `C_Item.GetItemInfoInstant`; equipLoc ("INVTYPE_2HWEAPON") may be left out.
 ---@field itemQualities table<integer, integer> Each loaded item's quality (Enum.ItemQuality), as
 --- `C_Item.GetItemQualityByID` reads it; nil for one not loaded yet.
 ---@field itemLoads table<integer, function[]> The `Item:CreateFromItemID(id):ContinueOnItemLoad` callbacks waiting
@@ -90,6 +93,11 @@
 --- "create <name> <icon>", "save <setID>" or "use <setID>".
 ---@field wearSet fun(setID: integer) Puts the set's items on (slot 16 into `mainHand`, the rest into `worn`), as
 --- the end of a swap does. It fires no event.
+---@field equipCalls string[] Each `C_Item.EquipItemByName(item, slot)` call, in order: "equip <item> <slot>", the
+--- item as given (an item ID, or a link "item:<id>"). The equip itself ends later: a spec calls `client.equip`.
+---@field equip fun(slot: integer, itemID: integer?) An equip's result: `itemID` goes from the bags into `slot` (nil
+--- empties it), the item it replaces goes into the bags, and a two-hander in the main hand sends the off hand (17)
+--- to the bags too; each changed slot fires `PLAYER_EQUIPMENT_CHANGED(slot, hasCurrent)`.
 ---@field bindingNames table<string, string> Each binding command's name in Key Bindings, as `GetBindingName` returns
 --- it; a command not listed reads as itself. Default: Assist Target and Move Forward.
 ---@field bindingTexts table<string, string> Short key texts `GetBindingText(key, true)` returns, by key; a key not
@@ -137,7 +145,8 @@ return function(client, stubs)
 	}
 	client.cvarCalls = {}
 	-- A Fishing Pole (6256, as probe B1 read it) and a Worn Shortsword (25).
-	client.items = { [6256] = { 2, 20 }, [25] = { 2, 7 } }
+	-- Each `{ classID, subclassID, equipLoc }`; a pole is two-handed.
+	client.items = { [6256] = { 2, 20, "INVTYPE_2HWEAPON" }, [25] = { 2, 7, "INVTYPE_WEAPON" } }
 	-- On Forever `C_Item.IsUsableItem` is false for a clam in the bags: the dev's `/dump` read 5523 so (build 70338,
 	-- #147). The other two clams are taken to be the same.
 	client.bags, client.unusable = {}, { [5523] = true, [5524] = true, [7973] = true }
@@ -336,14 +345,41 @@ return function(client, stubs)
 	stubs.GetInventoryItemID = function(unit, slot)
 		if unit == "player" and slot == 16 then
 			return client.mainHand
+		elseif unit == "player" then
+			return client.worn[slot]
 		end
 	end
+	-- An equipped item's link: "item:<id>", the part of a link EquipItemByName reads.
+	stubs.GetInventoryItemLink = function(unit, slot)
+		local itemID = stubs.GetInventoryItemID(unit, slot)
+		return itemID and ("item:" .. itemID) or nil
+	end
+	-- The bags as C_Container reads them: every item of `client.bags` in the backpack (bag 0), one slot each, by item
+	-- ID; the other bags are empty.
+	local function bagList()
+		local list = {}
+		for itemID, count in pairs(client.bags) do
+			if count > 0 then
+				list[#list + 1] = itemID
+			end
+		end
+		table.sort(list)
+		return list
+	end
+	stubs.C_Container = {
+		GetContainerNumSlots = function(bag)
+			return bag == 0 and #bagList() or 0
+		end,
+		GetContainerItemID = function(bag, slot)
+			return bag == 0 and bagList()[slot] or nil
+		end,
+	}
 	stubs.C_Item = stubs.C_Item or {}
 	-- itemID, itemType, itemSubType, itemEquipLoc, icon, classID, subclassID; nil for an item it doesn't know.
 	stubs.C_Item.GetItemInfoInstant = function(itemID)
-		local item = client.items[itemID]
+		local item = client.items[tonumber((tostring(itemID):match("^item:(%d+)"))) or itemID]
 		if item then
-			return itemID, "", "", "", 0, item[1], item[2]
+			return itemID, "", "", item[3] or "", 0, item[1], item[2]
 		end
 	end
 	stubs.C_Item.GetItemCount = function(itemID)
@@ -575,6 +611,33 @@ return function(client, stubs)
 	end
 	stubs.SpellIsTargeting = function()
 		return client.targeting ~= nil
+	end
+
+	client.equipCalls = {}
+	stubs.C_Item.EquipItemByName = function(item, slot)
+		client.equipCalls[#client.equipCalls + 1] = ("equip %s %s"):format(tostring(item), tostring(slot))
+	end
+	local function put(slot, itemID)
+		local old = wornIn(slot)
+		if old then
+			client.bags[old] = (client.bags[old] or 0) + 1
+		end
+		if itemID then
+			client.bags[itemID] = math.max((client.bags[itemID] or 1) - 1, 0)
+		end
+		if slot == 16 then
+			client.mainHand = itemID
+		else
+			client.worn[slot] = itemID
+		end
+		client.fireGameEvent("PLAYER_EQUIPMENT_CHANGED", slot, itemID ~= nil)
+	end
+	function client.equip(slot, itemID)
+		put(slot, itemID)
+		local item = itemID and client.items[itemID]
+		if slot == 16 and item and item[3] == "INVTYPE_2HWEAPON" and client.worn[17] then
+			put(17, nil)
+		end
 	end
 
 	function client.wearSet(setID)
