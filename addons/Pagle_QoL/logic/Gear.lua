@@ -291,25 +291,26 @@ function ns.SwapBackPlan(memory, hands)
 	return equips, kept
 end
 
---- The remembered weapons once the hands change (QOL-R49): with no fishing pole in hand, each entry whose item is
---- worn in its slot again is spent; nil once none is left. With a pole in hand nothing is spent, so the press that put
---- the pole on never clears what it remembered.
+--- The remembered weapons once a hand changes (QOL-R49): the entry for the slot that changed is spent when that slot
+--- now holds its item; nil once none is left. Only the changed slot's own entry is read, so the order in which the
+--- client reports the two hands never spends the other (a two-handed pole going on sends the off hand to the bags
+--- while the main hand may still hold the remembered weapon).
 ---@param memory PagleQoLPoleSwap?
----@param mainHand integer? the item ID worn in the main hand
----@param offHand integer? the item ID worn in the off hand
----@param poleInHand boolean
+---@param slot integer the slot `PLAYER_EQUIPMENT_CHANGED` names
+---@param itemID integer? the item ID worn in that slot now
 ---@return PagleQoLPoleSwap?
-function ns.ClearWornWeapons(memory, mainHand, offHand, poleInHand)
-	if not memory or poleInHand then
+function ns.ClearWornWeapons(memory, slot, itemID)
+	if not memory or itemID == nil then
 		return memory
 	end
 	local main = memory.mainHand
 	local off = memory.offHand
-	if main and main.itemID == mainHand then
+	if slot == 16 and main and main.itemID == itemID then
 		main = nil
-	end
-	if off and off.itemID == offHand then
+	elseif slot == 17 and off and off.itemID == itemID then
 		off = nil
+	else
+		return memory
 	end
 	if not main and not off then
 		return nil

@@ -414,8 +414,8 @@ value = "»"
 en = "»"
 
 [GUIDE_CASTING_SMALL]
-value = "Ненужные шаги пропускаются: нет сохранённой рыбацкой одежды — нет шага с экипировкой; приманка уже стоит — нет шага с приманкой. Маленькая кнопка у воды показывает, что сделает следующее нажатие."
-en = "Steps you don’t need are passed over: no fishing clothes saved, no gear step; a lure already on, no lure step. A small button by the water shows what your next press will do."
+value = "Лишние шаги пропускаются: нет рыбацкой одежды — берётся лучшая удочка из сумок; приманка уже стоит — шага с приманкой нет. Кнопка у воды показывает, что сделает следующее нажатие."
+en = "Steps you don’t need are passed over: no fishing clothes saved, just your best pole from the bags; a lure already on, no lure step. A small button by the water shows what your next press will do."
 
 [GUIDE_CASTING_NOTE]
 value = "*Двойной правый щелчок* по воде тоже забрасывает и подсекает, но никогда не меняет одежду."

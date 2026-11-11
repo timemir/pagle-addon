@@ -51,7 +51,7 @@ ns.Locale("esES", function(L)
 	L.GUIDE_CASTING_NOTE = "Un *doble clic derecho* en el agua también lanza y recoge, pero nunca te cambia la ropa."
 	L.GUIDE_CASTING_REEL = "cuando el corcho se hunde"
 	L.GUIDE_CASTING_RIBBON = "Lances"
-	L.GUIDE_CASTING_SMALL = "Los pasos que no hacen falta se saltan: sin ropa de pescar guardada, no hay paso de equipo; con un señuelo ya puesto, no hay paso de señuelo. Un botoncito junto al agua muestra qué hará tu próxima pulsación."
+	L.GUIDE_CASTING_SMALL = "Los pasos que no hacen falta se saltan: sin ropa de pescar guardada, solo tu mejor caña de las bolsas; con un señuelo ya puesto, no hay paso de señuelo. Un botoncito junto al agua muestra qué hará tu próxima pulsación."
 	L.GUIDE_CASTING_THEN = "»"
 	L.GUIDE_CASTING_TITLE = "Una tecla para todo el lance"
 	L.GUIDE_CHOICE_KICKER = "Tú eliges"

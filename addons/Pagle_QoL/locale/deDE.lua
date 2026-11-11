@@ -50,7 +50,7 @@ ns.Locale("deDE", function(L)
 	L.GUIDE_CASTING_NOTE = "Ein *doppelter Rechtsklick* aufs Wasser wirft auch aus und holt ein, wechselt aber nie deine Kleidung."
 	L.GUIDE_CASTING_REEL = "wenn der Schwimmer abtaucht"
 	L.GUIDE_CASTING_RIBBON = "Auswerfen"
-	L.GUIDE_CASTING_SMALL = "Unnötige Schritte entfallen: kein Angelset gespeichert, kein Ausrüstungsschritt; schon ein Köder dran, kein Köderschritt. Ein kleiner Knopf am Wasser zeigt, was dein nächster Druck tut."
+	L.GUIDE_CASTING_SMALL = "Unnötige Schritte entfallen: kein Angelset gespeichert, nur deine beste Rute aus der Tasche; schon ein Köder dran, kein Köderschritt. Ein kleiner Knopf am Wasser zeigt, was dein nächster Druck tut."
 	L.GUIDE_CASTING_THEN = "»"
 	L.GUIDE_CASTING_TITLE = "Eine Taste für den ganzen Wurf"
 	L.GUIDE_CHOICE_KICKER = "Deine Wahl"

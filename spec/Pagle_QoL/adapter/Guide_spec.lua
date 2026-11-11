@@ -275,7 +275,7 @@ describe("The Casting step (ONB-R32)", function()
 			"the best lure you have",
 			"out it goes",
 			"when the bobber dips",
-			"Steps you don’t need are passed over: no fishing clothes saved, no gear step; a lure already on, no lure step. A small button by the water shows what your next press will do.",
+			"Steps you don’t need are passed over: no fishing clothes saved, just your best pole from the bags; a lure already on, no lure step. A small button by the water shows what your next press will do.",
 		}) do
 			assertSays(left, text)
 		end

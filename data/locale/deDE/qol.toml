@@ -414,8 +414,8 @@ value = "»"
 en = "»"
 
 [GUIDE_CASTING_SMALL]
-value = "Unnötige Schritte entfallen: kein Angelset gespeichert, kein Ausrüstungsschritt; schon ein Köder dran, kein Köderschritt. Ein kleiner Knopf am Wasser zeigt, was dein nächster Druck tut."
-en = "Steps you don’t need are passed over: no fishing clothes saved, no gear step; a lure already on, no lure step. A small button by the water shows what your next press will do."
+value = "Unnötige Schritte entfallen: kein Angelset gespeichert, nur deine beste Rute aus der Tasche; schon ein Köder dran, kein Köderschritt. Ein kleiner Knopf am Wasser zeigt, was dein nächster Druck tut."
+en = "Steps you don’t need are passed over: no fishing clothes saved, just your best pole from the bags; a lure already on, no lure step. A small button by the water shows what your next press will do."
 
 [GUIDE_CASTING_NOTE]
 value = "Ein *doppelter Rechtsklick* aufs Wasser wirft auch aus und holt ein, wechselt aber nie deine Kleidung."

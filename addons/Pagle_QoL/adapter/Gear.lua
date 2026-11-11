@@ -453,23 +453,18 @@ function ns.StartGear()
 		gear:SwapFinished()
 		ns.EvaluateFishingKey()
 	end)
-	-- A hand changed: with no fishing set, an equip's result (QOL-R29); and a remembered weapon worn again is spent
-	-- (QOL-R49), whatever put it on. The re-evaluation is QOL-R25's own.
+	-- A hand changed: with no fishing set, the main hand's change is an equip's result (QOL-R29); and the changed
+	-- slot's remembered weapon, worn again, is spent (QOL-R49), whatever put it on. The re-evaluation is QOL-R25's own.
 	Pagle.RegisterEvent(OWNER, "PLAYER_EQUIPMENT_CHANGED", function(_, slot)
 		if slot ~= 16 and slot ~= 17 then
 			return
 		end
-		if not readFishingSet() then
+		if slot == 16 and not readFishingSet() then
 			gear:SwapFinished()
 		end
 		local guid = UnitGUID("player")
 		if guid and poleSwaps()[guid] then
-			poleSwaps()[guid] = ns.ClearWornWeapons(
-				poleSwaps()[guid],
-				GetInventoryItemID("player", 16),
-				GetInventoryItemID("player", 17),
-				ns.PoleInHand()
-			)
+			poleSwaps()[guid] = ns.ClearWornWeapons(poleSwaps()[guid], slot, GetInventoryItemID("player", slot))
 		end
 		ns.EvaluateFishingKey()
 	end)

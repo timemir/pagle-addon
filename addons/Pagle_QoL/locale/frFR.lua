@@ -50,7 +50,7 @@ ns.Locale("frFR", function(L)
 	L.GUIDE_CASTING_NOTE = "Un *double clic droit* sur l’eau lance et ferre aussi, mais ne change jamais votre tenue."
 	L.GUIDE_CASTING_REEL = "quand le flotteur plonge"
 	L.GUIDE_CASTING_RIBBON = "Lancer"
-	L.GUIDE_CASTING_SMALL = "Les étapes inutiles sont sautées : pas de tenue de pêche enregistrée, pas d’étape d’équipement ; un appât déjà posé, pas d’étape d’appât. Un petit bouton au bord de l’eau montre ce que fera votre prochaine pression."
+	L.GUIDE_CASTING_SMALL = "Les étapes inutiles sont sautées : pas de tenue de pêche enregistrée, juste votre meilleure canne des sacs ; un appât déjà posé, pas d’étape d’appât. Un petit bouton au bord de l’eau montre ce que fera votre prochaine pression."
 	L.GUIDE_CASTING_THEN = "»"
 	L.GUIDE_CASTING_TITLE = "Une touche pour tout le lancer"
 	L.GUIDE_CHOICE_KICKER = "À vous de choisir"

@@ -413,8 +413,8 @@ value = "»"
 en = "»"
 
 [GUIDE_CASTING_SMALL]
-value = "Les étapes inutiles sont sautées : pas de tenue de pêche enregistrée, pas d’étape d’équipement ; un appât déjà posé, pas d’étape d’appât. Un petit bouton au bord de l’eau montre ce que fera votre prochaine pression."
-en = "Steps you don’t need are passed over: no fishing clothes saved, no gear step; a lure already on, no lure step. A small button by the water shows what your next press will do."
+value = "Les étapes inutiles sont sautées : pas de tenue de pêche enregistrée, juste votre meilleure canne des sacs ; un appât déjà posé, pas d’étape d’appât. Un petit bouton au bord de l’eau montre ce que fera votre prochaine pression."
+en = "Steps you don’t need are passed over: no fishing clothes saved, just your best pole from the bags; a lure already on, no lure step. A small button by the water shows what your next press will do."
 
 [GUIDE_CASTING_NOTE]
 value = "Un *double clic droit* sur l’eau lance et ferre aussi, mais ne change jamais votre tenue."

@@ -911,6 +911,22 @@ describe("Gear with no fishing set (from 1.7)", function()
 			assert.are.same({ "equip 19970 16", "equip item:25 16", "equip item:2129 17" }, client.equipCalls)
 		end)
 
+		it("keeps both weapons when the client reports the off hand before the pole is on (QOL-R49)", function()
+			local fake, client, loaded = noSet()
+			pressSwapGear(loaded)
+
+			-- The shield goes to the bags first, the sword still in hand; then the pole goes on.
+			client.worn[17], client.bags[SHIELD] = nil, 1
+			fake.fireGameEvent("PLAYER_EQUIPMENT_CHANGED", 17, false)
+			client.mainHand, client.bags[SWORD], client.bags[ARCANITE] = ARCANITE, 1, 0
+			fake.fireGameEvent("PLAYER_EQUIPMENT_CHANGED", 16, true)
+
+			assert.are.same({
+				mainHand = { itemID = SWORD, link = "item:25" },
+				offHand = { itemID = SHIELD, link = "item:2129" },
+			}, remembered(loaded))
+		end)
+
 		it("forgets the weapons once they are worn again (QOL-R49)", function()
 			local _, client, loaded = noSet()
 			pressSwapGear(loaded)

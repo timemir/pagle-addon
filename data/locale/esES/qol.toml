@@ -474,8 +474,8 @@ value = "Pulsa la Tecla de pesca y Pagle hace lo siguiente que toca, y luego esp
 en = "Press the Fishing key and Pagle does the one next thing, then waits for your next press. It never does two things at once, and it never does anything on its own."
 
 [GUIDE_CASTING_SMALL]
-value = "Los pasos que no hacen falta se saltan: sin ropa de pescar guardada, no hay paso de equipo; con un señuelo ya puesto, no hay paso de señuelo. Un botoncito junto al agua muestra qué hará tu próxima pulsación."
-en = "Steps you don’t need are passed over: no fishing clothes saved, no gear step; a lure already on, no lure step. A small button by the water shows what your next press will do."
+value = "Los pasos que no hacen falta se saltan: sin ropa de pescar guardada, solo tu mejor caña de las bolsas; con un señuelo ya puesto, no hay paso de señuelo. Un botoncito junto al agua muestra qué hará tu próxima pulsación."
+en = "Steps you don’t need are passed over: no fishing clothes saved, just your best pole from the bags; a lure already on, no lure step. A small button by the water shows what your next press will do."
 
 [GUIDE_RESTING]
 value = "La Tecla de pesca de Pagle descansa mientras la tenga {titles}. Puedes seguir lanzando con doble clic derecho."

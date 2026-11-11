@@ -342,17 +342,20 @@ describe("QoL's gear logic", function()
 		local sword = { itemID = 25, link = "item:25" }
 		local shield = { itemID = 2129, link = "item:2129" }
 
-		it("spends each weapon worn again in its slot, with no pole in hand", function()
+		it("spends the changed slot's weapon once that slot holds it again", function()
 			local memory = { mainHand = sword, offHand = shield }
 
-			assert.are.same({ offHand = shield }, ns.ClearWornWeapons(memory, 25, nil, false))
-			assert.is_nil(ns.ClearWornWeapons(memory, 25, 2129, false))
+			assert.are.same({ offHand = shield }, ns.ClearWornWeapons(memory, 16, 25))
+			assert.is_nil(ns.ClearWornWeapons({ offHand = shield }, 17, 2129))
 		end)
 
-		it("spends nothing with a pole in hand, so the press that put it on keeps what it remembered", function()
+		it("reads only the changed slot, so the hands' order never spends the other", function()
 			local memory = { mainHand = sword, offHand = shield }
 
-			assert.are.equal(memory, ns.ClearWornWeapons(memory, 19970, 2129, true))
+			-- A two-handed pole going on: the off hand empties first, the sword still in the main hand.
+			assert.are.equal(memory, ns.ClearWornWeapons(memory, 17, nil))
+			assert.are.equal(memory, ns.ClearWornWeapons(memory, 16, 19970))
+			assert.are.equal(memory, ns.ClearWornWeapons(memory, 17, 25))
 		end)
 	end)
 
